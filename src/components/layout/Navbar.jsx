@@ -50,7 +50,7 @@ const Navbar = () => {
               <Link
                 key={index}
                 to={item.path}
-                className="relative inline-flex items-center text-[16px] font-medium text-primary transition-all duration-300 hover:!text-[#12C6B0] hover:scale-105 after:content-[''] after:absolute after:right-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:origin-right after:bg-[#12C6B0] after:transition-transform after:duration-300 hover:after:scale-x-100"
+                className="relative inline-flex items-center text-[16px] font-medium text-primary transition-all duration-300 hover:text-[#12C6B0]! hover:scale-105 after:content-[''] after:absolute after:right-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:origin-right after:bg-[#12C6B0] after:transition-transform after:duration-300 hover:after:scale-x-100"
               >
                 {item.title}
               </Link>))}
