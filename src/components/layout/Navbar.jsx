@@ -1,0 +1,210 @@
+import { useState } from "react";
+import logo from "../../assets/icons/logo.png";
+import { Menu, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+
+const Navbar = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const links = [
+    { title: "الرئيسية", path: "/" },
+    { title: "عن الأكاديمية", path: "/about" },
+    { title: "المميزات", path: "/features" },
+    { title: "الباقات", path: "/pricing" },
+    { title: "الأسئلة الشائعة", path: "/faq" },
+  ];
+
+  return (
+    <>
+      {/* ================= NAVBAR ================= */}
+      <nav
+        dir="rtl"
+        className="
+          fixed top-0 left-0 w-full h-20
+          px-4 md:px-10 lg:px-20
+
+          bg-(--bg-light)/60
+          backdrop-blur-md
+
+          border-b border-(--border-light)
+          shadow-(--shadow)
+
+          z-50
+        "
+      >
+        <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
+
+          {/* ================= LOGO ================= */}
+          <Link to="/" className="flex items-center shrink-0">
+            <img
+              src={logo}
+              alt="logo"
+              className="w-35 md:w-44 h-8 object-contain"
+            />
+          </Link>
+
+          {/* ================= DESKTOP LINKS ================= */}
+          <div className="hidden lg:flex items-center gap-6 xl:gap-8">
+            {links.map((item, index) => (
+              <Link
+                key={index}
+                to={item.path}
+                className="relative inline-flex items-center text-[16px] font-medium text-primary transition-all duration-300 hover:!text-[#12C6B0] hover:scale-105 after:content-[''] after:absolute after:right-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:origin-right after:bg-[#12C6B0] after:transition-transform after:duration-300 hover:after:scale-x-100"
+              >
+                {item.title}
+              </Link>))}
+          </div>
+
+          {/* ================= DESKTOP BUTTONS ================= */}
+          <div className="hidden lg:flex items-center gap-3">
+
+            <button
+              onClick={() => navigate("/create-account")}
+              className="
+                h-10
+                px-6
+                rounded-lg
+
+                bg-[#123C91]
+          
+
+                text-white
+                text-[16px]
+                font-medium
+
+                transition-none
+              "
+            >
+              إنشاء حساب
+            </button>
+
+            <button
+              onClick={() => navigate("/login")}
+              className="
+              h-10
+              px-6
+              rounded-lg
+
+              bg-[#F8FBFF]
+
+              border border-[#1F293733]
+
+              text-[#123C91]
+              text-[16px]
+              font-medium
+
+              transition-all duration-300
+
+              hover:border-[#123C91]
+              hover:shadow-sm
+            "
+            >
+              تسجيل الدخول
+            </button>
+
+          </div>
+
+          {/* ================= MOBILE BUTTON ================= */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="lg:hidden text-primary"
+          >
+            <Menu size={28} />
+          </button>
+
+        </div>
+      </nav>
+
+      {/* ================= OVERLAY ================= */}
+      <div
+        onClick={() => setMenuOpen(false)}
+        className={`
+          fixed inset-0 bg-black/40 z-40
+          transition-opacity duration-300
+          ${menuOpen ? "opacity-100 visible" : "opacity-0 invisible"}
+        `}
+      />
+
+      {/* ================= SIDEBAR ================= */}
+      <aside
+
+        className={`
+          fixed top-0 right-0 h-full w-70 sm:w-[320px]
+
+          bg-white
+          z-50
+          shadow-2xl
+
+          flex flex-col
+
+          transform transition-transform duration-300
+          ${menuOpen ? "translate-x-0" : "translate-x-full"}
+        `}
+      >
+        {/* HEADER */}
+        <div className="flex items-center justify-between p-5 border-b border-(--border-light)">
+          <img src={logo} alt="logo" className="h-9.5" />
+
+          <button onClick={() => setMenuOpen(false)}>
+            <X size={26} className="text-[#123C91]" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-6 p-6">
+          {links.map((item, index) => (
+            <Link
+              key={index}
+              to={item.path}
+              onClick={() => setMenuOpen(false)}
+              className="text-primary hover:text-[#12C6B0]! text-[16px] font-medium transition-colors duration-300"
+            >
+              {item.title}
+            </Link>
+          ))}
+        </div>
+
+        {/* BUTTONS */}
+        <div className="mt-auto p-6 border-t border-(--border-light) flex flex-col gap-3">
+
+          <button className="
+            h-10
+            rounded-lg
+
+            bg-[#123C91]
+            text-white
+            text-[16px]
+            font-medium
+
+            hover:bg-[#0F3278]
+            transition-none
+          ">
+            إنشاء حساب
+          </button>
+
+          <button className="
+            h-10
+            rounded-lg
+
+            bg-[#F8FBFF]
+            border border-[#1F293733]
+
+            text-[#123C91]
+            text-[16px]
+            font-medium
+
+            transition-all duration-300
+
+            hover:border-[#123C91]
+            hover:shadow-sm
+          ">
+            تسجيل الدخول
+          </button>
+
+        </div>
+      </aside>
+    </>
+  );
+};
+
+export default Navbar;
