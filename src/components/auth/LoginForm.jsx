@@ -85,7 +85,7 @@ const LoginForm = () => {
                     </label>
 
                     <a
-                        href="#"
+                        href="/forgot-password"
                         className="font-medium inline-block border-b-2 border-[#123C91] text-primary"
                         style={{
                             fontFamily: 'IBM Plex Sans Arabic, sans-serif',
@@ -113,7 +113,7 @@ const LoginForm = () => {
                         ليس لديك حساب؟
                     </span>
                     <a
-                        href="#"
+                        href="/select-account-type"
                         className="font-['IBM_Plex_Sans_Arabic'] inline-block border-b-2 border-[#123C91] font-medium text-[14px] leading-4 text-right text-primary px-1"
                     >
                         إنشاء حساب

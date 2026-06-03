@@ -76,8 +76,8 @@ const RegisterForm = ({ type }) => {
                 </button>
 
                 <div className="w-full flex items-center justify-center pt-4">
-                    <span className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-4 text-[#1F2937] px-1">ليس لديك حساب؟</span>
-                    <a href="#" className="font-['IBM_Plex_Sans_Arabic'] inline-block border-b-2 border-[#123C91] font-medium text-[14px] leading-4 text-primary px-1">إنشاء حساب</a>
+                    <span className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-4 text-[#1F2937] px-1">لديك حساب؟</span>
+                    <a href="/login" className="font-['IBM_Plex_Sans_Arabic'] inline-block border-b-2 border-[#123C91] font-medium text-[14px] leading-4 text-primary px-1">تسجيل دخول</a>
                 </div>
             </form>
         </div>
