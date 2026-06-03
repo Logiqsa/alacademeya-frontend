@@ -9,13 +9,29 @@ import FAQ from "../components/landing/FAQ";
 export default function Landing() {
   return (
     <>
-      <Hero />
-      <Marquee />
-      <Features />
-      <Services />
-      <Pricing />
-      <Stats />
-      <FAQ />
+      
+        <Hero />
+      <section id="marquee">
+        <Marquee />
+      </section>
+
+        <Features />
+
+      <section id="services">
+        <Services />
+      </section>
+
+      <section id="pricing">
+        <Pricing />
+      </section>
+
+      <section id="stats">
+        <Stats />
+      </section>
+
+      <section id="faq">
+        <FAQ />
+      </section>
     </>
   );
 }

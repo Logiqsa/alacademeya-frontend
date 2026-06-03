@@ -1,9 +1,9 @@
-import heroImage from "../../assets/small dashbord.png";
+import heroImage from "../../assets/small dashbord.svg";
 import heroBg from "../../assets/hero.png";
 
 export default function Hero() {
   return (
-<section className="relative w-full overflow-hidden">
+<section className="relative w-full overflow-hidden" id="home">
   
   <img 
     src={heroBg} 

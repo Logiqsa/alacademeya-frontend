@@ -1,5 +1,5 @@
 import { useState } from "react";
-import logo from "../../assets/icons/logo.png";
+import logo from "../../assets/icons/logo.svg";
 import { Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -8,12 +8,28 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const links = [
-    { title: "الرئيسية", path: "/" },
-    { title: "عن الأكاديمية", path: "/about" },
-    { title: "المميزات", path: "/features" },
-    { title: "الباقات", path: "/pricing" },
-    { title: "الأسئلة الشائعة", path: "/faq" },
+    { title: "الرئيسية", id: "home" },
+    { title: "عن الأكاديمية", id: "about" },
+    { title: "المميزات", id: "features" },
+    { title: "الباقات", id: "pricing" },
+    { title: "الأسئلة الشائعة", id: "faq" },
   ];
+
+
+  const scrollToSection = (id) => {
+    const section = document.getElementById(id);
+
+    if (section) {
+      section.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+
+    setMenuOpen(false);
+  };
+
+
 
   return (
     <>
@@ -47,13 +63,13 @@ const Navbar = () => {
           {/* ================= DESKTOP LINKS ================= */}
           <div className="hidden lg:flex items-center gap-6 xl:gap-8">
             {links.map((item, index) => (
-              <Link
+              <button
                 key={index}
-                to={item.path}
+                onClick={() => scrollToSection(item.id)}
                 className="relative inline-flex items-center text-[16px] font-medium text-primary transition-all duration-300 hover:text-[#12C6B0]! hover:scale-105 after:content-[''] after:absolute after:right-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:origin-right after:bg-[#12C6B0] after:transition-transform after:duration-300 hover:after:scale-x-100"
               >
                 {item.title}
-              </Link>))}
+              </button>))}
           </div>
 
           {/* ================= DESKTOP BUTTONS ================= */}
@@ -153,14 +169,14 @@ const Navbar = () => {
 
         <div className="flex flex-col gap-6 p-6">
           {links.map((item, index) => (
-            <Link
+            <button
               key={index}
-              to={item.path}
-              onClick={() => setMenuOpen(false)}
+              onClick={() => scrollToSection(item.id)}
+
               className="text-primary hover:text-[#12C6B0]! text-[16px] font-medium transition-colors duration-300"
             >
               {item.title}
-            </Link>
+            </button>
           ))}
         </div>
 
