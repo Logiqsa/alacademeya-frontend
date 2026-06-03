@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../../assets/icons/logo.svg"; // تأكد من مسار الشعار
+import logo from "../../assets/icons/logo.svg"; 
 import AuthLayout from "../../components/auth/AuthLayout";
 
 const AccountTypePage = () => {
