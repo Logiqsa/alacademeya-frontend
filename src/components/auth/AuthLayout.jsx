@@ -5,83 +5,34 @@ import img3 from "../../assets/image3.png";
 
 const AuthLayout = ({ children }) => {
   const [index, setIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
   const images = [img1, img2, img3];
 
   useEffect(() => {
-    let interval;
-
-    if (isHovered) {
-      interval = setInterval(() => {
-        setIndex((prev) => (prev + 1) % images.length);
-      }, 800);
-    } else {
-      setIndex(0);
-    }
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % images.length);
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, [isHovered, images.length]);
+  }, []);
 
   return (
-//     <div
-//       className="w-full min-h-screen flex items-center justify-center bg-white px-4 py-8"
-//       dir="rtl"
-//     >
-//       <div
-//         className="
-//           w-full max-w-6xl
-//           flex flex-col lg:flex-row-reverse
-//           items-center justify-center
-//           gap-10 lg:gap-16
-//         "
-//       >
-//         {/* IMAGE SECTION */}
-//       {/* IMAGE SECTION */}
-// <div
-//   onMouseEnter={() => setIsHovered(true)}
-//   onMouseLeave={() => setIsHovered(false)}
-//   className="
-//     w-full
-//     lg:flex-1
-//     hidden lg:flex
-//     items-center justify-center
-//   "
-// >
-//   <div
-//     className="
-//       w-full
-//       max-w-md sm:max-w-lg lg:max-w-xl
-//       aspect-square sm:aspect-[4/3]
-//       lg:h-[595px]
-//       rounded-3xl
-//       overflow-hidden
-//       flex items-center justify-center
-//     "
-//   >
-//     <img
-//       src={images[index]}
-//       alt="Auth Animation"
-//       className="w-full h-full object-contain transition-all duration-500"
-//     />
-//   </div>
-// </div>
+    <div className="min-h-screen flex bg-gray-100">
 
-//         {/* FORM SECTION */}
-//         <div
-//           className="
-//             w-full
-//             lg:flex-1
-//             flex flex-col
-//             justify-center
-//             px-2 sm:px-6 lg:px-10
-//           "
-//         >
-//           {children}
-//         </div>
-//       </div>
-//     </div>
+      {/* LEFT SIDE → FORM (زي الصورة) */}
+      <div className="w-full md:w-1/2 flex items-center justify-center bg-white px-6">
+        {children}
+      </div>
 
-<></>
+      {/* RIGHT SIDE → IMAGE */}
+      {/* <div className="hidden md:flex w-1/2 relative items-center justify-center bg-[#e9eef6] overflow-hidden">
+        <img
+          src={images[index]}
+          alt="slide"
+          className="w-[80%] h-auto object-contain transition-all duration-700"
+        />
+      </div> */}
+
+    </div>
   );
 };
 
