@@ -1,13 +1,16 @@
-import React from 'react';
-import AuthLayout from '../../components/auth/AuthLayout';
-import RegisterForm from '../../components/auth/RegisterForm';
+import React from "react";
+import { useLocation } from "react-router-dom";
+import AuthLayout from "../../components/auth/AuthLayout";
+import RegisterForm from "../../components/auth/RegisterForm";
 
 const RegisterPage = () => {
-  return (
-    <AuthLayout>
-      <RegisterForm />
-    </AuthLayout>
-  );
-};
+    const location = useLocation();
+    const accountType = location.state?.accountType || "student"; 
 
+    return (
+        <AuthLayout>
+            <RegisterForm type={accountType} />
+        </AuthLayout>
+    );
+};
 export default RegisterPage;
