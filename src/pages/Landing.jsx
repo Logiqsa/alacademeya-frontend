@@ -9,11 +9,12 @@ import FAQ from "../components/landing/FAQ";
 export default function Landing() {
   return (
     <>
-      
-        <Hero />
+
+      <Hero />
       <section id="marquee">
         <Marquee />
       </section>
+      
 
         <Features />
 

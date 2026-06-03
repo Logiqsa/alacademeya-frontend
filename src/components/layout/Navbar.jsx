@@ -9,8 +9,8 @@ const Navbar = () => {
 
   const links = [
     { title: "الرئيسية", id: "home" },
-    { title: "عن الأكاديمية", id: "about" },
-    { title: "المميزات", id: "features" },
+    { title: "عن الأكاديمية", id: "features" },
+    { title: "المميزات", id: "services" },
     { title: "الباقات", id: "pricing" },
     { title: "الأسئلة الشائعة", id: "faq" },
   ];
