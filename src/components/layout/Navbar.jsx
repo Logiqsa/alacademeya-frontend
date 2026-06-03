@@ -83,8 +83,6 @@ const Navbar = () => {
                 rounded-lg
 
                 bg-[#123C91]
-          
-
                 text-white
                 text-[16px]
                 font-medium
