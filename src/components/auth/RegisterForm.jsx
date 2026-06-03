@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, ChevronDown } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
+import { Link } from "react-router-dom";
 
 const RegisterForm = ({ type }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -173,7 +174,7 @@ const RegisterForm = ({ type }) => {
 
                 <div className="w-full flex items-center justify-center pt-4">
                     <span className="font-normal text-[14px] leading-4 text-[#1F2937] px-1">لديك حساب؟</span>
-                    <a href="/login" className="inline-block border-b-2 border-[#123C91] font-medium text-[14px] leading-4 text-primary px-1">تسجيل دخول</a>
+                    <Link to="/login" className="inline-block border-b-2 border-[#123C91] font-medium text-[14px] leading-4 text-primary px-1">تسجيل دخول</Link>
                 </div>
             </form>
         </div>

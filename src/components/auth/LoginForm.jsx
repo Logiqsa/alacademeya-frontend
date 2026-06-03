@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
+import { Link } from "react-router-dom";
 
 const LoginForm = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -84,8 +85,8 @@ const LoginForm = () => {
                         تذكرني
                     </label>
 
-                    <a
-                        href="/forgot-password"
+                    <Link
+                        to="/forgot-password"
                         className="font-medium inline-block border-b-2 border-[#123C91] text-primary"
                         style={{
                             fontFamily: 'IBM Plex Sans Arabic, sans-serif',
@@ -93,8 +94,8 @@ const LoginForm = () => {
                             lineHeight: '16px',
                         }}
                     >
-                        نسيت كلمة المرور؟
-                    </a>
+                        نسيت كلمة المرور
+                    </Link>
                 </div>
 
                 <button
@@ -112,12 +113,12 @@ const LoginForm = () => {
                     >
                         ليس لديك حساب؟
                     </span>
-                    <a
-                        href="/select-account-type"
+                    <Link
+                        to="/select-account-type"
                         className="font-['IBM_Plex_Sans_Arabic'] inline-block border-b-2 border-[#123C91] font-medium text-[14px] leading-4 text-right text-primary px-1"
                     >
                         إنشاء حساب
-                    </a>
+                    </Link>
                 </div>
             </form>
         </div>
