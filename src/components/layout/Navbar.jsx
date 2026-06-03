@@ -76,7 +76,7 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center gap-3">
 
             <button
-              onClick={() => navigate("/create-account")}
+              onClick={() => navigate("/select-account-type")}
               className="
                 h-10
                 px-6
@@ -183,7 +183,8 @@ const Navbar = () => {
         {/* BUTTONS */}
         <div className="mt-auto p-6 border-t border-(--border-light) flex flex-col gap-3">
 
-          <button className="
+          <button  onClick={() => navigate("/select-account-type")} 
+           className="
             h-10
             rounded-lg
 
@@ -198,7 +199,8 @@ const Navbar = () => {
             إنشاء حساب
           </button>
 
-          <button className="
+          <button  onClick={() => navigate("/login")} 
+           className="
             h-10
             rounded-lg
 
