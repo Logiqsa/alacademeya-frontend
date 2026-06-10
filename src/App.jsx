@@ -5,6 +5,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import RegisterPage from "./pages/auth/RegisterPage";
 import AccountTypePage from "./pages/auth/AccountTypePage";
+import Home from "./pages/parent/Home";
 
 function App() {
   return (
@@ -18,6 +19,10 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/select-account-type" element={<AccountTypePage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+
+
+        <Route path="/parent-dashboard" element={<Home />} />
 
       </Routes>
     </>
