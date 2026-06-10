@@ -1,38 +1,44 @@
-// import studentsImg from "../../../assets/students.png";
+import studentsImg from "../../../assets/student.svg";
 
 const WelcomeSection = () => {
   return (
-    <>
-      {/* <div>
-        <h2 className="text-3xl font-bold text-blue-900">
-          مرحباً بك...
+    <div className="flex flex-col gap-6 p-6 px-3 -mt-3 -mr-4">
+      <div
+        className="w-full  rounded-lg flex items-center px-2"
+      >
+        <h2 className="font-['IBM_Plex_Sans_Arabic'] font-semibold text-[24px] leading-8 text-primary w-full text-right">
+          مرحباً بك يا أحمد
         </h2>
+      </div>
 
-        <p className="text-gray-500 mt-2">
-          هنا يمكنك متابعة رحلة تعلم أبنائك لحظة بلحظة.
-        </p>
-      </div> */}
-{/* 
-      <div className="bg-white border rounded-2xl p-10 text-center">
+      <p className="text-gray-500 font-medium -mt-3 px-2">
+        هنا يمكنك متابعة رحلة تعلم أبنائك لحظة بلحظة.
+      </p>
+
+      <div className="bg-white border border-[#1F293726] rounded-2xl p-10 text-center flex flex-col items-center justify-center shadow-[0px_0px_4px_0px_#00000014]"
+      >
         <img
           src={studentsImg}
-          alt=""
-          className="mx-auto h-32 object-contain"
+          alt="students"
+          className="h-32 object-contain mb-6"
         />
 
-        <h3 className="text-xl font-semibold mt-5">
+        <h3 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[20px] leading-8 text-[#000000] text-center">
           لم تقم بإضافة أي أبناء بعد
         </h3>
 
-        <p className="text-gray-500 mt-2">
-          أضف أبنائك لبدء متابعة الحصص والواجبات والتقييمات.
+        <p className="font-['IBM_Plex_Sans_Arabic'] mt-2 font-normal text-[16px] leading-6 text-[#1F2937BF] text-center max-w-md">
+          أضف أبناءك لبدء متابعة الحصص والواجبات والتقييمات والجدول الدراسي.
         </p>
 
-        <button className="bg-blue-800 text-white px-8 py-3 rounded-lg mt-6">
+        <button className="bg-[#123C91] text-white rounded-lg mt-3 flex items-center justify-center hover:bg-blue-900 transition-colors font-['Tajawal'] font-medium text-[16px] leading-5.5"
+          style={{ width: '160px', height: '48px', padding: '0 24px' }}
+          onClick={() => navigate("/المعلومات-الشخصية")}
+        >
           إضافة ابن
         </button>
-      </div> */}
-    </>
+      </div>
+    </div>
   );
 };
 
