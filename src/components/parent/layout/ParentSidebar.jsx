@@ -57,6 +57,7 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
         relative
         flex
         flex-col
+        h-full
         justify-between
         bg-[#1F2937]
         border-l
@@ -70,7 +71,7 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
       `}
     >
       {/* Header */}
-      <div className="relative flex items-center justify-between h-17.5 px-6 border-b border-[#FFFFFF14]">
+      <div className="relative flex items-center justify-between  px-6 border-b border-[#FFFFFF14]">
         {isOpen && (
           <img
             src={logo}

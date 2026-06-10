@@ -2,7 +2,7 @@ import studentsImg from "../../../assets/student.svg";
 
 const WelcomeSection = () => {
   return (
-    <div className="flex flex-col gap-6 p-6 px-3 -mt-3 -mr-4">
+    <div className="flex flex-col gap-6 w-full">
       <div
         className="w-full  rounded-lg flex items-center px-2"
       >
