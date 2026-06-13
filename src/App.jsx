@@ -6,6 +6,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import RegisterPage from "./pages/auth/RegisterPage";
 import AccountTypePage from "./pages/auth/AccountTypePage";
 import Home from "./pages/parent/Home";
+// import AddChildPage from "./pages/parent/add-child/AddChildPage";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
 
 
         <Route path="/parent-dashboard" element={<Home />} />
+        {/* <Route path="/add-child" element={<AddChildPage />} /> */}
 
       </Routes>
     </>

@@ -19,11 +19,9 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="py-20 bg-white w-full" id="features">
-      <div className="w-full px-6 md:px-12 lg:px-20">
-
-        {/* Header */}
-        <div className="text-center mb-16">
+ <section className="pt-0 pb-20 bg-white w-full" id="features">
+  <div className="w-full px-6 md:px-12 lg:px-20">
+    <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-4">
             <div className="w-12 h-0.5 bg-(--secondary)"></div>
             <p className="text-(--secondary) font-['Tajawal'] font-medium text-[16px]">

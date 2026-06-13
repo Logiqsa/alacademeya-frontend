@@ -6,7 +6,7 @@ const ParentLayout = ({ children }) => {
 
   return (
     <div className="h-screen flex bg-[#F5F7FB] overflow-hidden">
-            <div className="h-full shrink-0">
+      <div className="h-full shrink-0">
         <ParentSidebar
           isOpen={isOpen}
           setIsOpen={setIsOpen}
