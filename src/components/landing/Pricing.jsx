@@ -45,33 +45,32 @@ const Pricing = () => {
           اختر الباقة المناسبة لك ولأبنائك واستمتع بتجربة تعليمية متميزة
         </p>
 
-       
-        <div className="flex items-center justify-center gap-4 mb-12">
-          <span className={`font-semibold text-[16px] ${!isAnnual ? "text-[#123C91]" : "text-gray-500"}`}>
+
+        <div className="flex items-center justify-center gap-4 mb-12" dir="rtl">
+          <span className={`font-semibold text-[16px] ${isAnnual ? "text-gray-500" : "text-[#123C91]"}`}>
             شهرياً
           </span>
 
-          <div className="relative">
-         
-            <div className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-[#EBF4FF] text-[#123C91] text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#123C91] transition-opacity duration-300 ${isAnnual ? "opacity-100" : "opacity-0"}`}>
+          <button
+            onClick={() => setIsAnnual(!isAnnual)}
+            className={`relative w-14 h-7 rounded-full p-1 flex items-center transition-colors duration-300 ${isAnnual ? "bg-[#123C91]" : "bg-gray-300"
+              }`}
+          >
+            <div
+              className={`w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-sm ${isAnnual ? "mr-7" : "mr-0"
+                }`}
+            />
+          </button>
+
+          <div className="flex items-center gap-2">
+            <span className={`font-semibold text-[16px] ${isAnnual ? "text-[#123C91]" : "text-gray-500"}`}>
+              سنوياً
+            </span>
+
+            <div className={`bg-[#EBF4FF] text-[#123C91] text-[10px] font-bold px-2 mr-1 py-0.5 rounded-md border border-[#123C91] transition-all duration-300 ${isAnnual ? "opacity-100 visible" : "opacity-0 invisible"}`}>
               وفّر 20%
             </div>
-            
-            <button 
-              onClick={() => setIsAnnual(!isAnnual)} 
-              className={`w-14 h-7 rounded-full p-1 transition-all duration-300 flex items-center ${isAnnual ? "bg-[#123C91]" : "bg-gray-300"}`}
-            >
-              <div 
-                className={`w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-sm ${
-                  isAnnual ? "-translate-x-7" : "translate-x-0"
-                }`} 
-              />
-            </button>
           </div>
-
-          <span className={`font-semibold text-[16px] ${isAnnual ? "text-[#123C91]" : "text-gray-500"}`}>
-            سنوياً
-          </span>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 items-stretch">
