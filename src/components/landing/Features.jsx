@@ -19,9 +19,9 @@ const features = [
 
 export default function Features() {
   return (
- <section className="pt-0 pb-20 bg-white w-full" id="features">
-  <div className="w-full px-6 md:px-12 lg:px-20">
-    <div className="text-center mb-8">
+    <section className="-mt-16 bg-white w-full" id="features ">
+      <div className="w-full px-6 md:px-12 lg:px-20">
+        <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-4">
             <div className="w-12 h-0.5 bg-(--secondary)"></div>
             <p className="text-(--secondary) font-['Tajawal'] font-medium text-[16px]">
@@ -36,8 +36,8 @@ export default function Features() {
         </div>
 
         {/* Banner */}
-        <div className="w-full mb-10 p-10 rounded-3xl border-r-4 border-[#12C6B0] bg-[#EAF4FF] flex items-center justify-center">
-          <p className="text-(--text-dark) leading-8 text-lg text-center md:text-right">
+        <div className="w-full mb-12 flex items-center justify-center">
+          <p className="text-[#1F2937] leading-8 text-[18px] text-center max-w-4xl">
             توفر الأكاديمية بيئة تعليمية متكاملة تساعد الطلاب على التعلم والتطور من خلال حصص مباشرة، واجبات، اختبارات، وتقارير متابعة مستمرة، مع نظام تواصل آمن يربط بين المعلمين وأولياء الأمور لضمان تجربة تعليمية أكثر احترافية وفاعلية.
           </p>
         </div>
