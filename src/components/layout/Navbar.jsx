@@ -37,7 +37,7 @@ const Navbar = () => {
       <nav
         dir="rtl"
         className="
-          fixed top-0 left-0 w-full h-20
+          relative top-0 left-0 w-full h-20
           px-4 md:px-10 lg:px-20
 
           bg-(--bg-light)/60
