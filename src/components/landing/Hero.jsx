@@ -13,7 +13,7 @@ export default function Hero() {
       <div className="container-custom mx-auto relative z-10 pt-16 pb-4 lg:pb-8 flex flex-col lg:flex-row items-center justify-center min-h-[60vh]">
 
         {/* TEXT SIDE */}
-        <div className="flex-1 text-center lg:text-right lg:mr-10 px-4 -translate-y-4 lg:-translate-y-14">
+        <div className="flex-1 text-center lg:text-right lg:mr-10 px-4 -translate-y-4 lg:-translate-y-18">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight" style={{ fontFamily: "Tajawal, sans-serif" }}>
             <span className="text-[#1F2937]">منصة واحدة</span><br />
             <span className="text-(--primary)">لإدارة تعليمية متكاملة</span>
