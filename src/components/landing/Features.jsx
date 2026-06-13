@@ -19,7 +19,7 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="-mt-16 bg-white w-full" id="features ">
+    <section className="-mt-16 bg-white w-full" id="features">
       <div className="w-full px-6 md:px-12 lg:px-20">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-4">

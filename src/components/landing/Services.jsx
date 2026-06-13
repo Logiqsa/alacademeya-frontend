@@ -21,7 +21,7 @@ const features = [
 export default function Services() {
   return (
     <section
-      className="py-20 w-full relative"
+      className="py-20 w-full relative" id="services"
       style={{
         background: "radial-gradient(50% 50% at 50% 50%, rgba(18, 198, 176, 0.2) 0%, rgba(234, 244, 255, 0.2) 100%)"
       }}

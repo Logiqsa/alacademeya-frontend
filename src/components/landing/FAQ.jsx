@@ -104,7 +104,7 @@ const FAQItem = ({ item }) => {
 
 export default function FAQ() {
   return (
-    <section className="py-12 md:py-20 bg-white w-full">
+    <section className="py-12 md:py-20 bg-white w-full" id="faq">
       <div className="max-w-7xl mx-auto px-4 text-center">
         <h2
           className="
