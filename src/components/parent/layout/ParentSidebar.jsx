@@ -1,4 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../../../context/AuthContext";
 
 import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
@@ -11,6 +13,7 @@ import subscriptionIcon from "../../../assets/icons/subscription.png";
 import notificationsIcon from "../../../assets/icons/notifications.png";
 import settingsIcon from "../../../assets/icons/settings.png";
 import logoutIcon from "../../../assets/icons/logout.png";
+
 
 const ParentSidebar = ({ isOpen, setIsOpen }) => {
   const menu = [
@@ -50,6 +53,16 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
       path: "/parent/settings",
     },
   ];
+
+
+  const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
 
   return (
     <aside
@@ -111,10 +124,9 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
             className={({ isActive }) => `
               flex
               items-center
-              ${
-                isOpen
-                  ? "gap-2 px-3 justify-start"
-                  : "justify-center"
+              ${isOpen
+                ? "gap-2 px-3 justify-start"
+                : "justify-center"
               }
               py-2
               mb-1
@@ -123,10 +135,9 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
               font-['IBM_Plex_Sans_Arabic']
               font-medium
               text-[16px]
-              ${
-                isActive
-                  ? "bg-[#FFFFFF] text-primary border-r-4 border-[#12C6B0] shadow-sm"
-                  : "text-white hover:bg-white/10"
+              ${isActive
+                ? "bg-[#FFFFFF] text-primary border-r-4 border-[#12C6B0] shadow-sm"
+                : "text-white hover:bg-white/10"
               }
             `}
           >
@@ -135,17 +146,16 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
                 <img
                   src={item.icon}
                   alt={item.title}
-                  className={`w-5 h-5 shrink-0 transition-all duration-200 ${
-                    isActive
-                      ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
-                      : ""
-                  }`}
+                  className={`w-5 h-5 shrink-0 transition-all duration-200 ${isActive
+                    ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
+                    : ""
+                    }`}
                   style={
                     isActive
                       ? {
-                          filter:
-                            "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
-                        }
+                        filter:
+                          "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
+                      }
                       : {}
                   }
                 />
@@ -176,27 +186,17 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
 
       {/* Logout */}
       <div className="p-3 border-t border-[#FFFFFF14]">
-        <NavLink
-          to="/login"
-          className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${
-            isOpen
-              ? "gap-3 justify-start"
-              : "justify-center"
-          }`}
+        <button
+          onClick={handleLogout}
+          className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${isOpen ? "gap-3 justify-start" : "justify-center"
+            }`}
         >
-          <img
-            src={logoutIcon}
-            alt="logout"
-            className="w-5 h-5"
-          />
+          <img src={logoutIcon} alt="logout" className="w-5 h-5" />
 
-          {isOpen && (
-            <span className="text-sm">
-              تسجيل الخروج
-            </span>
-          )}
-        </NavLink>
+          {isOpen && <span className="text-sm">تسجيل الخروج</span>}
+        </button>
       </div>
+
     </aside>
   );
 };

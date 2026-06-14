@@ -9,9 +9,24 @@ export const AuthContextProvider = ({ children }) => {
         return savedUser ? JSON.parse(savedUser) : null;
     });
 
+    // أضيفي هذا داخل AuthContextProvider
+    useEffect(() => {
+        const savedUser = localStorage.getItem("user");
+        if (savedUser) {
+            try {
+                const parsedUser = JSON.parse(savedUser);
+                setUser(parsedUser);
+            } catch (error) {
+                console.error("خطأ في قراءة بيانات المستخدم:", error);
+                localStorage.removeItem("user");
+                setUser(null);
+            }
+        }
+    }, []);
+
     const login = async (credentials) => {
         const res = await loginApi(credentials);
-        console.log("الرد من الـ API:", res.data); 
+        console.log("الرد من الـ API:", res.data);
 
         const userData = res.data.data;
 

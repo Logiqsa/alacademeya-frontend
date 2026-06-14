@@ -188,7 +188,7 @@ const Navbar = () => {
           ))}
         </div>
 
-       
+
         {/* BUTTONS */}
         <div className="mt-auto p-6 border-t border-(--border-light) flex flex-col gap-3">
           {user ? (
