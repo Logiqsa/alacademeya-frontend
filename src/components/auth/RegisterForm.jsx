@@ -24,7 +24,104 @@ const RegisterForm = ({ type }) => {
     });
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        if (name === "phone") {
+            const onlyNumbers = value.replace(/\D/g, "");
+            setFormData({
+                ...formData,
+                [name]: onlyNumbers,
+            });
+            return;
+        }
+
+        setFormData({
+            ...formData,
+            [name]: value,
+        });
+    };
+
+    const validateForm = () => {
+        if (!formData.fullName.trim()) {
+            toast.error("يرجى إدخال الاسم الكامل");
+            return false;
+        }
+
+        if (formData.fullName.trim().length < 3) {
+            toast.error("الاسم الكامل يجب أن يحتوي على 3 أحرف على الأقل");
+            return false;
+        }
+
+        if (!formData.username.trim()) {
+            toast.error("يرجى إدخال اسم المستخدم");
+            return false;
+        }
+
+        if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+            toast.error("اسم المستخدم يجب أن يحتوي على حروف وأرقام فقط");
+            return false;
+        }
+
+        if (!formData.email.trim()) {
+            toast.error("يرجى إدخال البريد الإلكتروني");
+            return false;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(formData.email)) {
+            toast.error("يرجى إدخال بريد إلكتروني صحيح");
+            return false;
+        }
+
+        if (!formData.phone.trim()) {
+            toast.error("يرجى إدخال رقم الهاتف");
+            return false;
+        }
+
+        const phoneRegex = /^1[0125][0-9]{8}$/;
+
+        if (!phoneRegex.test(formData.phone)) {
+            toast.error("يرجى إدخال رقم هاتف مصري صحيح");
+            return false;
+        }
+
+        if (!formData.password) {
+            toast.error("يرجى إدخال كلمة المرور");
+            return false;
+        }
+
+        if (formData.password.length < 8) {
+            toast.error("كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل");
+            return false;
+        }
+
+        if (!/(?=.*[a-z])/.test(formData.password)) {
+            toast.error("كلمة المرور يجب أن تحتوي على حرف صغير");
+            return false;
+        }
+
+        if (!/(?=.*[A-Z])/.test(formData.password)) {
+            toast.error("كلمة المرور يجب أن تحتوي على حرف كبير");
+            return false;
+        }
+
+        if (!/(?=.*\d)/.test(formData.password)) {
+            toast.error("كلمة المرور يجب أن تحتوي على رقم");
+            return false;
+        }
+
+        if (!/(?=.*[@$!%*?&])/.test(formData.password)) {
+            toast.error("كلمة المرور يجب أن تحتوي على رمز خاص");
+            return false;
+        }
+
+        if (formData.password !== formData.passwordConfirm) {
+            toast.error("كلمتا المرور غير متطابقتين");
+            return false;
+        }
+
+        return true;
     };
 
     useEffect(() => {
@@ -37,30 +134,51 @@ const RegisterForm = ({ type }) => {
 
     const handleNext = async (e) => {
         e.preventDefault();
+
+        if (!validateForm()) return;
+
         setLoading(true);
+
         try {
             await register(formData);
+
+            toast.success(
+                "تم إنشاء الحساب بنجاح، تحقق من بريدك الإلكتروني لإدخال رمز التفعيل"
+            );
+
             setShowOtpModal(true);
         } catch (err) {
-            const errorMessage = err.response?.data?.message || "حدثت مشكلة أثناء التسجيل";
+            const errorMessage =
+                err.response?.data?.message || "حدثت مشكلة أثناء التسجيل";
 
             if (errorMessage === "USER_ALREADY_EXISTS") {
-                toast.error("هذا البريد الإلكتروني أو اسم المستخدم مستخدم بالفعل. حاول تسجيل الدخول.");
+                toast.error(
+                    "هذا البريد الإلكتروني أو اسم المستخدم مستخدم بالفعل"
+                );
             } else {
-                alert("خطأ: " + errorMessage);
+                toast.error(errorMessage);
             }
         } finally {
             setLoading(false);
         }
     };
 
+
+
     const handleVerify = async () => {
+        const otpCode = otp.join("").trim();
+
+        if (otpCode.length !== 6) {
+            toast.error("يرجى إدخال رمز التفعيل كاملاً");
+            return;
+        }
+
         setLoading(true);
 
         try {
             const payload = {
                 email: formData.email.trim(),
-                code: otp.join("").trim(),
+                code: otpCode,
             };
 
             await verifyAccount(payload);
@@ -79,7 +197,6 @@ const RegisterForm = ({ type }) => {
             setLoading(false);
         }
     };
-
     const handleOtpChange = (element, index) => {
         if (isNaN(element.value)) return;
         let newOtp = [...otp];
@@ -95,7 +212,7 @@ const RegisterForm = ({ type }) => {
             {showOtpModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div
-                        dir="ltr" 
+                        dir="ltr"
                         className="bg-white p-10 md:p-10 flex flex-col items-center justify-center shadow-[0px_20px_60px_0px_#1F29371F] overflow-y-auto"
                         style={{
                             width: '100%',
@@ -167,7 +284,16 @@ const RegisterForm = ({ type }) => {
 
                 <div>
                     <label className="block text-[14px] font-medium mb-2 text-right">اسم المستخدم</label>
-                    <input name="username" onChange={handleChange} placeholder="ادخل اسم المستخدم" value={formData.username} type="text" className="w-full h-12 p-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91]" required />
+                    <input
+                        name="username"
+                        onChange={handleChange}
+                        value={formData.username}
+                        type="text"
+                        maxLength={30}
+                        placeholder="ادخل اسم المستخدم"
+                        className="w-full h-12 p-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91]"
+                        required
+                    />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -182,7 +308,17 @@ const RegisterForm = ({ type }) => {
                                 +20
                             </div>
 
-                            <input name="phone" onChange={handleChange} placeholder="ادخل رقم الهاتف" value={formData.phone} type="tel" className="flex-1 h-full px-4 bg-transparent outline-none text-right placeholder:text-[#1F293780]" required />
+                            <input
+                                name="phone"
+                                onChange={handleChange}
+                                value={formData.phone}
+                                type="tel"
+                                maxLength={11}
+                                inputMode="numeric"
+                                placeholder="ادخل رقم الهاتف"
+                                className="flex-1 h-full px-4 bg-transparent outline-none text-right placeholder:text-[#1F293780]"
+                                required
+                            />
                         </div>
                     </div>
                 </div>
@@ -190,7 +326,16 @@ const RegisterForm = ({ type }) => {
                 <div>
                     <label className="block text-sm font-medium mb-1 text-[#1F2937]">كلمة المرور</label>
                     <div className="relative">
-                        <input name="password" type={showPassword ? "text" : "password"} placeholder="********" onChange={handleChange} value={formData.password} className="w-full h-12 p-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91]" required />
+                        <input
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="********"
+                            onChange={handleChange}
+                            value={formData.password}
+                            minLength={8}
+                            className="w-full h-12 p-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91]"
+                            required
+                        />
 
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-3 text-gray-400">
                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
