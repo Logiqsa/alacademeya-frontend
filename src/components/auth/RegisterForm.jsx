@@ -91,34 +91,50 @@ const RegisterForm = ({ type }) => {
     };
 
     return (
-        <div className="relative w-full max-w-175 mx-auto p-6" dir="rtl">
+        <div className="relative w-full max-w-175 mx-auto p-6" >
             {showOtpModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div
-                        className="bg-white p-10 md:p-10  flex-col items-center justify-center shadow-[0px_20px_60px_0px_#1F29371F] overflow-y-auto"
+                        dir="ltr" 
+                        className="bg-white p-10 md:p-10 flex flex-col items-center justify-center shadow-[0px_20px_60px_0px_#1F29371F] overflow-y-auto"
                         style={{
                             width: '100%',
                             maxWidth: '720px',
                             height: 'auto',
-                            minHeight: '456px',
+                            minHeight: '30px',
                             borderRadius: '24px',
                             opacity: '1',
                             gap: '20px'
                         }}
                     >
-                        <p className="font-normal text-[18px] md:text-[20px] leading-8 text-center text-[#1F2937] p-2">لإكمال عملية التسجيل، نرجو إدخال رمز التفعيل المرسل إلى البريد الإلكتروني:</p>
+                        <p className="font-normal text-[18px] md:text-[20px] leading-8 text-center text-[#1F2937] p-2">
+                            لإكمال عملية التسجيل، نرجو إدخال رمز التفعيل المرسل إلى البريد الإلكتروني:
+                        </p>
                         <p className="font-medium text-[20px] md:text-[22px] leading-8 text-center text-[#123C91] p-2 mb-2">
                             {formData.email}
                         </p>
+
                         <div className="flex justify-center gap-2 mb-4">
                             {otp.map((data, i) => (
-                                <input key={i} type="text" maxLength="1" value={data} onChange={(e) => handleOtpChange(e.target, i)} className="w-11.25 h-11.25 md:w-14 md:h-14 rounded-lg border border-[#1F293733] bg-[#F9FAFA] text-center text-xl outline-none focus:border-[#123C91] transition-colors"
+                                <input
+                                    key={i}
+                                    type="text"
+                                    maxLength="1"
+                                    value={data}
+                                    onChange={(e) => handleOtpChange(e.target, i)}
+                                    className="w-12 h-14 md:w-14 md:h-14 rounded-lg border border-[#1F293733] bg-[#F9FAFA] text-center text-xl outline-none focus:border-[#123C91] transition-colors"
                                 />
                             ))}
                         </div>
-                        <div className="mb-2">
-                            {timer > 0 ? <p className="font-bold text-[20px] text-center text-[#123C91]">{timer} ثانية</p> : <button onClick={() => setTimer(60)} className="text-[#123C91] underline w-full">إعادة إرسال الكود</button>}
+
+                        <div className="mb-4">
+                            {timer > 0 ? (
+                                <p className="font-bold text-[20px] text-center text-[#123C91]">{timer} ثانية</p>
+                            ) : (
+                                <button onClick={() => setTimer(60)} className="text-[#123C91] underline w-full">إعادة إرسال الكود</button>
+                            )}
                         </div>
+
                         <div className="flex flex-col md:flex-row gap-4 w-full justify-center">
                             <button onClick={() => setShowOtpModal(false)} className="w-full md:w-77 h-14 rounded-lg border border-[#1F293733] bg-white text-[#123C91]">إلغاء</button>
                             <button onClick={handleVerify} disabled={loading} className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white">{loading ? "جاري التحقق..." : "تحقق"}</button>
