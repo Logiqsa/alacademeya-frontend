@@ -302,9 +302,15 @@ const RegisterForm = ({ type }) => {
                         <input name="email" onChange={handleChange} placeholder="ادخل البريد الإلكتروني" value={formData.email} type="email" className="w-full h-12 p-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91]" required />
                     </div>
                     <div>
-                        <label className="block text-[14px] font-medium mb-2 text-right">رقم الهاتف</label>
-                        <div className="flex w-full h-12 rounded-lg overflow-hidden border border-[#1F293733] bg-[#F9FAFA] focus-within:border-[#123C91]">
-                            <div className="w-16 shrink-0 flex items-center justify-center bg-[#D1D5DB] text-white font-medium text-sm border-l border-[#1F293733]">
+                        <label className="block text-[14px] font-medium mb-2 text-right">
+                            رقم الهاتف
+                        </label>
+
+                        <div
+                            dir="ltr"
+                            className="flex w-full h-12 rounded-lg overflow-hidden border border-[#1F293733] bg-[#F9FAFA] focus-within:border-[#123C91]"
+                        >
+                            <div className="w-16 shrink-0 flex items-center justify-center bg-[#E5E7EB] text-[#9CA3AF] font-medium text-sm border-r border-[#1F293733]">
                                 +20
                             </div>
 
@@ -315,8 +321,8 @@ const RegisterForm = ({ type }) => {
                                 type="tel"
                                 maxLength={11}
                                 inputMode="numeric"
-                                placeholder="ادخل رقم الهاتف"
-                                className="flex-1 h-full px-4 bg-transparent outline-none text-right placeholder:text-[#1F293780]"
+                                placeholder="رقم الهاتف"
+                                className="flex-1 h-full px-4 bg-transparent outline-none text-left placeholder:text-[#9CA3AF]"
                                 required
                             />
                         </div>
