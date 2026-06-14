@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import StepsNavigation from '../../../components/parent/add-child/StepsNavigation';
-// import PersonalInfoStep from '../../../components/parent/add-child/PersonalInfoStep';
-// import AcademicInfoStep from '../../../components/parent/add-child/AcademicInfoStep';
-// import AccountSetupStep from '../../../components/parent/add-child/AccountSetupStep';
-// import SuccessStep from '../../../components/parent/add-child/SuccessStep';
+import PersonalInfoStep from '../../../components/parent/add-child/PersonalInfoStep';
+import AcademicInfoStep from '../../../components/parent/add-child/AcademicInfoStep';
+import AccountSetupStep from '../../../components/parent/add-child/AccountSetupStep';
+import SuccessStep from '../../../components/parent/add-child/SuccessStep';
 import ParentLayout from '../../../components/parent/layout/ParentLayout';
 
 const AddChildPage = () => {
@@ -34,12 +34,12 @@ const AddChildPage = () => {
 
         <StepsNavigation currentStep={currentStep} />
 
-        {/* <div className="mt-8 bg-white p-8 rounded-2xl border border-[#1F293726] shadow-sm">
+        <div className="mt-8 bg-white p-8 rounded-2xl border border-[#1F293726] shadow-sm">
           {currentStep === 1 && <PersonalInfoStep onNext={() => setCurrentStep(2)} />}
           {currentStep === 2 && <AcademicInfoStep onNext={() => setCurrentStep(3)} onBack={() => setCurrentStep(1)} />}
           {currentStep === 3 && <AccountSetupStep onNext={() => setCurrentStep(4)} onBack={() => setCurrentStep(2)} />}
           {currentStep === 4 && <SuccessStep />}
-        </div> */}
+        </div>
       </div>
     </ParentLayout>
   );
