@@ -3,7 +3,7 @@ import StepsNavigation from '../../../components/parent/add-child/StepsNavigatio
 import PersonalInfoStep from '../../../components/parent/add-child/PersonalInfoStep';
 import AcademicInfoStep from '../../../components/parent/add-child/AcademicInfoStep';
 import AccountSetupStep from '../../../components/parent/add-child/AccountSetupStep';
-import SuccessStep from '../../../components/parent/add-child/SuccessStep';
+import SubscriptionStep from '../../../components/parent/add-child/SubscriptionStep';
 import ParentLayout from '../../../components/parent/layout/ParentLayout';
 
 const AddChildPage = () => {
@@ -38,7 +38,7 @@ const AddChildPage = () => {
           {currentStep === 1 && <PersonalInfoStep onNext={() => setCurrentStep(2)} />}
           {currentStep === 2 && <AcademicInfoStep onNext={() => setCurrentStep(3)} onBack={() => setCurrentStep(1)} />}
           {currentStep === 3 && <AccountSetupStep onNext={() => setCurrentStep(4)} onBack={() => setCurrentStep(2)} />}
-          {currentStep === 4 && <SuccessStep />}
+          {currentStep === 4 && <SubscriptionStep />}
         </div>
       </div>
     </ParentLayout>
