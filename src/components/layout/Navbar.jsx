@@ -1,9 +1,11 @@
-import { useState } from "react";
+import React, { useState, useContext } from "react";
 import logo from "../../assets/icons/logo.svg";
 import { Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 
 const Navbar = () => {
+  const { user } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -73,11 +75,25 @@ const Navbar = () => {
           </div>
 
           {/* ================= DESKTOP BUTTONS ================= */}
-          <div className="hidden lg:flex items-center gap-3">
 
-            <button
-              onClick={() => navigate("/select-account-type")}
-              className="
+          <div className="hidden lg:flex items-center gap-3">
+            {user ? (
+              <div className="flex items-center gap-4">
+                <span className="text-[#123C91] font-medium text-[16px]">
+
+                  مرحباً، {user.fullName || "عزيزي المستخدم"}
+                </span>
+                <button
+                  onClick={() => navigate("/parent-dashboard")}
+                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white text-[16px] font-medium"
+                >
+                  لوحة التحكم
+                </button>
+              </div>
+            ) : (
+              // إذا كان المستخدم زائر
+              <>
+                <button onClick={() => navigate("/select-account-type")} className="
                 h-10
                 px-6
                 rounded-lg
@@ -88,36 +104,30 @@ const Navbar = () => {
                 font-medium
 
                 transition-none
-              "
-            >
-              إنشاء حساب
-            </button>
+              ">
+                  إنشاء حساب
+                </button>
+                <button onClick={() => navigate("/login")} className="
+                h-10
+                px-6
+                rounded-lg
 
-            <button
-              onClick={() => navigate("/login")}
-              className="
-              h-10
-              px-6
-              rounded-lg
+                bg-[#F8FBFF]
+                border border-[#1F293733]
 
-              bg-[#F8FBFF]
+                text-[#123C91]
+                text-[16px]
+                font-medium
 
-              border border-[#1F293733]
-
-              text-[#123C91]
-              text-[16px]
-              font-medium
-
-              transition-all duration-300
-
-              hover:border-[#123C91]
-              hover:shadow-sm
-            "
-            >
-              تسجيل الدخول
-            </button>
-
+                transition-all duration-300
+              ">
+                  تسجيل الدخول
+                </button>
+              </>
+            )}
           </div>
+
+
 
           {/* ================= MOBILE BUTTON ================= */}
           <button
@@ -178,45 +188,46 @@ const Navbar = () => {
           ))}
         </div>
 
+       
         {/* BUTTONS */}
         <div className="mt-auto p-6 border-t border-(--border-light) flex flex-col gap-3">
-
-          <button  onClick={() => navigate("/select-account-type")} 
-           className="
-            h-10
-            rounded-lg
-
-            bg-[#123C91]
-            text-white
-            text-[16px]
-            font-medium
-
-            hover:bg-[#0F3278]
-            transition-none
-          ">
-            إنشاء حساب
-          </button>
-
-          <button  onClick={() => navigate("/login")} 
-           className="
-            h-10
-            rounded-lg
-
-            bg-[#F8FBFF]
-            border border-[#1F293733]
-
-            text-[#123C91]
-            text-[16px]
-            font-medium
-
-            transition-all duration-300
-
-            hover:border-[#123C91]
-            hover:shadow-sm
-          ">
-            تسجيل الدخول
-          </button>
-
+          {user ? (
+            <div className="flex flex-col gap-4">
+              <span className="text-[#123C91] font-medium text-[16px] text-center">
+                مرحباً، {user.fullName || "عزيزي المستخدم"}
+              </span>
+              <button
+                onClick={() => {
+                  navigate("/parent-dashboard");
+                  setMenuOpen(false);
+                }}
+                className="h-10 w-full rounded-lg bg-[#123C91] text-white text-[16px] font-medium"
+              >
+                لوحة التحكم
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  navigate("/select-account-type");
+                  setMenuOpen(false);
+                }}
+                className="h-10 w-full rounded-lg bg-[#123C91] text-white text-[16px] font-medium transition-none"
+              >
+                إنشاء حساب
+              </button>
+              <button
+                onClick={() => {
+                  navigate("/login");
+                  setMenuOpen(false);
+                }}
+                className="h-10 w-full rounded-lg bg-[#F8FBFF] border border-[#1F293733] text-[#123C91] text-[16px] font-medium transition-all duration-300"
+              >
+                تسجيل الدخول
+              </button>
+            </>
+          )}
         </div>
       </aside>
     </>
