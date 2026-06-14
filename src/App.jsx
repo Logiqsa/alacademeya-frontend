@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { Toaster } from 'react-hot-toast';
 import HomeLayout from "./components/layout/HomeLayout";
 import Landing from "./pages/Landing";
 import LoginPage from "./pages/auth/LoginPage";
@@ -11,6 +12,16 @@ import Home from "./pages/parent/Home";
 function App() {
   return (
     <>
+    <Toaster 
+        position="top-left" 
+        reverseOrder={false} 
+        toastOptions={{
+          style: {
+            direction: 'ltr', 
+          },
+        }}
+      />
+
       <Routes>
         <Route element={<HomeLayout />}>
           <Route index element={<Landing />} />
