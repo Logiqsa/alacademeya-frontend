@@ -1,38 +1,77 @@
-// src/components/parent/add-child/StepsNavigation.jsx
+import React from 'react';
 
-const StepsNavigation = ({ currentStep }) => {
+const StepsNavigation = ({ currentStep = 1 }) => {
   const steps = [
-    { id: 4, name: "الإشتراك والدفع" },
-    { id: 3, name: "بيانات دخول الطالب" },
+    { id: 1, name: "المعلومات الشخصية" },
     { id: 2, name: "المعلومات الأكاديمية" },
-    { id: 1, name: "المعلومات الشخصية" }
+    { id: 3, name: "بيانات دخول الطالب" },
+    { id: 4, name: "الإشتراك والدفع" },
   ];
 
   return (
-    <div className="flex flex-row-reverse justify-between items-center bg-white border border-[#1F293726] rounded-2xl p-4 md:px-8 shadow-[0px_0px_4px_0px_#0000000A]">
+    <div
+      dir="rtl"
+      className="w-full  h-22 bg-white border border-[#E5E5E5] rounded-2xl px-8 pt-3 pb-2 mt-8 flex items-center justify-between
+      shadow-[0px_0px_2px_-1px_rgba(0,0,0,0.1),0px_0px_3px_0px_rgba(0,0,0,0.1)]"
+    >
       {steps.map((step, index) => {
         const isActive = currentStep === step.id;
         const isCompleted = currentStep > step.id;
 
         return (
-          <div key={step.id} className="flex items-center flex-1 justify-center relative">
-            {/* الدائرة والرقم/الاسم */}
-            <div className="flex flex-col items-center gap-2 z-10">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 
-                ${isActive ? 'bg-[#123C91] text-white border-[#123C91]' : 
-                  isCompleted ? 'bg-[#123C91] text-white border-[#123C91]' : 'bg-[#F3F4F6] text-[#6B7280] border-transparent'}`}>
-                {isCompleted ? '✓' : step.id}
+          <React.Fragment key={step.id}>
+            {/* Step Content */}
+            <div className="flex items-center gap-1">
+              <div
+                className={`
+                w-10 h-10 rounded-full flex items-center justify-center
+                text-sm font-medium transition-all duration-200
+                ${isActive
+                    ? "bg-[#123C91CC] border-2 border-[#123C91] text-white "
+                    : isCompleted
+                      ? "bg-[#1E4FAE] text-white"
+                      : "bg-[#F3F4F6] text-[#6B7280]"
+                  }
+               `}
+              >
+                {isCompleted ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  step.id
+                )}
               </div>
-              <span className={`text-xs md:text-sm font-medium ${isActive ? 'text-[#123C91]' : 'text-[#6B7280]'}`}>
+              <span
+                className={`
+                  font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-6 tracking-[0%] text-right
+                  ${isActive ? "text-[1F2937]" : "text-[#6B7280]"}
+                  text-[#1F2937] px-2 py-1 rounded-md
+                `}
+              >
                 {step.name}
               </span>
             </div>
 
-            {/* الخط الواصل بين الخطوات */}
-            {index < steps.length - 1 && (
-              <div className={`h-[2px] flex-1 mx-2 md:mx-4 ${isCompleted ? 'bg-[#123C91]' : 'bg-[#E5E7EB]'}`} />
+            {index !== steps.length - 1 && (
+              <div
+                className={`
+                    h-1 w-23.25 mx-2 rounded-full transition-colors duration-200
+                    ${currentStep > step.id
+                    ? "bg-[#E5E5E5]"
+                    : "bg-[#E5E5E5]"
+                  }
+             `}
+              />
             )}
-          </div>
+          </React.Fragment>
         );
       })}
     </div>

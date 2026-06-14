@@ -1,6 +1,10 @@
 import studentsImg from "../../../assets/student.svg";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const WelcomeSection = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col gap-6 w-full">
       <div
@@ -31,12 +35,14 @@ const WelcomeSection = () => {
           أضف أبناءك لبدء متابعة الحصص والواجبات والتقييمات والجدول الدراسي.
         </p>
 
-        <button className="bg-[#123C91] text-white rounded-lg mt-3 flex items-center justify-center hover:bg-blue-900 transition-colors font-['Tajawal'] font-medium text-[16px] leading-5.5"
+        <button 
+          className="bg-[#123C91] text-white rounded-lg mt-3 flex items-center justify-center hover:bg-blue-900 transition-colors font-['Tajawal'] font-medium text-[16px]"
           style={{ width: '160px', height: '48px', padding: '0 24px' }}
-          onClick={() => navigate("/add-child")}
+          onClick={() => navigate("/parent-dashboard/add-child")}
         >
           إضافة ابن
         </button>
+        
       </div>
     </div>
   );

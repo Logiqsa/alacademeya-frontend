@@ -11,6 +11,7 @@ import AccountTypePage from "./pages/auth/AccountTypePage";
 import Home from "./pages/parent/Home";
 
 import { AuthContext } from "./context/AuthContext";
+import AddChildPage from "./pages/parent/add-child/AddChildPage";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -46,7 +47,12 @@ function App() {
           path="/parent-dashboard"
           element={user ? <Home /> : <Navigate to="/login" replace />}
         />
+        <Route
+          path="/parent-dashboard/add-child"
+          element={<AddChildPage/>}
+        />
       </Routes>
+      
     </>
 
 
