@@ -12,6 +12,7 @@ import Home from "./pages/parent/Home";
 
 import { AuthContext } from "./context/AuthContext";
 import AddChildPage from "./pages/parent/add-child/AddChildPage";
+import LessonsSchedule from "./pages/parent/LessonsSchedule";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -50,6 +51,10 @@ function App() {
         <Route
           path="/parent-dashboard/add-child"
           element={<AddChildPage/>}
+        />
+        <Route
+          path="/parent/schedule"
+          element={<LessonsSchedule/>}
         />
       </Routes>
       

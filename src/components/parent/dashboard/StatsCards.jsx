@@ -8,28 +8,28 @@ import {
 const cards = [
   {
     title: "عدد الأبناء",
-    value: "--",
+    value: "2",
     icon: Users,
     iconBg: "bg-teal-50",
     iconColor: "text-[#12C6B0]",
   },
   {
     title: "ساعات الدراسة",
-    value: "--",
+    value: "14",
     icon: Clock3,
     iconBg: "bg-blue-50",
     iconColor: "text-[#123C91]",
   },
   {
     title: "الدروس هذا الشهر",
-    value: "--",
+    value: "7",
     icon: BookOpen,
     iconBg: "bg-teal-50",
     iconColor: "text-[#12C6B0]",
   },
   {
     title: "متوسط الحضور",
-    value: "--",
+    value: "90%",
     icon: TrendingUp,
     iconBg: "bg-blue-50",
     iconColor: "text-[#123C91]",
