@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, Hourglass, Bell } from 'lucide-react';
 import academyLogo from '../../../assets/icons/logo.svg';
 
-const SuccessStep = () => {
+const SuccessStep = ({ onStatusClick }) => {
   return (
     <div className=" flex flex-col items-center justify-center py-4 text-center space-y-4 font-['IBM_Plex_Sans_Arabic']">
 
@@ -52,7 +52,7 @@ const SuccessStep = () => {
       </div>
 
      
-      <button className="bg-[#123C91] text-white py-3 px-12 rounded-xl font-medium mt-6 cursor-pointer">
+      <button onClick={onStatusClick} className="bg-[#123C91] text-white py-3 px-12 rounded-xl font-medium mt-6 cursor-pointer">
         عرض حالة الطلب
       </button>
     </div>

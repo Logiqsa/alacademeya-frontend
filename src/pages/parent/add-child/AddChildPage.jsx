@@ -6,16 +6,28 @@ import AccountSetupStep from '../../../components/parent/add-child/AccountSetupS
 import SubscriptionStep from '../../../components/parent/add-child/SubscriptionStep';
 import ParentLayout from '../../../components/parent/layout/ParentLayout';
 import SuccessStep from '../../../components/parent/add-child/SuccessStep';
+import RequestStatusPage from '../../../components/parent/add-child/RequestStatusPage';
 
 const AddChildPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showStatus, setShowStatus] = useState(false);
+
+  if (showStatus) {
+    return (
+      <ParentLayout>
+        <div className="max-w-4xl mx-auto mt-10">
+          <RequestStatusPage />
+        </div>
+      </ParentLayout>
+    );
+  }
 
   if (isSubmitted) {
     return (
       <ParentLayout>
         <div className="max-w-4xl mx-auto mt-20">
-          <SuccessStep />
+          <SuccessStep onStatusClick={() => setShowStatus(true)} />
         </div>
       </ParentLayout>
     );
@@ -53,9 +65,9 @@ const AddChildPage = () => {
             <AccountSetupStep onNext={() => setCurrentStep(4)} onBack={() => setCurrentStep(2)} />
           )}
           {currentStep === 4 && (
-            <SubscriptionStep 
-              onNext={() => setIsSubmitted(true)} 
-              onBack={() => setCurrentStep(3)} 
+            <SubscriptionStep
+              onNext={() => setIsSubmitted(true)}
+              onBack={() => setCurrentStep(3)}
             />
           )}
         </div>
