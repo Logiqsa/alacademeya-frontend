@@ -14,6 +14,7 @@ import { AuthContext } from "./context/AuthContext";
 import AddChildPage from "./pages/parent/add-child/AddChildPage";
 import LessonsSchedule from "./pages/parent/LessonsSchedule";
 import Notifications from "./pages/parent/Notifications";
+import SubscriptionPage from "./pages/parent/SubscriptionPage";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -60,6 +61,10 @@ function App() {
         <Route
           path="/parent/notifications"
           element={<Notifications/>}
+        />
+        <Route
+          path="/parent/subscription"
+          element={<SubscriptionPage/>}
         />
       </Routes>
       
