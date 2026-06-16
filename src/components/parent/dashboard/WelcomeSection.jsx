@@ -19,7 +19,7 @@ const WelcomeSection = () => {
         هنا يمكنك متابعة رحلة تعلم أبنائك لحظة بلحظة.
       </p>
 
-      {/* <div className="bg-white border border-[#1F293726] rounded-2xl p-10 text-center flex flex-col items-center justify-center shadow-[0px_0px_4px_0px_#00000014]"
+      <div className="bg-white border border-[#1F293726] rounded-2xl p-10 text-center flex flex-col items-center justify-center shadow-[0px_0px_4px_0px_#00000014]"
       >
         <img
           src={studentsImg}
@@ -43,7 +43,7 @@ const WelcomeSection = () => {
           إضافة ابن
         </button>
         
-      </div> */}
+      </div>
     </div>
   );
 };

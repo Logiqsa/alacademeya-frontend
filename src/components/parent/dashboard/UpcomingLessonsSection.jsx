@@ -1,23 +1,29 @@
-import bellIcon from "../../../assets/icons/bell-icon.svg";
-import bellEmpty from "../../../assets/bell-empty.svg";
+import calendarIcon from "../../../assets/icons/calendar-icon.svg";
+import calendarEmpty from "../../../assets/calendar-empty.svg";
 
-
-const NotificationsSection = () => {
+const UpcomingLessonsSection = () => {
   return (
-    <div className="bg-white border border-[#1F293726] rounded-2xl p-8 flex flex-col">
+    <div
+      className="bg-white border border-[#1F293726] rounded-2xl p-8 flex flex-col"
+
+    >
       <div className="flex items-center justify-start gap-2 mb-6 w-full">
-        <img src={bellIcon} alt="bell" className="w-6 h-6" />
+        <img src={calendarIcon} alt="calendar" className="w-6 h-6" />
+
         <h3
           className="font-['IBM_Plex_Sans_Arabic'] font-semibold text-[20px] leading-6 text-[#123C91]"
           style={{ letterSpacing: '0px' }}
         >
-          الإشعارات
+          الدروس القادمة
         </h3>
       </div>
 
       <div className="flex-1 flex flex-col justify-center items-center text-center">
-        <div className="mb-4 flex items-center justify-center rounded-full">
-          <img src={bellEmpty} alt="no-notifications" className="w-20 h-20 opacity-80" />
+        <div
+          className="mb-4 flex items-center justify-center  rounded-full"
+
+        >
+          <img src={calendarEmpty} alt="no-lessons" className="w-20 h-20 opacity-80" />
         </div>
 
         <p
@@ -29,11 +35,11 @@ const NotificationsSection = () => {
             color: '#1F2937'
           }}
         >
-          لا توجد إشعارات حالياً
+          لا توجد دروس حالياً
         </p>
 
         <p
-          className="font-['IBM_Plex_Sans_Arabic'] text-center"
+          className="font-['IBM_Plex_Sans_Arabic'] text-center "
           style={{
             fontWeight: 400,
             fontSize: '16px',
@@ -41,11 +47,13 @@ const NotificationsSection = () => {
             color: '#1F2937BF'
           }}
         >
-          ستظهر هنا الإشعارات الخاصة بأبنائك.
+          أضف أبنائك أولاً لعرض الجدول الدراسي و الدروس القادمة.
         </p>
       </div>
     </div>
+
+   
   );
 };
 
-export default NotificationsSection;
+export default UpcomingLessonsSection;
