@@ -15,6 +15,7 @@ import AddChildPage from "./pages/parent/add-child/AddChildPage";
 import LessonsSchedule from "./pages/parent/LessonsSchedule";
 import Notifications from "./pages/parent/Notifications";
 import SubscriptionPage from "./pages/parent/SubscriptionPage";
+import ChildrenPage from "./pages/parent/ChildrenPage";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -57,6 +58,10 @@ function App() {
         <Route
           path="/parent/schedule"
           element={<LessonsSchedule/>}
+        />
+        <Route
+          path="/parent/children"
+          element={<ChildrenPage/>}
         />
         <Route
           path="/parent/notifications"
