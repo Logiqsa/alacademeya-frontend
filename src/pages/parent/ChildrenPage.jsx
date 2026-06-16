@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus } from 'lucide-react';
 import ChildrenStatsCards from '../../components/parent/children/ChildrenStatsCard';
 import ChildrenSearch from '../../components/parent/children/ChildrenSearch';
+import ChildrenTable from '../../components/parent/children/ChildrenTable';
 
 
 const ChildrenPage = () => {
@@ -11,7 +12,7 @@ const ChildrenPage = () => {
     return (
 
         <ParentLayout >
-            <div className="w-full px-6 py-4 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+            <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
                 <div className="flex items-center justify-between mb-4">
 
                     <div>
@@ -39,14 +40,14 @@ const ChildrenPage = () => {
                     <ChildrenStatsCards />
                 </div>
 
-                <div className="bg-white border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
+                <div className="bg-white border mb-8 border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
                     <ChildrenSearch />
                 </div>
 
 
-                {/* <div className="w-[1136px] bg-white border border-[#E5E5E5] rounded-[8px] shadow-sm">
-        <ChildrenTable />
-      </div> */}
+                <div >
+                    <ChildrenTable />
+                </div>
             </div>
 
         </ParentLayout>
