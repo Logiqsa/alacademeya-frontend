@@ -3,6 +3,7 @@ import ParentLayout from '../../components/parent/layout/ParentLayout';
 import { useNavigate } from "react-router-dom";
 import { Plus } from 'lucide-react';
 import ChildrenStatsCards from '../../components/parent/children/ChildrenStatsCard';
+import ChildrenSearch from '../../components/parent/children/ChildrenSearch';
 
 
 const ChildrenPage = () => {
@@ -38,12 +39,9 @@ const ChildrenPage = () => {
                     <ChildrenStatsCards />
                 </div>
 
-
-                {/* <input 
-        type="text" 
-        placeholder="بحث عن ابن..." 
-        className="w-full p-4 mb-6 rounded-lg border border-[#E5E5E5] outline-none"
-      /> */}
+                <div className="bg-white border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
+                    <ChildrenSearch />
+                </div>
 
 
                 {/* <div className="w-[1136px] bg-white border border-[#E5E5E5] rounded-[8px] shadow-sm">
