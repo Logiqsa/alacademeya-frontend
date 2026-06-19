@@ -1,13 +1,11 @@
-import React from 'react';
-import AuthLayout from '../../components/auth/AuthLayout';
-import LoginForm from '../../components/auth/LoginForm';
+import React from "react";
+import AuthLayout from "../../components/auth/AuthLayout";
+import LoginForm from "../../components/auth/LoginForm";
 
-const LoginPage = () => {
-  return (
-    <AuthLayout>
-      <LoginForm />
-    </AuthLayout>
-  );
-};
+const LoginPage = () => (
+  <AuthLayout>
+    <LoginForm />
+  </AuthLayout>
+);
 
 export default LoginPage;
