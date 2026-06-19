@@ -20,38 +20,38 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
     {
       title: "لوحة التحكم",
       icon: dashboardIcon,
-      path: "/parent-dashboard",
+      path: "/student-dashboard",
     },
-    {
-      title: "الأبناء",
-      icon: childrenIcon,
-      path: "/parent/children",
-    },
-    {
-      title: "الجدول",
-      icon: scheduleIcon,
-      path: "/parent/schedule",
-    },
-    {
-      title: "الرسائل",
-      icon: messagesIcon,
-      path: "/parent/messages",
-    },
-    {
-      title: "الإشتراك",
-      icon: subscriptionIcon,
-      path: "/parent/subscription",
-    },
-    {
-      title: "الإشعارات",
-      icon: notificationsIcon,
-      path: "/parent/notifications",
-    },
-    {
-      title: "الإعدادات",
-      icon: settingsIcon,
-      path: "/parent/settings",
-    },
+    // {
+    //   title: "الأبناء",
+    //   icon: childrenIcon,
+    //   path: "/parent/children",
+    // },
+    // {
+    //   title: "الجدول",
+    //   icon: scheduleIcon,
+    //   path: "/parent/schedule",
+    // },
+    // {
+    //   title: "الرسائل",
+    //   icon: messagesIcon,
+    //   path: "/parent/messages",
+    // },
+    // {
+    //   title: "الإشتراك",
+    //   icon: subscriptionIcon,
+    //   path: "/parent/subscription",
+    // },
+    // {
+    //   title: "الإشعارات",
+    //   icon: notificationsIcon,
+    //   path: "/parent/notifications",
+    // },
+    // {
+    //   title: "الإعدادات",
+    //   icon: settingsIcon,
+    //   path: "/parent/settings",
+    // },
   ];
 
 
@@ -168,7 +168,7 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       </div>
 
       {/* Footer Links */}
-      {isOpen && (
+      {/* {isOpen && (
         <div className="px-4 py-3 mx-3 mb-3 space-y-2 rounded-lg">
           <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
             روابط مهمة
@@ -182,7 +182,7 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
             المجموعات
           </p>
         </div>
-      )}
+      )} */}
 
       {/* Logout */}
       <div className="p-3 border-t border-[#FFFFFF14]">

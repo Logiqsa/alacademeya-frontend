@@ -5,24 +5,28 @@ import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { getSubjects, saveStudentInterests } from "../../services/authService";
 
-// Normalizes whatever shape the /subjects endpoint returns into
-// a flat { id, name } list, since the exact field names can vary.
 const normalizeSubjects = (raw) => {
     const list = Array.isArray(raw) ? raw : (raw?.data || []);
     return list.map((s) => ({
         id: s.id ?? s._id,
-        name: s.name ?? s.title ?? "—",
+        name: s.name?.ar || s.name?.en || s.name || "—",
     }));
 };
 
-const StudentSubjectsPage = () => {
+const StudentSubjectsPages = () => {
     const navigate = useNavigate();
     const { state } = useLocation();
 
-    // Passed in from RegisterForm after a successful OTP verification
-    const email = state?.email || "";
-    const academicLevel = state?.academicLevel || "";
-    const countryId = state?.countryId || "";
+    const {
+        email,
+        role,
+        academicLevel,
+        countryId,
+        curriculumId,
+        stageId,
+        gradeId,
+        serviceType,
+    } = state || {};
 
     const [subjects, setSubjects] = useState([]);
     const [selected, setSelected] = useState([]);
@@ -30,8 +34,7 @@ const StudentSubjectsPage = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        // Without these two, the backend can't tell us which curriculum to return.
-        if (!academicLevel || !countryId) {
+        if (!gradeId || !stageId || !curriculumId) {
             navigate("/select-account-type");
             return;
         }
@@ -39,16 +42,20 @@ const StudentSubjectsPage = () => {
         const load = async () => {
             setLoadingSubjects(true);
             try {
-                const res = await getSubjects({ academicLevel, countryId });
+                const res = await getSubjects({
+                    curriculum: curriculumId,
+                    stage: stageId,
+                    grade: gradeId,
+                });
                 setSubjects(normalizeSubjects(res.data));
-            } catch (err) {
+            } catch {
                 toast.error("تعذر تحميل المواد، حاول مرة أخرى");
             } finally {
                 setLoadingSubjects(false);
             }
         };
         load();
-    }, [academicLevel, countryId, navigate]);
+    }, [gradeId, stageId, curriculumId, navigate]);
 
     const toggle = (id) => {
         setSelected((prev) =>
@@ -83,10 +90,13 @@ const StudentSubjectsPage = () => {
                 </label>
 
                 {loadingSubjects ? (
-                    <p className="text-[14px] text-[#9CA3AF] mb-6">جاري تحميل المواد...</p>
+                    <div className="flex items-center gap-2 mb-6">
+                        <div className="w-4 h-4 border-2 border-[#123C91] border-t-transparent rounded-full animate-spin" />
+                        <p className="text-[14px] text-[#9CA3AF]">جاري تحميل المواد...</p>
+                    </div>
                 ) : subjects.length === 0 ? (
                     <p className="text-[14px] text-[#9CA3AF] mb-6">
-                        لا توجد مواد متاحة لهذه المرحلة حالياً
+                        لا توجد مواد متاحة لهذا الصف حالياً
                     </p>
                 ) : (
                     <div className="flex flex-wrap gap-2 mb-8">
@@ -133,4 +143,4 @@ const StudentSubjectsPage = () => {
     );
 };
 
-export default StudentSubjectsPage;
+export default StudentSubjectsPages;

@@ -25,12 +25,13 @@ import SubscriptionPage from "./pages/parent/SubscriptionPage";
 import ChildrenPage from "./pages/parent/ChildrenPage";
 
 import { AuthContext } from "./context/AuthContext";
-import StudentDetailsPage from "./pages/auth/StudentDetailsPage";
-import StudentSubjectsPage from "./pages/auth/Studentsubjectspage";
+
+import StudentSubjectsPage from "./pages/auth/StudentSubjectsPages";
 import RegisterSuccessPage from "./pages/auth/RegisterSuccessPage";
 import TeacherHome from "./pages/teacher/TeacherHome";
 import StudentHome from "./pages/student/StudentHome";
-
+import StudentDetailsPages from "./pages/auth/StudentDetailsPages";
+import StudentSubjectsPages from "./pages/auth/StudentSubjectsPages";
 
 
 function App() {
@@ -63,8 +64,8 @@ function App() {
         <Route path="/select-account-type" element={<AccountTypePage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-otp" element={<OtpPage />} />
-        <Route path="/register/student-details" element={<StudentDetailsPage />} />
-        <Route path="/register/subjects" element={<StudentSubjectsPage />} />
+        <Route path="/register/student-details" element={<StudentDetailsPages />} />
+        <Route path="/register/subjects" element={<StudentSubjectsPages />} />
         <Route path="/register/success" element={<RegisterSuccessPage />} />
         {/* <Route path="/register/interests" element={<StudentInterestsPage />} /> */}
         <Route path="/register/teacher-details" element={<TeacherDetailsPage />} />
