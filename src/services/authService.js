@@ -21,7 +21,8 @@ ROOT_API.interceptors.request.use(attachToken);
 export const login = (credentials) => API.post('/auth/login', credentials);
 export const register = (userData) => API.post('/auth/register', userData);
 export const verifyAccount = (data) => API.post('/auth/verifyAccount', data);
-export const resendOtp = (email) => API.post('/auth/resendOtp', { email });
+export const resendOtp = (email) => API.post('/auth/resend-otp', { email });
+
 export const saveStudentInterests = (payload) => API.post('/auth/student/interests', payload);
 export const saveTeacherDetails = (payload) => API.post('/auth/teacher/details', payload);
 export const getAccountState = () => API.get('/auth/account-state');
@@ -30,10 +31,9 @@ export const getCountries = () => API.get('/countries');
 export const getCurriculums = (countryId) =>
   API.get('/curriculums', { params: { country: countryId } });
 
-export const getCurriculumStages = (curriculumId) =>
-  API.get(`/curriculums/${curriculumId}/stages`);
+// export const getCurriculumStages = (curriculumId) =>
+//   API.get(`/curriculums/${curriculumId}/stages`);
 
-// الـ endpoint الصح من Postman هو /grades?stage=stageId
 export const getStageGrades = (stageId) =>
   API.get('/grades', { params: { stage: stageId } });
 
@@ -42,3 +42,6 @@ export const getSubjects = (params) =>
 
 export const getAllSubjects = (params) =>
   API.get('/subjects', { params });
+
+export const getCurriculumStages = (curriculumId) =>
+  API.get(`/stages`, { params: { curriculum: curriculumId } });

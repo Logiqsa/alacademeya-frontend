@@ -335,13 +335,23 @@ const RegisterForm = ({ type }) => {
         }
         setOtpLoading(true);
         try {
-            await verifyAccount({ email: formData.email, code });
+
+
+            const res = await verifyAccount({ email: formData.email, code });
+            console.log("verify success:", JSON.stringify(res.data));
+
+            const token = res.data?.token;
+            if (token) {
+                localStorage.setItem("token", token);
+                console.log("token saved:", token.substring(0, 20) + "...");
+            }
             toast.success("تم تفعيل الحساب بنجاح!");
             setShowOtpModal(false);
-
+            await new Promise((resolve) => setTimeout(resolve, 100));
             const { path, state } = resolvePostVerifyRoute();
             navigate(path, { state });
         } catch (err) {
+            console.log("verify error:", JSON.stringify(err.response?.data));
             toast.error(err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى");
         } finally {
             setOtpLoading(false);

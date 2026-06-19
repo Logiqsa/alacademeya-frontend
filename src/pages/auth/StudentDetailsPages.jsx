@@ -30,16 +30,15 @@ const Dropdown = ({ label, placeholder, value, onChange, options, loading, disab
                 type="button"
                 onClick={() => { if (!loading && !disabled) setOpen(!open); }}
                 disabled={loading || disabled}
-                className={`${inputClass} flex items-center justify-between cursor-pointer text-right ${
-                    !value ? "text-[#9CA3AF]" : "text-[#1F2937]"
-                } ${loading || disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+                className={`${inputClass} flex items-center justify-between cursor-pointer text-right ${!value ? "text-[#9CA3AF]" : "text-[#1F2937]"
+                    } ${loading || disabled ? "opacity-60 cursor-not-allowed" : ""}`}
             >
                 <span>
                     {loading
                         ? "جاري التحميل..."
                         : selected
-                        ? selected.label
-                        : placeholder}
+                            ? selected.label
+                            : placeholder}
                 </span>
                 <ChevronDown
                     size={18}
@@ -54,9 +53,8 @@ const Dropdown = ({ label, placeholder, value, onChange, options, loading, disab
                             <li
                                 key={opt.id}
                                 onClick={() => { onChange(opt.id); setOpen(false); }}
-                                className={`px-4 py-2.5 cursor-pointer text-[14px] hover:bg-[#F0F4FC] transition-colors ${
-                                    value === opt.id ? "text-[#123C91] font-medium bg-[#F0F4FC]" : "text-[#1F2937]"
-                                }`}
+                                className={`px-4 py-2.5 cursor-pointer text-[14px] hover:bg-[#F0F4FC] transition-colors ${value === opt.id ? "text-[#123C91] font-medium bg-[#F0F4FC]" : "text-[#1F2937]"
+                                    }`}
                             >
                                 {opt.label}
                             </li>
@@ -100,17 +98,25 @@ const StudentDetailsPages = () => {
     const toLabel = (nameObj) => nameObj?.ar || nameObj?.en || "—";
 
     // 1. Load curriculums on mount
-    useEffect(() => {
-        if (!countryId) return;
-        setLoadingCurriculums(true);
-        getCurriculums(countryId)
-            .then((res) => {
-                const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-                setCurriculums(list.map((c) => ({ id: c.id, label: toLabel(c.name) })));
-            })
-            .catch(() => toast.error("تعذر تحميل المناهج"))
-            .finally(() => setLoadingCurriculums(false));
-    }, [countryId]);
+useEffect(() => {
+    if (!countryId) {
+        console.log("countryId is empty:", countryId);
+        return;
+    }
+    console.log("loading curriculums for countryId:", countryId);
+    setLoadingCurriculums(true);
+    getCurriculums(countryId)
+        .then((res) => {
+            console.log("curriculums raw response:", JSON.stringify(res.data));
+            const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+            console.log("curriculums list:", list);
+            setCurriculums(list.map((c) => ({ id: c.id, label: toLabel(c.name) })));
+        })
+        .catch((err) => {
+            console.log("curriculums error:", err.response?.status, err.response?.data);
+        })
+        .finally(() => setLoadingCurriculums(false));
+}, [countryId]);
 
     // 2. Load stages when curriculum changes
     useEffect(() => {
@@ -178,7 +184,7 @@ const StudentDetailsPages = () => {
 
     return (
         <AuthLayout>
-            <div className="w-full max-w-md mx-auto p-8" dir="rtl">
+            <div className="relative w-full max-w-175 mx-auto p-6">
                 <img src={logo} alt="logo" className="w-44 h-8 mb-5 cursor-pointer" />
                 <h2
                     className="text-[24px] font-bold mb-6 text-[#1F2937]"
@@ -198,22 +204,20 @@ const StudentDetailsPages = () => {
                             <button
                                 type="button"
                                 onClick={() => setServiceType("private")}
-                                className={`h-12 text-[14px] font-medium transition-colors ${
-                                    serviceType === "private"
+                                className={`h-12 text-[14px] font-medium transition-colors ${serviceType === "private"
                                         ? "bg-[#123C91] text-white"
                                         : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
-                                }`}
+                                    }`}
                             >
                                 خاص
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setServiceType("group")}
-                                className={`h-12 text-[14px] font-medium transition-colors border-r border-[#1F293733] ${
-                                    serviceType === "group"
+                                className={`h-12 text-[14px] font-medium transition-colors border-r border-[#1F293733] ${serviceType === "group"
                                         ? "bg-[#123C91] text-white"
                                         : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
-                                }`}
+                                    }`}
                             >
                                 مجموعة
                             </button>
