@@ -1,15 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Eye, EyeOff, ChevronDown, GraduationCap } from "lucide-react";
+import { Eye, EyeOff, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import { register, verifyAccount, resendOtp, getCountries } from "../../services/authService";
-
-const NEXT_ROUTE = {
-    parent: "/parent-dashboard",
-    student: "/register/interests",
-    teacher: "/register/teacher-details",
-};
 
 const OTP_LENGTH = 6;
 const TIMER_START = 60;
@@ -22,7 +16,7 @@ const getFlagUrl = (code) => {
 const normalizeCountries = (raw) => {
     const list = Array.isArray(raw) ? raw : (raw?.data || []);
     return list.map((c) => ({
-        id: c.id,           // المهم ده
+        id: c.id,
         code: c.code,
         name: c.name || "Unknown",
         nameEn: c.name || "",
@@ -125,7 +119,6 @@ const CountryDropdown = ({ value, onChange, inputClass, countries = [], loading 
                                 <span>{c.name}</span>
                             </li>
                         ))}
-
                     </ul>
                 </div>
             )}
@@ -143,7 +136,6 @@ const RegisterForm = ({ type }) => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showOtpModal, setShowOtpModal] = useState(false);
-    const [openAcademic, setOpenAcademic] = useState(false);
     const [otp, setOtp] = useState(new Array(OTP_LENGTH).fill(""));
     const [timer, setTimer] = useState(TIMER_START);
     const [otpLoading, setOtpLoading] = useState(false);
@@ -160,7 +152,6 @@ const RegisterForm = ({ type }) => {
         role: type || "student",
     });
 
-
     useEffect(() => {
         const load = async () => {
             try {
@@ -175,7 +166,6 @@ const RegisterForm = ({ type }) => {
         load();
     }, []);
 
-
     useEffect(() => {
         if (!showOtpModal) return;
         if (timer <= 0) return;
@@ -187,8 +177,6 @@ const RegisterForm = ({ type }) => {
         }, 1000);
         return () => clearInterval(interval);
     }, [showOtpModal, timer]);
-
-
 
     const selectedCountry = countries.find((c) => c.id === formData.country);
     const phoneCode = selectedCountry?.phoneCode || "";
@@ -219,9 +207,6 @@ const RegisterForm = ({ type }) => {
             toast.error("يرجى إدخال بريد إلكتروني صحيح");
             return false;
         }
-        // FIX 4: Removed hardcoded Egyptian phone regex.
-        // Now validates only that the phone number has a reasonable length,
-        // so any country's phone number is accepted — fixing INVALID_COUNTRY_CODE.
         if (!formData.phone || formData.phone.length < 7 || formData.phone.length > 15) {
             toast.error("يرجى إدخال رقم هاتف صحيح");
             return false;
@@ -242,7 +227,6 @@ const RegisterForm = ({ type }) => {
             toast.error("يرجى اختيار المرحلة الدراسية");
             return false;
         }
-
         if (type === "teacher" && !formData.specialization.trim()) {
             toast.error("يرجى إدخال التخصص");
             return false;
@@ -270,9 +254,8 @@ const RegisterForm = ({ type }) => {
                 role: formData.role,
             };
 
+            if (type === "student") payload.academicLevel = formData.academicLevel;
             if (type === "teacher") payload.specialization = formData.specialization;
-
-            console.log("payload:", JSON.stringify(payload));
 
             await register(payload);
 
@@ -315,6 +298,35 @@ const RegisterForm = ({ type }) => {
         e.preventDefault();
     };
 
+    // ---- Post-verification routing ----
+    // - parent                             -> straight to dashboard
+    // - student, university                -> straight to dashboard
+    // - student, primary/middle/high       -> student-details -> subjects -> success -> account-state
+    // - teacher                            -> success -> account-state
+    const resolvePostVerifyRoute = () => {
+        if (type === "parent") {
+            return { path: "/parent-dashboard", state: { email: formData.email, role: type } };
+        }
+        if (type === "student") {
+            if (formData.academicLevel === "university") {
+                return { path: "/student-dashboard", state: { email: formData.email, role: type } };
+            }
+            return {
+                path: "/register/student-details",
+                state: {
+                    email: formData.email,
+                    role: type,
+                    academicLevel: formData.academicLevel,
+                    countryId: formData.country,
+                },
+            };
+        }
+        if (type === "teacher") {
+            return { path: "/register/success", state: { role: type } };
+        }
+        return { path: "/login", state: { email: formData.email, role: type } };
+    };
+
     const handleVerify = async () => {
         const code = otp.join("");
         if (code.length !== OTP_LENGTH) {
@@ -326,7 +338,9 @@ const RegisterForm = ({ type }) => {
             await verifyAccount({ email: formData.email, code });
             toast.success("تم تفعيل الحساب بنجاح!");
             setShowOtpModal(false);
-            navigate(NEXT_ROUTE[type] || "/login", { state: { email: formData.email, role: type } });
+
+            const { path, state } = resolvePostVerifyRoute();
+            navigate(path, { state });
         } catch (err) {
             toast.error(err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى");
         } finally {
@@ -392,16 +406,12 @@ const RegisterForm = ({ type }) => {
                         <label className="block text-[13px] font-medium text-[#1F2937] mb-1">
                             المرحلة الدراسية
                         </label>
-
-
                         <div className="relative w-full">
                             <select
                                 name="academicLevel"
                                 value={formData.academicLevel}
                                 onChange={handleChange}
-
-                                className={`${inputClass} w-full h-12.5 py-0 appearance-none px-4 outline-none ${!formData.academicLevel ? "text-gray-400" : "text-[#1F2937]"
-                                    }`}
+                                className={`${inputClass} w-full h-12.5 py-0 appearance-none px-4 outline-none ${!formData.academicLevel ? "text-gray-400" : "text-[#1F2937]"}`}
                                 required
                             >
                                 <option value="" disabled>اختر المرحلة الدراسية</option>
@@ -410,8 +420,6 @@ const RegisterForm = ({ type }) => {
                                 <option value="high">ثانوي</option>
                                 <option value="university">جامعي و غير ذلك</option>
                             </select>
-
-
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
                                 <ChevronDown size={18} />
                             </div>
@@ -423,7 +431,6 @@ const RegisterForm = ({ type }) => {
                     value={formData.country}
                     countries={countries}
                     loading={loadingCountries}
-
                     onChange={(selectedId) => setFormData((prev) => ({ ...prev, country: selectedId }))}
                     inputClass={inputClass}
                 />
@@ -454,7 +461,6 @@ const RegisterForm = ({ type }) => {
                             className="flex w-full h-12 rounded-lg overflow-hidden border border-[#1F293733] bg-[#F9FAFA] focus-within:border-[#123C91] transition-colors"
                         >
                             <div className="w-auto min-w-15 px-2 shrink-0 flex items-center justify-center bg-[#E5E7EB] text-[#6B7280] text-[13px] border-r border-[#1F293733]">
-                                {/* FIX 7: Show placeholder +-- when no country selected */}
                                 {phoneCode || "+--"}
                             </div>
                             <input

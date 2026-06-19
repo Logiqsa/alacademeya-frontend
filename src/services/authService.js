@@ -28,8 +28,26 @@ export const login = (credentials) => API.post('/auth/login', credentials);
 export const register = (userData) => API.post('/auth/register', userData);
 export const verifyAccount = (data) => API.post('/auth/verifyAccount', data);
 
-export const resendOtp = (email) => API.post('/auth/resend-otp', { email });
+// export const resendOtp = (email) => API.post('/auth/resend-otp', { email });
+export const resendOtp = (email) => API.post('/auth/resendOtp', { email });
 export const saveStudentInterests = (payload) => API.post('/auth/student/interests', payload);
 export const saveTeacherDetails = (payload) => API.post('/auth/teacher/details', payload);
 export const getAccountState = () => API.get('/auth/account-state');
 export const getCountries = () => API.get('/countries');
+
+
+export const getCurriculums = (countryId) =>
+  ROOT_API.get('/curriculums', { params: { country: countryId } });
+ 
+export const getCurriculumStages = (curriculumId) =>
+  ROOT_API.get(`/curriculums/${curriculumId}/stages`);
+ 
+export const getStageGrades = (stageId) =>
+  ROOT_API.get(`/stages/${stageId}/grades`);
+ 
+export const getAllSubjects = (params) =>
+  ROOT_API.get('/subjects', { params });
+
+export const getSubjects = (params) =>
+  ROOT_API.get('/subjects', { params });
+ 

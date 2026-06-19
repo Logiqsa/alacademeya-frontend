@@ -34,8 +34,8 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-8 flex flex-col items-center" dir="rtl">
-      <div className="w-full flex flex-col items-start mb-8">
+   <div className="w-full max-w-2xl mx-auto p-8 flex flex-col items-center" dir="rtl">
+      <div className="w-full max-w-150 flex flex-col items-start mb-10">
         <img
           src={logo}
           alt="logo"
@@ -101,9 +101,7 @@ const LoginForm = () => {
           >
             نسيت كلمة المرور؟
           </Link>
-        </div>
-
-        <button
+        </div><button
           type="submit"
           disabled={loading}
           className="w-full h-14 rounded-lg bg-[#123C91] text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
