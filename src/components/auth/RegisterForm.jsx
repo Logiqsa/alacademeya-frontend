@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Eye, EyeOff, ChevronDown } from "lucide-react";
+import { Eye, EyeOff, ChevronDown, GraduationCap } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
@@ -114,9 +114,9 @@ const CountryDropdown = ({ value, onChange, inputClass, countries = [], loading 
                     <ul className="max-h-48 overflow-y-auto">
                         {filtered.map((c) => (
                             <li
-                                key={c.id} // تم التعديل من c.code إلى c.id
+                                key={c.id}
                                 onClick={() => {
-                                    onChange(c.id); // نرسل الـ id هنا
+                                    onChange(c.id);
                                     setOpen(false);
                                 }}
                                 className="px-4 py-2.5 cursor-pointer flex items-center gap-3 hover:bg-[#F0F4FC]"
@@ -143,6 +143,7 @@ const RegisterForm = ({ type }) => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showOtpModal, setShowOtpModal] = useState(false);
+    const [openAcademic, setOpenAcademic] = useState(false);
     const [otp, setOtp] = useState(new Array(OTP_LENGTH).fill(""));
     const [timer, setTimer] = useState(TIMER_START);
     const [otpLoading, setOtpLoading] = useState(false);
@@ -155,6 +156,7 @@ const RegisterForm = ({ type }) => {
         passwordConfirm: "",
         specialization: "",
         country: "",
+        academicLevel: "",
         role: type || "student",
     });
 
@@ -236,6 +238,11 @@ const RegisterForm = ({ type }) => {
             toast.error("كلمتا المرور غير متطابقتين");
             return false;
         }
+        if (type === "student" && !formData.academicLevel) {
+            toast.error("يرجى اختيار المرحلة الدراسية");
+            return false;
+        }
+
         if (type === "teacher" && !formData.specialization.trim()) {
             toast.error("يرجى إدخال التخصص");
             return false;
@@ -379,6 +386,37 @@ const RegisterForm = ({ type }) => {
                     />
                 </div>
 
+                {type === "student" && (
+                    <div className="relative">
+                        <label className="block text-[13px] font-medium text-[#1F2937] mb-1">
+                            المرحلة الدراسية
+                        </label>
+
+
+                        <div className="relative w-full">
+                            <select
+                                name="academicLevel"
+                                value={formData.academicLevel}
+                                onChange={handleChange}
+
+                                className={`${inputClass} w-full h-12.5 py-0 appearance-none px-4 outline-none ${!formData.academicLevel ? "text-gray-400" : "text-[#1F2937]"
+                                    }`}
+                                required
+                            >
+                                <option value="" disabled>اختر المرحلة الدراسية</option>
+                                <option value="primary">ابتدائي</option>
+                                <option value="middle">إعدادي</option>
+                                <option value="high">ثانوي</option>
+                                <option value="university">جامعي و غير ذلك</option>
+                            </select>
+
+
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
+                                <ChevronDown size={18} />
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <CountryDropdown
                     value={formData.country}
