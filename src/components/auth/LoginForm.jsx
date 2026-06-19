@@ -73,7 +73,7 @@ const LoginForm = () => {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
+              placeholder="********"
               required
               onChange={(e) =>
                 setCredentials({ ...credentials, password: e.target.value })
