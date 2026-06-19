@@ -264,6 +264,7 @@ const RegisterForm = ({ type }) => {
                 email: formData.email,
                 phone: phoneCode ? `${phoneCode}${formData.phone}` : formData.phone,
                 password: formData.password,
+                passwordConfirm: formData.passwordConfirm,
                 country: formData.country,
                 countryCode: selectedCountry?.code,
                 role: formData.role,
@@ -499,6 +500,7 @@ const RegisterForm = ({ type }) => {
                             type={showPassword ? "text" : "password"}
                             placeholder="********"
                             value={formData.password}
+                            autoComplete="new-password"
                             onChange={handleChange}
                             className={inputClass}
                             required
@@ -524,6 +526,7 @@ const RegisterForm = ({ type }) => {
                             type={showConfirmPassword ? "text" : "password"}
                             placeholder="********"
                             value={formData.passwordConfirm}
+                            autoComplete="new-password"
                             onChange={handleChange}
                             className={inputClass}
                             required
