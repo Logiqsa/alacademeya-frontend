@@ -6,7 +6,7 @@ import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { getCurriculums, getCurriculumStages, getStageGrades } from "../../services/authService";
 
-// ── Custom dropdown (same style as CountryDropdown in RegisterForm) ──────────
+
 const Dropdown = ({ label, placeholder, value, onChange, options, loading, disabled }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
@@ -69,14 +69,13 @@ const Dropdown = ({ label, placeholder, value, onChange, options, loading, disab
     );
 };
 
-// ── Main page ────────────────────────────────────────────────────────────────
 const StudentDetailsPages = () => {
     const { state } = useLocation();
     const navigate = useNavigate();
 
     const { email, role, academicLevel, countryId } = state || {};
 
-    // ── Selections ──
+   
     const [serviceType, setServiceType] = useState("private");
     const [curriculumId, setCurriculumId] = useState("");
     const [stageId, setStageId] = useState("");
@@ -94,31 +93,30 @@ const StudentDetailsPages = () => {
 
     const [loading, setLoading] = useState(false);
 
-    // ── Map API name object → display label ──
     const toLabel = (nameObj) => nameObj?.ar || nameObj?.en || "—";
 
-    // 1. Load curriculums on mount
-useEffect(() => {
-    if (!countryId) {
-        console.log("countryId is empty:", countryId);
-        return;
-    }
-    console.log("loading curriculums for countryId:", countryId);
-    setLoadingCurriculums(true);
-    getCurriculums(countryId)
-        .then((res) => {
-            console.log("curriculums raw response:", JSON.stringify(res.data));
-            const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-            console.log("curriculums list:", list);
-            setCurriculums(list.map((c) => ({ id: c.id, label: toLabel(c.name) })));
-        })
-        .catch((err) => {
-            console.log("curriculums error:", err.response?.status, err.response?.data);
-        })
-        .finally(() => setLoadingCurriculums(false));
-}, [countryId]);
+  
+    useEffect(() => {
+        if (!countryId) {
+            console.log("countryId is empty:", countryId);
+            return;
+        }
+        console.log("loading curriculums for countryId:", countryId);
+        setLoadingCurriculums(true);
+        getCurriculums(countryId)
+            .then((res) => {
+                console.log("curriculums raw response:", JSON.stringify(res.data));
+                const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                console.log("curriculums list:", list);
+                setCurriculums(list.map((c) => ({ id: c.id, label: toLabel(c.name) })));
+            })
+            .catch((err) => {
+                console.log("curriculums error:", err.response?.status, err.response?.data);
+            })
+            .finally(() => setLoadingCurriculums(false));
+    }, [countryId]);
 
-    // 2. Load stages when curriculum changes
+    
     useEffect(() => {
         if (!curriculumId) { setStages([]); setStageId(""); setGrades([]); setGradeId(""); return; }
         setLoadingStages(true);
@@ -205,8 +203,8 @@ useEffect(() => {
                                 type="button"
                                 onClick={() => setServiceType("private")}
                                 className={`h-12 text-[14px] font-medium transition-colors ${serviceType === "private"
-                                        ? "bg-[#123C91] text-white"
-                                        : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
+                                    ? "bg-[#123C91] text-white"
+                                    : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
                                     }`}
                             >
                                 خاص
@@ -215,8 +213,8 @@ useEffect(() => {
                                 type="button"
                                 onClick={() => setServiceType("group")}
                                 className={`h-12 text-[14px] font-medium transition-colors border-r border-[#1F293733] ${serviceType === "group"
-                                        ? "bg-[#123C91] text-white"
-                                        : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
+                                    ? "bg-[#123C91] text-white"
+                                    : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
                                     }`}
                             >
                                 مجموعة
