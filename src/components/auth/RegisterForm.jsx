@@ -139,6 +139,7 @@ const RegisterForm = ({ type }) => {
     const [otp, setOtp] = useState(new Array(OTP_LENGTH).fill(""));
     const [timer, setTimer] = useState(TIMER_START);
     const [otpLoading, setOtpLoading] = useState(false);
+    const [resendLoading, setResendLoading] = useState(false);
     const [formData, setFormData] = useState({
         fullName: "",
         username: "",
@@ -264,7 +265,7 @@ const RegisterForm = ({ type }) => {
             setTimer(TIMER_START);
             setShowOtpModal(true);
         } catch (err) {
-            console.error("خطأ من السيرفر:", err.response?.data);
+            console.error("خطأ من السيرفر (register):", err.response?.data);
             toast.error(err.response?.data?.message || "حدثت مشكلة أثناء التسجيل");
         } finally {
             setLoading(false);
@@ -335,9 +336,14 @@ const RegisterForm = ({ type }) => {
         }
         setOtpLoading(true);
         try {
-
-
-            const res = await verifyAccount({ email: formData.email, code });
+            // السيرفر برجع validation error لو country مش موجودة
+            // في الـ body، فبنبعتها مع email و code و role
+            const res = await verifyAccount({
+                email: formData.email,
+                code,
+                role: formData.role,
+                country: formData.country,
+            });
             console.log("verify success:", JSON.stringify(res.data));
 
             const token = res.data?.token;
@@ -351,7 +357,7 @@ const RegisterForm = ({ type }) => {
             const { path, state } = resolvePostVerifyRoute();
             navigate(path, { state });
         } catch (err) {
-            console.log("verify error:", JSON.stringify(err.response?.data));
+            console.error("خطأ من السيرفر (verify):", err.response?.data);
             toast.error(err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى");
         } finally {
             setOtpLoading(false);
@@ -359,14 +365,20 @@ const RegisterForm = ({ type }) => {
     };
 
     const handleResend = async () => {
+        setResendLoading(true);
         try {
-            await resendOtp(formData.email);
+            // نفس الموضوع هنا: لازم نبعت country (وroled) عشان
+            // السيرفر مايرجعش COUNTRY_REQUIRED مع teacher/parent
+            await resendOtp(formData.email, formData.role, formData.country);
             setTimer(TIMER_START);
             setOtp(new Array(OTP_LENGTH).fill(""));
             otpRefs.current[0]?.focus();
             toast.success("تم إرسال كود جديد!");
-        } catch {
-            toast.error("فشل إعادة الإرسال، حاول لاحقاً");
+        } catch (err) {
+            console.error("خطأ من السيرفر (resend-otp):", err.response?.data);
+            toast.error(err.response?.data?.message || "فشل إعادة الإرسال، حاول لاحقاً");
+        } finally {
+            setResendLoading(false);
         }
     };
 
@@ -624,9 +636,10 @@ const RegisterForm = ({ type }) => {
                             ) : (
                                 <button
                                     onClick={handleResend}
-                                    className="text-[#123C91] underline w-full"
+                                    disabled={resendLoading}
+                                    className="text-[#123C91] underline w-full disabled:opacity-60"
                                 >
-                                    إعادة إرسال الكود
+                                    {resendLoading ? "جاري إعادة الإرسال..." : "إعادة إرسال الكود"}
                                 </button>
                             )}
                         </div>

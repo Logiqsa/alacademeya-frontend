@@ -63,21 +63,24 @@ const StudentSubjectsPages = () => {
         );
     };
 
-    const handleSubmit = async () => {
-        if (selected.length === 0) {
-            toast.error("يرجى اختيار مادة واحدة على الأقل");
-            return;
-        }
-        setLoading(true);
-        try {
-            await saveStudentInterests({ subjects: selected });
-            navigate("/register/success", { state: { role: "student" } });
-        } catch {
-            toast.error("حدث خطأ، حاول مرة أخرى");
-        } finally {
-            setLoading(false);
-        }
-    };
+   const handleSubmit = async () => {
+    if (selected.length === 0) {
+        toast.error("يرجى اختيار مادة واحدة على الأقل");
+        return;
+    }
+    setLoading(true);
+    try {
+        const selectedSubjects = subjects.filter(s => selected.includes(s.id));
+        navigate("/register/success", { 
+            state: { 
+                role: "student",
+                interests: selectedSubjects // ✅ بعت المواد المختارة في الـ state
+            } 
+        });
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <AuthLayout>

@@ -1,144 +1,165 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import logo from "../../assets/icons/logo.svg";
+import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/auth/AuthLayout";
-import { getAccountState } from "../../services/authService";
-
-const STATUS_CONFIG = {
-  pending: {
-    icon: <Clock size={32} className="text-[#D97706]" />,
-    bg: "bg-[#FFFBEB]",
-    title: "طلب قيد المراجعة",
-    desc: "طلبك قيد المراجعة من قِبل الإدارة، يرجى الانتظار.",
-    color: "text-[#D97706]",
-  },
-  approved: {
-    icon: <CheckCircle size={32} className="text-[#059669]" />,
-    bg: "bg-[#ECFDF5]",
-    title: "تم قبول طلبك!",
-    desc: "تم قبول حسابك، يمكنك الآن تسجيل الدخول والبدء.",
-    color: "text-[#059669]",
-  },
-  rejected: {
-    icon: <XCircle size={32} className="text-[#DC2626]" />,
-    bg: "bg-[#FEF2F2]",
-    title: "تم رفض الطلب",
-    desc: "للأسف تم رفض طلبك. يرجى التواصل مع الدعم للمزيد من التفاصيل.",
-    color: "text-[#DC2626]",
-  },
-  error: {
-    icon: <AlertCircle size={32} className="text-[#D97706]" />,
-    bg: "bg-[#FFFBEB]",
-    title: "خطأ في تحميل الحالة",
-    desc: "تعذر تحميل حالة حسابك، حاول مرة أخرى.",
-    color: "text-[#D97706]",
-  },
-};
+import logo from "../../assets/icons/logo.svg";
+import clockIcon from "../../assets/icons/clock.svg";
+import whatsappIcon from "../../assets/icons/whatsapp.svg";
+import reviewTimeIcon from "../../assets/icons/review-time.svg";
 
 const AccountStatePage = () => {
   const navigate = useNavigate();
-  const [status, setStatus] = useState("pending");
-  const [details, setDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getAccountState()
-      .then((data) => {
-        setStatus(data?.status || "pending");
-        setDetails(data);
-      })
-      .catch(() => setStatus("error"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+  const { state } = useLocation();
 
   return (
     <AuthLayout>
-      <div
-        className="w-full max-w-md mx-auto p-8 flex flex-col items-center"
-        dir="rtl"
-      >
-        <img src={logo} alt="logo" className="w-44 h-8 mb-8 cursor-pointer" />
+      <div className="w-full max-w-145 mx-auto p-2 flex flex-col items-center" dir="rtl">
 
+        {/* Logo */}
+        <img src={logo} alt="logo" className="w-44 h-8 mb-2 mt-4 cursor-pointer" />
+
+        <img src={clockIcon} alt="clock" className="w-16 h-16 mb-4" />
         <h2
-          className="text-[22px] font-bold text-[#1F2937] mb-8 w-full"
-          style={{ fontFamily: "Tajawal, sans-serif" }}
+          className="text-center mb-2"
+          style={{
+            fontFamily: "Tajawal, sans-serif",
+            fontWeight: 700,
+            fontSize: "24px",
+            lineHeight: "32px",
+            letterSpacing: "0px",
+            color: "#1F2937",
+          }}
         >
-          حالة الحساب
+          طلبك قيد المراجعة
         </h2>
+        <p
+          className="text-center mb-6"
+          style={{
+            fontFamily: "IBM Plex Sans Arabic, sans-serif",
+            fontWeight: 400,
+            fontSize: "16px",
+            lineHeight: "24px",
+            letterSpacing: "0px",
+            color: "#575F69",
+          }}
+        >
+          شكراً لتقديم طلبك، يقوم فريقنا حالياً بمراجعة بياناتك والتحقق من المستندات المرفقة
+        </p>
 
-        {loading ? (
-          <div className="flex flex-col items-center gap-3 py-10">
-            <div className="w-8 h-8 border-2 border-[#123C91] border-t-transparent rounded-full animate-spin" />
-            <p className="text-[14px] text-[#6B7280]">جاري التحميل...</p>
-          </div>
-        ) : (
-          <>
-            <div
-              className={`w-full ${config.bg} rounded-xl p-6 flex flex-col items-center text-center mb-6 border border-[#1F293710]`}
-            >
-              <div className="mb-3">{config.icon}</div>
-              <h3 className={`text-[18px] font-bold mb-1 ${config.color}`}>
-                {config.title}
-              </h3>
-              <p className="text-[13px] text-[#6B7280]">{config.desc}</p>
-            </div>
+        <div className="w-full bg-[#F9FAFA] rounded-xl border border-[#1F293720] p-5 mb-4">
 
-            {details && (
-              <div className="w-full bg-[#F9FAFA] rounded-xl border border-[#1F293733] p-5 mb-6 space-y-3">
-                {details.fullName && (
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-[#6B7280]">الاسم</span>
-                    <span className="text-[#1F2937] font-medium">{details.fullName}</span>
-                  </div>
-                )}
-                {details.email && (
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-[#6B7280]">البريد الإلكتروني</span>
-                    <span className="text-[#1F2937] font-medium">{details.email}</span>
-                  </div>
-                )}
-                {details.role && (
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-[#6B7280]">نوع الحساب</span>
-                    <span className="text-[#1F2937] font-medium">
-                      {{ student: "طالب", teacher: "معلم", parent: "ولي أمر" }[details.role] || details.role}
-                    </span>
-                  </div>
-                )}
+          {/* Step 1 - Done */}
+          <div className="flex items-start gap-3 mb-4">
+            <div className="flex flex-col items-center">
+              <div className="w-6 h-6 rounded-full bg-[#14B8A6] flex items-center justify-center shrink-0">
+                <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                  <path d="M1 5L4 8L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
-            )}
+              <div className="w-0.5 h-8 bg-[#E5E7EB]" />
+            </div>
+            <div className="pt-0.5 ">
+              <p className="mb-1" style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "16px", lineHeight: "24px", color: "#1F2937" }}>
+                تم استلام الطلب
+              </p>
+              <p style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontWeight: 400, fontSize: "14px", lineHeight: "16px", color: "#575F69" }}>
+                تم تسجيل بياناتك بنجاح
+              </p>
+            </div>
+          </div>
 
-            {status === "approved" && (
-              <button
-                onClick={() => navigate("/login")}
-                className="w-full h-14 rounded-xl bg-[#123C91] text-white font-medium text-[16px] mb-3"
-                style={{ fontFamily: "Tajawal, sans-serif" }}
-              >
-                تسجيل الدخول الآن
-              </button>
-            )}
+          <div className="flex items-start gap-3 mb-4">
+            <div className="flex flex-col items-center">
+              <div className="w-6 h-6 rounded-full bg-[#F59E0B] flex items-center justify-center shrink-0">
+                <div className="w-2 h-2 rounded-full bg-white" />
+              </div>
+              <div className="w-0.5 h-8 bg-[#E5E7EB]" />
+            </div>
+            <div className="pt-0.5">
+              <p className="mb-1" style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "16px", lineHeight: "24px", color: "#1F2937" }}>
+                قيد المراجعة
+              </p>
+              <p style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontWeight: 400, fontSize: "14px", lineHeight: "16px", color: "#575F69" }}>
+                يتم مراجعة بياناتك والتحقق من المستندات
+              </p>
+            </div>
+          </div>
 
-            {status === "rejected" && (
-              <button
-                onClick={() => navigate("/select-account-type")}
-                className="w-full h-14 rounded-xl border border-[#123C91] text-[#123C91] font-medium text-[16px] mb-3"
-                style={{ fontFamily: "Tajawal, sans-serif" }}
-              >
-                إنشاء حساب جديد
-              </button>
-            )}
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-6 rounded-full border-2 border-[#D1D5DB] bg-white shrink-0" />
+            <div className="pt-0.5">
+              <p className="mb-1" style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "16px", lineHeight: "24px", color: "#9CA3AF" }}>
+                تفعيل الحساب
+              </p>
+              <p style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontWeight: 400, fontSize: "12px", lineHeight: "16px", color: "#575F69" }}>
+                تحقق من رقم واتسابك سنرسل لك إشعاراً فور الموافقة على طلبك.
+              </p>
+            </div>
+          </div>
+        </div>
 
+        {/* Info Cards */}
+        <div className="w-full grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-white rounded-xl border border-[#1F293720] p-4 flex flex-col items-right text-right gap-5">
+            <img src={reviewTimeIcon} alt="review time" className="w-8 h-8" />
+            <p style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "16px", lineHeight: "16px", color: "#1F2937" }}>
+              وقت المراجعة
+            </p>
+            <p style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontWeight: 400, fontSize: "14px", lineHeight: "16px", color: "#575F69" }}>
+              عادة 1-3 أيام عمل
+            </p>
+          </div>
+
+          {/* WhatsApp */}
+          <div className="bg-white rounded-xl border border-[#1F293720] p-4 flex flex-col items-right text-right gap-3">
+            <img src={whatsappIcon} alt="whatsapp" className="w-8 h-8" />
+            <p style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "16px", lineHeight: "16px", color: "#1F2937" }}>
+              تواصل معنا عبر واتساب
+            </p>
+            <p style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontWeight: 400, fontSize: "14px", lineHeight: "16px", color: "#575F69" }}>
+              تحقق من رقم واتسابك سنرسل لك إشعارا فور الموافقة على طلبك.
+            </p>
+            {/* WhatsApp Button */}
             <button
-              onClick={() => window.location.reload()}
-              className="text-[14px] text-[#6B7280] hover:text-[#123C91] transition-colors"
+              onClick={() => window.open("https://wa.me/", "_blank")}
+              style={{
+                width: "240px",
+                height: "40px",
+                borderRadius: "8px",
+                paddingRight: "24px",
+                paddingLeft: "24px",
+                gap: "8px",
+                backgroundColor: "#123C91",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              ↺ تحديث الحالة
+              <img src={whatsappIcon} alt="" className="w-4 h-4 brightness-0 invert" />
+              <span style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 500, fontSize: "16px", color: "#FFFFFF" }}>
+                تواصل عبر واتساب
+              </span>
             </button>
-          </>
-        )}
+          </div>
+        </div>
+
+        {/* Back Button */}
+        <button className="mb-4"
+          onClick={() => navigate("/login")}
+          style={{
+            width: "100%",
+            height: "56px",
+            borderRadius: "8px",
+            border: "1px solid #123C9180",
+            backgroundColor: "#FFFFFF",
+            fontFamily: "Tajawal, sans-serif",
+            fontWeight: 500,
+            fontSize: "16px",
+            color: "#123C91",
+          }}
+        >
+          العودة لتسجيل الدخول
+        </button>
+
       </div>
     </AuthLayout>
   );
