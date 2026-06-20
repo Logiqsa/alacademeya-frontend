@@ -328,40 +328,38 @@ const RegisterForm = ({ type }) => {
         return { path: "/login", state: { email: formData.email, role: type } };
     };
 
-    const handleVerify = async () => {
-        const code = otp.join("");
-        if (code.length !== OTP_LENGTH) {
-            toast.error("يرجى إدخال رمز التفعيل كاملاً");
-            return;
-        }
-        setOtpLoading(true);
-        try {
-   
-            const res = await verifyAccount({
-                email: formData.email,
-                code,
-                role: formData.role,
-                country: formData.country,
-            });
-            console.log("verify success:", JSON.stringify(res.data));
+   const handleVerify = async () => {
+    const code = otp.join("");
+    if (code.length !== OTP_LENGTH) {
+        toast.error("يرجى إدخال رمز التفعيل كاملاً");
+        return;
+    }
+    setOtpLoading(true);
+    try {
+        const selectedCountry = countries.find((c) => c.id === formData.country);
 
-            const token = res.data?.token;
-            if (token) {
-                localStorage.setItem("token", token);
-                console.log("token saved:", token.substring(0, 20) + "...");
-            }
-            toast.success("تم تفعيل الحساب بنجاح!");
-            setShowOtpModal(false);
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            const { path, state } = resolvePostVerifyRoute();
-            navigate(path, { state });
-        } catch (err) {
-            console.error("خطأ من السيرفر (verify):", err.response?.data);
-            toast.error(err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى");
-        } finally {
-            setOtpLoading(false);
+        const res = await verifyAccount({
+            email: formData.email,
+            code,
+            country: selectedCountry?.code, // ✅ ابعت الـ code مش الـ id
+        });
+
+        const token = res.data?.token;
+        if (token) {
+            localStorage.setItem("token", token);
         }
-    };
+        toast.success("تم تفعيل الحساب بنجاح!");
+        setShowOtpModal(false);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        const { path, state } = resolvePostVerifyRoute();
+        navigate(path, { state });
+    } catch (err) {
+        console.error("خطأ من السيرفر (verify):", err.response?.data);
+        toast.error(err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى");
+    } finally {
+        setOtpLoading(false);
+    }
+};
 
     const handleResend = async () => {
         setResendLoading(true);

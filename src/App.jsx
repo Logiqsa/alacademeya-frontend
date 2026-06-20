@@ -99,9 +99,14 @@ function App() {
 
         {/* Teacher */}
 
-        <Route
+        {/* <Route
           path="/teacher-dashboard"
           element={user ? <TeacherHome /> : <Navigate to="/login" replace />}
+        /> */}
+
+        <Route
+          path="/teacher-dashboard"
+          element={ <StudentHome />}
         />
 
         {/* Students */}
@@ -109,6 +114,7 @@ function App() {
           path="/student-dashboard"
           element={user ? <StudentHome /> : <Navigate to="/login" replace />}
         />
+         
       </Routes>
     </>
   );
