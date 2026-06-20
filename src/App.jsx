@@ -8,10 +8,6 @@ import LoginPage from "./pages/auth/LoginPage";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import RegisterPage from "./pages/auth/RegisterPage";
 import OtpPage from "./pages/auth/OtpPage";
-// import StudentDetailsPage from "./pages/auth/StudentDetailsPage";
-// import SubjectsPage from "./pages/auth/SubjectsPage";
-// import RegisterSuccessPage from "./pages/auth/RegisterSuccessPage";
-// import StudentInterestsPage from "./pages/auth/StudentInterestsPage";
 import TeacherDetailsPage from "./pages/auth/TeacherDetailsPage";
 import PendingPage from "./pages/auth/PendingPage";
 import AccountStatePage from "./pages/auth/AccountStatePage";
@@ -109,7 +105,7 @@ function App() {
         />
 
         {/* Students */}
-            <Route
+        <Route
           path="/student-dashboard"
           element={user ? <StudentHome /> : <Navigate to="/login" replace />}
         />
