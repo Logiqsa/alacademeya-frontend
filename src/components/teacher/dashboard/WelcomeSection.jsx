@@ -11,7 +11,7 @@ const Welcome = () => {
         className="w-full  rounded-lg flex items-center px-2"
       >
         <h2 className="font-['IBM_Plex_Sans_Arabic'] font-semibold text-[24px] leading-8 text-primary w-full text-right">
-          مرحباً بك يا أحمد
+          مرحباً بك يا عادل
         </h2>
       </div>
 

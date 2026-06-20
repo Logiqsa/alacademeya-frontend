@@ -20,7 +20,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
     {
       title: "لوحة التحكم",
       icon: dashboardIcon,
-      path: "/parent-dashboard",
+      path: "/teacher-dashboard",
     },
     {
       title: "الأبناء",

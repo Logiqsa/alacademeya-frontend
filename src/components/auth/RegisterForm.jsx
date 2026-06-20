@@ -328,7 +328,7 @@ const RegisterForm = ({ type }) => {
         return { path: "/login", state: { email: formData.email, role: type } };
     };
 
-   const handleVerify = async () => {
+const handleVerify = async () => {
     const code = otp.join("");
     if (code.length !== OTP_LENGTH) {
         toast.error("يرجى إدخال رمز التفعيل كاملاً");
@@ -336,18 +336,19 @@ const RegisterForm = ({ type }) => {
     }
     setOtpLoading(true);
     try {
-        const selectedCountry = countries.find((c) => c.id === formData.country);
+        const found = countries.find((c) => c.id === formData.country);
+        
+        console.log("sending country code:", found?.code); 
 
         const res = await verifyAccount({
             email: formData.email,
             code,
-            country: selectedCountry?.code, // ✅ ابعت الـ code مش الـ id
+            country: found?.code, 
         });
 
         const token = res.data?.token;
-        if (token) {
-            localStorage.setItem("token", token);
-        }
+        if (token) localStorage.setItem("token", token);
+        
         toast.success("تم تفعيل الحساب بنجاح!");
         setShowOtpModal(false);
         await new Promise((resolve) => setTimeout(resolve, 100));
