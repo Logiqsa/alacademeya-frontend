@@ -20,8 +20,6 @@ ROOT_API.interceptors.request.use(attachToken);
 
 export const login = (credentials) => API.post('/auth/login', credentials);
 export const register = (userData) => API.post('/auth/register', userData);
-// export const verifyAccount = (data) => API.post('/auth/verifyAccount', data);
-// export const resendOtp = (email) => API.post('/auth/resend-otp', { email });
 export const resendOtp = (email, role, country) => API.post('/auth/resend-otp', { email, role, country });
 export const verifyAccount = (data) => API.post('/auth/verifyAccount', data);
 
@@ -30,10 +28,8 @@ export const saveTeacherDetails = (payload) => API.post('/auth/teacher/details',
 export const getAccountState = () => API.get('/auth/account-state');
 export const getCountries = () => API.get('/countries');
 
-// الـ API بيرجع كل المناهج — الـ filter بالدولة بيحصل في الـ frontend
-export const getCurriculums = () => API.get('/curriculums');
 
-// الـ stages endpoint هو /stages/curriculum/:id مش query param
+export const getCurriculums = () => API.get('/curriculums');
 export const getCurriculumStages = (curriculumId) =>
   API.get(`/stages/curriculum/${curriculumId}`);
 

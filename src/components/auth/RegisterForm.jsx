@@ -336,8 +336,7 @@ const RegisterForm = ({ type }) => {
         }
         setOtpLoading(true);
         try {
-            // السيرفر برجع validation error لو country مش موجودة
-            // في الـ body، فبنبعتها مع email و code و role
+   
             const res = await verifyAccount({
                 email: formData.email,
                 code,
@@ -367,8 +366,6 @@ const RegisterForm = ({ type }) => {
     const handleResend = async () => {
         setResendLoading(true);
         try {
-            // نفس الموضوع هنا: لازم نبعت country (وroled) عشان
-            // السيرفر مايرجعش COUNTRY_REQUIRED مع teacher/parent
             await resendOtp(formData.email, formData.role, formData.country);
             setTimer(TIMER_START);
             setOtp(new Array(OTP_LENGTH).fill(""));
