@@ -63,24 +63,24 @@ const StudentSubjectsPages = () => {
         );
     };
 
-   const handleSubmit = async () => {
-    if (selected.length === 0) {
-        toast.error("يرجى اختيار مادة واحدة على الأقل");
-        return;
-    }
-    setLoading(true);
-    try {
-        const selectedSubjects = subjects.filter(s => selected.includes(s.id));
-        navigate("/register/success", { 
-            state: { 
-                role: "student",
-                interests: selectedSubjects // ✅ بعت المواد المختارة في الـ state
-            } 
-        });
-    } finally {
-        setLoading(false);
-    }
-};
+    const handleSubmit = async () => {
+        if (selected.length === 0) {
+            toast.error("يرجى اختيار مادة واحدة على الأقل");
+            return;
+        }
+        setLoading(true);
+        try {
+            const selectedSubjects = subjects.filter(s => selected.includes(s.id));
+            navigate("/register/success", {
+                state: {
+                    role: "student",
+                    interests: selectedSubjects
+                }
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <AuthLayout>
@@ -110,11 +110,10 @@ const StudentSubjectsPages = () => {
                                     key={subject.id}
                                     type="button"
                                     onClick={() => toggle(subject.id)}
-                                    className={`px-4 py-2 rounded-full border text-[14px] font-medium transition-colors ${
-                                        isSelected
-                                            ? "bg-[#123C91] text-white border-[#123C91]"
-                                            : "bg-white text-[#1F2937] border-[#1F293733] hover:border-[#123C91]"
-                                    }`}
+                                    className={`px-4 py-2 rounded-full border text-[14px] font-medium transition-colors ${isSelected
+                                        ? "bg-[#123C91] text-white border-[#123C91]"
+                                        : "bg-white text-[#1F2937] border-[#1F293733] hover:border-[#123C91]"
+                                        }`}
                                 >
                                     {subject.name}
                                 </button>
