@@ -28,11 +28,12 @@ export const saveTeacherDetails = (payload) => API.post('/auth/teacher/details',
 export const getAccountState = () => API.get('/auth/account-state');
 export const getCountries = () => API.get('/countries');
 
-export const getCurriculums = (countryId) =>
-  API.get('/curriculums', { params: { country: countryId } });
+// الـ API بيرجع كل المناهج — الـ filter بالدولة بيحصل في الـ frontend
+export const getCurriculums = () => API.get('/curriculums');
 
-// export const getCurriculumStages = (curriculumId) =>
-//   API.get(`/curriculums/${curriculumId}/stages`);
+// الـ stages endpoint هو /stages/curriculum/:id مش query param
+export const getCurriculumStages = (curriculumId) =>
+  API.get(`/stages/curriculum/${curriculumId}`);
 
 export const getStageGrades = (stageId) =>
   API.get('/grades', { params: { stage: stageId } });
@@ -43,5 +44,4 @@ export const getSubjects = (params) =>
 export const getAllSubjects = (params) =>
   API.get('/subjects', { params });
 
-export const getCurriculumStages = (curriculumId) =>
-  API.get(`/stages`, { params: { curriculum: curriculumId } });
+export const addStudent = (payload) => API.post('/parents/students', payload);

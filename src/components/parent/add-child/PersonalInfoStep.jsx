@@ -1,109 +1,218 @@
-import React, { useState } from 'react'; 
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import { ChevronDown } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { getCountries } from '../../../services/authService';
 
-const PersonalInfoStep = ({ onNext }) => {
+const getName = (item) => {
+  if (!item) return '';
+  if (typeof item.name === 'string') return item.name;
+  if (typeof item.name === 'object') return item.name?.ar || item.name?.en || '';
+  return '';
+};
+
+const getFlagUrl = (code) =>
+  code ? `https://flagcdn.com/w40/${code.toLowerCase()}.png` : null;
+
+const normalizeCountries = (raw) => {
+  const list = Array.isArray(raw) ? raw : raw?.data || [];
+  return list.map((c) => ({
+    id: c.id,
+    code: c.code,
+    name: getName(c),
+    flagUrl: getFlagUrl(c.code),
+  }));
+};
+
+const CountryDropdown = ({ value, onChange, countries, loading }) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const ref = useRef(null);
+  const selected = countries.find((c) => c.id === value);
+
+  const filtered = countries.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const inputClass =
+    'w-full h-12 p-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] ' +
+    'text-[14px] text-[#1F2937] transition-colors focus:outline-none focus:border-[#123C91]';
+
+  return (
+    <div ref={ref} className="relative">
+      <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
+        الدولة
+      </label>
+      <button
+        type="button"
+        onClick={() => {
+          if (!loading) { setOpen(!open); setSearch(''); }
+        }}
+        disabled={loading}
+        className={`${inputClass} flex items-center justify-between cursor-pointer
+          ${!value ? 'text-[#9CA3AF]' : 'text-[#1F2937]'}
+          ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+      >
+        <span className="flex items-center gap-2">
+          {loading ? (
+            'جاري تحميل الدول...'
+          ) : selected ? (
+            <>
+              {selected.flagUrl && (
+                <img
+                  src={selected.flagUrl}
+                  alt=""
+                  className="w-5 h-3.5 object-cover rounded-xs shrink-0"
+                />
+              )}
+              {selected.name}
+            </>
+          ) : (
+            'اختر الدولة'
+          )}
+        </span>
+        <ChevronDown
+          size={18}
+          className={`text-[#9CA3AF] transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 left-0 mt-1 bg-white border border-[#1F293733] rounded-lg shadow-lg z-50 overflow-hidden">
+          <div className="p-2 border-b border-[#1F293710]">
+            <input
+              type="text"
+              placeholder="ابحث عن دولة..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-9 px-3 rounded-md border border-[#1F293733] bg-[#F9FAFA] text-[13px] outline-none focus:border-[#123C91]"
+              autoFocus
+            />
+          </div>
+          <ul className="max-h-48 overflow-y-auto">
+            {filtered.map((c) => (
+              <li
+                key={c.id}
+                onClick={() => { onChange(c.id); setOpen(false); }}
+                className="px-4 py-2.5 cursor-pointer flex items-center gap-3 hover:bg-[#F0F4FC]"
+              >
+                {c.flagUrl && (
+                  <img
+                    src={c.flagUrl}
+                    alt=""
+                    className="w-5 h-3.5 object-cover rounded-xs shrink-0"
+                  />
+                )}
+                <span>{c.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PersonalInfoStep = ({ onNext, data, onChange }) => {
   const navigate = useNavigate();
+  const [countries, setCountries] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(true);
+  const [startDate, setStartDate] = useState(data.birthDate || null);
 
-  const [isFocused, setIsFocused] = useState(false);
-  const [startDate, setStartDate] = useState(null);
+  useEffect(() => {
+    getCountries()
+      .then((res) => setCountries(normalizeCountries(res.data)))
+      .catch(console.error)
+      .finally(() => setLoadingCountries(false));
+  }, []);
 
-  const handleCancel = () => {
-    navigate('/parent-dashboard');
+  const handleDateChange = (date) => {
+    setStartDate(date);
+    onChange('birthDate', date);
   };
+
+  const inputClass =
+    'w-full h-12 px-4 py-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] ' +
+    'font-["IBM_Plex_Sans_Arabic"] font-normal text-[14px] text-right ' +
+    'focus:outline-none focus:ring-2 focus:ring-[#123C91] transition-all placeholder:text-[#1F293780]';
+
   return (
     <div dir="rtl" className="w-full p-2">
       <div className="mb-8">
-        <h2 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[20px] leading-8 text-[#1F2937] text-right mb-2">
+        <h2 className="font-medium text-[20px] text-[#1F2937] text-right mb-2">
           المعلومات الشخصية
         </h2>
-        <p className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[16px] leading-6 text-[#575F69] text-right">
+        <p className="text-[16px] text-[#575F69] text-right">
           يرجى إدخال البيانات الأساسية للطالب.
         </p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label
-            className="block font-['Tajawal'] font-medium text-[17px] leading-4 text-right text-[#1F2937] p-2 rounded-md  w-fit"
-          >
+          <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
             الاسم بالكامل
           </label>
           <input
             type="text"
-            className="
-              w-full h-12 px-4 py-4 
-              border border-[#E5E5E5] rounded-lg 
-              bg-[#F9FAFA] 
-              font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-4 text-right
-              focus:outline-none focus:ring-2 focus:ring-[#123C91] 
-              transition-all 
-              placeholder:text-[#1F293780]
-            "
-            placeholder="ادخل اسمك الكامل"
+            className={inputClass}
+            placeholder="ادخل اسمه الكامل"
+            value={data.fullName || ''}
+            onChange={(e) => onChange('fullName', e.target.value)}
           />
         </div>
 
+        <div>
+          <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
+            البريد الإلكتروني
+          </label>
+          <input
+            type="email"
+            className={inputClass}
+            placeholder="example@mail.com"
+            value={data.email || ''}
+            onChange={(e) => onChange('email', e.target.value)}
+          />
+        </div>
 
         <div>
-          <label className="block font-['Tajawal'] font-medium text-[17px] leading-4 text-right text-[#1F2937] p-2 rounded-md w-fit">
+          <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
             تاريخ الميلاد
           </label>
-
           <div className="relative w-full">
             <DatePicker
               selected={startDate}
-              onChange={(date) => setStartDate(date)}
+              onChange={handleDateChange}
               placeholderText="يوم / شهر / سنة"
               dateFormat="dd/MM/yyyy"
               wrapperClassName="w-full"
-              className="w-full h-12 pr-12 pl-4 py-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#123C91]"
-              calendarClassName="dark-calendar"
+              className={inputClass}
             />
-
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div>
-          <label className="block font-['Tajawal'] font-medium text-[17px] leading-4 text-right text-[#1F2937] p-2 rounded-md w-fit">
-            الدولة
-          </label>
-
-          <div className="relative w-full">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </div>
-
-            <select
-              className="
-              w-full h-12 px-4 py-3
-              border border-[#E5E5E5] rounded-lg 
-              bg-[#F9FAFA] 
-              font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-4 text-right
-              focus:outline-none focus:ring-2 focus:ring-[#123C91] 
-              transition-all appearance-none
-              text-[#1F2937]
-            "
-            >
-              <option value="" disabled selected className="text-[#1F293780]">
-                اختر الدولة
-              </option>
-              <option value="sa">السعودية</option>
-              <option value="eg">مصر</option>
-            </select>
-          </div>
-        </div>
+        <CountryDropdown
+          value={data.country}
+          countries={countries}
+          loading={loadingCountries}
+          onChange={(id) => onChange('country', id)}
+        />
       </div>
 
       <div className="flex gap-4 mt-10">
@@ -113,14 +222,12 @@ const PersonalInfoStep = ({ onNext }) => {
         >
           التالي
         </button>
-
         <button
-          onClick={handleCancel} 
+          onClick={() => navigate('/parent-dashboard')}
           className="flex-1 py-3 px-6 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium cursor-pointer"
         >
           إلغاء
         </button>
-        
       </div>
     </div>
   );
