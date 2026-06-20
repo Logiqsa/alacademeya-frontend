@@ -38,7 +38,7 @@ const AddChildPage = () => {
     fullName: '',
     email: '',
     birthDate: null,
-    country: '',
+    country: null, // ⬅️ الآن object: { id, code, name } بدل string id
     curriculum: '',
     stage: '',
     grade: '',
@@ -58,6 +58,8 @@ const AddChildPage = () => {
   const handleChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
+  const countryId = formData.country?.id;
+
   useEffect(() => {
     getCountries()
       .then((res) => {
@@ -68,14 +70,14 @@ const AddChildPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!formData.country) return;
-    getCurriculums(formData.country)
+    if (!countryId) return;
+    getCurriculums(countryId)
       .then((res) => {
         const list = res.data?.data || res.data || [];
         setCurriculumsMap(Object.fromEntries(list.map((c) => [c.id, getName(c)])));
       })
       .catch(() => {});
-  }, [formData.country]);
+  }, [countryId]);
 
   useEffect(() => {
     if (!formData.curriculum) return;
@@ -149,7 +151,7 @@ const AddChildPage = () => {
             <AcademicInfoStep
               data={formData}
               onChange={handleChange}
-              countryId={formData.country}
+              countryId={countryId}
               onNext={() => setCurrentStep(3)}
               onBack={() => setCurrentStep(1)}
             />

@@ -20,6 +20,40 @@ const Section = ({ title, children }) => (
   </div>
 );
 
+// خرائط رسائل أخطاء السيرفر المعروفة → رسالة عربية مفهومة
+const SERVER_ERROR_MESSAGES = {
+  INVALID_COUNTRY_CODE: 'كود الدولة غير صحيح، يرجى الرجوع للخطوة الأولى وإعادة اختيار الدولة',
+  EMAIL_ALREADY_EXISTS: 'هذا البريد الإلكتروني مستخدم من قبل، يرجى استخدام بريد آخر',
+  USERNAME_ALREADY_EXISTS: 'اسم المستخدم هذا غير متاح، يرجى اختيار اسم آخر',
+  USERNAME_TAKEN: 'اسم المستخدم هذا غير متاح، يرجى اختيار اسم آخر',
+  EMAIL_TAKEN: 'هذا البريد الإلكتروني مستخدم من قبل، يرجى استخدام بريد آخر',
+  INVALID_CURRICULUM: 'المنهج الدراسي المختار غير صحيح',
+  INVALID_STAGE: 'المرحلة الدراسية المختارة غير صحيحة',
+  INVALID_GRADE: 'الصف الدراسي المختار غير صحيح',
+  VALIDATION_ERROR: 'يوجد خطأ في البيانات المدخلة، يرجى مراجعة الحقول',
+};
+
+const getServerErrorMessage = (err) => {
+  const data = err.response?.data;
+  if (!data) return 'حدثت مشكلة أثناء إنشاء الحساب، يرجى المحاولة لاحقاً';
+
+  // لو فيه errors array فيها تفاصيل لكل حقل (شائع في express-validator/joi)
+  if (Array.isArray(data.errors) && data.errors.length > 0) {
+    return data.errors
+      .map((e) => e.message || e.msg || SERVER_ERROR_MESSAGES[e.code] || e.code)
+      .filter(Boolean)
+      .join(' — ');
+  }
+
+  const code = data.message;
+  if (code && SERVER_ERROR_MESSAGES[code]) return SERVER_ERROR_MESSAGES[code];
+
+  // fallback: اعرض الرسالة الخام لو موجودة ومش كود غامض
+  if (typeof code === 'string' && code.length > 0) return code;
+
+  return 'حدثت مشكلة أثناء إنشاء الحساب، يرجى المحاولة لاحقاً';
+};
+
 const ReviewStep = ({
   onBack,
   onSuccess,
@@ -31,6 +65,7 @@ const ReviewStep = ({
   subjectsMap,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const getLabel = (map, id) => map?.[id] || id || '—';
 
@@ -42,7 +77,10 @@ const ReviewStep = ({
     data.language === 'en' ? 'الإنجليزية' :
     data.language === 'fr' ? 'الفرنسية' : '—';
 
+  const countryLabel = data.country?.name || getLabel(countriesMap, data.country?.id);
+
   const handleSubmit = async () => {
+    setSubmitError('');
     setLoading(true);
     try {
       const payload = {
@@ -51,7 +89,8 @@ const ReviewStep = ({
         birthDate: data.birthDate
           ? new Date(data.birthDate).toISOString().split('T')[0]
           : undefined,
-        country: data.country,
+        country: data.country?.id, // رجعنا للـ id — اتأكد إن endpoint التسجيل العادي بيقبل id لنفس الحقل
+        countryCode: data.country?.code, // لو الـ backend محتاج الكود في حقل منفصل (زي register)
         curriculum: data.curriculum,
         stage: data.stage,
         grade: data.grade,
@@ -66,7 +105,10 @@ const ReviewStep = ({
       toast.success('تم إنشاء حساب الطالب بنجاح!');
       onSuccess();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'حدثت مشكلة أثناء إنشاء الحساب');
+      console.error('addStudent error response:', err.response?.data);
+      const message = getServerErrorMessage(err);
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -94,7 +136,7 @@ const ReviewStep = ({
               : '—'
           }
         />
-        <Row label="الدولة" value={getLabel(countriesMap, data.country)} />
+        <Row label="الدولة" value={countryLabel} />
       </Section>
 
       <Section title="🎓 المعلومات الأكاديمية">
@@ -109,6 +151,12 @@ const ReviewStep = ({
         <Row label="اسم المستخدم" value={data.username} />
         <Row label="كلمة المرور" value={data.password ? '••••••••' : '—'} />
       </Section>
+
+      {submitError && (
+        <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[14px] text-right">
+          {submitError}
+        </div>
+      )}
 
       <div className="flex gap-4 mt-6">
         <button

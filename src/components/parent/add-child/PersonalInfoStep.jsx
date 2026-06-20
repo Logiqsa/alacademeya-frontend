@@ -29,6 +29,7 @@ const CountryDropdown = ({ value, onChange, countries, loading }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef(null);
+  // value الآن هو id الدولة المختارة (نخزنه في data.country.id)
   const selected = countries.find((c) => c.id === value);
 
   const filtered = countries.filter((c) =>
@@ -102,7 +103,7 @@ const CountryDropdown = ({ value, onChange, countries, loading }) => {
             {filtered.map((c) => (
               <li
                 key={c.id}
-                onClick={() => { onChange(c.id); setOpen(false); }}
+                onClick={() => { onChange(c); setOpen(false); }}
                 className="px-4 py-2.5 cursor-pointer flex items-center gap-3 hover:bg-[#F0F4FC]"
               >
                 {c.flagUrl && (
@@ -127,6 +128,7 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
   const [countries, setCountries] = useState([]);
   const [loadingCountries, setLoadingCountries] = useState(true);
   const [startDate, setStartDate] = useState(data.birthDate || null);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     getCountries()
@@ -138,12 +140,43 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
   const handleDateChange = (date) => {
     setStartDate(date);
     onChange('birthDate', date);
+    if (errors.birthDate) setErrors((p) => ({ ...p, birthDate: null }));
   };
 
-  const inputClass =
-    'w-full h-12 px-4 py-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] ' +
+  const handleField = (field, value) => {
+    onChange(field, value);
+    if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
+  };
+
+  const validate = () => {
+    const next = {};
+    if (!data.fullName?.trim()) next.fullName = 'الاسم الكامل مطلوب';
+
+    if (!data.email?.trim()) {
+      next.email = 'البريد الإلكتروني مطلوب';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+      next.email = 'صيغة البريد الإلكتروني غير صحيحة';
+    }
+
+    if (!startDate) next.birthDate = 'تاريخ الميلاد مطلوب';
+
+    if (!data.country?.id) next.country = 'الدولة مطلوبة';
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validate()) onNext();
+  };
+
+  const inputClass = (hasError) =>
+    'w-full h-12 px-4 py-4 border rounded-lg bg-[#F9FAFA] ' +
     'font-["IBM_Plex_Sans_Arabic"] font-normal text-[14px] text-right ' +
-    'focus:outline-none focus:ring-2 focus:ring-[#123C91] transition-all placeholder:text-[#1F293780]';
+    'focus:outline-none focus:ring-2 transition-all placeholder:text-[#1F293780] ' +
+    (hasError
+      ? 'border-red-400 focus:ring-red-300'
+      : 'border-[#E5E5E5] focus:ring-[#123C91]');
 
   return (
     <div dir="rtl" className="w-full p-2">
@@ -163,11 +196,14 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
           </label>
           <input
             type="text"
-            className={inputClass}
+            className={inputClass(!!errors.fullName)}
             placeholder="ادخل اسمه الكامل"
             value={data.fullName || ''}
-            onChange={(e) => onChange('fullName', e.target.value)}
+            onChange={(e) => handleField('fullName', e.target.value)}
           />
+          {errors.fullName && (
+            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.fullName}</p>
+          )}
         </div>
 
         <div>
@@ -176,11 +212,14 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
           </label>
           <input
             type="email"
-            className={inputClass}
+            className={inputClass(!!errors.email)}
             placeholder="example@mail.com"
             value={data.email || ''}
-            onChange={(e) => onChange('email', e.target.value)}
+            onChange={(e) => handleField('email', e.target.value)}
           />
+          {errors.email && (
+            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.email}</p>
+          )}
         </div>
 
         <div>
@@ -194,7 +233,7 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
               placeholderText="يوم / شهر / سنة"
               dateFormat="dd/MM/yyyy"
               wrapperClassName="w-full"
-              className={inputClass}
+              className={inputClass(!!errors.birthDate)}
             />
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -205,19 +244,27 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
               </svg>
             </div>
           </div>
+          {errors.birthDate && (
+            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.birthDate}</p>
+          )}
         </div>
 
-        <CountryDropdown
-          value={data.country}
-          countries={countries}
-          loading={loadingCountries}
-          onChange={(id) => onChange('country', id)}
-        />
+        <div>
+          <CountryDropdown
+            value={data.country?.id}
+            countries={countries}
+            loading={loadingCountries}
+            onChange={(country) => handleField('country', country)}
+          />
+          {errors.country && (
+            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.country}</p>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-4 mt-10">
         <button
-          onClick={onNext}
+          onClick={handleNext}
           className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer"
         >
           التالي

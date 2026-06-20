@@ -4,11 +4,46 @@ import { Eye, EyeOff } from 'lucide-react';
 const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const inputClass =
-    'w-full h-12 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] ' +
+  const handleField = (field, value) => {
+    onChange(field, value);
+    if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
+  };
+
+  const validate = () => {
+    const next = {};
+    if (!data.username?.trim()) {
+      next.username = 'اسم المستخدم مطلوب';
+    } else if (data.username.trim().length < 3) {
+      next.username = 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل';
+    }
+
+    if (!data.password) {
+      next.password = 'كلمة المرور مطلوبة';
+    } else if (data.password.length < 6) {
+      next.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    }
+
+    if (!data.passwordConfirm) {
+      next.passwordConfirm = 'تأكيد كلمة المرور مطلوب';
+    } else if (data.password !== data.passwordConfirm) {
+      next.passwordConfirm = 'كلمتا المرور غير متطابقتين';
+    }
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validate()) onNext();
+  };
+
+  const inputClass = (hasError) =>
+    'w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] ' +
     'font-["IBM_Plex_Sans_Arabic"] text-[14px] focus:outline-none focus:ring-2 ' +
-    'focus:ring-[#123C91] placeholder:text-[#8C9198]';
+    'placeholder:text-[#8C9198] ' +
+    (hasError ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]');
 
   return (
     <div dir="rtl" className="w-full p-2 space-y-4">
@@ -27,11 +62,14 @@ const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
             اسم المستخدم
           </label>
           <input
-            className={inputClass}
+            className={inputClass(!!errors.username)}
             placeholder="ادخل اسم المستخدم"
             value={data.username || ''}
-            onChange={(e) => onChange('username', e.target.value)}
+            onChange={(e) => handleField('username', e.target.value)}
           />
+          {errors.username && (
+            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.username}</p>
+          )}
         </div>
 
         <div>
@@ -41,10 +79,10 @@ const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
-              className={inputClass}
+              className={inputClass(!!errors.password)}
               placeholder="********"
               value={data.password || ''}
-              onChange={(e) => onChange('password', e.target.value)}
+              onChange={(e) => handleField('password', e.target.value)}
             />
             <button
               type="button"
@@ -54,6 +92,9 @@ const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          {errors.password && (
+            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.password}</p>
+          )}
         </div>
 
         <div>
@@ -63,10 +104,10 @@ const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
           <div className="relative">
             <input
               type={showConfirmPassword ? 'text' : 'password'}
-              className={inputClass}
+              className={inputClass(!!errors.passwordConfirm)}
               placeholder="********"
               value={data.passwordConfirm || ''}
-              onChange={(e) => onChange('passwordConfirm', e.target.value)}
+              onChange={(e) => handleField('passwordConfirm', e.target.value)}
             />
             <button
               type="button"
@@ -76,6 +117,9 @@ const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
               {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          {errors.passwordConfirm && (
+            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.passwordConfirm}</p>
+          )}
         </div>
       </div>
 
@@ -85,7 +129,7 @@ const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
 
       <div className="flex gap-4 mt-6">
         <button
-          onClick={onNext}
+          onClick={handleNext}
           className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer"
         >
           التالي

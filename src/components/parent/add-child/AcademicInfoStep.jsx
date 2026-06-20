@@ -14,7 +14,7 @@ const getName = (item) => {
   return '';
 };
 
-const SelectField = ({ label, value, onChange, options, placeholder, disabled, loading }) => (
+const SelectField = ({ label, value, onChange, options, placeholder, disabled, loading, error }) => (
   <div className="relative w-full">
     <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
       {label}
@@ -24,9 +24,10 @@ const SelectField = ({ label, value, onChange, options, placeholder, disabled, l
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled || loading}
-        className={`w-full h-12 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA]
-          font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#123C91]
+        className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA]
+          font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2
           appearance-none transition-all
+          ${error ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'}
           ${!value ? 'text-[#8C9198]' : 'text-[#1F2937]'}
           ${disabled || loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
       >
@@ -39,6 +40,7 @@ const SelectField = ({ label, value, onChange, options, placeholder, disabled, l
         <ChevronDown size={16} />
       </div>
     </div>
+    {error && <p className="text-red-500 text-[13px] mt-1 text-right">{error}</p>}
   </div>
 );
 
@@ -57,6 +59,7 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
   const [grades, setGrades]                 = useState([]);
   const [allSubjects, setAllSubjects]       = useState([]);
   const [subjectSearch, setSubjectSearch]   = useState('');
+  const [errors, setErrors]                 = useState({});
 
   const [loadingCurriculums, setLoadingCurriculums] = useState(false);
   const [loadingStages, setLoadingStages]           = useState(false);
@@ -175,6 +178,12 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       ? current.filter((s) => s !== subId)
       : [...current, subId];
     onChange('subjects', updated);
+    if (errors.subjects) setErrors((p) => ({ ...p, subjects: null }));
+  };
+
+  const handleSelect = (field, value) => {
+    onChange(field, value);
+    if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
   };
 
   const selectedSubjectObjects = allSubjects.filter((s) =>
@@ -186,6 +195,22 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       s.name.toLowerCase().includes(subjectSearch.toLowerCase()) &&
       !(data.subjects || []).includes(s.id)
   );
+
+  const validate = () => {
+    const next = {};
+    if (!data.curriculum) next.curriculum = 'المنهج الدراسي مطلوب';
+    if (!data.stage) next.stage = 'المرحلة الدراسية مطلوبة';
+    if (!data.grade) next.grade = 'الصف الدراسي مطلوب';
+    if (!data.language) next.language = 'لغة التعلم مطلوبة';
+    if (!data.subjects || data.subjects.length === 0) next.subjects = 'اختر مادة واحدة على الأقل';
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validate()) onNext();
+  };
 
   return (
     <div dir="rtl" className="w-full p-2 space-y-6">
@@ -202,11 +227,12 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       <SelectField
         label="المنهج الدراسي"
         value={data.curriculum || ''}
-        onChange={(v) => onChange('curriculum', v)}
+        onChange={(v) => handleSelect('curriculum', v)}
         options={curriculums}
         placeholder={!countryId ? 'اختر الدولة أولاً من الخطوة السابقة' : 'اختر المنهج الدراسي'}
         loading={loadingCurriculums}
         disabled={!countryId || loadingCurriculums}
+        error={errors.curriculum}
       />
 
       {/* المرحلة والصف */}
@@ -214,20 +240,22 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
         <SelectField
           label="المرحلة الدراسية"
           value={data.stage || ''}
-          onChange={(v) => onChange('stage', v)}
+          onChange={(v) => handleSelect('stage', v)}
           options={stages}
           placeholder="اختر المرحلة"
           loading={loadingStages}
           disabled={!data.curriculum || loadingStages}
+          error={errors.stage}
         />
         <SelectField
           label="الصف الدراسي"
           value={data.grade || ''}
-          onChange={(v) => onChange('grade', v)}
+          onChange={(v) => handleSelect('grade', v)}
           options={grades}
           placeholder="اختر الصف"
           loading={loadingGrades}
           disabled={!data.stage || loadingGrades}
+          error={errors.grade}
         />
       </div>
 
@@ -235,9 +263,10 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       <SelectField
         label="لغة التعلم المفضلة"
         value={data.language || ''}
-        onChange={(v) => onChange('language', v)}
+        onChange={(v) => handleSelect('language', v)}
         options={LANGUAGES}
         placeholder="اختر اللغة"
+        error={errors.language}
       />
 
       {/* المواد */}
@@ -269,7 +298,9 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
           type="text"
           value={subjectSearch}
           onChange={(e) => setSubjectSearch(e.target.value)}
-          className="w-full h-12 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] placeholder:text-[#8C9198] focus:outline-none focus:ring-2 focus:ring-[#123C91] disabled:opacity-60 disabled:cursor-not-allowed"
+          className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] placeholder:text-[#8C9198] focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed ${
+            errors.subjects ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'
+          }`}
           placeholder={
             !data.grade
               ? 'اختر الصف أولاً'
@@ -297,11 +328,15 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
         {subjectSearch && filteredSubjects.length === 0 && data.grade && !loadingSubjects && (
           <p className="text-[13px] text-[#8C9198] text-right px-1">لا توجد مواد مطابقة</p>
         )}
+
+        {errors.subjects && (
+          <p className="text-red-500 text-[13px] mt-1 text-right">{errors.subjects}</p>
+        )}
       </div>
 
       <div className="flex gap-4 mt-10">
         <button
-          onClick={onNext}
+          onClick={handleNext}
           className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer"
         >
           التالي

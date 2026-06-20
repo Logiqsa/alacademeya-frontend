@@ -1,81 +1,151 @@
-// import React from 'react';
-// import { Check, Clock, MessageCircle, RotateCcw } from 'lucide-react';
-// import academyLogo from '../../../assets/icons/logo.svg'; 
+import React, { useEffect, useState } from 'react';
+import { Check, Hourglass, XCircle, RotateCcw } from 'lucide-react';
+
+// عدّل الدالة دي لو عندك endpoint حقيقي يرجع حالة آخر طلب طالب
+// المفروض السيرفر يرجع حاجة زي: { status: 'pending' | 'approved' | 'rejected', studentName, reason }
+const fetchLatestRequestStatus = async () => {
+  // TODO: استبدل ده بنداء فعلي، مثلاً:
+  // const res = await API.get('/parents/students/latest-request');
+  // return res.data;
+  return { status: 'pending', studentName: '', reason: '' };
+};
+
+const STATUS_CONFIG = {
+  pending: {
+    icon: Hourglass,
+    color: '#F59E0B',
+    bg: '#FEF3C7',
+    title: 'الطلب قيد المراجعة',
+    description: 'فريق الإدارة بيراجع طلبك الآن، هيتم إشعارك فور اتخاذ القرار.',
+  },
+  approved: {
+    icon: Check,
+    color: '#10B981',
+    bg: '#D1FAE5',
+    title: 'تم قبول الطلب',
+    description: 'تم تفعيل حساب الطالب بنجاح، يمكنه الآن تسجيل الدخول.',
+  },
+  rejected: {
+    icon: XCircle,
+    color: '#EF4444',
+    bg: '#FEE2E2',
+    title: 'تم رفض الطلب',
+    description: 'لم يتم قبول الطلب، يمكنك مراجعة السبب أدناه أو التواصل مع الدعم.',
+  },
+};
 
 const RequestStatusPage = () => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [statusData, setStatusData] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchLatestRequestStatus();
+      setStatusData(data);
+    } catch (err) {
+      setError('تعذر تحميل حالة الطلب، يرجى المحاولة مرة أخرى');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <div dir="rtl" className="flex flex-col items-center justify-center py-16 text-center font-['IBM_Plex_Sans_Arabic']">
+        <div className="w-8 h-8 border-3 border-[#123C91] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-[#575F69] text-[14px]">جاري تحميل حالة الطلب...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div dir="rtl" className="flex flex-col items-center justify-center py-16 text-center font-['IBM_Plex_Sans_Arabic']">
+        <p className="text-red-500 text-[14px] mb-4">{error}</p>
+        <button
+          onClick={load}
+          className="flex items-center gap-2 px-6 py-2.5 bg-[#123C91] text-white rounded-xl text-[14px] font-medium cursor-pointer"
+        >
+          <RotateCcw size={16} />
+          إعادة المحاولة
+        </button>
+      </div>
+    );
+  }
+
+  const config = STATUS_CONFIG[statusData?.status] || STATUS_CONFIG.pending;
+  const Icon = config.icon;
+
   return (
-    // <div className="flex flex-col items-center justify-center py-6 text-center space-y-6 font-['IBM_Plex_Sans_Arabic']" dir="rtl">
-      
-    //   <div className="mb-6">
-    //     <img src={academyLogo} alt="الأكاديمية" className="h-10 object-contain" />
-    //   </div>
+    <div dir="rtl" className="flex flex-col items-center justify-center py-4 text-center space-y-4 font-['IBM_Plex_Sans_Arabic']">
+      <div
+        className="w-16 h-16 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: config.bg }}
+      >
+        <Icon size={28} style={{ color: config.color }} />
+      </div>
 
-    //   <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-2">
-    //     <RotateCcw size={40} className="text-orange-500" />
-    //   </div>
-      
-    //   <div>
-    //     <h2 className="text-[24px] font-bold text-[#123C91]">طلبك قيد المراجعة</h2>
-    //     <p className="text-[#575F69] mt-3 text-[16px] max-w-lg">
-    //       شكراً لتقديم طلبك، يقوم فريقنا حالياً بمراجعة بياناتك والتحقق من المستندات المرفقة
-    //     </p>
-    //   </div>
+      <div>
+        <h2 className="text-[20px] font-bold text-[#1F2937] mb-2">{config.title}</h2>
+        <p className="text-[#1F2937BF] mt-2 text-[14px] max-w-md mx-auto">
+          {config.description}
+        </p>
+      </div>
 
-    //   <div className="w-full max-w-[520px] p-8 rounded-[16px] bg-[#1F29370A] border border-[#E5E5E5] space-y-8 relative">
-        
-    //     <div className="absolute right-[43px] top-12 bottom-12 w-[2px] bg-[#E5E5E5]"></div>
+      {statusData?.status === 'rejected' && statusData?.reason && (
+        <div className="w-full max-w-130 p-4 rounded-xl border border-red-200 bg-red-50 text-right">
+          <p className="text-[13px] font-medium text-red-600 mb-1">سبب الرفض:</p>
+          <p className="text-[14px] text-[#1F2937]">{statusData.reason}</p>
+        </div>
+      )}
 
-    //     <div className="relative flex items-start gap-4">
-    //       <div className="z-10 w-8 h-8 rounded-full bg-[#10B981] flex items-center justify-center border-4 border-white shadow-sm">
-    //         <Check size={16} className="text-white" strokeWidth={3} />
-    //       </div>
-    //       <div className="text-right">
-    //         <p className="font-bold text-[#1F2937]">تم استلام الطلب</p>
-    //         <p className="text-sm text-[#8C9198]">تم تسجيل بياناتك بنجاح</p>
-    //       </div>
-    //     </div>
+      <div className="w-full max-w-130 p-8 rounded-2xl border border-[#E5E5E5] bg-[#1F29371A] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] space-y-4 text-right">
+        <div className="flex items-center justify-start gap-3">
+          <div className="w-6 h-6 flex items-center justify-center rounded-full bg-[#10B981]">
+            <Check size={14} className="text-white" strokeWidth={3} />
+          </div>
+          <span className="text-[14px] text-[#1F2937]">تم استلام طلبك بنجاح</span>
+        </div>
 
-    //     <div className="relative flex items-start gap-4">
-    //       <div className="z-10 w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center border-4 border-white shadow-sm">
-    //          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-    //       </div>
-    //       <div className="text-right">
-    //         <p className="font-bold text-[#1F2937]">قيد المراجعة</p>
-    //         <p className="text-sm text-[#8C9198]">يتم مراجعة بياناتك والتحقق من المستندات</p>
-    //       </div>
-    //     </div>
+        <div className="flex items-center justify-start gap-3">
+          <div className="w-6 h-6 flex items-center justify-center">
+            <Hourglass
+              size={20}
+              className={statusData?.status === 'pending' ? 'text-[#F59E0B]' : 'text-[#9CA3AF]'}
+            />
+          </div>
+          <span className="text-[14px] text-[#1F2937]">
+            {statusData?.status === 'pending' ? 'جاري مراجعة الحساب من الإدارة' : 'تمت مراجعة الحساب من الإدارة'}
+          </span>
+        </div>
 
-      
-    //     <div className="relative flex items-start gap-4 opacity-50">
-    //       <div className="z-10 w-8 h-8 rounded-full bg-white border-2 border-[#E5E5E5] flex items-center justify-center"></div>
-    //       <div className="text-right">
-    //         <p className="font-bold text-[#1F2937]">تفعيل الحساب</p>
-    //         <p className="text-sm text-[#8C9198]">سيتم إشعارك فور الموافقة</p>
-    //       </div>
-    //     </div>
-    //   </div>
+        <div className="flex items-center justify-start gap-3">
+          <div className="w-6 h-6 flex items-center justify-center rounded-full" style={{ backgroundColor: statusData?.status !== 'pending' ? config.bg : 'transparent' }}>
+            <Icon size={statusData?.status !== 'pending' ? 14 : 20} style={{ color: statusData?.status !== 'pending' ? config.color : '#9CA3AF' }} />
+          </div>
+          <span className="text-[14px] text-[#1F2937]">
+            {statusData?.status === 'approved' && 'تم قبول الطلب وتفعيل الحساب'}
+            {statusData?.status === 'rejected' && 'تم رفض الطلب'}
+            {statusData?.status === 'pending' && 'سيتم إشعارك فور اتخاذ القرار'}
+          </span>
+        </div>
+      </div>
 
-      
-    //   <div className="flex gap-4 w-full max-w-[520px]">
-       
-    //     <div className="flex-1 p-4 bg-white border border-[#E5E5E5] rounded-xl flex flex-col items-center">
-    //       <Clock className="text-[#123C91] mb-2" size={24} />
-    //       <p className="font-bold text-[#1F2937] text-sm">وقت المراجعة</p>
-    //       <p className="text-[12px] text-[#575F69]">عادة 1-3 أيام عمل</p>
-    //     </div>
-
-       
-    //     <div className="flex-1 p-4 bg-white border border-[#E5E5E5] rounded-xl flex flex-col items-center">
-    //       <MessageCircle className="text-[#123C91] mb-2" size={24} />
-    //       <p className="font-bold text-[#1F2937] text-sm">تواصل معنا عبر واتساب</p>
-    //       <button className="mt-2 bg-[#123C91] text-white px-4 py-1.5 rounded-lg text-xs flex items-center gap-2">
-    //          تواصل عبر واتساب
-    //       </button>
-    //     </div>
-    //   </div>
-    // </div>
-
-    <></>
+      <button
+        onClick={load}
+        className="flex items-center gap-2 bg-white border border-[#E5E5E5] text-[#123C91] py-2.5 px-8 rounded-xl font-medium mt-4 cursor-pointer"
+      >
+        <RotateCcw size={16} />
+        تحديث الحالة
+      </button>
+    </div>
   );
 };
 
