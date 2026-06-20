@@ -42,7 +42,7 @@ const SuccessPage = () => {
         {/* Steps card */}
         <div className="w-full bg-[#F9FAFA] rounded-xl border border-[#1F293733] p-5 mb-6">
           <div className="flex items-center gap-3 py-2">
-            <div className="w-5 h-5 rounded-full bg-[#059669] flex items-center justify-center flex-shrink-0">
+            <div className="w-5 h-5 rounded-full bg-[#059669] flex items-center justify-center shrink-0">
               <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                 <path
                   d="M1 4L3.5 6.5L9 1"
@@ -59,14 +59,14 @@ const SuccessPage = () => {
           </div>
 
           <div className="flex items-center gap-3 py-2">
-            <div className="w-5 h-5 rounded-full border-2 border-[#D1D5DB] bg-white flex-shrink-0" />
+            <div className="w-5 h-5 rounded-full border-2 border-[#D1D5DB] bg-white shrink-0" />
             <span className="text-[14px] text-[#9CA3AF]">
               جاري مراجعة الحساب من الإدارة
             </span>
           </div>
 
           <div className="flex items-center gap-3 py-2">
-            <div className="w-5 h-5 rounded-full border-2 border-[#D1D5DB] bg-white flex-shrink-0" />
+            <div className="w-5 h-5 rounded-full border-2 border-[#D1D5DB] bg-white shrink-0" />
             <span className="text-[14px] text-[#9CA3AF]">
               سيتم إعلامك فور القبول
             </span>
