@@ -90,14 +90,14 @@ const GroupLessonsPage = () => {
         </div>
 
         {/* Table */}
-        {/* <div className="mb-4">
+        <div className="mt-4">
           <LessonsTable
             lessons={filtered}
             onView={(id) => console.log("view lesson", id)}
             onEdit={(id) => console.log("edit lesson", id)}
             onDelete={(id) => console.log("delete lesson", id)}
           />
-        </div> */}
+        </div>
 
         {/* Pagination */}
         {/* <Pagination page={page} onChange={setPage} /> */}
