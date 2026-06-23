@@ -1,104 +1,60 @@
-// ─── Status Badge (local helper) ─────────────────────────────────────────────
+import { Trash2, Edit3, Users, Calendar } from "lucide-react";
 const StatusBadge = ({ status }) => {
-  const map = {
-    "نشطة":          "bg-green-100 text-green-700",
-    "معلقة":         "bg-orange-100 text-orange-600",
-    "قيد التسجيل":  "bg-blue-100 text-blue-700",
+  const styles = {
+    "نشطة": "bg-[#00A63E26] bg-opacity-[0.15] text-[#00A63E]",
+    "معلقة": "bg-[#D32F2F26] bg-opacity-[0.15] text-[#D32F2F]",
+    "قيد التسجيل": "bg-[#F59E0B26] bg-opacity-[0.15] text-[#F59E0B]",
   };
+
   return (
-    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${map[status] ?? "bg-gray-100 text-gray-600"}`}>
+    <span className={`text-[12px] font-medium px-4 py-1 rounded-[999px] ${styles[status] ?? "bg-gray-100 text-gray-600"}`}>
       {status}
     </span>
   );
 };
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-const TrashIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-  </svg>
-);
-const EditIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-  </svg>
-);
-const UsersIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-);
-const CalIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-);
-
-// ─── GroupCard ────────────────────────────────────────────────────────────────
-/**
- * Props:
- *  group: { id, name, grade, subject, status, enrolled, max, nextLesson }
- *  onViewLessons: (id) => void
- *  onViewStudents: (id) => void
- *  onEdit: (id) => void        (optional)
- *  onDelete: (id) => void      (optional)
- */
 const GroupCard = ({ group, onViewLessons, onViewStudents, onEdit, onDelete }) => (
-  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition">
-    {/* Top row */}
-    <div className="flex items-start justify-between">
+  <div className="bg-white rounded-2xl border border-[#E5E5E5] p-6 flex flex-col gap-3 w-full ">
+
+  
+    <div className="flex items-center justify-between">
       <StatusBadge status={group.status} />
-      <div className="flex gap-2">
-        {onDelete && (
-          <button
-            onClick={() => onDelete(group.id)}
-            className="text-gray-400 hover:text-red-500 transition"
-            title="حذف"
-          >
-            <TrashIcon />
-          </button>
-        )}
-        {onEdit && (
-          <button
-            onClick={() => onEdit(group.id)}
-            className="text-gray-400 hover:text-blue-500 transition"
-            title="تعديل"
-          >
-            <EditIcon />
-          </button>
-        )}
+      <div className="flex gap-2.5 text-[#575F69]">
+        <button onClick={() => onDelete(group.id)} className="hover:text-red-500"><Trash2 size={18} /></button>
+        <button onClick={() => onEdit(group.id)} className="hover:text-blue-600"><Edit3 size={18} /></button>
       </div>
     </div>
 
-    {/* Name & subject */}
+    
     <div>
-      <h3 className="font-bold text-gray-800 text-base">{group.name}</h3>
-      <p className="text-xs text-gray-500 mt-0.5">{group.grade} • {group.subject}</p>
+      <h3 className="text-[#1F2937] text-[16px] font-medium leading-6 mb-2">{group.name}</h3>
+      <p className="text-[#575F69] text-[14px] font-normal leading-4">{group.grade} • {group.subject}</p>
     </div>
 
-    {/* Enrolled */}
-    <div className="flex items-center gap-1 text-sm text-gray-600">
-      <UsersIcon />
+    <div className="border border-[#E5E5E5]"></div>
+    {/* Stats: Enrollment */}
+    <div className="flex items-center gap-2 text-[#575F69] text-[14px] font-normal">
+      <Users size={16}  className="text-[#123C91]"/>
       <span>{group.enrolled} / {group.max} طالباً</span>
     </div>
 
-    {/* Next lesson */}
-    <div className="flex items-center gap-1 text-sm text-gray-600">
-      <CalIcon />
+    {/* Stats: Next Lesson */}
+    <div className="flex items-center gap-2 text-[#575F69] text-[14px] font-normal">
+      <Calendar size={16}  className="text-[#123C91]"/>
       <span>{group.nextLesson}</span>
     </div>
 
-    {/* Actions */}
-    <div className="flex gap-2 mt-1">
+    {/* Footer: Action Buttons */}
+    <div className="flex gap-3 mt-2">
       <button
         onClick={() => onViewLessons(group.id)}
-        className="flex-1 bg-[#1F2937] text-white rounded-xl py-2 text-sm font-semibold hover:bg-[#374151] transition"
+        className="flex-1 bg-[#123C91] text-white rounded-xl py-2.5 text-[14px] font-medium hover:bg-blue-900 transition"
       >
         الحصص
       </button>
       <button
         onClick={() => onViewStudents(group.id)}
-        className="flex-1 border border-gray-200 text-gray-700 rounded-xl py-2 text-sm font-semibold hover:bg-gray-50 transition"
+        className="flex-1 border border-[#E5E5E5] text-[#1F2937] rounded-xl py-2.5 text-[14px] font-medium hover:bg-gray-50 transition"
       >
         الطلاب
       </button>
