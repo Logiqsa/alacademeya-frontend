@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
-import CreateLessonModal from "../../../components/teacher/groups/lessons/CreateLessonModal";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 import Pagination from "../../../components/teacher/groups/lessons/Paginationn";

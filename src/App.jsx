@@ -33,6 +33,7 @@ import GroupLessonsPage from "./pages/teacher/groups/GroupLessonsPage";
 import GroupStudentsPage from "./pages/teacher/groups/GroupStudentsPage";
 import StudentDetailsPage from "./pages/teacher/groups/StudentDetailsPage";
 import CreateGroupPage from "./components/teacher/groups/CreateGroupPage";
+import CreateLessonPage from "./components/teacher/groups/lessons/CreateLessonPage";
 
 
 function App() {
@@ -131,6 +132,10 @@ function App() {
         <Route
           path="/add-new-group"                       
           element={user ? <CreateGroupPage /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/add-new-lesson"                       
+          element={user ? <CreateLessonPage /> : <Navigate to="/login" replace />}
         />
 
         
