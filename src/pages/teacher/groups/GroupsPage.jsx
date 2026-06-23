@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Trash2, Edit3, Users, Calendar, ChevronRight, ChevronLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {  ChevronRight, ChevronLeft } from "lucide-react";
 
 import GroupStatsBar from "../../../components/teacher/groups/GroupStatsBar";
 import GroupCard from "../../../components/teacher/groups/GroupCard";
@@ -19,21 +19,32 @@ const MOCK_GROUPS = [
 ];
 
 // ─── Page Component ──────────────────────────────────────────────────────────
+// const GroupsPage = () => {
+//   const navigate = useNavigate();
+//   const [showModal, setShowModal] = useState(false);
+//   const [toast, setToast] = useState(false);
+//   const [page, setPage] = useState(1);
+//   const itemsPerPage = 6;
+
 const GroupsPage = () => {
   const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
+  const location = useLocation(); // استيراد ضروري
+  
   const [toast, setToast] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1); // تعريف متغير الصفحة مفقود
   const itemsPerPage = 6;
 
+  // استقبال التوست عند العودة من صفحة الإنشاء
+  useEffect(() => {
+    if (location.state?.showSuccessToast) {
+      setToast(true);
+      setTimeout(() => setToast(false), 3000);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const totalPages = Math.ceil(MOCK_GROUPS.length / itemsPerPage);
   const paginatedGroups = MOCK_GROUPS.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-
-  const handleSuccess = () => {
-    setToast(true);
-    setTimeout(() => setToast(false), 3000);
-  };
 
   return (
     <TeacherLayout>
