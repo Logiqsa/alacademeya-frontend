@@ -6,6 +6,8 @@ import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTabl
 import CreateLessonModal from "../../../components/teacher/groups/lessons/CreateLessonModal";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
+import Pagination from "../../../components/teacher/groups/lessons/Pagination";
+
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const MOCK_LESSONS = [
@@ -17,32 +19,49 @@ const MOCK_LESSONS = [
   { id: 6, title: "القيل الحسابي", date: "السبت 24 مايو 2026", time: "06:00 PM", duration: 60, attendance: 22, absence: 0, status: "منتهية" },
 ];
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
-const Pagination = ({ page, onChange }) => (
-  <div className="flex items-center justify-between text-sm text-gray-500">
-    <span>عرض 6 من اصل 12 حصة</span>
-    <div className="flex items-center gap-1">
-      <button onClick={() => onChange(Math.max(1, page - 1))}
-        className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-100">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      {[1, 2].map((n) => (
-        <button key={n} onClick={() => onChange(n)}
-          className={`w-8 h-8 rounded-lg text-sm font-medium transition ${page === n ? "bg-[#1F2937] text-white" : "border border-gray-200 hover:bg-gray-100"}`}>
-          {n}
-        </button>
-      ))}
-      <button onClick={() => onChange(Math.min(2, page + 1))}
-        className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-100">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    </div>
-  </div>
-);
+// const Pagination = ({ page, totalPages, onChange, totalItems, displayedCount }) => {
+//   return (
+//     <div className="flex items-center justify-between px-2 py-6 text-sm text-gray-500 w-full" dir="ltr">
+//       {/* الأزرار على اليسار */}
+//       <div className="flex items-center gap-1">
+//         <button 
+//           onClick={() => onChange(Math.max(1, page - 1))}
+//           disabled={page === 1}
+//           className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 transition-all"
+//         >
+//           <HiChevronRight size={20} />
+//         </button>
+
+//         {[...Array(totalPages)].map((_, i) => (
+//           <button 
+//             key={i + 1} 
+//             onClick={() => onChange(i + 1)}
+//             className={`w-9 h-9 rounded-lg text-sm font-semibold transition-all ${
+//               page === i + 1 
+//                 ? "bg-[#1F2937] text-white shadow-sm" 
+//                 : "border border-gray-200 hover:bg-gray-100 text-gray-600"
+//             }`}
+//           >
+//             {i + 1}
+//           </button>
+//         ))}
+
+//         <button 
+//           onClick={() => onChange(Math.min(totalPages, page + 1))}
+//           disabled={page === totalPages}
+//           className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 transition-all"
+//         >
+//           <HiChevronLeft size={20} />
+//         </button>
+//       </div>
+
+//       {/* النص على اليمين */}
+//       <span className="font-medium text-gray-500">
+//         عرض {displayedCount} من اصل {totalItems} حصة
+//       </span>
+//     </div>
+//   );
+// };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const GroupLessonsPage = () => {
@@ -50,16 +69,25 @@ const GroupLessonsPage = () => {
   const navigate = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilter] = useState("جميع الحالات");
-  const [filterTime, setFilterTime] = useState("جميع الأوقات");
+  const [search] = useState("");
+  const [filterStatus] = useState("جميع الحالات");
+
   const [page, setPage] = useState(1);
+
+
+
+  const ITEMS_PER_PAGE = 5;
+
 
   const filtered = MOCK_LESSONS.filter(
     (l) =>
       l.title.includes(search) &&
       (filterStatus === "جميع الحالات" || l.status === filterStatus)
   );
+
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedLessons = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
     <TeacherLayout>
@@ -92,23 +120,22 @@ const GroupLessonsPage = () => {
         {/* Table */}
         <div className="mt-4">
           <LessonsTable
-            lessons={filtered}
-            onView={(id) => console.log("view lesson", id)}
-            onEdit={(id) => console.log("edit lesson", id)}
-            onDelete={(id) => console.log("delete lesson", id)}
+            lessons={paginatedLessons}
+            onView={(id) => console.log("view", id)}
+            onEdit={(id) => console.log("edit", id)}
+            onDelete={(id) => console.log("delete", id)}
           />
         </div>
 
-        {/* Pagination */}
-        {/* <Pagination page={page} onChange={setPage} /> */}
 
-        {/* Modal */}
-        {showModal && (
-          <CreateLessonModal
-            onClose={() => setShowModal(false)}
-            onSuccess={(data) => console.log("new lesson", data)}
-          />
-        )}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={filtered.length} 
+          displayedCount={paginatedLessons.length} 
+          onChange={(p) => setPage(p)}
+        />
+
       </div>
 
     </TeacherLayout>

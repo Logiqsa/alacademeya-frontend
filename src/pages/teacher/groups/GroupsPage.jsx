@@ -4,7 +4,6 @@ import {  ChevronRight, ChevronLeft } from "lucide-react";
 
 import GroupStatsBar from "../../../components/teacher/groups/GroupStatsBar";
 import GroupCard from "../../../components/teacher/groups/GroupCard";
-// import CreateGroupModal from "../../../components/teacher/groups/CreateGroupPage";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
