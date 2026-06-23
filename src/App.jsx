@@ -28,6 +28,10 @@ import TeacherHome from "./pages/teacher/TeacherHome";
 import StudentHome from "./pages/student/StudentHome";
 import StudentDetailsPages from "./pages/auth/StudentDetailsPages";
 import StudentSubjectsPages from "./pages/auth/StudentSubjectsPages";
+import GroupsPage from "./pages/teacher/groups/GroupsPage";
+import GroupLessonsPage from "./pages/teacher/groups/GroupLessonsPage";
+import GroupStudentsPage from "./pages/teacher/groups/GroupStudentsPage";
+import StudentDetailsPage from "./pages/teacher/groups/StudentDetailsPage";
 
 
 function App() {
@@ -103,6 +107,30 @@ function App() {
           path="/teacher-dashboard"
           element={user ? <TeacherHome /> : <Navigate to="/login" replace />}
         />
+
+        <Route
+          path="/teacher/groups"
+          element={user ? <GroupsPage /> : <Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/teacher/groups/:groupId/lessons"                        
+          element={user ? <GroupLessonsPage /> : <Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/teacher/groups/:groupId/students"                        
+          element={user ? <GroupStudentsPage /> : <Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/teacher/groups/:groupId/students/:studentId"                       
+          element={user ? <StudentDetailsPage /> : <Navigate to="/login" replace />}
+        />
+
+        
+
+        
 
         {/* <Route
           path="/teacher-dashboard"
