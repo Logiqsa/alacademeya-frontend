@@ -6,7 +6,7 @@ import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTabl
 import CreateLessonModal from "../../../components/teacher/groups/lessons/CreateLessonModal";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
-import Pagination from "../../../components/teacher/groups/lessons/Pagination";
+import Pagination from "../../../components/teacher/groups/lessons/Paginationn";
 
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────

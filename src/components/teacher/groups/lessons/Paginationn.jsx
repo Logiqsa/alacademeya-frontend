@@ -1,7 +1,7 @@
 import React from 'react';
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 
-const Pagination = ({ page, totalPages, onChange, totalItems, displayedCount }) => {
+const Paginationn = ({ page, totalPages, onChange, totalItems, displayedCount }) => {
     return (
         <div className="flex items-center justify-between px-2 py-6 text-sm text-gray-500 w-full" >
 
@@ -45,4 +45,4 @@ const Pagination = ({ page, totalPages, onChange, totalItems, displayedCount }) 
     );
 };
 
-export default Pagination;
+export default Paginationn;
