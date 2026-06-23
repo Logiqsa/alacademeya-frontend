@@ -5,6 +5,7 @@ import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonSta
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
 import CreateLessonModal from "../../../components/teacher/groups/lessons/CreateLessonModal";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
+import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const MOCK_LESSONS = [
@@ -74,38 +75,19 @@ const GroupLessonsPage = () => {
           <button
             onClick={() => navigate("/add-new-lesson")}
             className="w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 "          >
-           إنشاء حصة جديدة
+            إنشاء حصة جديدة
           </button>
         </div>
 
         {/* Stats */}
         <div className="mb-6">
-          <LessonStatsBar  />
+          <LessonStatsBar />
         </div>
 
         {/* Filters */}
-        {/* <div className="flex gap-3 mb-4">
-          <div className="relative flex-1">
-            <input
-              value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="بحث عن حصة..."
-              className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm pr-9 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            />
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <select value={filterStatus} onChange={(e) => setFilter(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none">
-            <option>جميع الحالات</option>
-            <option>قادمة</option><option>مباشر الآن</option><option>منتهية</option><option>ملغية</option>
-          </select>
-          <select value={filterTime} onChange={(e) => setFilterTime(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none">
-            <option>جميع الأوقات</option>
-            <option>الأسبوع الحالي</option><option>الشهر الحالي</option>
-          </select>
-        </div> */}
+        <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
+          <LessonFilters />
+        </div>
 
         {/* Table */}
         {/* <div className="mb-4">
