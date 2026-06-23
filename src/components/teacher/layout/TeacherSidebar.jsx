@@ -23,34 +23,54 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
       path: "/teacher-dashboard",
     },
     {
-      title: "الأبناء",
+      title: "المجموعات",
       icon: childrenIcon,
-      path: "/parent/children",
+      path: "/teacher/groups",
     },
     {
       title: "الجدول",
       icon: scheduleIcon,
-      path: "/parent/schedule",
+      path: "/teacher/schedule",
+    },
+    {
+      title: "الواجبات",
+      icon: messagesIcon,
+      path: "/teacher/tasks",
+    },
+    {
+      title: "الاختبارات",
+      icon: subscriptionIcon,
+      path: "/teacher/exams",
+    },
+    {
+      title: "تصحيح",
+      icon: subscriptionIcon,
+      path: "/teacher/correction",
+    },
+    {
+      title: "التسجيلات",
+      icon: scheduleIcon,
+      path: "/teacher/recordings",
     },
     {
       title: "الرسائل",
       icon: messagesIcon,
-      path: "/parent/messages",
-    },
-    {
-      title: "الإشتراك",
-      icon: subscriptionIcon,
-      path: "/parent/subscription",
+      path: "/teacher/messages",
     },
     {
       title: "الإشعارات",
       icon: notificationsIcon,
-      path: "/parent/notifications",
+      path: "/teacher/notifications",
+    },
+    {
+      title: "الأرباح",
+      icon: subscriptionIcon,
+      path: "/teacher/earnings",
     },
     {
       title: "الإعدادات",
       icon: settingsIcon,
-      path: "/parent/settings",
+      path: "/teacher/settings",
     },
   ];
 
@@ -167,22 +187,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
         ))}
       </div>
 
-      {/* Footer Links */}
-      {isOpen && (
-        <div className="px-4 py-3 mx-3 mb-3 space-y-2 rounded-lg">
-          <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
-            روابط مهمة
-          </p>
 
-          <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
-            المدرسة الرئيسية
-          </p>
-
-          <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
-            المجموعات
-          </p>
-        </div>
-      )}
 
       {/* Logout */}
       <div className="p-3 border-t border-[#FFFFFF14]">

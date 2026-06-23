@@ -99,15 +99,15 @@ function App() {
 
         {/* Teacher */}
 
-        {/* <Route
-          path="/teacher-dashboard"
-          element={user ? <TeacherHome /> : <Navigate to="/login" replace />}
-        /> */}
-
         <Route
           path="/teacher-dashboard"
-          element={ <StudentHome />}
+          element={user ? <TeacherHome /> : <Navigate to="/login" replace />}
         />
+
+        {/* <Route
+          path="/teacher-dashboard"
+          element={ <StudentHome />}
+        /> */}
 
         {/* Students */}
         <Route
