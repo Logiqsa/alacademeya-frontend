@@ -4,7 +4,7 @@ import { Trash2, Edit3, Users, Calendar, ChevronRight, ChevronLeft } from "lucid
 
 import GroupStatsBar from "../../../components/teacher/groups/GroupStatsBar";
 import GroupCard from "../../../components/teacher/groups/GroupCard";
-import CreateGroupModal from "../../../components/teacher/groups/CreateGroupPage";
+// import CreateGroupModal from "../../../components/teacher/groups/CreateGroupPage";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@ const GroupsPage = () => {
   const [page, setPage] = useState(1);
   const itemsPerPage = 6;
 
-  
+
   const totalPages = Math.ceil(MOCK_GROUPS.length / itemsPerPage);
   const paginatedGroups = MOCK_GROUPS.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
@@ -103,12 +103,12 @@ const GroupsPage = () => {
           </div>
         </div>
 
-        {showModal && (
+        {/* {showModal && (
           <CreateGroupModal
             onClose={() => setShowModal(false)}
             onSuccess={handleSuccess}
           />
-        )}
+        )} */}
       </div>
     </TeacherLayout>
   );
