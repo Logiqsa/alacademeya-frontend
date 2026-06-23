@@ -1,3 +1,4 @@
+import StatsTeacherCard from "../../components/teacher/dashboard/StatsTeacherCard";
 import Welcome from "../../components/teacher/dashboard/WelcomeSection";
 import TeacherLayout from "../../components/teacher/layout/TeacherLayout";
 
@@ -7,7 +8,7 @@ const TeacherHome = () => {
     <TeacherLayout>
       <div className="space-y-6 p-2" dir="rtl">
         <Welcome />
-        {/* <StatsCards /> */}
+        <StatsTeacherCard />
 
 
         {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
