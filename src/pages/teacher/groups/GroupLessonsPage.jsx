@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import LessonStatsBar    from "../../../components/teacher/groups/lessons/LessonStatsBar";
-import LessonsTable      from "../../../components/teacher/groups/lessons/LessonsTable";
+import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
+import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
 import CreateLessonModal from "../../../components/teacher/groups/lessons/CreateLessonModal";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const MOCK_LESSONS = [
-  { id: 1, title: "المصفوفات_2",        date: "السبت 21 يونيو 2026",  time: "06:00 PM", duration: 45, attendance: null, absence: null, status: "قادمة" },
-  { id: 2, title: "المصفوفات_1",        date: "غداً 18 يونيو 2026",   time: "08:30 PM", duration: 40, attendance: null, absence: null, status: "قادمة" },
-  { id: 3, title: "التبادليل والتوافيق", date: "اليوم 17 يونيو 2026",  time: "06:00 PM", duration: 60, attendance: 21,   absence: 1,    status: "مباشر الآن" },
-  { id: 4, title: "المتتاليات",         date: "السبت 24 مايو 2026",   time: "05:30 PM", duration: 50, attendance: null, absence: null, status: "ملغية" },
-  { id: 5, title: "العدد الأولى",       date: "السبت 24 مايو 2026",   time: "11:00 AM", duration: 40, attendance: 19,   absence: 3,    status: "منتهية" },
-  { id: 6, title: "القيل الحسابي",      date: "السبت 24 مايو 2026",   time: "06:00 PM", duration: 60, attendance: 22,   absence: 0,    status: "منتهية" },
+  { id: 1, title: "المصفوفات_2", date: "السبت 21 يونيو 2026", time: "06:00 PM", duration: 45, attendance: null, absence: null, status: "قادمة" },
+  { id: 2, title: "المصفوفات_1", date: "غداً 18 يونيو 2026", time: "08:30 PM", duration: 40, attendance: null, absence: null, status: "قادمة" },
+  { id: 3, title: "التبادليل والتوافيق", date: "اليوم 17 يونيو 2026", time: "06:00 PM", duration: 60, attendance: 21, absence: 1, status: "مباشر الآن" },
+  { id: 4, title: "المتتاليات", date: "السبت 24 مايو 2026", time: "05:30 PM", duration: 50, attendance: null, absence: null, status: "ملغية" },
+  { id: 5, title: "العدد الأولى", date: "السبت 24 مايو 2026", time: "11:00 AM", duration: 40, attendance: 19, absence: 3, status: "منتهية" },
+  { id: 6, title: "القيل الحسابي", date: "السبت 24 مايو 2026", time: "06:00 PM", duration: 60, attendance: 22, absence: 0, status: "منتهية" },
 ];
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
@@ -48,11 +48,11 @@ const GroupLessonsPage = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
 
-  const [showModal,    setShowModal]   = useState(false);
-  const [search,       setSearch]      = useState("");
-  const [filterStatus, setFilter]      = useState("جميع الحالات");
-  const [filterTime,   setFilterTime]  = useState("جميع الأوقات");
-  const [page,         setPage]        = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilter] = useState("جميع الحالات");
+  const [filterTime, setFilterTime] = useState("جميع الأوقات");
+  const [page, setPage] = useState(1);
 
   const filtered = MOCK_LESSONS.filter(
     (l) =>
@@ -61,85 +61,73 @@ const GroupLessonsPage = () => {
   );
 
   return (
-      <TeacherLayout>
-    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
-      {/* Breadcrumb */}
-      <button
-        onClick={() => navigate("/teacher/groups")}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4 transition"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-        الحصص
-      </button>
-
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">مجموعة الرياضيات A</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في مكان واحد.
-          </p>
+    <TeacherLayout>
+      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3">مجموعة الرياضيات A</h3>
+            <p className="text-[16px] font-normal leading-6 text-[#575F69]">
+              إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في مكان واحد.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/add-new-lesson")}
+            className="w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 "          >
+           إنشاء حصة جديدة
+          </button>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-[#1F2937] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#374151] transition whitespace-nowrap"
-        >
-          + إنشاء حصة جديدة
-        </button>
-      </div>
 
-      {/* Stats */}
-      <div className="mb-6">
-        <LessonStatsBar total={12} upcoming={6} completed={5} cancelled={1} />
-      </div>
+        {/* Stats */}
+        <div className="mb-6">
+          <LessonStatsBar  />
+        </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1">
-          <input
-            value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث عن حصة..."
-            className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm pr-9 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        {/* Filters */}
+        {/* <div className="flex gap-3 mb-4">
+          <div className="relative flex-1">
+            <input
+              value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث عن حصة..."
+              className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm pr-9 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            />
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <select value={filterStatus} onChange={(e) => setFilter(e.target.value)}
+            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none">
+            <option>جميع الحالات</option>
+            <option>قادمة</option><option>مباشر الآن</option><option>منتهية</option><option>ملغية</option>
+          </select>
+          <select value={filterTime} onChange={(e) => setFilterTime(e.target.value)}
+            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none">
+            <option>جميع الأوقات</option>
+            <option>الأسبوع الحالي</option><option>الشهر الحالي</option>
+          </select>
+        </div> */}
+
+        {/* Table */}
+        {/* <div className="mb-4">
+          <LessonsTable
+            lessons={filtered}
+            onView={(id) => console.log("view lesson", id)}
+            onEdit={(id) => console.log("edit lesson", id)}
+            onDelete={(id) => console.log("delete lesson", id)}
           />
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        <select value={filterStatus} onChange={(e) => setFilter(e.target.value)}
-          className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none">
-          <option>جميع الحالات</option>
-          <option>قادمة</option><option>مباشر الآن</option><option>منتهية</option><option>ملغية</option>
-        </select>
-        <select value={filterTime} onChange={(e) => setFilterTime(e.target.value)}
-          className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none">
-          <option>جميع الأوقات</option>
-          <option>الأسبوع الحالي</option><option>الشهر الحالي</option>
-        </select>
+        </div> */}
+
+        {/* Pagination */}
+        {/* <Pagination page={page} onChange={setPage} /> */}
+
+        {/* Modal */}
+        {showModal && (
+          <CreateLessonModal
+            onClose={() => setShowModal(false)}
+            onSuccess={(data) => console.log("new lesson", data)}
+          />
+        )}
       </div>
-
-      {/* Table */}
-      <div className="mb-4">
-        <LessonsTable
-          lessons={filtered}
-          onView={(id)   => console.log("view lesson", id)}
-          onEdit={(id)   => console.log("edit lesson", id)}
-          onDelete={(id) => console.log("delete lesson", id)}
-        />
-      </div>
-
-      {/* Pagination */}
-      <Pagination page={page} onChange={setPage} />
-
-      {/* Modal */}
-      {showModal && (
-        <CreateLessonModal
-          onClose={() => setShowModal(false)}
-          onSuccess={(data) => console.log("new lesson", data)}
-        />
-      )}
-    </div>
 
     </TeacherLayout>
   );

@@ -1,34 +1,34 @@
-const CalIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-);
+import { Presentation, CheckSquare, Calendar, BookOpen } from "lucide-react";
 
-/**
- * Props:
- *  total, upcoming, completed, cancelled  (all numbers)
- */
 const LessonStatsBar = ({ total = 12, upcoming = 6, completed = 5, cancelled = 1 }) => {
   const stats = [
-    { label: "إجمالي الحصص",   value: total,     color: "text-blue-600",   bg: "bg-blue-50" },
-    { label: "الحصص القادمة",  value: upcoming,  color: "text-green-600",  bg: "bg-green-50" },
-    { label: "الحصص المكتملة", value: completed, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "الحصص الملغاة",  value: cancelled, color: "text-red-500",    bg: "bg-red-50" },
+    { label: "إجمالي الحصص", value: total, color: "text-teal-600", bg: "bg-teal-50", icon: BookOpen },
+    { label: "الحصص القادمة", value: upcoming, color: "text-blue-600", bg: "bg-blue-50", icon: Calendar },
+    { label: "الحصص المكتملة", value: completed, color: "text-gray-600", bg: "bg-gray-100", icon: CheckSquare },
+    { label: "الحصص الملغاة", value: cancelled, color: "text-red-600", bg: "bg-red-50", icon: Presentation },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      {stats.map((s) => (
-        <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between">
-          <div>
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {stats.map((s) => {
+        const Icon = s.icon;
+        return (
+          <div
+            key={s.label}
+           className="bg-white border border-gray-100 rounded-xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-all"
+          >
+            <div className={`p-3 rounded-lg ${s.bg}`}>
+              <Icon size={24} className={s.color} />
+            </div>
+
+            <div className="text-right">
+              <h3 className="text-2xl font-bold text-gray-800">{s.value}</h3>
+              <p className="text-gray-500 text-sm mt-1">{s.label}</p>
+            </div>
+
           </div>
-          <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
-            <CalIcon className={`w-5 h-5 ${s.color}`} />
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

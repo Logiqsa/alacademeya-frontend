@@ -62,7 +62,7 @@ const GroupsPage = () => {
           </div>
           <button
             onClick={() => navigate("/add-new-group")}
-            className="w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-[22px] hover:bg-[#0e2d6b] transition-all"
+            className="w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 hover:bg-[#0e2d6b] transition-all"
           >
             إنشاء مجموعة
           </button>
