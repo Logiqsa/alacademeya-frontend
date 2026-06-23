@@ -28,13 +28,11 @@ const MOCK_GROUPS = [
 
 const GroupsPage = () => {
   const navigate = useNavigate();
-  const location = useLocation(); // استيراد ضروري
-  
+  const location = useLocation(); 
   const [toast, setToast] = useState(false);
-  const [page, setPage] = useState(1); // تعريف متغير الصفحة مفقود
+  const [page, setPage] = useState(1); 
   const itemsPerPage = 6;
 
-  // استقبال التوست عند العودة من صفحة الإنشاء
   useEffect(() => {
     if (location.state?.showSuccessToast) {
       setToast(true);
