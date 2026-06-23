@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import StudentStatsBar from "../../../components/teacher/groups/students/StudentStatsBar";
+import StudentFilters from "../../../components/teacher/groups/students/StudentFilters";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const MOCK_STUDENTS = [
@@ -55,33 +56,19 @@ const GroupStudentsPage = () => {
 
         {/* Stats */}
         <div className=" mb-6">
-        {/* Stats */}
-        
+          {/* Stats */}
+
           <StudentStatsBar />
-        
+
         </div>
 
         {/* Filters */}
-        <div className="flex gap-3 mb-4">
-          <div className="relative flex-1">
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث عن طالب..."
-              className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm pr-9 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          </div>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none">
-            <option>جميع الحالات</option>
-            <option>نشط</option><option>مستبعد</option><option>معلق</option>
-          </select>
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none">
-            <option>تاريخ الإنضمام</option>
-            <option>الاسم</option><option>الحالة</option>
-          </select>
+        <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
+          <StudentFilters />
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
+        <div className="bg-white rounded-2xl border mt-6 border-gray-100 shadow-sm overflow-hidden mb-4">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
