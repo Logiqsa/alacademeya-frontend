@@ -41,7 +41,7 @@ const CreateLessonPage = () => {
         ))}
       </select>
       <ChevronDown
-        className="absolute left-4 top-[42px] text-[#8C9198] pointer-events-none"
+        className="absolute left-4 top-10.5 text-[#8C9198] pointer-events-none"
         size={16}
       />
     </div>
