@@ -86,7 +86,7 @@ const GroupsPage = () => {
 
         {/* Stats */}
         <div className="mb-6">
-          <GroupStatsBar total={12} active={6} suspended={3} pending={3} />
+          <GroupStatsBar />
         </div>
 
         {/* Grid */}
