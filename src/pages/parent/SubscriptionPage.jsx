@@ -126,7 +126,7 @@ const SubscriptionPage = () => {
         {/* Table */}
         <div
           className="
-            bg-white
+           
             border
             border-[#E5E5E5]
             rounded-2xl
