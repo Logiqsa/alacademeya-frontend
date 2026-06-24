@@ -16,7 +16,7 @@ const getName = (item) => {
 
 const SelectField = ({ label, value, onChange, options, placeholder, disabled, loading, error }) => (
   <div className="relative w-full">
-    <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
+    <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1 w-fit">
       {label}
     </label>
     <div className="relative">
@@ -24,8 +24,8 @@ const SelectField = ({ label, value, onChange, options, placeholder, disabled, l
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled || loading}
-        className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA]
-          font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2
+        className={`w-full h-11 sm:h-12 px-4 border rounded-lg bg-[#F9FAFA]
+          font-['IBM_Plex_Sans_Arabic'] text-[13px] sm:text-[14px] focus:outline-none focus:ring-2
           appearance-none transition-all
           ${error ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'}
           ${!value ? 'text-[#8C9198]' : 'text-[#1F2937]'}
@@ -40,7 +40,7 @@ const SelectField = ({ label, value, onChange, options, placeholder, disabled, l
         <ChevronDown size={16} />
       </div>
     </div>
-    {error && <p className="text-red-500 text-[13px] mt-1 text-right">{error}</p>}
+    {error && <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>}
   </div>
 );
 
@@ -51,9 +51,7 @@ const LANGUAGES = [
 ];
 
 const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
-  // كل المناهج من الـ API
   const [allCurriculums, setAllCurriculums] = useState([]);
-  // المناهج المفلترة بالدولة
   const [curriculums, setCurriculums]       = useState([]);
   const [stages, setStages]                 = useState([]);
   const [grades, setGrades]                 = useState([]);
@@ -66,7 +64,6 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
   const [loadingGrades, setLoadingGrades]           = useState(false);
   const [loadingSubjects, setLoadingSubjects]       = useState(false);
 
-  // جيب كل المناهج مرة واحدة عند mount
   useEffect(() => {
     setLoadingCurriculums(true);
     getCurriculums()
@@ -81,7 +78,6 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       .finally(() => setLoadingCurriculums(false));
   }, []);
 
-  // لما الدولة تتغير → فلتر المناهج وصفّر ما بعدها
   useEffect(() => {
     onChange('curriculum', '');
     onChange('stage', '');
@@ -96,20 +92,18 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       return;
     }
 
-    // لو كل منهج عنده country field → فلتر، لو لأ → اعرض الكل
     const filtered = allCurriculums.filter((c) => {
       if (c.country) {
         return c.country === countryId ||
                c.country?._id === countryId ||
                c.country?.id === countryId;
       }
-      return true; // لو مفيش country field اعرض الكل
+      return true;
     });
 
     setCurriculums(filtered.length > 0 ? filtered : allCurriculums);
   }, [countryId, allCurriculums]);
 
-  // لما المنهج يتغير → جيب المراحل
   useEffect(() => {
     setStages([]);
     setGrades([]);
@@ -132,7 +126,6 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       .finally(() => setLoadingStages(false));
   }, [data.curriculum]);
 
-  // لما المرحلة تتغير → جيب الصفوف
   useEffect(() => {
     setGrades([]);
     setAllSubjects([]);
@@ -153,7 +146,6 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       .finally(() => setLoadingGrades(false));
   }, [data.stage]);
 
-  // لما الصف يتغير → جيب المواد
   useEffect(() => {
     setAllSubjects([]);
     onChange('subjects', []);
@@ -199,11 +191,10 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
   const validate = () => {
     const next = {};
     if (!data.curriculum) next.curriculum = 'المنهج الدراسي مطلوب';
-    if (!data.stage) next.stage = 'المرحلة الدراسية مطلوبة';
-    if (!data.grade) next.grade = 'الصف الدراسي مطلوب';
-    if (!data.language) next.language = 'لغة التعلم مطلوبة';
+    if (!data.stage)      next.stage      = 'المرحلة الدراسية مطلوبة';
+    if (!data.grade)      next.grade      = 'الصف الدراسي مطلوب';
+    if (!data.language)   next.language   = 'لغة التعلم مطلوبة';
     if (!data.subjects || data.subjects.length === 0) next.subjects = 'اختر مادة واحدة على الأقل';
-
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -213,12 +204,14 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
   };
 
   return (
-    <div dir="rtl" className="w-full p-2 space-y-6">
+    <div dir="rtl" className="w-full p-2 space-y-5">
+
+      {/* العنوان */}
       <div>
-        <h2 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[20px] text-[#1F2937] text-right mb-2">
+        <h2 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[18px] sm:text-[20px] text-[#1F2937] text-right mb-1">
           المعلومات الأكاديمية
         </h2>
-        <p className="font-['IBM_Plex_Sans_Arabic'] text-[#575F69] text-[16px]">
+        <p className="font-['IBM_Plex_Sans_Arabic'] text-[#575F69] text-[14px] sm:text-[16px]">
           يرجى إدخال المعلومات الدراسية للطالب.
         </p>
       </div>
@@ -235,8 +228,8 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
         error={errors.curriculum}
       />
 
-      {/* المرحلة والصف */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* المرحلة والصف — جنب بعض على sm */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <SelectField
           label="المرحلة الدراسية"
           value={data.stage || ''}
@@ -271,7 +264,7 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
 
       {/* المواد */}
       <div className="space-y-3">
-        <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
+        <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1 w-fit">
           المواد المفضلة
         </label>
 
@@ -280,7 +273,7 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
             {selectedSubjectObjects.map((sub) => (
               <span
                 key={sub.id}
-                className="bg-[#EFF6FF] text-[#1E4FAE] px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2"
+                className="bg-[#EFF6FF] text-[#1E4FAE] px-3 py-1 rounded-full text-[13px] font-medium flex items-center gap-2"
               >
                 {sub.name}
                 <button
@@ -298,15 +291,15 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
           type="text"
           value={subjectSearch}
           onChange={(e) => setSubjectSearch(e.target.value)}
-          className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] placeholder:text-[#8C9198] focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed ${
-            errors.subjects ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'
-          }`}
+          className={`w-full h-11 sm:h-12 px-4 border rounded-lg bg-[#F9FAFA]
+            font-['IBM_Plex_Sans_Arabic'] text-[13px] sm:text-[14px]
+            placeholder:text-[#8C9198] focus:outline-none focus:ring-2
+            disabled:opacity-60 disabled:cursor-not-allowed
+            ${errors.subjects ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'}`}
           placeholder={
-            !data.grade
-              ? 'اختر الصف أولاً'
-              : loadingSubjects
-              ? 'جاري تحميل المواد...'
-              : 'ابدأ بكتابة اسم المادة...'
+            !data.grade ? 'اختر الصف أولاً'
+            : loadingSubjects ? 'جاري تحميل المواد...'
+            : 'ابدأ بكتابة اسم المادة...'
           }
           disabled={!data.grade || loadingSubjects}
         />
@@ -317,7 +310,7 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
               <li
                 key={sub.id}
                 onClick={() => { toggleSubject(sub.id); setSubjectSearch(''); }}
-                className="px-4 py-2.5 cursor-pointer hover:bg-[#F0F4FC] text-[14px] text-[#1F2937]"
+                className="px-4 py-2.5 cursor-pointer hover:bg-[#F0F4FC] text-[13px] sm:text-[14px] text-[#1F2937]"
               >
                 {sub.name}
               </li>
@@ -330,24 +323,26 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
         )}
 
         {errors.subjects && (
-          <p className="text-red-500 text-[13px] mt-1 text-right">{errors.subjects}</p>
+          <p className="text-red-500 text-[12px] mt-1 text-right">{errors.subjects}</p>
         )}
       </div>
 
-      <div className="flex gap-4 mt-10">
-        <button
-          onClick={handleNext}
-          className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer"
-        >
-          التالي
-        </button>
+      {/* الأزرار */}
+      <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
         <button
           onClick={onBack}
-          className="flex-1 py-3 border border-[#E5E5E5] rounded-xl font-medium text-[#123C91] cursor-pointer"
+          className="flex-1 py-3 border border-[#E5E5E5] rounded-xl font-medium text-[#123C91] cursor-pointer text-[14px] sm:text-[16px]"
         >
           السابق
         </button>
+        <button
+          onClick={handleNext}
+          className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px]"
+        >
+          التالي
+        </button>
       </div>
+
     </div>
   );
 };
