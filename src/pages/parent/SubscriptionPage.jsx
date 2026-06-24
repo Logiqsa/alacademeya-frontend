@@ -18,7 +18,7 @@ const SubscriptionPage = () => {
           mx-auto
           px-3
           sm:px-5
-          lg:px-8
+          lg:px-2
           py-3
           sm:py-5
           font-['IBM_Plex_Sans_Arabic']

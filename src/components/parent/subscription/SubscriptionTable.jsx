@@ -188,7 +188,7 @@ const SubscriptionTable = ({ data = defaultData }) => {
               border
               border-[#E5E5E5]
               rounded-2xl
-              p-4
+              p-6
               shadow-sm
             "
             dir="rtl"
