@@ -3,32 +3,55 @@ import { Search, ChevronDown } from 'lucide-react';
 
 const ScheduleFilters = () => {
   return (
-    <div className="flex flex-wrap items-center gap-4 mb-1" dir="rtl">
+    <div className="w-full" dir="rtl">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
 
-      <div className="relative flex-1 min-w-50" style={{ height: '48px' }}>
-        <input
-          type="text"
-          placeholder="ابحث عن مادة أو معلم..."
-          className="w-full h-full pr-10 pl-4 py-3  bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg text-sm outline-none focus:border-[#123C91] transition-colors"
-        />
-        <Search className="absolute right-3 top-1/2  -translate-y-1/2 text-[#9CA3AF]" size={18} />
+        {/* Search — grows to fill remaining space */}
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="ابحث عن مادة أو معلم..."
+            className="
+              w-full h-12
+              pr-11 pl-4
+              bg-[#F9FAFA] border border-[#E5E5E5] rounded-xl
+              text-sm text-[#1F2937] placeholder:text-[#9CA3AF]
+              outline-none focus:border-[#123C91] focus:bg-white
+              transition-colors duration-200
+            "
+          />
+          <Search
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
+            size={18}
+          />
+        </div>
+
+        {/* Group select */}
+        <div className="relative w-full sm:w-56">
+          <select
+            className="
+              w-full h-12
+              appearance-none
+              bg-[#F9FAFA] border border-[#E5E5E5] rounded-xl
+              pr-4 pl-9
+              text-sm text-[#575F69]
+              outline-none cursor-pointer
+              focus:border-[#123C91] focus:bg-white
+              transition-colors duration-200
+            "
+          >
+            <option>جميع المجموعات</option>
+            <option>الرياضيات A</option>
+            <option>الرياضيات B</option>
+            <option>الرياضيات C</option>
+          </select>
+          <ChevronDown
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none"
+            size={16}
+          />
+        </div>
+
       </div>
-
- 
-      <div className="relative" style={{ width: '280px', height: '48px' }}>
-        <select className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]">
-          <option>جميع المجموعات</option>
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
-      </div>
-
-      {/* <div className="relative" style={{ width: '240px', height: '48px' }}>
-        <select className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]">
-          <option>جميع المواد</option>
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
-      </div> */}
-
     </div>
   );
 };
