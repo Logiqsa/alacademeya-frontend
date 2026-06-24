@@ -24,7 +24,7 @@ const Row = ({ label, value }) => (
         sm:text-[15px]
         font-semibold
         text-[#1F2937]
-        break-words
+        wrap-break-word
         sm:text-left
       "
     >
@@ -296,7 +296,7 @@ const ReviewStep = ({
           onClick={onBack}
           className="
             flex-1
-            h-[52px]
+            h-13
             border
             border-[#D1D5DB]
             rounded-xl
@@ -314,7 +314,7 @@ const ReviewStep = ({
           disabled={loading}
           className="
             flex-1
-            h-[52px]
+            h-13
             bg-[#123C91]
             text-white
             rounded-xl
