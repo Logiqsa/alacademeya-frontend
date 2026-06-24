@@ -168,7 +168,7 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
       </div>
 
       {/* Footer Links */}
-      {isOpen && (
+      {/* {isOpen && (
         <div className="px-4 py-3 mx-3 mb-3 space-y-2 rounded-lg">
           <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
             روابط مهمة
@@ -182,7 +182,7 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
             المجموعات
           </p>
         </div>
-      )}
+      )} */}
 
       {/* Logout */}
       <div className="p-3 border-t border-[#FFFFFF14]">
