@@ -2,6 +2,10 @@ import React from 'react';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import TeacherLayout from '../../../components/teacher/layout/TeacherLayout';
+import StatsCards from '../../../components/teacher/schedule/StatsCards';
+import ScheduleFilters from '../../../components/teacher/schedule/ScheduleFilters';
+import CalendarStrip from '../../../components/teacher/schedule/CalendarStrip';
+import LessonsList from '../../../components/teacher/schedule/LessonCard';
 
 
 const Schedule = () => {

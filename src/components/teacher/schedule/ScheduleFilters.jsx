@@ -17,17 +17,17 @@ const ScheduleFilters = () => {
  
       <div className="relative" style={{ width: '280px', height: '48px' }}>
         <select className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]">
-          <option>جميع الأبناء</option>
+          <option>جميع المجموعات</option>
         </select>
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
       </div>
 
-      <div className="relative" style={{ width: '240px', height: '48px' }}>
+      {/* <div className="relative" style={{ width: '240px', height: '48px' }}>
         <select className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]">
           <option>جميع المواد</option>
         </select>
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
-      </div>
+      </div> */}
 
     </div>
   );
