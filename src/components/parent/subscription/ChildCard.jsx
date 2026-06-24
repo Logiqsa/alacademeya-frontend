@@ -20,7 +20,7 @@ const ChildCard = ({
       dir="rtl"
       className={`
         w-full
-        min-h-[260px]
+        min-h-65
         bg-white
         rounded-2xl
         border
