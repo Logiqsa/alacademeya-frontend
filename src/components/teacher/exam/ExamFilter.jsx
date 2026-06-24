@@ -13,7 +13,7 @@ const ExamFilters = ({
 }) => {
   return (
     <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-1" dir="rtl">
-      <div className="relative w-full sm:w-[220px] lg:w-[240px]" style={{ height: "48px" }}>
+      <div className="relative w-full sm:w-55 lg:w-60" style={{ height: "48px" }}>
         <select
           value={filterGroup}
           onChange={(e) => onFilterGroupChange?.(e.target.value)}
@@ -28,7 +28,7 @@ const ExamFilters = ({
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
       </div>
 
-      <div className="relative w-full sm:w-[190px] lg:w-[220px]" style={{ height: "48px" }}>
+      <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
         <select
           value={filterStatus}
           onChange={(e) => onFilterStatusChange?.(e.target.value)}
@@ -43,7 +43,7 @@ const ExamFilters = ({
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
       </div>
 
-      <div className="relative w-full sm:flex-1 sm:min-w-[200px]" style={{ height: "48px" }}>
+      <div className="relative w-full sm:flex-1 sm:min-w-50" style={{ height: "48px" }}>
         <input
           type="text"
           value={search}
