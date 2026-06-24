@@ -34,6 +34,7 @@ import GroupStudentsPage from "./pages/teacher/groups/GroupStudentsPage";
 import StudentDetailsPage from "./pages/teacher/groups/StudentDetailsPage";
 import CreateGroupPage from "./components/teacher/groups/CreateGroupPage";
 import CreateLessonPage from "./components/teacher/groups/lessons/CreateLessonPage";
+import AssignmentsPage from "./pages/teacher/assignments/AssignmentsPage";
 
 
 function App() {
@@ -137,6 +138,11 @@ function App() {
           path="/add-new-lesson"                       
           element={user ? <CreateLessonPage /> : <Navigate to="/login" replace />}
         />
+        <Route
+          path="/teacher/tasks"                       
+          element={user ? <AssignmentsPage /> : <Navigate to="/login" replace />}
+        />
+
 
         
 
