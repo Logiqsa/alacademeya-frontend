@@ -20,8 +20,17 @@ const Badge = ({ label, type }) => {
   );
 };
 
-const assignmentStatusBadge = (v) => (v === "نشط" ? <Badge label={v} type="blue" /> : <Badge label={v} type="gray" />);
-
+const assignmentStatusBadge = (a) => {
+  if (a.status === "نشط") {
+    return (
+      <div className="flex flex-col items-center">
+        <Badge label="نشط" type="blue" />
+        <span className="text-[10px] text-gray-400 mt-1">{a.timeRemaining}</span>
+      </div>
+    );
+  }
+  return <Badge label="مكتمل" type="gray" />;
+};
 const correctionStatusBadge = (v) => {
   if (v === "تم التصحيح") return <Badge label={v} type="green" />;
   if (v === "قيد التصحيح") return <Badge label={v} type="orange" />;
@@ -100,122 +109,37 @@ const MobileField = ({ label, children }) => (
 );
 
 
-const ExamTable = ({ assignments = [], onView, onEdit, onDelete }) => {
-  if (assignments.length === 0) {
-    return (
-      <div
-        dir="rtl"
-        className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm sm:text-base text-[#575F69]"
-      >
-        لا توجد واجبات متاحة
-      </div>
-    );
-  }
+const ExamTable = ({ Exams = [], onView, onEdit, onDelete }) => {
+ 
 
   return (
-    <div dir="rtl" className="w-full">
-      {/* ── Desktop / Tablet table (md and up) ───────────────────────────── */}
-      <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-230 text-right">
-            <thead>
-              <tr
-                style={{
-                  backgroundColor: "#F9FAFA",
-                  fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                }}
-              >
-                {[
-                  "عنوان الواجب",
-                  "المجموعة",
-                  "الحصة",
-                  "موعد التسليم",
-                  "تم التسليم",
-                  "حالة الواجب",
-                  "حالة التصحيح",
-                  "الإجراءات",
-                ].map((header) => (
-                  <th
-                    key={header}
-                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[13px] lg:text-[14px] font-medium text-right uppercase tracking-wider whitespace-nowrap"
-                    style={{ fontWeight: 500, lineHeight: "16px" }}
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {assignments.map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td
-                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69]"
-                    style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 500, fontSize: "16px", lineHeight: "20px" }}
-                  >
-                    {a.title}
-                  </td>
-
-                  {[a.group, a.lesson, a.dueDate].map((cellData, index) => (
-                    <td
-                      key={index}
-                      className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
-                      style={{
-                        fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                        fontWeight: 400,
-                        fontSize: "14px",
-                        lineHeight: "24px",
-                      }}
-                    >
-                      {cellData}
-                    </td>
-                  ))}
-
-                  <td
-                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
-                    style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontSize: "14px", lineHeight: "24px" }}
-                  >
-                    {a.submitted}/{a.totalStudents}
-                  </td>
-
-                  <td className="px-4 lg:px-6 py-3 lg:py-4">{assignmentStatusBadge(a.status)}</td>
-                  <td className="px-4 lg:px-6 py-3 lg:py-4">{correctionStatusBadge(a.correctionStatus)}</td>
-
-                  <td className="px-4 lg:px-6 py-3 lg:py-4">
-                    <ActionsMenu assignment={a} onView={onView} onEdit={onEdit} onDelete={onDelete} />
-                  </td>
-                </tr>
+    <div dir="rtl" className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-200 text-right">
+          <thead>
+            <tr className="bg-[#F9FAFA]">
+              {["عنوان الاختبار", "المجموعة", "الحصة", "موعد الاختبار", "تم التسليم", "حالة الاختبار", "حالة التصحيح", "الإجراءات"].map((h) => (
+                <th key={h} className="px-6 py-4 text-[#575F69] text-sm font-medium">{h}</th>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* ── Mobile cards (below md) ───────────────────────────────────────── */}
-      <div className="md:hidden space-y-3">
-        {assignments.map((a) => (
-          <div key={a.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[#1A1A1A] font-semibold text-[16px]" style={{ fontFamily: "Tajawal, sans-serif" }}>
-                {a.title}
-              </h4>
-              <ActionsMenu assignment={a} onView={onView} onEdit={onEdit} onDelete={onDelete} />
-            </div>
-
-            <div className="flex items-center gap-2 mb-3">
-              {assignmentStatusBadge(a.status)}
-              {correctionStatusBadge(a.correctionStatus)}
-            </div>
-
-            <div className="space-y-0.5">
-              <MobileField label="المجموعة">{a.group}</MobileField>
-              <MobileField label="الحصة">{a.lesson}</MobileField>
-              <MobileField label="موعد التسليم">{a.dueDate}</MobileField>
-              <MobileField label="تم التسليم">
-                {a.submitted}/{a.totalStudents}
-              </MobileField>
-            </div>
-          </div>
-        ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {Exams.map((a) => (
+              <tr key={a.id} className="hover:bg-gray-50/80">
+                <td className="px-6 py-4 font-medium text-[#575F69]">{a.title}</td>
+                <td className="px-6 py-4 text-sm">{a.group}</td>
+                <td className="px-6 py-4 text-sm">{a.lesson}</td>
+                <td className="px-6 py-4 text-sm whitespace-nowrap">{a.dateTime}</td>
+                <td className="px-6 py-4 text-sm">{a.submitted}/{a.totalStudents}</td>
+                <td className="px-6 py-4">{assignmentStatusBadge(a)}</td>
+                <td className="px-6 py-4">{correctionStatusBadge(a.correctionStatus)}</td>
+                <td className="px-6 py-4">
+                  <ActionsMenu assignment={a} onView={onView} onEdit={onEdit} onDelete={onDelete} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -10,12 +10,12 @@ import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const MOCK_ExamS = [
-  { id: 1, title: "حل المعادلات", group: "الرياضيات A", lesson: "المعادلات التربيعية", dueDate: "2026 يونيو 21", submitted: 24, totalStudents: 28, status: "نشط", correctionStatus: "قيد التصحيح" },
-  { id: 2, title: "مسائل تطبيقية", group: "الرياضيات A", lesson: "الهندسة", dueDate: "2026 يونيو 21", submitted: 28, totalStudents: 28, status: "منتهي", correctionStatus: "تم التصحيح" },
-  { id: 3, title: "حل المعادلات", group: "الرياضيات C", lesson: "الجبر", dueDate: "2026 يونيو 21", submitted: 28, totalStudents: 28, status: "منتهي", correctionStatus: "لم يبدأ التصحيح" },
-  { id: 4, title: "مراجعة شاملة", group: "الرياضيات A", lesson: "--", dueDate: "2026 يونيو 21", submitted: 24, totalStudents: 28, status: "منتهي", correctionStatus: "قيد التصحيح" },
-  { id: 5, title: "حل المعادلات", group: "الرياضيات B", lesson: "المعادلات التربيعية", dueDate: "2026 يونيو 21", submitted: 24, totalStudents: 28, status: "نشط", correctionStatus: "لم يبدأ التصحيح" },
-  { id: 6, title: "مسائل تطبيقية", group: "الرياضيات C", lesson: "المعادلات التربيعية_2", dueDate: "2026 يونيو 21", submitted: 20, totalStudents: 28, status: "منتهي", correctionStatus: "تم التصحيح" },
+  { id: 1, title: "حل المعادلات", group: "الرياضيات A", lesson: "المعادلات التربيعية", dateTime: "21 يونيو 2026-7:00م", submitted: 24, totalStudents: 28, status: "نشط", timeRemaining: "الوقت المتبقي 2 ساعة", correctionStatus: "قيد التصحيح" },
+  { id: 2, title: "مسائل تطبيقية", group: "الرياضيات A", lesson: "الهندسة", dateTime: "21 يونيو 2026-7:00م", submitted: 28, totalStudents: 28, status: "مكتمل", correctionStatus: "تم التصحيح" },
+  { id: 3, title: "حل المعادلات", group: "الرياضيات C", lesson: "الجبر", dateTime: "21 يونيو 2026-7:00م", submitted: 28, totalStudents: 28, status: "مكتمل", correctionStatus: "لم يبدأ التصحيح" },
+  { id: 4, title: "مراجعة شاملة", group: "الرياضيات A", lesson: "--", dateTime: "21 يونيو 2026-7:00م", submitted: 24, totalStudents: 28, status: "مكتمل", correctionStatus: "قيد التصحيح" },
+  { id: 5, title: "حل المعادلات", group: "الرياضيات B", lesson: "المعادلات التربيعية", dateTime: "21 يونيو 2026-7:00م", submitted: 24, totalStudents: 28, status: "نشط", timeRemaining: "الوقت المتبقي 2 ساعة", correctionStatus: "لم يبدأ التصحيح" },
+  { id: 6, title: "مسائل تطبيقية", group: "الرياضيات C", lesson: "المعادلات التربيعية_2", dateTime: "21 يونيو 2026-7:00م", submitted: 20, totalStudents: 28, status: "مكتمل", correctionStatus: "تم التصحيح" },
 ];
 
 const PAGE_SIZE = 6;
