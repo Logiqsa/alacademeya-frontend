@@ -5,7 +5,11 @@ import { Plus } from 'lucide-react';
 import ChildrenStatsCards from '../../components/parent/children/ChildrenStatsCard';
 import ChildrenSearch from '../../components/parent/children/ChildrenSearch';
 import ChildrenTable from '../../components/parent/children/ChildrenTable';
+
 import { getMyStudents, getStudentsStatistics } from "../../services/authService";
+import Paginationn from '../../components/teacher/groups/students/Paginationn';
+
+const PER_PAGE = 10;
 
 const ChildrenPage = () => {
     const navigate = useNavigate();
@@ -13,6 +17,7 @@ const ChildrenPage = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         const load = async () => {
@@ -22,10 +27,7 @@ const ChildrenPage = () => {
                     getStudentsStatistics(),
                 ]);
                 setStudents(studentsRes.data?.data || []);
-
                 setStats(statsRes.data?.data || null);
-                setStudents(studentsRes.data?.data || []);
-console.log("STUDENTS:", studentsRes.data?.data?.map(s => ({ id: s.id, userId: s.user?.id, name: s.user?.fullName })));
             } catch (err) {
                 console.error("فشل تحميل بيانات الأبناء:", err.response?.data);
             } finally {
@@ -40,6 +42,17 @@ console.log("STUDENTS:", studentsRes.data?.data?.map(s => ({ id: s.id, userId: s
     const filteredStudents = students.filter((s) =>
         (s.user?.fullName || "").toLowerCase().includes(search.toLowerCase())
     );
+
+    // — Pagination —
+    const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PER_PAGE));
+    const safePage = Math.min(page, totalPages);
+    const paginated = filteredStudents.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
+
+    // reset to page 1 whenever search changes
+    const handleSearch = (val) => {
+        setSearch(val);
+        setPage(1);
+    };
 
     return (
         <ParentLayout>
@@ -68,19 +81,31 @@ console.log("STUDENTS:", studentsRes.data?.data?.map(s => ({ id: s.id, userId: s
                 </div>
 
                 <div className="bg-white border mb-8 border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
-                    <ChildrenSearch value={search} onChange={setSearch} />
+                    <ChildrenSearch value={search} onChange={handleSearch} />
                 </div>
 
                 <div>
                     {loading ? (
                         <p className="text-[#575F69] text-center py-10">جاري التحميل...</p>
                     ) : (
-                        <ChildrenTable
-                            children={filteredStudents}
-                            onStudentRemoved={(removedId) =>
-                                setStudents((prev) => prev.filter((s) => s.id !== removedId))
-                            }
-                        />
+                        <>
+                            <ChildrenTable
+                                children={paginated}
+                                onStudentRemoved={(removedId) =>
+                                    setStudents((prev) => prev.filter((s) => s.id !== removedId))
+                                }
+                            />
+
+                            <Paginationn
+                                page={safePage}
+                                totalPages={totalPages}
+                                onChange={setPage}
+                                totalItems={filteredStudents.length}
+                                displayedCount={paginated.length}
+                                unitLabel="ابن"
+                            />
+
+                        </>
                     )}
                 </div>
             </div>
