@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import {  ChevronRight, ChevronLeft } from "lucide-react";
 
 import GroupStatsBar from "../../../components/teacher/groups/GroupStatsBar";
 import GroupCard from "../../../components/teacher/groups/GroupCard";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
+import Pagination from "../../../components/teacher/groups/Pagination";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 const MOCK_GROUPS = [
@@ -17,20 +17,14 @@ const MOCK_GROUPS = [
   { id: 7, name: "مجموعة الرياضيات G", grade: "الصف الثالث الثانوي", subject: "رياضيات", status: "نشطة", enrolled: 22, max: 30, nextLesson: "الحصة القادمة غداً" },
 ];
 
-// ─── Page Component ──────────────────────────────────────────────────────────
-// const GroupsPage = () => {
-//   const navigate = useNavigate();
-//   const [showModal, setShowModal] = useState(false);
-//   const [toast, setToast] = useState(false);
-//   const [page, setPage] = useState(1);
-//   const itemsPerPage = 6;
+const ITEMS_PER_PAGE = 6;
 
+// ─── Page Component ──────────────────────────────────────────────────────────
 const GroupsPage = () => {
   const navigate = useNavigate();
-  const location = useLocation(); 
+  const location = useLocation();
   const [toast, setToast] = useState(false);
-  const [page, setPage] = useState(1); 
-  const itemsPerPage = 6;
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (location.state?.showSuccessToast) {
@@ -40,37 +34,41 @@ const GroupsPage = () => {
     }
   }, [location]);
 
-  const totalPages = Math.ceil(MOCK_GROUPS.length / itemsPerPage);
-  const paginatedGroups = MOCK_GROUPS.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const paginatedGroups = MOCK_GROUPS.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
     <TeacherLayout>
       <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
         {toast && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg text-sm font-semibold">
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-4 sm:px-6 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-semibold text-center w-[90%] sm:w-auto">
             ✓ تم إنشاء مجموعتك بنجاح !
           </div>
         )}
 
-        <div className="flex items-start justify-between mb-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3">مجموعاتك التعليمية</h1>
-            <p className="text-[16px] font-normal leading-6 text-[#575F69]">
+            <h1 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
+              مجموعاتك التعليمية
+            </h1>
+            <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               استعرض جميع مجموعاتك الدراسية، ونظّم الحصص والمهام والاختبارات.
             </p>
           </div>
           <button
             onClick={() => navigate("/add-new-group")}
-            className="w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 hover:bg-[#0e2d6b] transition-all"
+            className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 hover:bg-[#0e2d6b] transition-all shrink-0"
           >
             إنشاء مجموعة
           </button>
         </div>
 
+        {/* Stats */}
         <div className="mb-6">
           <GroupStatsBar />
         </div>
 
+        {/* Groups grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {paginatedGroups.map((g) => (
             <GroupCard
@@ -84,39 +82,8 @@ const GroupsPage = () => {
           ))}
         </div>
 
-        {/* Pagination Controls */}
-        <div className="flex items-center justify-between text-sm text-gray-500 mt-6">
-          <span>عرض {paginatedGroups.length} من أصل {MOCK_GROUPS.length} مجموعة</span>
-          <div className="flex items-center gap-1">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronRight size={18} />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button key={n} onClick={() => setPage(n)}
-                className={`w-8 h-8 rounded-lg text-sm font-medium transition ${page === n ? "bg-[#123C91] text-white" : "border border-gray-200 hover:bg-gray-50"}`}>
-                {n}
-              </button>
-            ))}
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronLeft size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* {showModal && (
-          <CreateGroupModal
-            onClose={() => setShowModal(false)}
-            onSuccess={handleSuccess}
-          />
-        )} */}
+        {/* Pagination */}
+        <Pagination page={page} totalItems={MOCK_GROUPS.length} itemsPerPage={ITEMS_PER_PAGE} onChange={setPage} />
       </div>
     </TeacherLayout>
   );
