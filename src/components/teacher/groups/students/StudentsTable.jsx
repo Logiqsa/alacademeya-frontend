@@ -32,6 +32,14 @@ const ActionButton = ({ children, onClick, colorClass = "" }) => (
   </button>
 );
 
+// ─── Mobile Row Field ─────────────────────────────────────────────────────────
+const MobileField = ({ label, children }) => (
+  <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-50 last:border-b-0">
+    <span className="text-xs font-medium text-[#8C9198] shrink-0">{label}</span>
+    <span className="text-sm text-[#575F69] font-medium text-left">{children}</span>
+  </div>
+);
+
 // ─────────────────────────────────────────────────────────────
 // Students Table
 // ─────────────────────────────────────────────────────────────
@@ -41,48 +49,51 @@ const ActionButton = ({ children, onClick, colorClass = "" }) => (
  *  onView: (id) => void
  */
 const StudentsTable = ({ students = [], onView }) => {
+  if (students.length === 0) {
+    return (
+      <div
+        dir="rtl"
+        className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm sm:text-base text-[#575F69]"
+      >
+        لا يوجد طلاب
+      </div>
+    );
+  }
+
   return (
-    <div dir="rtl" className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-200 text-right">
-          <thead>
-            <tr
-              style={{
-                backgroundColor: "#F9FAFA",
-                fontFamily: "IBM Plex Sans Arabic, sans-serif",
-              }}
-            >
-              {["اسم الطالب", "تاريخ الإنضمام", "رقم الهاتف", "ولي الأمر", "الحالة", "الإجراءات"].map((header) => (
-                <th
-                  key={header}
-                  className="px-6 py-4 text-[#575F69] text-[14px] font-medium text-right uppercase tracking-wider"
-                  style={{
-                    fontWeight: 500,
-                    lineHeight: "16px",
-                  }}
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {students.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-[#575F69]">
-                  لا يوجد طلاب
-                </td>
+    <div dir="rtl" className="w-full">
+      {/* ── Desktop / Tablet table (md and up) ───────────────────────────── */}
+      <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-170 text-right">
+            <thead>
+              <tr
+                style={{
+                  backgroundColor: "#F9FAFA",
+                  fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                }}
+              >
+                {["اسم الطالب", "تاريخ الإنضمام", "رقم الهاتف", "ولي الأمر", "الحالة", "الإجراءات"].map((header) => (
+                  <th
+                    key={header}
+                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[13px] lg:text-[14px] font-medium text-right uppercase tracking-wider whitespace-nowrap"
+                    style={{ fontWeight: 500, lineHeight: "16px" }}
+                  >
+                    {header}
+                  </th>
+                ))}
               </tr>
-            ) : (
-              students.map((student) => (
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {students.map((student) => (
                 <tr key={student.id} className="hover:bg-gray-50/80 transition-colors">
                   {/* اسم الطالب */}
                   <td
-                    className="px-6 py-4 text-[#575F69]"
+                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69]"
                     style={{
                       fontFamily: "Tajawal, sans-serif",
                       fontWeight: 500,
-                      fontSize: "18px",
+                      fontSize: "16px",
                       lineHeight: "20px",
                     }}
                   >
@@ -92,11 +103,11 @@ const StudentsTable = ({ students = [], onView }) => {
                   {[student.joinDate, student.phone, student.parent].map((cellData, index) => (
                     <td
                       key={index}
-                      className="px-6 py-4 text-[#575F69]"
+                      className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
                       style={{
                         fontFamily: "IBM Plex Sans Arabic, sans-serif",
                         fontWeight: 400,
-                        fontSize: "16px",
+                        fontSize: "14px",
                         lineHeight: "24px",
                       }}
                     >
@@ -104,11 +115,11 @@ const StudentsTable = ({ students = [], onView }) => {
                     </td>
                   ))}
 
-                  <td className="px-6 py-4">
+                  <td className="px-4 lg:px-6 py-3 lg:py-4">
                     <StatusBadge status={student.status} />
                   </td>
 
-                  <td className="px-6 py-4">
+                  <td className="px-4 lg:px-6 py-3 lg:py-4">
                     <div className="flex items-center gap-2">
                       <ActionButton onClick={() => onView?.(student.id)} colorClass="text-[#575F69] hover:text-blue-600">
                         <HiOutlineEye size={18} />
@@ -116,10 +127,40 @@ const StudentsTable = ({ students = [], onView }) => {
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Mobile cards (below md) ───────────────────────────────────────── */}
+      <div className="md:hidden space-y-3">
+        {students.map((student) => (
+          <div key={student.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4
+                className="text-[#1A1A1A] font-semibold text-[16px]"
+                style={{ fontFamily: "Tajawal, sans-serif" }}
+              >
+                {student.name}
+              </h4>
+              <StatusBadge status={student.status} />
+            </div>
+
+            <div className="space-y-0.5">
+              <MobileField label="تاريخ الإنضمام">{student.joinDate}</MobileField>
+              <MobileField label="رقم الهاتف">{student.phone}</MobileField>
+              <MobileField label="ولي الأمر">{student.parent}</MobileField>
+            </div>
+
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
+              <ActionButton onClick={() => onView?.(student.id)} colorClass="text-[#575F69] hover:text-blue-600 bg-gray-50 flex-1 justify-center">
+                <HiOutlineEye size={18} />
+                <span className="text-xs font-medium mr-1">عرض</span>
+              </ActionButton>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
