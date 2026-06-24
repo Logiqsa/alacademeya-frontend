@@ -67,7 +67,7 @@ const StudentLessonsTable = ({ lessons = [] }) => {
       {/* ── Desktop / Tablet table (md and up) ───────────────────────────── */}
       <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-right">
+          <table className="w-full min-w-190 text-right">
             <thead>
               <tr
                 style={{
