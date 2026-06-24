@@ -6,7 +6,7 @@ const ChildrenSearch = ({ value, onChange }) => {
       <div className="relative flex-1 min-w-50" style={{ height: '48px' }}>
         <input
           type="text"
-          placeholder="بحث عن ابن..."
+          placeholder="بحث عن ابن....."
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="w-full h-full pr-10 pl-4 py-3 bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg text-sm outline-none focus:border-[#123C91] transition-colors"
