@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 
 import logo from "../../../assets/icons/loogo.svg";
@@ -14,75 +14,43 @@ import notificationsIcon from "../../../assets/icons/notifications.png";
 import settingsIcon from "../../../assets/icons/settings.png";
 import logoutIcon from "../../../assets/icons/logout.png";
 
+// Breakpoint matching Tailwind's `md` (768px). Below this, the sidebar
+// should start closed; at or above it, it should start open.
+const MOBILE_BREAKPOINT = 768;
 
 const TeacherSidebar = ({ isOpen, setIsOpen }) => {
   const menu = [
-    {
-      title: "لوحة التحكم",
-      icon: dashboardIcon,
-      path: "/teacher-dashboard",
-    },
-    {
-      title: "المجموعات",
-      icon: childrenIcon,
-      path: "/teacher/groups",
-    },
-    {
-      title: "الجدول",
-      icon: scheduleIcon,
-      path: "/teacher/schedule",
-    },
-    {
-      title: "الواجبات",
-      icon: messagesIcon,
-      path: "/teacher/tasks",
-    },
-    {
-      title: "الاختبارات",
-      icon: subscriptionIcon,
-      path: "/teacher/exams",
-    },
-    {
-      title: "تصحيح",
-      icon: subscriptionIcon,
-      path: "/teacher/correction",
-    },
-    {
-      title: "التسجيلات",
-      icon: scheduleIcon,
-      path: "/teacher/recordings",
-    },
-    {
-      title: "الرسائل",
-      icon: messagesIcon,
-      path: "/teacher/messages",
-    },
-    {
-      title: "الإشعارات",
-      icon: notificationsIcon,
-      path: "/teacher/notifications",
-    },
-    {
-      title: "الأرباح",
-      icon: subscriptionIcon,
-      path: "/teacher/earnings",
-    },
-    {
-      title: "الإعدادات",
-      icon: settingsIcon,
-      path: "/teacher/settings",
-    },
+    { title: "لوحة التحكم", icon: dashboardIcon, path: "/teacher-dashboard" },
+    { title: "المجموعات", icon: childrenIcon, path: "/teacher/groups" },
+    { title: "الجدول", icon: scheduleIcon, path: "/teacher/schedule" },
+    { title: "الواجبات", icon: messagesIcon, path: "/teacher/tasks" },
+    { title: "الاختبارات", icon: subscriptionIcon, path: "/teacher/exams" },
+    { title: "تصحيح", icon: subscriptionIcon, path: "/teacher/correction" },
+    { title: "التسجيلات", icon: scheduleIcon, path: "/teacher/recordings" },
+    { title: "الرسائل", icon: messagesIcon, path: "/teacher/messages" },
+    { title: "الإشعارات", icon: notificationsIcon, path: "/teacher/notifications" },
+    { title: "الأرباح", icon: subscriptionIcon, path: "/teacher/earnings" },
+    { title: "الإعدادات", icon: settingsIcon, path: "/teacher/settings" },
   ];
-
 
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  // Set the initial open/closed state once, based on screen width at
+  // mount time: closed on mobile, open on desktop. Runs only once so it
+  // doesn't fight with the user manually toggling the sidebar afterwards.
+  const didInit = useRef(false);
+  useEffect(() => {
+    if (didInit.current) return;
+    didInit.current = true;
+    const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
+    setIsOpen(!isMobile);
+  }, [setIsOpen]);
 
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
-
 
   return (
     <aside
@@ -104,14 +72,8 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
       `}
     >
       {/* Header */}
-      <div className="relative flex items-center justify-between  px-6 border-b border-[#FFFFFF14]">
-        {isOpen && (
-          <img
-            src={logo}
-            alt="logo"
-            className="object-contain w-36 h-8"
-          />
-        )}
+      <div className="relative flex items-center justify-between px-6 border-b border-[#FFFFFF14]">
+        {isOpen && <img src={logo} alt="logo" className="object-contain w-36 h-8" />}
 
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -126,16 +88,12 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
             transition
           "
         >
-          <img
-            src={toggleIcon}
-            alt="toggle"
-            className="object-contain w-7 h-7"
-          />
+          <img src={toggleIcon} alt="toggle" className="object-contain w-7 h-7" />
         </button>
       </div>
 
       {/* Menu */}
-      <div className="flex-1 px-3 mt-4">
+      <div className="flex-1 px-3 mt-4 overflow-y-auto">
         {menu.map((item) => (
           <NavLink
             key={item.path}
@@ -144,10 +102,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
             className={({ isActive }) => `
               flex
               items-center
-              ${isOpen
-                ? "gap-2 px-3 justify-start"
-                : "justify-center"
-              }
+              ${isOpen ? "gap-2 px-3 justify-start" : "justify-center"}
               py-2
               mb-1
               rounded-lg
@@ -166,16 +121,15 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
                 <img
                   src={item.icon}
                   alt={item.title}
-                  className={`w-5 h-5 shrink-0 transition-all duration-200 ${isActive
-                    ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
-                    : ""
-                    }`}
+                  className={`w-5 h-5 shrink-0 transition-all duration-200 ${
+                    isActive ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200" : ""
+                  }`}
                   style={
                     isActive
                       ? {
-                        filter:
-                          "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
-                      }
+                          filter:
+                            "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
+                        }
                       : {}
                   }
                 />
@@ -187,21 +141,19 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
         ))}
       </div>
 
-
-
       {/* Logout */}
       <div className="p-3 border-t border-[#FFFFFF14]">
         <button
           onClick={handleLogout}
-          className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${isOpen ? "gap-3 justify-start" : "justify-center"
-            }`}
+          className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${
+            isOpen ? "gap-3 justify-start" : "justify-center"
+          }`}
         >
           <img src={logoutIcon} alt="logout" className="w-5 h-5" />
 
           {isOpen && <span className="text-sm">تسجيل الخروج</span>}
         </button>
       </div>
-
     </aside>
   );
 };
