@@ -14,7 +14,6 @@ const ChildrenStatsCards = ({ stats, hasChildren = false }) => {
     },
     {
       title: "إجمالي الإختبارات",
-      // لا يوجد endpoint حالياً يرجّع عدد الاختبارات — قيمة افتراضية لحد ما يتوفر
       value: "--",
       icon: FileText,
       iconBg: "bg-[#EAF4FF]",
@@ -22,7 +21,6 @@ const ChildrenStatsCards = ({ stats, hasChildren = false }) => {
     },
     {
       title: "إجمالي الواجبات",
-      // لا يوجد endpoint حالياً يرجّع الواجبات — قيمة افتراضية لحد ما يتوفر
       value: "--",
       icon: BookOpen,
       iconBg: "bg-[#12C6B01A]",
@@ -66,4 +64,4 @@ const ChildrenStatsCards = ({ stats, hasChildren = false }) => {
   );
 };
 
-export default ChildrenStatsCards;
+export default ChildrenPage;
