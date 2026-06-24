@@ -29,7 +29,6 @@ const CountryDropdown = ({ value, onChange, countries, loading }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef(null);
-  // value الآن هو id الدولة المختارة (نخزنه في data.country.id)
   const selected = countries.find((c) => c.id === value);
 
   const filtered = countries.filter((c) =>
@@ -55,9 +54,7 @@ const CountryDropdown = ({ value, onChange, countries, loading }) => {
       </label>
       <button
         type="button"
-        onClick={() => {
-          if (!loading) { setOpen(!open); setSearch(''); }
-        }}
+        onClick={() => { if (!loading) { setOpen(!open); setSearch(''); } }}
         disabled={loading}
         className={`${inputClass} flex items-center justify-between cursor-pointer
           ${!value ? 'text-[#9CA3AF]' : 'text-[#1F2937]'}
@@ -69,11 +66,7 @@ const CountryDropdown = ({ value, onChange, countries, loading }) => {
           ) : selected ? (
             <>
               {selected.flagUrl && (
-                <img
-                  src={selected.flagUrl}
-                  alt=""
-                  className="w-5 h-3.5 object-cover rounded-xs shrink-0"
-                />
+                <img src={selected.flagUrl} alt="" className="w-5 h-3.5 object-cover rounded-xs shrink-0" />
               )}
               {selected.name}
             </>
@@ -81,10 +74,7 @@ const CountryDropdown = ({ value, onChange, countries, loading }) => {
             'اختر الدولة'
           )}
         </span>
-        <ChevronDown
-          size={18}
-          className={`text-[#9CA3AF] transition-transform ${open ? 'rotate-180' : ''}`}
-        />
+        <ChevronDown size={18} className={`text-[#9CA3AF] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
@@ -107,11 +97,7 @@ const CountryDropdown = ({ value, onChange, countries, loading }) => {
                 className="px-4 py-2.5 cursor-pointer flex items-center gap-3 hover:bg-[#F0F4FC]"
               >
                 {c.flagUrl && (
-                  <img
-                    src={c.flagUrl}
-                    alt=""
-                    className="w-5 h-3.5 object-cover rounded-xs shrink-0"
-                  />
+                  <img src={c.flagUrl} alt="" className="w-5 h-3.5 object-cover rounded-xs shrink-0" />
                 )}
                 <span>{c.name}</span>
               </li>
@@ -151,17 +137,13 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
   const validate = () => {
     const next = {};
     if (!data.fullName?.trim()) next.fullName = 'الاسم الكامل مطلوب';
-
     if (!data.email?.trim()) {
       next.email = 'البريد الإلكتروني مطلوب';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
       next.email = 'صيغة البريد الإلكتروني غير صحيحة';
     }
-
     if (!startDate) next.birthDate = 'تاريخ الميلاد مطلوب';
-
     if (!data.country?.id) next.country = 'الدولة مطلوبة';
-
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -171,7 +153,7 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
   };
 
   const inputClass = (hasError) =>
-    'w-full h-12 px-4 py-4 border rounded-lg bg-[#F9FAFA] ' +
+    'w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] ' +
     'font-["IBM_Plex_Sans_Arabic"] font-normal text-[14px] text-right ' +
     'focus:outline-none focus:ring-2 transition-all placeholder:text-[#1F293780] ' +
     (hasError
@@ -180,18 +162,20 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
 
   return (
     <div dir="rtl" className="w-full p-2">
-      <div className="mb-8">
-        <h2 className="font-medium text-[20px] text-[#1F2937] text-right mb-2">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="font-medium text-[18px] sm:text-[20px] text-[#1F2937] text-right mb-2">
           المعلومات الشخصية
         </h2>
-        <p className="text-[16px] text-[#575F69] text-right">
+        <p className="text-[14px] sm:text-[16px] text-[#575F69] text-right">
           يرجى إدخال البيانات الأساسية للطالب.
         </p>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        {/* الاسم بالكامل */}
+        <div className="sm:col-span-2">
+          <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1 w-fit">
             الاسم بالكامل
           </label>
           <input
@@ -202,12 +186,13 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
             onChange={(e) => handleField('fullName', e.target.value)}
           />
           {errors.fullName && (
-            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.fullName}</p>
+            <p className="text-red-500 text-[12px] mt-1 text-right">{errors.fullName}</p>
           )}
         </div>
 
-        <div>
-          <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
+        {/* البريد الإلكتروني */}
+        <div className="sm:col-span-2">
+          <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1 w-fit">
             البريد الإلكتروني
           </label>
           <input
@@ -218,12 +203,13 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
             onChange={(e) => handleField('email', e.target.value)}
           />
           {errors.email && (
-            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.email}</p>
+            <p className="text-red-500 text-[12px] mt-1 text-right">{errors.email}</p>
           )}
         </div>
 
+        {/* تاريخ الميلاد */}
         <div>
-          <label className="block font-['Tajawal'] font-medium text-[17px] text-right text-[#1F2937] p-2 w-fit">
+          <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1 w-fit">
             تاريخ الميلاد
           </label>
           <div className="relative w-full">
@@ -233,10 +219,10 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
               placeholderText="يوم / شهر / سنة"
               dateFormat="dd/MM/yyyy"
               wrapperClassName="w-full"
-              className={inputClass(!!errors.birthDate)}
+              className={`${inputClass(!!errors.birthDate)} pr-11`}
             />
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />
@@ -245,10 +231,11 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
             </div>
           </div>
           {errors.birthDate && (
-            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.birthDate}</p>
+            <p className="text-red-500 text-[12px] mt-1 text-right">{errors.birthDate}</p>
           )}
         </div>
 
+        {/* الدولة */}
         <div>
           <CountryDropdown
             value={data.country?.id}
@@ -257,23 +244,25 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
             onChange={(country) => handleField('country', country)}
           />
           {errors.country && (
-            <p className="text-red-500 text-[13px] mt-1 text-right">{errors.country}</p>
+            <p className="text-red-500 text-[12px] mt-1 text-right">{errors.country}</p>
           )}
         </div>
+
       </div>
 
-      <div className="flex gap-4 mt-10">
-        <button
-          onClick={handleNext}
-          className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer"
-        >
-          التالي
-        </button>
+      {/* الأزرار */}
+      <div className="flex flex-col-reverse sm:flex-row gap-3 mt-8">
         <button
           onClick={() => navigate('/parent-dashboard')}
-          className="flex-1 py-3 px-6 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium cursor-pointer"
+          className="flex-1 py-3 px-6 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium cursor-pointer text-[14px] sm:text-[16px]"
         >
           إلغاء
+        </button>
+        <button
+          onClick={handleNext}
+          className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px]"
+        >
+          التالي
         </button>
       </div>
     </div>
