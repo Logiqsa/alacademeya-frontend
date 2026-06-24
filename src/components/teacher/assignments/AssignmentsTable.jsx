@@ -99,15 +99,7 @@ const MobileField = ({ label, children }) => (
   </div>
 );
 
-// ─── AssignmentsTable ──────────────────────────────────────────────────────────
-/**
- * Props:
- *  assignments: Array<{
- *    id, title, group, lesson, dueDate, submitted, totalStudents,
- *    status,            // "نشط" | "منتهي"
- *    correctionStatus,  // "تم التصحيح" | "لم يبدأ التصحيح" | "قيد التصحيح"
- *  }>
- */
+
 const AssignmentsTable = ({ assignments = [], onView, onEdit, onDelete }) => {
   if (assignments.length === 0) {
     return (
@@ -125,7 +117,7 @@ const AssignmentsTable = ({ assignments = [], onView, onEdit, onDelete }) => {
       {/* ── Desktop / Tablet table (md and up) ───────────────────────────── */}
       <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] text-right">
+          <table className="w-full min-w-230 text-right">
             <thead>
               <tr
                 style={{
