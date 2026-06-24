@@ -59,8 +59,8 @@ const RowActions = ({ onView, onDelete }) => (
 
 const ChildrenTable = ({ children = [], onStudentRemoved }) => {
   const [deletingId, setDeletingId] = useState(null);
-  const [confirmTarget, setConfirmTarget] = useState(null); // { id, name }
-  const [viewTarget, setViewTarget] = useState(null); // student object كامل
+  const [confirmTarget, setConfirmTarget] = useState(null);
+  const [viewTarget, setViewTarget] = useState(null);
 
   const handleConfirmDelete = async () => {
     if (!confirmTarget) return;
@@ -90,7 +90,7 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
 
   return (
     <>
-      {/* عرض جدول — للشاشات المتوسطة وأكبر */}
+      {/* جدول — للشاشات المتوسطة وأكبر */}
       <div className="hidden md:block w-full bg-white border border-[#E5E5E5] rounded-lg overflow-x-auto shadow-sm" dir="rtl">
         <table className="w-full min-w-180 text-right border-collapse">
           <thead className="bg-[#F9FAFA] border-b border-[#E5E5E5]">
@@ -102,7 +102,6 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
               ))}
             </tr>
           </thead>
-
           <tbody>
             {children.map((child) => {
               const name = child.user?.fullName || "بدون اسم";
@@ -122,16 +121,13 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
                       </div>
                     </div>
                   </td>
-
                   <td className="px-6 text-[#575F69] text-[16px]">--</td>
                   <td className="px-6 text-[#575F69] text-[16px]">{performance}%</td>
                   <td className="px-6 text-[#575F69] text-[16px]">--</td>
                   <td className="px-6 text-[#575F69] text-[16px]">--</td>
-
                   <td className="px-6">
                     <StatusBadge status={child.status} />
                   </td>
-
                   <td className="px-6">
                     <RowActions
                       onView={() => setViewTarget(child)}
@@ -145,7 +141,7 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
         </table>
       </div>
 
-      {/* عرض كروت — للموبايل */}
+      {/* كروت — للموبايل */}
       <div className="md:hidden flex flex-col gap-3" dir="rtl">
         {children.map((child) => {
           const name = child.user?.fullName || "بدون اسم";
@@ -153,10 +149,7 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
           const performance = child.averageScore ?? 0;
 
           return (
-            <div
-              key={child.id}
-              className="bg-white border border-[#E5E5E5] rounded-xl p-4 shadow-sm"
-            >
+            <div key={child.id} className="bg-white border border-[#E5E5E5] rounded-xl p-4 shadow-sm">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-11 h-11 rounded-full bg-[#123C91] text-white flex items-center justify-center font-bold text-lg shrink-0">
