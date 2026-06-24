@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import ExamStatsBar from "../../../components/teacher/exam/ExamStatsBar";
 import ExamFilters from "../../../components/teacher/exam/ExamFilter";
+import ExamTable from "../../../components/teacher/exam/ExamTable";
+import Paginationn from "../../../components/teacher/groups/students/Paginationn";
+import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
@@ -53,7 +56,7 @@ const ExamPage = () => {
             </p>
           </div>
           <button
-            onClick={() => navigate("/teacher/exam/new")}
+            onClick={() => navigate("/teacher/exams/new")}
             className="order-1 sm:order-2 w-full sm:w-auto px-5 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center gap-2 font-['Tajawal'] font-medium text-[16px] shrink-0"
           >
             <Plus size={18} />
@@ -89,7 +92,7 @@ const ExamPage = () => {
 
         {/* Table */}
         <div className="mt-4">
-          <ExamsTable
+          <ExamTable
             Exams={paginatedExams}
             onView={(id) => console.log("view", id)}
             onEdit={(id) => console.log("edit", id)}

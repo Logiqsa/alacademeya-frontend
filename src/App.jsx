@@ -35,6 +35,7 @@ import StudentDetailsPage from "./pages/teacher/groups/StudentDetailsPage";
 import CreateGroupPage from "./components/teacher/groups/CreateGroupPage";
 import CreateLessonPage from "./components/teacher/groups/lessons/CreateLessonPage";
 import AssignmentsPage from "./pages/teacher/assignments/AssignmentsPage";
+import ExamPage from "./pages/teacher/exam/ExamPage";
 
 
 function App() {
@@ -142,11 +143,15 @@ function App() {
           path="/teacher/tasks"                       
           element={user ? <AssignmentsPage /> : <Navigate to="/login" replace />}
         />
+        <Route
+          path="/teacher/exams"                       
+          element={user ? <ExamPage /> : <Navigate to="/login" replace />}
+        />
 
 
         
 
-        
+      
 
         {/* <Route
           path="/teacher-dashboard"
