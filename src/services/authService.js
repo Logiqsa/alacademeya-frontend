@@ -42,6 +42,8 @@ export const getSubjects = (params) =>
 export const getAllSubjects = (params) =>
   API.get('/subjects', { params });
 
+export const removeStudent = (studentId) => API.delete(`/parents/students/${studentId}`);
+
 export const addStudent = (payload) => API.post('/parents/students', payload);
 export const getMyStudents = () => API.get('/parents/students');
 export const getStudentsStatistics = () => API.get('/parents/students/statistics');
