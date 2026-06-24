@@ -34,6 +34,14 @@ const gradeBadge = (v) => {
   return <Badge label={v} type="gray" />;
 };
 
+// ─── Mobile Row Field ─────────────────────────────────────────────────────────
+const MobileField = ({ label, children }) => (
+  <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-50 last:border-b-0">
+    <span className="text-xs font-medium text-[#8C9198] shrink-0">{label}</span>
+    <span className="text-sm text-[#575F69] font-medium text-left">{children}</span>
+  </div>
+);
+
 // ─── StudentLessonsTable ──────────────────────────────────────────────────────
 /**
  * Props:
@@ -43,50 +51,52 @@ const gradeBadge = (v) => {
  *  }>
  */
 const StudentLessonsTable = ({ lessons = [] }) => {
+  if (lessons.length === 0) {
+    return (
+      <div
+        dir="rtl"
+        className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm sm:text-base text-[#575F69]"
+      >
+        لا توجد بيانات
+      </div>
+    );
+  }
+
   return (
-    <div dir="rtl" className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-200 text-right">
-          <thead>
-            <tr
-              style={{
-                backgroundColor: "#F9FAFA",
-                fontFamily: "IBM Plex Sans Arabic, sans-serif",
-              }}
-            >
-              {["اسم الحصة", "التاريخ", "الحضور", "حالة الواجب", "الدرجة", "حالة الاختبار", "درجة الاختبار"].map(
-                (header) => (
-                  <th
-                    key={header}
-                    className="px-6 py-4 text-[#575F69] text-[14px] font-medium text-right uppercase tracking-wider"
-                    style={{
-                      fontWeight: 500,
-                      lineHeight: "16px",
-                    }}
-                  >
-                    {header}
-                  </th>
-                )
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {lessons.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-12 text-center text-[#575F69]">
-                  لا توجد بيانات
-                </td>
+    <div dir="rtl" className="w-full">
+      {/* ── Desktop / Tablet table (md and up) ───────────────────────────── */}
+      <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-right">
+            <thead>
+              <tr
+                style={{
+                  backgroundColor: "#F9FAFA",
+                  fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                }}
+              >
+                {["اسم الحصة", "التاريخ", "الحضور", "حالة الواجب", "الدرجة", "حالة الاختبار", "درجة الاختبار"].map(
+                  (header) => (
+                    <th
+                      key={header}
+                      className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[13px] lg:text-[14px] font-medium text-right uppercase tracking-wider whitespace-nowrap"
+                      style={{ fontWeight: 500, lineHeight: "16px" }}
+                    >
+                      {header}
+                    </th>
+                  )
+                )}
               </tr>
-            ) : (
-              lessons.map((lesson) => (
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {lessons.map((lesson) => (
                 <tr key={lesson.id} className="hover:bg-gray-50/80 transition-colors">
-                  {/* اسم الحصة */}
                   <td
-                    className="px-6 py-4 text-[#575F69]"
+                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69]"
                     style={{
                       fontFamily: "Tajawal, sans-serif",
                       fontWeight: 500,
-                      fontSize: "18px",
+                      fontSize: "16px",
                       lineHeight: "20px",
                     }}
                   >
@@ -94,48 +104,77 @@ const StudentLessonsTable = ({ lessons = [] }) => {
                   </td>
 
                   <td
-                    className="px-6 py-4 text-[#575F69]"
+                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
                     style={{
                       fontFamily: "IBM Plex Sans Arabic, sans-serif",
                       fontWeight: 400,
-                      fontSize: "16px",
+                      fontSize: "14px",
                       lineHeight: "24px",
                     }}
                   >
                     {lesson.date}
                   </td>
 
-                  <td className="px-6 py-4">{attendanceBadge(lesson.attendance)}</td>
-                  <td className="px-6 py-4">{homeworkBadge(lesson.homeworkStatus)}</td>
+                  <td className="px-4 lg:px-6 py-3 lg:py-4">{attendanceBadge(lesson.attendance)}</td>
+                  <td className="px-4 lg:px-6 py-3 lg:py-4">{homeworkBadge(lesson.homeworkStatus)}</td>
 
                   <td
-                    className="px-6 py-4 text-[#575F69] font-medium"
+                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] font-medium whitespace-nowrap"
                     style={{
                       fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                      fontSize: "16px",
+                      fontSize: "14px",
                       lineHeight: "24px",
                     }}
                   >
                     {lesson.grade}
                   </td>
 
-                  <td className="px-6 py-4">{gradeBadge(lesson.gradeStatus)}</td>
+                  <td className="px-4 lg:px-6 py-3 lg:py-4">{gradeBadge(lesson.gradeStatus)}</td>
 
                   <td
-                    className="px-6 py-4 text-[#575F69] font-medium"
+                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] font-medium whitespace-nowrap"
                     style={{
                       fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                      fontSize: "16px",
+                      fontSize: "14px",
                       lineHeight: "24px",
                     }}
                   >
                     {lesson.examGrade}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Mobile cards (below md) ───────────────────────────────────────── */}
+      <div className="md:hidden space-y-3">
+        {lessons.map((lesson) => (
+          <div
+            key={lesson.id}
+            className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h4
+                className="text-[#1A1A1A] font-semibold text-[16px]"
+                style={{ fontFamily: "Tajawal, sans-serif" }}
+              >
+                {lesson.title}
+              </h4>
+              {attendanceBadge(lesson.attendance)}
+            </div>
+
+            <p className="text-xs text-[#8C9198] mb-3">{lesson.date}</p>
+
+            <div className="space-y-0.5">
+              <MobileField label="حالة الواجب">{homeworkBadge(lesson.homeworkStatus)}</MobileField>
+              <MobileField label="الدرجة">{lesson.grade}</MobileField>
+              <MobileField label="حالة الاختبار">{gradeBadge(lesson.gradeStatus)}</MobileField>
+              <MobileField label="درجة الاختبار">{lesson.examGrade}</MobileField>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
