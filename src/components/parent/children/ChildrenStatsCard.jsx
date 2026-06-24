@@ -64,4 +64,4 @@ const ChildrenStatsCards = ({ stats, hasChildren = false }) => {
   );
 };
 
-export default ChildrenPage;
+export default ChildrenStatsCards;

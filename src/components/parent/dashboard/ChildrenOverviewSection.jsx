@@ -69,27 +69,24 @@ const ChildrenOverviewSection = ({ children = [] }) => {
                 key={child.id || index}
                 className="bg-[#FFFFFF] border border-[#E5E5E5] rounded-2xl p-4 flex flex-col gap-1"
               >
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`${color} text-white w-12 h-12 pb-2 flex items-center justify-center rounded-full font-['IBM_Plex_Sans_Arabic'] font-normal text-[18px] leading-6 tracking-[0%] text-center`}
+                      className={`${color} text-white w-12 h-12 flex items-center justify-center rounded-full font-['IBM_Plex_Sans_Arabic'] font-normal text-[18px]`}
                     >
                       {getInitial(name)}
                     </div>
-
                     <div>
-                      <h4 className="font-['Tajawal'] font-medium text-[20px] leading-6 tracking-normal text-[#1F2937] text-right mb-2">
+                      <h4 className="font-['Tajawal'] font-medium text-[18px] leading-6 text-[#1F2937] text-right mb-1">
                         {name}
                       </h4>
-                      <p className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-5 tracking-normal text-[#575F69] text-right">
+                      <p className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-5 text-[#575F69] text-right">
                         {gradeName}
                       </p>
                     </div>
                   </div>
-
                   <StatusBadge status={child.status} />
                 </div>
-
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-5 tracking-normal text-[#1F2937BF] text-right">
                     المعدل العام
