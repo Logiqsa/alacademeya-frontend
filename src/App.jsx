@@ -37,6 +37,7 @@ import CreateLessonPage from "./components/teacher/groups/lessons/CreateLessonPa
 import AssignmentsPage from "./pages/teacher/assignments/AssignmentsPage";
 import ExamPage from "./pages/teacher/exam/ExamPage";
 import Schedule from "./pages/teacher/schedule/Schedule";
+import Messages from "./pages/parent/Messages";
 
 
 function App() {
@@ -102,6 +103,12 @@ function App() {
           path="/parent/subscription"
           element={user ? <SubscriptionPage /> : <Navigate to="/login" replace />}
         />
+        <Route
+          path="/parent/messages"
+          element={user ? <Messages /> : <Navigate to="/login" replace />}
+        />
+
+        
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

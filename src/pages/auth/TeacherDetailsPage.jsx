@@ -1,81 +1,124 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Phone } from "lucide-react";
+import { ChevronDown, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
-import { saveTeacherDetails } from "../../services/authService";
+// import {
+//   completeTeacherProfile,
+//   getCurriculums,
+//   getCurriculumStages,
+//   getAllSubjects,
+// } from "../../services/authService";
+
+const SelectField = ({ label, name, value, onChange, options = [], placeholder, disabled }) => {
+  const getDisplayValue = (o) => {
+    // If the API returns an object for name, extract the Arabic property
+    if (typeof o === 'object' && o !== null) {
+      return o.name?.ar || o.name?.en || o.name || JSON.stringify(o);
+    }
+    return o.name ?? o;
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[13px] font-medium text-[#1F2937]">{label}</label>
+      <div className="relative">
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          className="w-full h-12 px-4 appearance-none rounded-xl border border-[#1F293733] bg-[#F9FAFA] text-[14px] outline-none cursor-pointer focus:border-[#123C91] transition-colors disabled:opacity-50"
+        >
+          <option value="" disabled>{disabled ? "جاري التحميل..." : placeholder}</option>
+          {Array.isArray(options) && options.map((o) => (
+            <option key={o.id ?? o} value={o.id ?? o}>
+              {getDisplayValue(o)}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+      </div>
+    </div>
+  );
+};
 
 const TeacherDetailsPage = () => {
   const navigate = useNavigate();
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
+  const fileRef = useRef(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingCurricula, setLoadingCurricula] = useState(true);
+  const [loadingStages, setLoadingStages] = useState(false);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [curricula, setCurricula] = useState([]);
+  const [stages, setStages] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [fileName, setFileName] = useState("");
+  const [fileObj, setFileObj] = useState(null);
+  const [form, setForm] = useState({ curriculum: "", stage: "", subject: "", experience: "" });
+
+  useEffect(() => {
+    getCurriculums().then(res => setCurricula(res.data?.data || res.data || [])).catch(() => toast.error("فشل تحميل المناهج")).finally(() => setLoadingCurricula(false));
+  }, []);
+
+  useEffect(() => {
+    if (!form.curriculum) { setStages([]); setSubjects([]); return; }
+    setLoadingStages(true);
+    getCurriculumStages(form.curriculum).then(res => setStages(res.data?.data || res.data || [])).catch(() => toast.error("فشل تحميل المراحل")).finally(() => setLoadingStages(false));
+  }, [form.curriculum]);
+
+  useEffect(() => {
+    if (!form.stage) { setSubjects([]); return; }
+    setLoadingSubjects(true);
+    getAllSubjects({ stage: form.stage, curriculum: form.curriculum }).then(res => setSubjects(res.data?.data || res.data || [])).catch(() => toast.error("فشل تحميل المواد")).finally(() => setLoadingSubjects(false));
+  }, [form.stage]);
+
+  const handleChange = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!/^1[0125][0-9]{8}$/.test(phone)) {
-      toast.error("يرجى إدخال رقم هاتف مصري صحيح");
+    setSubmitting(true);
+    
+    // Check if token exists
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error("يرجى تسجيل الدخول أولاً");
+      setSubmitting(false);
       return;
     }
-    setLoading(true);
+
+    const payload = new FormData();
+    payload.append("curriculum", form.curriculum);
+    payload.append("stage", form.stage);
+    payload.append("subject", form.subject);
+    if (form.experience) payload.append("experience", form.experience);
+    if (fileObj) payload.append("documents", fileObj);
+
     try {
-      await saveTeacherDetails({ phone: `+20${phone}` });
-      navigate("/pending", { state: { role: "teacher" } });
-    } catch {
-      toast.error("حدث خطأ، حاول مرة أخرى");
+      await completeTeacherProfile(payload);
+      navigate("/register/pending", { state: { role: "teacher" } });
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "حدث خطأ غير متوقع");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
     <AuthLayout>
-      <div className="w-full max-w-md mx-auto p-8 flex flex-col" dir="rtl">
-        <img src={logo} alt="logo" className="w-44 h-8 mb-5 cursor-pointer" />
-        <h2
-          className="text-[22px] font-bold text-[#1F2937] mb-1"
-          style={{ fontFamily: "Tajawal, sans-serif" }}
-        >
-          معلومات إضافية
-        </h2>
-        <p className="text-[13px] text-[#6B7280] mb-6">
-          نحتاج رقم هاتفك للتواصل معك بعد مراجعة طلبك
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-[13px] font-medium text-[#1F2937] mb-2">
-              رقم الهاتف
-            </label>
-            <div
-              dir="ltr"
-              className="flex w-full h-12 rounded-xl overflow-hidden border border-[#1F293733] bg-[#F9FAFA] focus-within:border-[#123C91] transition-colors"
-            >
-              <div className="w-14 shrink-0 flex items-center justify-center bg-[#E5E7EB] text-[#9CA3AF] text-[13px] border-r border-[#1F293733]">
-                +20
-              </div>
-              <input
-                type="tel"
-                maxLength={11}
-                inputMode="numeric"
-                placeholder="01xxxxxxxxx"
-                value={phone}
-                onChange={(e) =>
-                  setPhone(e.target.value.replace(/\D/g, ""))
-                }
-                className="flex-1 h-full px-3 bg-transparent outline-none text-[14px]"
-                required
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-14 rounded-xl bg-[#123C91] text-white font-medium text-[16px] disabled:opacity-70"
-            style={{ fontFamily: "Tajawal, sans-serif" }}
-          >
-            {loading ? "جاري الإرسال..." : "إرسال الطلب"}
+      <div className="w-full max-w-lg mx-auto px-6 py-8" dir="rtl">
+        <h2 className="text-[26px] font-bold mb-6">مرحباً بك...</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <SelectField label="المنهج" name="curriculum" value={form.curriculum} onChange={handleChange} options={curricula} placeholder="اختر المنهج" disabled={loadingCurricula} />
+          <SelectField label="المرحلة" name="stage" value={form.stage} onChange={handleChange} options={stages} placeholder="اختر المرحلة" disabled={!form.curriculum || loadingStages} />
+          <SelectField label="المادة" name="subject" value={form.subject} onChange={handleChange} options={subjects} placeholder="اختر المادة" disabled={!form.stage || loadingSubjects} />
+          <input name="experience" placeholder="سنوات الخبرة" value={form.experience} onChange={handleChange} className="w-full h-12 px-4 rounded-xl border border-[#1F293733]" />
+          <button type="button" onClick={() => fileRef.current?.click()} className="w-full py-5 border-dashed border-2 rounded-xl">{fileName || "ارفع الملفات"}</button>
+          <input ref={fileRef} type="file" className="hidden" onChange={(e) => { setFileName(e.target.files[0]?.name); setFileObj(e.target.files[0]); }} />
+          <button type="submit" disabled={submitting} className="w-full h-14 bg-[#123C91] text-white rounded-xl">
+            {submitting ? "جاري الإرسال..." : "تقديم الطلب"}
           </button>
         </form>
       </div>

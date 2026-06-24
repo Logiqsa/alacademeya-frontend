@@ -1,9 +1,21 @@
-const children = [
-  { name: "محمد أحمد", grade: "ثالث ثانوي", score: "85%", letter: "م", color: "bg-[#123C91]", gradeLetter: "A" },
-  { name: "سلمى أحمد", grade: "ثاني ثانوي", score: "95%", letter: "س", color: "bg-[#123C91]", gradeLetter: "A+" }
-];
+const COLOR_POOL = ["bg-[#123C91]", "bg-[#12C6B0]", "bg-[#7C3AED]", "bg-[#EA580C]"];
 
-const ChildrenOverviewSection = () => {
+const getInitial = (name) => (name?.trim()?.[0] || "؟");
+
+const StatusBadge = ({ status }) => {
+  if (status === "pending-contact") {
+    return (
+      <span className="font-['IBM_Plex_Sans_Arabic'] text-[12px] font-medium text-[#B45309] bg-[#FEF3C7] px-2.5 py-1 rounded-full">
+        قيد المراجعة
+      </span>
+    );
+  }
+  return null;
+};
+
+const ChildrenOverviewSection = ({ children = [] }) => {
+  const hasChildren = children.length > 0;
+
   return (
     <div className="bg-white border border-[#1F293726] rounded-2xl p-6 flex flex-col shadow-sm">
       <div className="flex items-center justify-between mb-6">
@@ -29,91 +41,74 @@ const ChildrenOverviewSection = () => {
         </span>
       </div>
 
-      <div className="space-y-4">
-        {children.map((child, index) => (
-          <div
-            key={index}
-            className="bg-[#FFFFFF] border border-[#E5E5E5] rounded-2xl p-4 flex flex-col gap-1"
-
+      {!hasChildren ? (
+        <div className="flex-1 flex flex-col justify-center items-center text-center py-8">
+          <p
+            className="font-['IBM_Plex_Sans_Arabic'] text-center mb-2"
+            style={{ fontWeight: 500, fontSize: '20px', lineHeight: '32px', color: '#1F2937' }}
           >
+            لا يوجد أبناء حالياً
+          </p>
+          <p
+            className="font-['IBM_Plex_Sans_Arabic'] text-center"
+            style={{ fontWeight: 400, fontSize: '16px', lineHeight: '24px', color: '#1F2937BF' }}
+          >
+            أضف أبناءك أولاً لعرض الأداء والتقدم الدراسي لأبنائك.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {children.map((child, index) => {
+            const name = child.user?.fullName || "بدون اسم";
+            const gradeName = child.grade?.name?.ar || child.grade?.name?.en || "—";
+            const score = child.averageScore ?? 0;
+            const color = COLOR_POOL[index % COLOR_POOL.length];
 
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-
-                <div
-                  className={`${child.color} text-white w-12 h-12 pb-2 flex items-center justify-center rounded-full font-['IBM_Plex_Sans_Arabic'] font-normal text-[18px] leading-6 tracking-[0%] text-center`}
-                >
-                  {child.letter}
-                </div>
-
-                <div>
-                  <h4
-                    className="font-['Tajawal'] font-medium text-[20px] leading-6 tracking-normal text-[#1F2937] text-right mb-2"
-                  >
-                    {child.name}
-                  </h4>
-                  <p
-                    className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-5 tracking-normal text-[#575F69] text-right"
-                  >
-                    {child.grade}
-                  </p>
-                </div>
-
-              </div>
-
+            return (
               <div
-                className="bg-[#12C6B0] text-white w-10 h-10 rounded-lg p-2.5 flex items-center justify-center font-bold"
+                key={child.id || index}
+                className="bg-[#FFFFFF] border border-[#E5E5E5] rounded-2xl p-4 flex flex-col gap-1"
               >
-                {child.gradeLetter}
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`${color} text-white w-12 h-12 pb-2 flex items-center justify-center rounded-full font-['IBM_Plex_Sans_Arabic'] font-normal text-[18px] leading-6 tracking-[0%] text-center`}
+                    >
+                      {getInitial(name)}
+                    </div>
+
+                    <div>
+                      <h4 className="font-['Tajawal'] font-medium text-[20px] leading-6 tracking-normal text-[#1F2937] text-right mb-2">
+                        {name}
+                      </h4>
+                      <p className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-5 tracking-normal text-[#575F69] text-right">
+                        {gradeName}
+                      </p>
+                    </div>
+                  </div>
+
+                  <StatusBadge status={child.status} />
+                </div>
+
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-5 tracking-normal text-[#1F2937BF] text-right">
+                    المعدل العام
+                  </span>
+                  <span className="font-['IBM_Plex_Sans_Arabic'] font-semibold text-[14px] leading-6 tracking-normal text-[#1F2937] text-right">
+                    {score}%
+                  </span>
+                </div>
+                <div className="w-full bg-[#123C9133] h-2 rounded-full mb-4">
+                  <div
+                    className="bg-[#123C91] h-2 rounded-full"
+                    style={{ width: `${score}%` }}
+                  ></div>
+                </div>
               </div>
-            </div>
-
-       
-            <div className="flex justify-between items-center mb-2">
-              <span
-                className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[14px] leading-5 tracking-normal text-[#1F2937BF] text-right"
-              >
-                نسبة الحضور
-              </span>
-              <span
-                className="font-['IBM_Plex_Sans_Arabic'] font-semibold text-[14px] leading-6 tracking-normal text-[#1F2937] text-right"
-              >
-                {child.score}
-              </span>
-            </div>
-            <div className="w-full bg-[#123C9133] h-2 rounded-full mb-4">
-              <div className="bg-[#123C91] h-2 rounded-full" style={{ width: child.score }}></div>
-            </div>
-
-
-            <div className="flex gap-2.5 justify-end">
-              {index === 0 ? (
-                <>
-                  {["فيزياء", "لغة عربية", "رياضيات"].map((subject) => (
-                    <span
-                      key={subject}
-                      className="flex items-center justify-center bg-[#FFFFFF] border border-[#E5E5E5] rounded-2xl font-['IBM_Plex_Sans_Arabic'] font-medium text-[12px] text-[#1F2937] h-6 px-2"
-                    >
-                      {subject}
-                    </span>
-                  ))}
-                </>
-              ) : (
-                <>
-                  {["لغة فرنسية", "جغرافيا"].map((subject) => (
-                    <span
-                      key={subject}
-                      className="flex items-center justify-center bg-[#FFFFFF] border border-[#E5E5E5] rounded-2xl font-['IBM_Plex_Sans_Arabic'] font-medium text-[12px] text-[#1F2937] h-6 px-2"
-                    >
-                      {subject}
-                    </span>
-                  ))}
-                </>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

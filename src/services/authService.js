@@ -43,3 +43,5 @@ export const getAllSubjects = (params) =>
   API.get('/subjects', { params });
 
 export const addStudent = (payload) => API.post('/parents/students', payload);
+export const getMyStudents = () => API.get('/parents/students');
+export const getStudentsStatistics = () => API.get('/parents/students/statistics');

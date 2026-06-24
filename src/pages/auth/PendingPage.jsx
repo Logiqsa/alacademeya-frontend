@@ -57,7 +57,7 @@ const PendingPage = () => {
           {content.steps.map((step, i) => (
             <div key={i} className="flex items-center gap-3 py-2">
               <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
                   step.done
                     ? "bg-[#059669]"
                     : "border-2 border-[#D1D5DB] bg-white"

@@ -9,7 +9,6 @@ export const AuthContextProvider = ({ children }) => {
         return savedUser ? JSON.parse(savedUser) : null;
     });
 
-    // أضيفي هذا داخل AuthContextProvider
     useEffect(() => {
         const savedUser = localStorage.getItem("user");
         if (savedUser) {
@@ -28,19 +27,26 @@ export const AuthContextProvider = ({ children }) => {
         const res = await loginApi(credentials);
         console.log("الرد من الـ API:", res.data);
 
-        const userData = res.data.data;
-
-        const finalUser = userData || res.data;
+        const finalUser = res.data.data;
+        const token = res.data.token;
 
         console.log("البيانات التي سيتم حفظها:", finalUser);
 
         setUser(finalUser);
         localStorage.setItem("user", JSON.stringify(finalUser));
+
+        if (token) {
+            localStorage.setItem("token", token);
+        }
+
+        // نرجّع الداتا عشان LoginForm يقدر يحدد الـ role ويوجّه صحيح
+        return { user: finalUser, token };
     };
 
     const logout = () => {
         setUser(null);
         localStorage.removeItem("user");
+        localStorage.removeItem("token");
     };
 
     return (
