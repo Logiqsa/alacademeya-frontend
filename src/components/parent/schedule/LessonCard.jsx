@@ -23,11 +23,11 @@ const LessonCard = ({
         hover:shadow-md
         transition-all
         duration-300
-        border-r-[4px]
+        border-r-4
         border-r-[#123C91]
         p-4
         w-full
-        min-h-[160px]
+        min-h-40
       "
     >
       {/* Header */}
