@@ -23,6 +23,9 @@ const MOCK_STUDENT = {
     { id: 3, title: "المتتاليات", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "تم تسليم", grade: "—", gradeStatus: "مكتمل", examGrade: "19/20" },
     { id: 4, title: "العدد الأولى", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "تم التسليم", grade: "19/20", gradeStatus: "لايوجد اختبار", examGrade: "—" },
     { id: 5, title: "القيل الحسابي", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "لا يوجد واجب", grade: "19/20", gradeStatus: "مكتمل", examGrade: "19/20" },
+    { id: 5, title: "القيل الحسابي", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "لا يوجد واجب", grade: "19/20", gradeStatus: "مكتمل", examGrade: "19/20" },
+    { id: 5, title: "القيل الحسابي", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "لا يوجد واجب", grade: "19/20", gradeStatus: "مكتمل", examGrade: "19/20" },
+    { id: 5, title: "القيل الحسابي", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "لا يوجد واجب", grade: "19/20", gradeStatus: "مكتمل", examGrade: "19/20" },
   ],
 };
 
