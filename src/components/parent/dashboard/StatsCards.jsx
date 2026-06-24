@@ -11,16 +11,9 @@ const StatsCards = ({ stats, hasChildren = false }) => {
 
   const cards = [
     {
-      title: "متوسط الحضور",
-      value: display(stats?.averageAttendance, "%"),
-      icon: TrendingUp,
-      iconBg: "bg-blue-50",
-      iconColor: "text-[#123C91]",
-    },
-    {
-      title: "الدروس هذا الشهر",
-      value: display(stats?.totalLessonsThisMonth),
-      icon: BookOpen,
+      title: "عدد الأبناء",
+      value: display(stats?.totalStudents),
+      icon: Users,
       iconBg: "bg-teal-50",
       iconColor: "text-[#12C6B0]",
     },
@@ -32,11 +25,18 @@ const StatsCards = ({ stats, hasChildren = false }) => {
       iconColor: "text-[#123C91]",
     },
     {
-      title: "عدد الأبناء",
-      value: display(stats?.totalStudents),
-      icon: Users,
+      title: "الدروس هذا الشهر",
+      value: display(stats?.totalLessonsThisMonth),
+      icon: BookOpen,
       iconBg: "bg-teal-50",
       iconColor: "text-[#12C6B0]",
+    },
+    {
+      title: "متوسط الحضور",
+      value: display(stats?.averageAttendance, "%"),
+      icon: TrendingUp,
+      iconBg: "bg-blue-50",
+      iconColor: "text-[#123C91]",
     },
   ];
 
