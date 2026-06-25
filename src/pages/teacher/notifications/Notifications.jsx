@@ -5,7 +5,7 @@ import NotificationsSection from '../../../components/teacher/notifications/Noti
 
 
 
-const Notifications = () => {
+const Notificationss = () => {
     return (
         <TeacherLayout>
             <div className="max-w-7xl mx-auto p-2 space-y-6 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
@@ -24,4 +24,4 @@ const Notifications = () => {
         </TeacherLayout>
     );
 };
-export default Notifications;
+export default Notificationss;

@@ -40,6 +40,7 @@ import Schedule from "./pages/teacher/schedule/Schedule";
 import Messages from "./pages/parent/Messages";
 import LessonDetailsPage from "./pages/teacher/groups/LessonDetailsPage";
 import AddAssignmentPage from "./components/teacher/assignments/AddAssignmentPage";
+import Notificationss from "./pages/teacher/notifications/Notifications";
 
 
 function App() {
@@ -170,6 +171,12 @@ function App() {
          path="/assignments/new"                       
           element={user ? <AddAssignmentPage /> : <Navigate to="/login" replace />}
         />
+
+        <Route
+         path="/teacher/notifications"                       
+          element={user ? <Notificationss /> : <Navigate to="/login" replace />}
+        />
+
 
         
        
