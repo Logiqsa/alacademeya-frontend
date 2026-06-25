@@ -34,14 +34,15 @@ export default function ChatBox({ conversation, onSend }) {
   return (
     <div className="flex flex-1 flex-col">
       {/* هيدر المحادثة */}
-      <div className="flex items-center justify-end gap-3 border-b border-gray-100 p-4">
-        <span className="text-sm font-semibold text-slate-800">
+      <div className="flex items-center justify-start gap-3 border-b border-gray-100 p-4">
+         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-900 text-sm font-bold text-white">
+          {conversation.avatarInitial}
+        </span>
+        <span className="text-[16px] font-semibold text-slate-800">
           {conversation.name}{" "}
           <span className="font-normal text-gray-400">({conversation.role})</span>
         </span>
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-900 text-sm font-bold text-white">
-          {conversation.avatarInitial}
-        </span>
+       
       </div>
 
       {/* الرسائل */}
@@ -54,7 +55,7 @@ export default function ChatBox({ conversation, onSend }) {
                 className={`max-w-[75%] rounded-2xl px-4 py-3 ${
                   isMe
                     ? "rounded-tl-sm bg-blue-900 text-white"
-                    : "rounded-tr-sm border border-blue-100 bg-blue-50/60 text-slate-700"
+                    : "rounded-tr-sm border border-blue-100 bg-[#EAF4FF] text-slate-700"
                 }`}
               >
                 <p className="text-sm leading-relaxed">{m.text}</p>
