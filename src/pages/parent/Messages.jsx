@@ -83,25 +83,54 @@ export default function Messages() {
 
   return (
     <ParentLayout>
-    <div className="p-6" dir="rtl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">مركز الرسائل</h1>
-        <p className="text-sm text-gray-400">التواصل مع المعلمين و الإدارة حول أبنائك</p>
-      </div>
+      <div className="max-w-7xl mx-auto p-2 space-y-6 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+        <div >
+          <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">مركز الرسائل</h1>
+          <p className="text-[16px] font-normal leading-6 text-[#575F69]">التواصل مع المعلمين و الإدارة حول أبنائك</p>
+        </div>
 
-      <div className="flex h-[600px] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <ConversationsList
-          conversations={conversations}
-          activeId={activeId}
-          onSelect={handleSelect}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-        />
-        <ChatBox conversation={activeConversation} onSend={handleSend} />
+        <div
+          className="grid"
+          style={{
+            gridTemplateColumns: "1.3fr 3fr",
+            gap: "16px",
+          }}
+        >
+          <div
+            className="flex flex-col overflow-hidden bg-white"
+            style={{
+              height: "700px",
+              borderRadius: "24px",
+              border: "1px solid #E5E5E5",
+              paddingLeft: "10px",
+              paddingRight: "10px",
+              gap: "8px",
+            }}
+          >
+            <ConversationsList
+              conversations={conversations}
+              activeId={activeId}
+              onSelect={handleSelect}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+            />
+          </div>
+
+          <div
+            className="flex flex-col overflow-hidden bg-white"
+            style={{
+              height: "700px",
+              borderRadius: "24px",
+              border: "1px solid #E5E5E5",
+              gap: "24px",
+            }}
+          >
+            <ChatBox conversation={activeConversation} onSend={handleSend} />
+          </div>
+        </div>
       </div>
-    </div>
     </ParentLayout>
   );
 }
