@@ -48,25 +48,18 @@ const PageHeader = ({ lesson, onBack }) => (
 
     <div dir="rtl" className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
-            <button
-                onClick={onBack}
-                className="w-9 h-9 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-[#575F69] hover:border-[#123C91] hover:text-[#123C91] transition-all flex-shrink-0"
-            >
-                <HiOutlineArrowRight size={18} />
-            </button>
+           
             <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                     <h1
-                        className="text-xl font-bold text-[#1A1A1A]"
-                        style={{ fontFamily: "Tajawal, sans-serif" }}
+                        className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3"
                     >
                         {lesson.title}
                     </h1>
                     <StatusBadge status={lesson.status} />
                 </div>
                 <p
-                    className="text-sm text-[#8C9198] mt-0.5"
-                    style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
+                    cclassName="text-[16px] font-normal leading-6 text-[#575F69]"
                 >
                     {lesson.groupName} • {lesson.date} • {lesson.time} • {lesson.duration}
                 </p>
@@ -80,10 +73,11 @@ const LessonDetailsPage = ({ lesson = DEMO_LESSON, onBack }) => {
     return (
         <TeacherLayout>
             <div
-                className="min-h-screen bg-[#F9FAFA] p-4 sm:p-6 lg:p-8"
-                style={{ fontFamily: "IBM Plex Sans Arabic, Tajawal, sans-serif" }}
+                className="w-full p-1 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl"
             >
-                <div className="max-w-5xl mx-auto space-y-5">
+              
+                <div className="mx-auto space-y-5">
+                    
                     {/* Header */}
                     <PageHeader lesson={lesson} onBack={onBack || (() => window.history.back())} />
 
