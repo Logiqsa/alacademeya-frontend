@@ -1,48 +1,44 @@
-import React, { useState } from "react";
-import { HiOutlineShare, HiOutlineClipboardCopy, HiOutlineCheckCircle } from "react-icons/hi";
-import { HiOutlineVideoCamera } from "react-icons/hi";
+import React from "react";
+import { Share2 } from "lucide-react";
 
-const LiveLessonLink = ({ lessonUrl = "https://lesson.link/abc123", isLive = false }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(lessonUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
+const LiveLessonLink = ({ onStart }) => {
   return (
     <div
       className="w-full rounded-2xl bg-[#1F2937] text-white px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
       dir="rtl"
     >
+      {/* Text */}
       <div className="flex-1">
         <h3
-          className="text-base font-semibold mb-1"
+          className="text-[16px] font-semibold mb-2"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           رابط الحصة المباشرة
         </h3>
-        <p className="text-sm text-gray-400" style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}>
+        <p
+          className="text-[14px] text-gray-400"
+          style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
+        >
           شارك الرابط مع الطلاب للانضمام
         </p>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 shrink-0">
+
         <button
-          onClick={handleCopy}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm font-medium transition-all"
+          onClick={onStart}
+          className="flex items-center gap-2 px-7 py-2.5 rounded-xl bg-white text-[#1F2937] text-[16px] font-semibold hover:bg-gray-100 transition-all"
           style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
         >
-          {copied ? <HiOutlineCheckCircle size={17} className="text-green-400" /> : <HiOutlineClipboardCopy size={17} />}
-          {copied ? "تم النسخ" : "نسخ الرابط"}
-        </button>
-        <button
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00A63E] hover:bg-[#008f35] text-sm font-semibold transition-all"
-          style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
-        >
-          <HiOutlineVideoCamera size={17} />
           بدء الدرس
+        </button>
+
+        <button
+          className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-all"
+          aria-label="مشاركة الرابط"
+        >
+          <Share2 size={18} />
         </button>
       </div>
     </div>
