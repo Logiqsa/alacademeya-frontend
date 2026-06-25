@@ -56,7 +56,7 @@ const AssignmentsPage = () => {
             </p>
           </div>
           <button
-            onClick={() => navigate("/teacher/assignments/new")}
+            onClick={() => navigate("/assignments/new")}
             className="order-1 sm:order-2 w-full sm:w-auto px-5 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center gap-2 font-['Tajawal'] font-medium text-[16px] shrink-0"
           >
             <Plus size={18} />
