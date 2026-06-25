@@ -38,6 +38,7 @@ import AssignmentsPage from "./pages/teacher/assignments/AssignmentsPage";
 import ExamPage from "./pages/teacher/exam/ExamPage";
 import Schedule from "./pages/teacher/schedule/Schedule";
 import Messages from "./pages/parent/Messages";
+import LessonDetailsPage from "./pages/teacher/groups/LessonDetailsPage";
 
 
 function App() {
@@ -159,7 +160,12 @@ function App() {
           path="/teacher/schedule"                       
           element={user ? <Schedule /> : <Navigate to="/login" replace />}
         />
+        <Route
+         path="/lessons/:lessonId"                       
+          element={user ? <LessonDetailsPage /> : <Navigate to="/login" replace />}
+        />
 
+        
 
         
 

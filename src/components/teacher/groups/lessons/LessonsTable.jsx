@@ -1,5 +1,6 @@
 import React from "react";
 import { HiOutlineEye, HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
 
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -11,18 +12,14 @@ const StatusBadge = ({ status }) => {
 
   return (
     <span
-      className={`inline-flex items-center justify-center px-3 py-1 text-[11px] md:text-xs font-semibold rounded-full whitespace-nowrap ${
-        styles[status] || "bg-gray-100 text-gray-600"
-      }`}
+      className={`inline-flex items-center justify-center px-3 py-1 text-[11px] md:text-xs font-semibold rounded-full whitespace-nowrap ${styles[status] || "bg-gray-100 text-gray-600"
+        }`}
     >
       {status}
     </span>
   );
 };
 
-// ─────────────────────────────────────────────────────────────
-// Action Button (Styled to fit the table)
-// ─────────────────────────────────────────────────────────────
 const ActionButton = ({ children, onClick, colorClass = "" }) => (
   <button
     onClick={onClick}
@@ -32,7 +29,6 @@ const ActionButton = ({ children, onClick, colorClass = "" }) => (
   </button>
 );
 
-// ─── Mobile Row Field ─────────────────────────────────────────────────────────
 const MobileField = ({ label, children }) => (
   <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-50 last:border-b-0">
     <span className="text-xs font-medium text-[#8C9198] shrink-0">{label}</span>
@@ -40,10 +36,13 @@ const MobileField = ({ label, children }) => (
   </div>
 );
 
-// ─────────────────────────────────────────────────────────────
-// Lessons Table
-// ─────────────────────────────────────────────────────────────
-const LessonsTable = ({ lessons = [], onView, onEdit, onDelete }) => {
+const LessonsTable = ({ lessons = [], onEdit, onDelete }) => {
+  const navigate = useNavigate();
+
+  const handleView = (lessonId) => {
+    navigate(`/lessons/${lessonId}`);
+  };
+
   if (lessons.length === 0) {
     return (
       <div
@@ -123,13 +122,22 @@ const LessonsTable = ({ lessons = [], onView, onEdit, onDelete }) => {
 
                   <td className="px-4 lg:px-6 py-3 lg:py-4">
                     <div className="flex items-center gap-2">
-                      <ActionButton onClick={() => onView?.(lesson.id)} colorClass="text-[#575F69] hover:text-blue-600">
+                      <ActionButton
+                        onClick={() => handleView(lesson.id)}
+                        colorClass="text-[#575F69] hover:text-blue-600"
+                      >
                         <HiOutlineEye size={18} />
                       </ActionButton>
-                      <ActionButton onClick={() => onEdit?.(lesson.id)} colorClass="text-[#575F69] hover:text-amber-600">
+                      <ActionButton
+                        onClick={() => onEdit?.(lesson.id)}
+                        colorClass="text-[#575F69] hover:text-amber-600"
+                      >
                         <HiOutlinePencil size={18} />
                       </ActionButton>
-                      <ActionButton onClick={() => onDelete?.(lesson.id)} colorClass="text-[#575F69] hover:text-red-600">
+                      <ActionButton
+                        onClick={() => onDelete?.(lesson.id)}
+                        colorClass="text-[#575F69] hover:text-red-600"
+                      >
                         <HiOutlineTrash size={18} />
                       </ActionButton>
                     </div>
@@ -165,7 +173,7 @@ const LessonsTable = ({ lessons = [], onView, onEdit, onDelete }) => {
 
             <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
               <ActionButton
-                onClick={() => onView?.(lesson.id)}
+                onClick={() => handleView(lesson.id)}
                 colorClass="text-[#575F69] hover:text-blue-600 bg-gray-50 flex-1 justify-center"
               >
                 <HiOutlineEye size={18} />
