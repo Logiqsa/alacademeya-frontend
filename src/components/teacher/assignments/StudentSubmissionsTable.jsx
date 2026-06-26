@@ -77,7 +77,7 @@ const CorrectionModal = ({ student, onClose, onSubmit }) => {
               strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="shrink-0 sm:w-[22px] sm:h-[22px]"
+              className="shrink-0 sm:w-5.5 sm:h-5.5"
             >
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
@@ -250,7 +250,7 @@ const StudentRow = ({ student, onCorrect, onEdit }) => {
         <div className="w-7 h-7 rounded-full bg-[#EAF4FF] text-[#123C91] text-xs font-semibold flex items-center justify-center shrink-0">
           {student.initial}
         </div>
-        <span
+        <h2
           className="truncate"
           style={{
             fontFamily: "Tajawal, sans-serif",
@@ -260,11 +260,11 @@ const StudentRow = ({ student, onCorrect, onEdit }) => {
           }}
         >
           {student.name}
-        </span>
+        </h2>
       </div>
 
       {/* Actions area — wraps gracefully on narrow screens */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap sm:shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3  flex-wrap sm:flex-nowrap sm:shrink-0">
         {student.submittedCount && <SubmissionCount value={student.submittedCount} />}
         {submissionBadge(student.submitted)}
 
