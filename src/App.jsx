@@ -41,6 +41,7 @@ import Messages from "./pages/parent/Messages";
 import LessonDetailsPage from "./pages/teacher/groups/LessonDetailsPage";
 import AddAssignmentPage from "./components/teacher/assignments/AddAssignmentPage";
 import Notificationss from "./pages/teacher/notifications/Notifications";
+import AssignmentDetailsPage from "./pages/teacher/assignments/AssignmentDetailsPage";
 
 
 function App() {
@@ -175,6 +176,12 @@ function App() {
         <Route
          path="/teacher/notifications"                       
           element={user ? <Notificationss /> : <Navigate to="/login" replace />}
+        />
+
+        {/* Assignment details — shows correction stats and per-student submission status */}
+        <Route
+         path="/teacher/assignments/:assignmentId"
+          element={user ? <AssignmentDetailsPage /> : <Navigate to="/login" replace />}
         />
 
 

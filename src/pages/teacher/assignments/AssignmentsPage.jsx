@@ -94,9 +94,7 @@ const AssignmentsPage = () => {
         <div className="mt-4">
           <AssignmentsTable
             assignments={paginatedAssignments}
-            onView={(id) => console.log("view", id)}
-            onEdit={(id) => console.log("edit", id)}
-            onDelete={(id) => console.log("delete", id)}
+            onView={(id) => navigate(`/teacher/assignments/${id}`)}
           />
         </div>
 
