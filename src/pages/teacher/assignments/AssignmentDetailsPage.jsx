@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FileCheck2, FileClock, FilesIcon } from "lucide-react";
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-// Replace this with a real fetch (e.g. by assignmentId) once the API is ready.
 const MOCK_ASSIGNMENT = {
   id: "1",
   title: "حل المعادلات",
