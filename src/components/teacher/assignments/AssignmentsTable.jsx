@@ -26,7 +26,6 @@ const Badge = ({ label, type, subLabel }) => {
   );
 };
 
-// "نشط" -> blue, "منتهي" -> gray, with optional time-remaining note under "نشط"
 const assignmentStatusBadge = (status, timeRemaining) => {
   if (status === "نشط") {
     return <Badge label={status} type="blue" subLabel={timeRemaining ? `الوقت المتبقي ${timeRemaining}` : null} />;
@@ -37,7 +36,7 @@ const assignmentStatusBadge = (status, timeRemaining) => {
 const correctionStatusBadge = (v) => {
   if (v === "تم التصحيح") return <Badge label={v} type="green" />;
   if (v === "قيد التصحيح") return <Badge label={v} type="orange" />;
-  return <Badge label={v} type="gray" />; // "لم يبدأ التصحيح"
+  return <Badge label={v} type="gray" />; 
 };
 
 // ─── View Action (single eye icon) ────────────────────────────────────────────
@@ -85,7 +84,7 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
 
   return (
     <div dir="rtl" className="w-full">
-      {/* ── Desktop / Tablet table (md and up) ───────────────────────────── */}
+    
       <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-230 text-right">
@@ -163,7 +162,7 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
         </div>
       </div>
 
-      {/* ── Mobile cards (below md) ───────────────────────────────────────── */}
+
       <div className="md:hidden space-y-3">
         {assignments.map((a) => (
           <div key={a.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
