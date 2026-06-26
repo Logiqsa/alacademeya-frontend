@@ -42,6 +42,7 @@ import LessonDetailsPage from "./pages/teacher/groups/LessonDetailsPage";
 import AddAssignmentPage from "./components/teacher/assignments/AddAssignmentPage";
 import Notificationss from "./pages/teacher/notifications/Notifications";
 import AssignmentDetailsPage from "./pages/teacher/assignments/AssignmentDetailsPage";
+import TeacherMessages from "./pages/teacher/messages/Messages";
 
 
 function App() {
@@ -182,6 +183,10 @@ function App() {
         <Route
          path="/teacher/assignments/:assignmentId"
           element={user ? <AssignmentDetailsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route
+         path="//teacher/messages"
+          element={user ? <TeacherMessages/> : <Navigate to="/login" replace />}
         />
 
 
