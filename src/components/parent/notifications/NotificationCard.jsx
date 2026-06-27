@@ -1,4 +1,4 @@
-// NotificationCard.jsx
+
 import React from "react";
 import { Eye, EyeOff, GraduationCap, Settings } from "lucide-react";
 

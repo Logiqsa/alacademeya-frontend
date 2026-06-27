@@ -1,4 +1,4 @@
-// NotificationsSection.jsx
+
 import React, { useState, useEffect } from "react";
 import { Bell, BellRing, GraduationCap, Settings } from "lucide-react";
 import NotificationCard from "./NotificationCard";

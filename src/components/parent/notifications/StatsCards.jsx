@@ -1,4 +1,4 @@
-// StatsCards.jsx
+
 import { Bell, BellOff, GraduationCap, Settings } from "lucide-react";
 
 const StatsCardds = ({ notifications = [] }) => {
