@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { getMyStudentsSubscriptions } from "../../services/authService";
 
-// تحويل status اللي جاي من الـ backend لنص عربي للعرض
 const STATUS_MAP = {
   active: "نشطة",
   expired: "منتهية",
@@ -17,9 +16,6 @@ const STATUS_MAP = {
 
 const mapStatus = (status) => STATUS_MAP[status] || status;
 
-// تحويل subscription واحد جاي من الـ API لصفوف متعددة في الجدول
-// كل item (معلم/مادة) بيتحول لصف مستقل، بس بنحمل معلومة "groupSize"
-// عشان الجدول يقدر يدمج خلية اسم الابن بصرياً (rowSpan) على عدد صفوفه
 const mapSubscriptionToRows = (sub) => {
   const groupId = sub.id;
   const studentName = sub.student?.user?.fullName || "--";
@@ -63,14 +59,13 @@ const mapSubscriptionToRows = (sub) => {
       name: studentName,
       subjectName,
       teacherName,
-      // ملاحظة: الـ backend مش بيرجع عدد الساعات المستهلكة/المتبقية حالياً
-      // بنفترض إن كل "session" = ساعة لحد ما يتوفر endpoint يوضح ده بدقة
+     
       totalHours: item.package?.sessions != null ? `${item.package.sessions} ساعة` : "--",
       consumed: "--",
       remaining: "--",
       duration: "شهر",
       startDate,
-      // الـ backend مش بيرجع تاريخ انتهاء حالياً
+  
       endDate: "--",
       amount: item.finalPrice != null ? `EGP ${item.finalPrice.toLocaleString()}` : "--",
       status: mapStatus(item.status || sub.status),
@@ -86,7 +81,6 @@ const SubscriptionPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // قيم الفلاتر: البحث النصي (ابن أو مادة/معلم)، الابن المختار، والحالة المختارة
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -96,8 +90,7 @@ const SubscriptionPage = () => {
       setIsLoading(true);
       setError(null);
       try {
-        // GET /parents/students/subscriptions بيرجع تلقائياً
-        // اشتراكات أولاد الأب المسجل دخوله فقط (مفلترة من الـ backend بالتوكن)
+    
         const res = await getMyStudentsSubscriptions();
         setSubscriptions(res.data?.data || []);
       } catch (err) {
@@ -113,12 +106,9 @@ const SubscriptionPage = () => {
 
   const tableRows = subscriptions.flatMap(mapSubscriptionToRows);
 
-  // خيارات فلتر "الأبناء" و "الحالة" بتتولد ديناميكياً من الداتا الحقيقية،
-  // عشان القايمة تفضل متوافقة مع أي أبناء/حالات جديدة من غير تعديل يدوي
   const studentOptions = [...new Set(tableRows.map((row) => row.name))];
   const statusOptions = [...new Set(tableRows.map((row) => row.status))];
 
-  // تطبيق الفلاتر الثلاثة على صفوف الجدول: البحث النصي، الابن، والحالة
   const filteredTableRows = tableRows.filter((row) => {
     const matchesSearch =
       searchTerm.trim() === "" ||
@@ -132,8 +122,7 @@ const SubscriptionPage = () => {
     return matchesSearch && matchesStudent && matchesStatus;
   });
 
-  // الكروت محتاجة صف واحد فريد لكل ابن (مش صف لكل معلم)، فبنفلتر بحيث ناخد
-  // أول صف بس من كل مجموعة (groupId) لعرضه في الكارت - بعد تطبيق الفلاتر
+
   const cardRows = filteredTableRows.filter((row, index) => {
     const firstIndexOfGroup = filteredTableRows.findIndex((r) => r.groupId === row.groupId);
     return firstIndexOfGroup === index;
@@ -218,7 +207,7 @@ const SubscriptionPage = () => {
           </button>
         </div>
 
-        {/* Loading State */}
+      
         {isLoading && (
           <div className="text-center py-10 text-[#575F69]">
             جاري تحميل الاشتراكات...
