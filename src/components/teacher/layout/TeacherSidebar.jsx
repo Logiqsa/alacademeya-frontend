@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useRef } from "react";
+import { useContext } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 
 import logo from "../../../assets/icons/loogo.svg";
@@ -13,10 +13,6 @@ import subscriptionIcon from "../../../assets/icons/subscription.png";
 import notificationsIcon from "../../../assets/icons/notifications.png";
 import settingsIcon from "../../../assets/icons/settings.png";
 import logoutIcon from "../../../assets/icons/logout.png";
-
-// Breakpoint matching Tailwind's `md` (768px). Below this, the sidebar
-// should start closed; at or above it, it should start open.
-const MOBILE_BREAKPOINT = 768;
 
 const TeacherSidebar = ({ isOpen, setIsOpen }) => {
   const menu = [
@@ -34,16 +30,11 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Set the initial open/closed state once, based on screen width at
-  // mount time: closed on mobile, open on desktop. Runs only once so it
-  // doesn't fight with the user manually toggling the sidebar afterwards.
-  const didInit = useRef(false);
-  useEffect(() => {
-    if (didInit.current) return;
-    didInit.current = true;
-    const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
-    setIsOpen(!isMobile);
-  }, [setIsOpen]);
+  // Note: the initial open/closed state is decided once in the parent
+  // (TeacherLayout) via a lazy useState initializer, based on screen
+  // width at first render. That avoids a flash of the sidebar being
+  // open-then-closing on mobile. From here on, isOpen is just controlled
+  // by the toggle button below.
 
   const handleLogout = () => {
     logout();
