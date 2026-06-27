@@ -13,69 +13,6 @@ const statusStyle = (status) => {
   return "";
 };
 
-const defaultData = [
-  {
-    groupId: "g1",
-    groupSize: 1,
-    name: "محمد أحمد",
-    subjectName: "الباقة الأساسية",
-    teacherName: "",
-    totalHours: "8 ساعات",
-    consumed: "4 ساعات",
-    remaining: "4 ساعات",
-    duration: "شهر",
-    startDate: "01/06/2026",
-    endDate: "01/07/2026",
-    amount: "EGP 700",
-    status: "نشطة",
-  },
-  {
-    groupId: "g2",
-    groupSize: 1,
-    name: "سلمى أحمد",
-    subjectName: "الباقة الأساسية",
-    teacherName: "",
-    totalHours: "8 ساعات",
-    consumed: "--",
-    remaining: "--",
-    duration: "شهر",
-    startDate: "--",
-    endDate: "--",
-    amount: "EGP 700",
-    status: "قيد المراجعة",
-  },
-  {
-    groupId: "g3",
-    groupSize: 2,
-    name: "خالد محمود",
-    subjectName: "الرياضيات",
-    teacherName: "أحمد محمود",
-    totalHours: "12 ساعة",
-    consumed: "--",
-    remaining: "--",
-    duration: "شهر",
-    startDate: "26/06/2026",
-    endDate: "--",
-    amount: "EGP 300",
-    status: "نشطة",
-  },
-  {
-    groupId: "g3",
-    groupSize: 2,
-    name: "خالد محمود",
-    subjectName: "الرياضيات",
-    teacherName: "محمود سعيد",
-    totalHours: "12 ساعة",
-    consumed: "--",
-    remaining: "--",
-    duration: "شهر",
-    startDate: "26/06/2026",
-    endDate: "--",
-    amount: "EGP 250",
-    status: "نشطة",
-  },
-];
-
 // نحدد لكل صف هل هو "أول صف" في مجموعته (يعني أول مرة يظهر فيها هذا groupId)
 // عشان نعرف نطبّق rowSpan على خلية اسم الابن بس في أول صف، ونخفيها في باقي صفوف نفس الابن
 const withGroupMeta = (rows) => {
@@ -123,10 +60,10 @@ const MutedOrValue = ({ value, highlight = false }) => {
   );
 };
 
-// ملاحظة: لو "data" مش متبعتة أصلاً (undefined) بنستخدم defaultData للمعاينة
-// لكن لو اتبعتت array فاضية [] (يعني فعلاً مفيش اشتراكات) بنعرضها فاضية ومش نرجع للـ defaultData
+// "data" المتوقعة هي بيانات حقيقية جاية من الـ API عبر SubscriptionPage.
+// لو متبعتش (undefined) أو كانت فاضية [], بنعرض حالة "لا توجد اشتراكات" مباشرة
 const SubscriptionTable = ({ data }) => {
-  const rows = withGroupMeta(data ?? defaultData);
+  const rows = withGroupMeta(data ?? []);
 
   const headers = [
     "الابن",
