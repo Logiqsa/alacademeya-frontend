@@ -59,9 +59,17 @@ export default function TeacherMessages() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
 
+
+  const [showChatOnMobile, setShowChatOnMobile] = useState(false);
+
   const handleSelect = (id) => {
     setActiveId(id);
     setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)));
+    setShowChatOnMobile(true);
+  };
+
+  const handleBackToList = () => {
+    setShowChatOnMobile(false);
   };
 
   const handleSend = (conversationId, text) => {
@@ -85,22 +93,16 @@ export default function TeacherMessages() {
   return (
     <TeacherLayout>
       <div className="max-w-7xl mx-auto p-2 space-y-6 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
-        <div >
+        <div>
           <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">مركز الرسائل</h1>
           <p className="text-[16px] font-normal leading-6 text-[#575F69]">التواصل مع المعلمين و الإدارة حول أبنائك</p>
         </div>
 
-        <div
-          className="grid"
-          style={{
-            gridTemplateColumns: "1.3fr 3fr",
-            gap: "16px",
-          }}
-        >
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.3fr_3fr]">
+      
           <div
-            className="flex flex-col overflow-hidden bg-white"
+            className={`${showChatOnMobile ? "hidden" : "flex"} md:flex h-[calc(100vh-220px)] md:h-175 flex-col overflow-hidden bg-white`}
             style={{
-              height: "700px",
               borderRadius: "24px",
               border: "1px solid #E5E5E5",
               paddingLeft: "10px",
@@ -119,16 +121,16 @@ export default function TeacherMessages() {
             />
           </div>
 
+      
           <div
-            className="flex flex-col overflow-hidden bg-white"
+            className={`${showChatOnMobile ? "flex" : "hidden"} md:flex h-[calc(100vh-220px)] md:h-175 flex-col overflow-hidden bg-white`}
             style={{
-              height: "700px",
               borderRadius: "24px",
               border: "1px solid #E5E5E5",
               gap: "24px",
             }}
           >
-            <ChatBox conversation={activeConversation} onSend={handleSend} />
+            <ChatBox conversation={activeConversation} onSend={handleSend} onBack={handleBackToList} />
           </div>
         </div>
       </div>
