@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/auth/AuthLayout";
 import logo from "../../assets/icons/logo.svg";
 import clockIcon from "../../assets/icons/clock.svg";
 import whatsappIcon from "../../assets/icons/whatsapp.svg";
 import reviewTimeIcon from "../../assets/icons/review-time.svg";
+import { AuthContext } from "../../context/AuthContext";
 
 const AccountStatePage = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { logout } = useContext(AuthContext);
 
   return (
     <AuthLayout>
@@ -118,7 +120,6 @@ const AccountStatePage = () => {
             <p style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontWeight: 400, fontSize: "14px", lineHeight: "16px", color: "#575F69" }}>
               تحقق من رقم واتسابك سنرسل لك إشعارا فور الموافقة على طلبك.
             </p>
-            {/* WhatsApp Button */}
             <button
               onClick={() => window.open("https://wa.me/", "_blank")}
               style={{
@@ -144,7 +145,10 @@ const AccountStatePage = () => {
 
         {/* Back Button */}
         <button className="mb-4"
-          onClick={() => navigate("/login")}
+          onClick={() => {
+            logout();
+            navigate("/login", { replace: true });
+          }}
           style={{
             width: "100%",
             height: "56px",
