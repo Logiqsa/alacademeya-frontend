@@ -57,3 +57,8 @@ export const getStudentSubscriptionOptions = (studentId) =>
 export const getPendingSubscriptionRequests = () => API.get('/subscriptions/students/pending');
 
 export const getMyStudentsSubscriptions = () => API.get('/parents/students/subscriptions');
+
+// Notifications
+export const getNotifications = () => API.get('/notifications');
+export const markNotificationRead = (id) => API.patch(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => API.patch('/notifications/read-all');
