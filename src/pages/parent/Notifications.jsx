@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
-import ParentLayout from '../../components/parent/layout/ParentLayout';
-import StatsCardds from '../../components/parent/notifications/StatsCards';
-import NotificationsSection from '../../components/parent/notifications/NotificationsSection';
+// Notifications.jsx
+import React, { useState } from "react";
+import ParentLayout from "../../components/parent/layout/ParentLayout";
+import StatsCardds from "../../components/parent/notifications/StatsCards";
+import NotificationsSection from "../../components/parent/notifications/NotificationsSection";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
 
   return (
     <ParentLayout>
-      <div className="max-w-7xl mx-auto p-2 space-y-6 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="max-w-7xl mx-auto p-2 space-y-6 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">
           الإشعارات
         </h1>
