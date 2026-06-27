@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import TeacherSidebar from "./TeacherSidebar";
 
-
 const MOBILE_BREAKPOINT = 768;
 
 const getInitialSidebarState = () => {
@@ -12,6 +11,7 @@ const getInitialSidebarState = () => {
 const TeacherLayout = ({ children }) => {
 
   const [isOpen, setIsOpen] = useState(getInitialSidebarState);
+
 
   const wasAboveBreakpoint = useRef(getInitialSidebarState());
 
@@ -37,7 +37,7 @@ const TeacherLayout = ({ children }) => {
         />
       </div>
 
-      <main className="flex-1 h-full overflow-y-auto p-6">
+      <main className="flex-1 h-full overflow-y-auto p-3 md:p-6">
         {children}
       </main>
 

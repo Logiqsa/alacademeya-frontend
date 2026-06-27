@@ -35,7 +35,7 @@ export default function ConversationsList({
         </button>
       </div>
 
-      
+
       <div className="px-4 pb-3">
         <div className="relative">
           <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -49,14 +49,14 @@ export default function ConversationsList({
         </div>
       </div>
 
-     
-      <div className="flex items-center gap-2 overflow-x-auto px-4 pb-3">
+  
+      <div className="flex items-center gap-1.5 overflow-x-auto px-4 pb-3 md:gap-2">
         {filters.map((f) => (
           <button
             key={f.key}
             type="button"
             onClick={() => onFilterChange(f.key)}
-            className={`shrink-0 rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors md:px-4 md:text-sm ${
               activeFilter === f.key
                 ? "bg-blue-900 text-white"
                 : "bg-gray-100 text-gray-500 hover:bg-gray-200"
@@ -67,7 +67,7 @@ export default function ConversationsList({
         ))}
       </div>
 
-    
+  
       <div className="flex-1 space-y-3 overflow-y-auto px-3 pb-4">
         {filtered.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-gray-400">لا توجد محادثات مطابقة</p>

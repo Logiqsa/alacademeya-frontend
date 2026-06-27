@@ -59,7 +59,7 @@ export default function TeacherMessages() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
 
-
+ 
   const [showChatOnMobile, setShowChatOnMobile] = useState(false);
 
   const handleSelect = (id) => {
@@ -92,16 +92,23 @@ export default function TeacherMessages() {
 
   return (
     <TeacherLayout>
-      <div className="max-w-7xl mx-auto p-2 space-y-6 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
-        <div>
-          <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">مركز الرسائل</h1>
-          <p className="text-[16px] font-normal leading-6 text-[#575F69]">التواصل مع المعلمين و الإدارة حول أبنائك</p>
+      <div
+        className="mx-auto flex h-full max-w-7xl flex-col pb-3 font-['IBM_Plex_Sans_Arabic'] text-right md:h-auto md:pb-0"
+        dir="rtl"
+      >
+        <div className="shrink-0 pb-3 md:pb-6">
+          <h1 className="text-[20px] font-semibold leading-7 text-[#123C91] md:text-[24px] md:leading-8 mb-1 md:mb-2">
+            مركز الرسائل
+          </h1>
+          <p className="hidden text-[16px] font-normal leading-6 text-[#575F69] md:block">
+            التواصل مع المعلمين و الإدارة حول أبنائك
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.3fr_3fr]">
-      
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 md:flex-none md:grid-cols-[1.3fr_3fr]">
+       
           <div
-            className={`${showChatOnMobile ? "hidden" : "flex"} md:flex h-[calc(100vh-220px)] md:h-175 flex-col overflow-hidden bg-white`}
+            className={`${showChatOnMobile ? "hidden" : "flex"} md:flex min-h-0 flex-col overflow-hidden bg-white md:h-175`}
             style={{
               borderRadius: "24px",
               border: "1px solid #E5E5E5",
@@ -121,9 +128,9 @@ export default function TeacherMessages() {
             />
           </div>
 
-      
+         
           <div
-            className={`${showChatOnMobile ? "flex" : "hidden"} md:flex h-[calc(100vh-220px)] md:h-175 flex-col overflow-hidden bg-white`}
+            className={`${showChatOnMobile ? "flex" : "hidden"} md:flex min-h-0 flex-col overflow-hidden bg-white md:h-175`}
             style={{
               borderRadius: "24px",
               border: "1px solid #E5E5E5",
