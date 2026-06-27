@@ -47,3 +47,14 @@ export const removeStudent = (studentId) => API.delete(`/parents/students/${stud
 export const addStudent = (payload) => API.post('/parents/students', payload);
 export const getMyStudents = () => API.get('/parents/students');
 export const getStudentsStatistics = () => API.get('/parents/students/statistics');
+
+// ===== Subscriptions =====
+export const createSubscription = (payload) => API.post('/subscriptions', payload);
+export const getAllSubscriptions = (params) => API.get('/subscriptions/', { params });
+export const getSubscription = (id) => API.get(`/subscriptions/${id}`);
+export const getStudentSubscriptionOptions = (studentId) =>
+  API.get(`/subscriptions/students/${studentId}/subscription-options`);
+export const getPendingSubscriptionRequests = () => API.get('/subscriptions/students/pending');
+
+// يرجع اشتراكات أولاد الأب الحالي فقط (مفلترة من الـ backend بالتوكن مباشرة)
+export const getMyStudentsSubscriptions = () => API.get('/parents/students/subscriptions');

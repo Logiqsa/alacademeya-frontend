@@ -15,8 +15,11 @@ const statusStyle = (status) => {
 
 const defaultData = [
   {
+    groupId: "g1",
+    groupSize: 1,
     name: "محمد أحمد",
-    plan: "الباقة الأساسية",
+    subjectName: "الباقة الأساسية",
+    teacherName: "",
     totalHours: "8 ساعات",
     consumed: "4 ساعات",
     remaining: "4 ساعات",
@@ -27,8 +30,11 @@ const defaultData = [
     status: "نشطة",
   },
   {
+    groupId: "g2",
+    groupSize: 1,
     name: "سلمى أحمد",
-    plan: "الباقة الأساسية",
+    subjectName: "الباقة الأساسية",
+    teacherName: "",
     totalHours: "8 ساعات",
     consumed: "--",
     remaining: "--",
@@ -39,20 +45,89 @@ const defaultData = [
     status: "قيد المراجعة",
   },
   {
-    name: "سلمى أحمد",
-    plan: "الباقة المتقدمة",
-    totalHours: "24 ساعة",
-    consumed: "24 ساعة",
-    remaining: "0 ساعة",
+    groupId: "g3",
+    groupSize: 2,
+    name: "خالد محمود",
+    subjectName: "الرياضيات",
+    teacherName: "أحمد محمود",
+    totalHours: "12 ساعة",
+    consumed: "--",
+    remaining: "--",
     duration: "شهر",
-    startDate: "01/05/2026",
-    endDate: "01/06/2026",
-    amount: "EGP 1,500",
-    status: "منتهية",
+    startDate: "26/06/2026",
+    endDate: "--",
+    amount: "EGP 300",
+    status: "نشطة",
+  },
+  {
+    groupId: "g3",
+    groupSize: 2,
+    name: "خالد محمود",
+    subjectName: "الرياضيات",
+    teacherName: "محمود سعيد",
+    totalHours: "12 ساعة",
+    consumed: "--",
+    remaining: "--",
+    duration: "شهر",
+    startDate: "26/06/2026",
+    endDate: "--",
+    amount: "EGP 250",
+    status: "نشطة",
   },
 ];
 
-const SubscriptionTable = ({ data = defaultData }) => {
+// نحدد لكل صف هل هو "أول صف" في مجموعته (يعني أول مرة يظهر فيها هذا groupId)
+// عشان نعرف نطبّق rowSpan على خلية اسم الابن بس في أول صف، ونخفيها في باقي صفوف نفس الابن
+const withGroupMeta = (rows) => {
+  const seenGroups = new Set();
+
+  return rows.map((row) => {
+    const groupId = row.groupId ?? row.id;
+    const isFirstInGroup = !seenGroups.has(groupId);
+    seenGroups.add(groupId);
+
+    return {
+      ...row,
+      groupId,
+      isFirstInGroup,
+      groupSize: row.groupSize ?? 1,
+    };
+  });
+};
+
+// خلية "الباقة" بتعرض اسم المادة كعنوان، واسم المعلم تحته بخط أصغر وأفتح،
+// عشان نتجنب مشكلة اختلاط RTL/LTR لما يكون اسم المعلم بالإنجليزي
+const PlanCell = ({ subjectName, teacherName }) => (
+  <div className="flex flex-col items-center leading-tight">
+    <span className="text-[#1F2937] font-medium text-[14px]">
+      {subjectName || "--"}
+    </span>
+    {teacherName && (
+      <span className="text-[#9CA3AF] text-[12px] mt-0.5" dir="auto">
+        {teacherName}
+      </span>
+    )}
+  </div>
+);
+
+// خلية المستهلك/المتبقي: لو القيمة "--" بنعرضها باهتة شفافة بدل نص عادي،
+// عشان توضح إن البيانات "لسه متوفرة قريباً" مش حقل اتجاهل أو خطأ
+const MutedOrValue = ({ value, highlight = false }) => {
+  if (value === "--" || value == null) {
+    return <span className="text-[#C7CBD1] text-[13px]">غير متاح</span>;
+  }
+  return (
+    <span className={highlight ? "text-[#123C91] font-medium" : "text-[#575F69]"}>
+      {value}
+    </span>
+  );
+};
+
+// ملاحظة: لو "data" مش متبعتة أصلاً (undefined) بنستخدم defaultData للمعاينة
+// لكن لو اتبعتت array فاضية [] (يعني فعلاً مفيش اشتراكات) بنعرضها فاضية ومش نرجع للـ defaultData
+const SubscriptionTable = ({ data }) => {
+  const rows = withGroupMeta(data ?? defaultData);
+
   const headers = [
     "الابن",
     "الباقة",
@@ -107,36 +182,64 @@ const SubscriptionTable = ({ data = defaultData }) => {
           </thead>
 
           <tbody>
-            {data.map((row, index) => (
+            {rows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={headers.length}
+                  className="px-4 py-8 text-center text-[#575F69]"
+                >
+                  لا توجد اشتراكات حالياً
+                </td>
+              </tr>
+            )}
+
+            {rows.map((row, index) => (
               <tr
-                key={index}
-                className="
+                key={row.id ?? index}
+                className={`
                   border-b
                   border-[#E5E5E5]
                   hover:bg-[#FAFAFA]
                   transition-colors
-                "
+                  ${row.isFirstInGroup && index !== 0 ? "border-t-2 border-t-[#E5E5E5]" : ""}
+                `}
               >
-                <td className="px-4 py-5 font-medium text-[#1F2937]">
-                  {row.name}
-                </td>
+                {/* خلية الابن بتتعرض بس في أول صف من مجموعته، وتمتد (rowSpan)
+                    على عدد صفوف باقي المعلمين/المواد بتاعته */}
+                {row.isFirstInGroup && (
+                  <td
+                    rowSpan={row.groupSize}
+                    className="
+                      px-4
+                      py-5
+                      font-medium
+                      text-[#1F2937]
+                      align-middle
+                      border-l
+                      border-[#F1F1F1]
+                    "
+                  >
+                    {row.name}
+                  </td>
+                )}
 
-                <td className="px-4 py-5 text-center text-[#575F69]">
-                  {row.plan}
+                <td className="px-4 py-5 text-center">
+                  <PlanCell
+                    subjectName={row.subjectName}
+                    teacherName={row.teacherName}
+                  />
                 </td>
 
                 <td className="px-4 py-5 text-center text-[#575F69]">
                   {row.totalHours}
                 </td>
 
-                <td className="px-4 py-5 text-center text-[#575F69]">
-                  {row.consumed}
+                <td className="px-4 py-5 text-center">
+                  <MutedOrValue value={row.consumed} />
                 </td>
 
                 <td className="px-4 py-5 text-center">
-                  <span className="text-[#123C91] font-medium">
-                    {row.remaining}
-                  </span>
+                  <MutedOrValue value={row.remaining} highlight />
                 </td>
 
                 <td className="px-4 py-5 text-center text-[#575F69]">
@@ -147,8 +250,8 @@ const SubscriptionTable = ({ data = defaultData }) => {
                   {row.startDate}
                 </td>
 
-                <td className="px-4 py-5 text-center text-[#575F69]">
-                  {row.endDate}
+                <td className="px-4 py-5 text-center">
+                  <MutedOrValue value={row.endDate} />
                 </td>
 
                 <td className="px-4 py-5 text-center text-[#575F69]">
@@ -179,55 +282,102 @@ const SubscriptionTable = ({ data = defaultData }) => {
       </div>
 
       {/* Mobile Cards */}
+      {/* في الموبايل بنجمع كل صفوف نفس الابن في كارت واحد بدل ما نكررها */}
       <div className="lg:hidden mt-4 space-y-4">
-        {data.map((row, index) => (
-          <div
-            key={index}
-            className="
-              bg-white
-              border
-              border-[#E5E5E5]
-              rounded-2xl
-              p-6
-              shadow-sm
-            "
-            dir="rtl"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-[#1F2937]">
-                {row.name}
-              </h3>
+        {rows.length === 0 && (
+          <p className="text-center text-[#575F69] py-8">
+            لا توجد اشتراكات حالياً
+          </p>
+        )}
 
-              <span
-                className={`
-                  px-3
-                  py-1
-                  rounded-full
-                  text-xs
-                  font-medium
-                  ${statusStyle(row.status)}
-                `}
-              >
-                {row.status}
-              </span>
-            </div>
+        {(() => {
+          // نجمع الصفوف حسب groupId عشان كل ابن يظهر في كارت واحد
+          // يحتوي على كل المواد/المعلمين بتاعته
+          const groups = [];
+          const groupIndexById = new Map();
 
-            <div className="space-y-3">
-              <InfoRow label="الباقة" value={row.plan} />
-              <InfoRow label="إجمالي الساعات" value={row.totalHours} />
-              <InfoRow label="المستهلك" value={row.consumed} />
-              <InfoRow
-                label="المتبقي"
-                value={row.remaining}
-                highlight
-              />
-              <InfoRow label="مدة الاشتراك" value={row.duration} />
-              <InfoRow label="تاريخ البدء" value={row.startDate} />
-              <InfoRow label="تاريخ الانتهاء" value={row.endDate} />
-              <InfoRow label="المبلغ" value={row.amount} />
+          rows.forEach((row) => {
+            if (!groupIndexById.has(row.groupId)) {
+              groupIndexById.set(row.groupId, groups.length);
+              groups.push({ ...row, items: [row] });
+            } else {
+              groups[groupIndexById.get(row.groupId)].items.push(row);
+            }
+          });
+
+          return groups.map((group) => (
+            <div
+              key={group.groupId}
+              className="
+                bg-white
+                border
+                border-[#E5E5E5]
+                rounded-2xl
+                p-6
+                shadow-sm
+              "
+              dir="rtl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-[#1F2937]">
+                  {group.name}
+                </h3>
+
+                <span
+                  className={`
+                    px-3
+                    py-1
+                    rounded-full
+                    text-xs
+                    font-medium
+                    ${statusStyle(group.status)}
+                  `}
+                >
+                  {group.status}
+                </span>
+              </div>
+
+              <div className="space-y-5">
+                {group.items.map((item, itemIndex) => (
+                  <div
+                    key={item.id ?? itemIndex}
+                    className={
+                      itemIndex !== 0
+                        ? "pt-4 border-t border-[#F1F1F1] space-y-3"
+                        : "space-y-3"
+                    }
+                  >
+                    <InfoRow
+                      label="الباقة"
+                      value={
+                        <PlanCell
+                          subjectName={item.subjectName}
+                          teacherName={item.teacherName}
+                        />
+                      }
+                    />
+                    <InfoRow label="إجمالي الساعات" value={item.totalHours} />
+                    <InfoRow
+                      label="المستهلك"
+                      value={<MutedOrValue value={item.consumed} />}
+                    />
+                    <InfoRow
+                      label="المتبقي"
+                      value={<MutedOrValue value={item.remaining} highlight />}
+                    />
+                    <InfoRow label="مدة الاشتراك" value={item.duration} />
+                    <InfoRow label="تاريخ البدء" value={item.startDate} />
+                    <InfoRow
+                      label="تاريخ الانتهاء"
+                      value={<MutedOrValue value={item.endDate} />}
+                    />
+                    <InfoRow label="المبلغ" value={item.amount} />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ));
+        })()}
       </div>
     </>
   );
@@ -245,7 +395,7 @@ const InfoRow = ({
 
     <span
       className={`text-sm font-medium ${
-        highlight
+        highlight && typeof value === "string"
           ? "text-[#123C91]"
           : "text-[#1F2937]"
       }`}
