@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Send, CheckCheck } from "lucide-react";
+import { Send, CheckCheck, ArrowRight } from "lucide-react";
 
-export default function ChatBox({ conversation, onSend }) {
+export default function ChatBox({ conversation, onSend, onBack }) {
   const [text, setText] = useState("");
   const endRef = useRef(null);
 
@@ -33,16 +33,25 @@ export default function ChatBox({ conversation, onSend }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* هيدر المحادثة */}
+    
       <div className="flex items-center justify-start gap-3 border-b border-gray-100 p-4">
-         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-900 text-sm font-bold text-white">
+       
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-gray-100 md:hidden"
+          aria-label="رجوع لقائمة المحادثات"
+        >
+          <ArrowRight size={18} />
+        </button>
+
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-900 text-sm font-bold text-white">
           {conversation.avatarInitial}
         </span>
         <span className="text-[16px] font-semibold text-slate-800">
           {conversation.name}{" "}
           <span className="font-normal text-gray-400">({conversation.role})</span>
         </span>
-       
       </div>
 
       {/* الرسائل */}
@@ -52,7 +61,7 @@ export default function ChatBox({ conversation, onSend }) {
           return (
             <div key={m.id} className={`flex ${isMe ? "justify-start" : "justify-end"}`}>
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+                className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 ${
                   isMe
                     ? "rounded-tl-sm bg-blue-900 text-white"
                     : "rounded-tr-sm border border-blue-100 bg-[#EAF4FF] text-slate-700"
@@ -70,15 +79,15 @@ export default function ChatBox({ conversation, onSend }) {
         <div ref={endRef} />
       </div>
 
-      {/* إدخال رسالة */}
-      <div className="flex items-center gap-3 border-t border-gray-100 p-4">
+    
+      <div className="flex items-center gap-2 border-t border-gray-100 p-3 md:gap-3 md:p-4">
         <button
           type="button"
           onClick={handleSend}
-          className="flex items-center gap-2 rounded-lg bg-blue-300/40 px-5 py-2.5 text-sm font-semibold text-blue-900 hover:bg-blue-300/60"
+          className="flex shrink-0 items-center gap-2 rounded-lg bg-blue-300/40 px-3 py-2.5 text-sm font-semibold text-blue-900 hover:bg-blue-300/60 md:px-5"
         >
           <Send size={16} />
-          إرسال
+          <span className="hidden sm:inline">إرسال</span>
         </button>
         <input
           type="text"
