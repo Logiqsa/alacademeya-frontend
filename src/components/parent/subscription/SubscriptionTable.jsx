@@ -13,8 +13,6 @@ const statusStyle = (status) => {
   return "";
 };
 
-// نحدد لكل صف هل هو "أول صف" في مجموعته (يعني أول مرة يظهر فيها هذا groupId)
-// عشان نعرف نطبّق rowSpan على خلية اسم الابن بس في أول صف، ونخفيها في باقي صفوف نفس الابن
 const withGroupMeta = (rows) => {
   const seenGroups = new Set();
 
@@ -32,8 +30,6 @@ const withGroupMeta = (rows) => {
   });
 };
 
-// خلية "الباقة" بتعرض اسم المادة كعنوان، واسم المعلم تحته بخط أصغر وأفتح،
-// عشان نتجنب مشكلة اختلاط RTL/LTR لما يكون اسم المعلم بالإنجليزي
 const PlanCell = ({ subjectName, teacherName }) => (
   <div className="flex flex-col items-center leading-tight">
     <span className="text-[#1F2937] font-medium text-[14px]">
@@ -47,8 +43,7 @@ const PlanCell = ({ subjectName, teacherName }) => (
   </div>
 );
 
-// خلية المستهلك/المتبقي: لو القيمة "--" بنعرضها باهتة شفافة بدل نص عادي،
-// عشان توضح إن البيانات "لسه متوفرة قريباً" مش حقل اتجاهل أو خطأ
+
 const MutedOrValue = ({ value, highlight = false }) => {
   if (value === "--" || value == null) {
     return <span className="text-[#C7CBD1] text-[13px]">غير متاح</span>;
@@ -60,8 +55,6 @@ const MutedOrValue = ({ value, highlight = false }) => {
   );
 };
 
-// "data" المتوقعة هي بيانات حقيقية جاية من الـ API عبر SubscriptionPage.
-// لو متبعتش (undefined) أو كانت فاضية [], بنعرض حالة "لا توجد اشتراكات" مباشرة
 const SubscriptionTable = ({ data }) => {
   const rows = withGroupMeta(data ?? []);
 
@@ -141,8 +134,7 @@ const SubscriptionTable = ({ data }) => {
                   ${row.isFirstInGroup && index !== 0 ? "border-t-2 border-t-[#E5E5E5]" : ""}
                 `}
               >
-                {/* خلية الابن بتتعرض بس في أول صف من مجموعته، وتمتد (rowSpan)
-                    على عدد صفوف باقي المعلمين/المواد بتاعته */}
+                
                 {row.isFirstInGroup && (
                   <td
                     rowSpan={row.groupSize}
@@ -218,9 +210,8 @@ const SubscriptionTable = ({ data }) => {
         </table>
       </div>
 
-      {/* Mobile Cards */}
-      {/* في الموبايل بنجمع كل صفوف نفس الابن في كارت واحد بدل ما نكررها */}
-      <div className="lg:hidden mt-4 space-y-4">
+    
+      <div className="lg:hidden space-y-4">
         {rows.length === 0 && (
           <p className="text-center text-[#575F69] py-8">
             لا توجد اشتراكات حالياً
@@ -228,8 +219,7 @@ const SubscriptionTable = ({ data }) => {
         )}
 
         {(() => {
-          // نجمع الصفوف حسب groupId عشان كل ابن يظهر في كارت واحد
-          // يحتوي على كل المواد/المعلمين بتاعته
+        
           const groups = [];
           const groupIndexById = new Map();
 
