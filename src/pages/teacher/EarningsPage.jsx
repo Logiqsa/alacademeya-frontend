@@ -56,15 +56,15 @@ const EarningsPage = () => {
         {/* ── Hero withdrawal card ── */}
         <div
           className="rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-          style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1a3e8c 60%, #2a5298 100%)" }}
+          style={{ background: "#1F2937" }}
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
               <DollarSign size={24} className="text-white" />
             </div>
             <div className="text-right">
-              <p className="text-white/70 text-sm mb-0.5">متاح للطلب</p>
-              <p className="text-white text-2xl font-bold">{fmt(stats.available)}</p>
+              <p className="text-white/70 text-sm mb-2">متاح للطلب</p>
+              <p className="text-white text-2xl font-bold mb-2">{fmt(stats.available)}</p>
               <p className="text-white/60 text-xs mt-1">المبلغ الذي يمكنك طلبه من الإدارة</p>
             </div>
           </div>
