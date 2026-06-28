@@ -45,6 +45,7 @@ import AssignmentDetailsPage from "./pages/teacher/assignments/AssignmentDetails
 import TeacherMessages from "./pages/teacher/messages/Messages";
 import AccountSettingsPage from "./pages/parent/AccountSettings";
 import AccountViewPage from "./pages/parent/AccountViewPage";
+import TeacherAccountSettingsPage from "./pages/teacher/TeacherAccountSettingsPage";
 
 
 function App() {
@@ -113,6 +114,10 @@ function App() {
         <Route
           path="/parent/messages"
           element={user ? <Messages /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/parent/settings"
+          element={user ? <AccountSettingsPage /> : <Navigate to="/login" replace />}
         />
 
 
@@ -190,10 +195,13 @@ function App() {
           path="/teacher/messages"
           element={user ? <TeacherMessages /> : <Navigate to="/login" replace />}
         />
+
         <Route
-          path="/parent/settings"
-          element={user ? <AccountSettingsPage /> : <Navigate to="/login" replace />}
+          path="/teacher/settings"
+          element={user ? <TeacherAccountSettingsPage /> : <Navigate to="/login" replace />}
         />
+
+
 
 
 
