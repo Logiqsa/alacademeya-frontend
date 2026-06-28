@@ -1,104 +1,60 @@
-import React, { useState, useRef, useEffect } from "react";
-import { MoreVertical, Eye, Pencil, Trash2 } from "lucide-react";
+import React from "react";
+import { Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
-const Badge = ({ label, type }) => {
+const Badge = ({ label, type, subLabel }) => {
   const map = {
     green: "bg-[#00A63E26] text-[#00A63E]",
     blue: "bg-[#EAF4FF] text-[#123C91]",
     orange: "bg-[#FF8A0026] text-[#FF8A00]",
-    gray: "bg-gray-100 text-gray-500",
+    gray: "bg-gray-100 text-[#8C9198]",
   };
   return (
-    <span
-      className={`inline-flex items-center justify-center px-3 py-1 text-[11px] md:text-xs font-semibold rounded-full whitespace-nowrap ${
-        map[type] ?? map.gray
-      }`}
-    >
-      {label}
-    </span>
-  );
-};
-
-const assignmentStatusBadge = (a) => {
-  if (a.status === "نشط") {
-    return (
-      <div className="flex flex-col items-center">
-        <Badge label="نشط" type="blue" />
-        <span className="text-[10px] text-gray-400 mt-1">{a.timeRemaining}</span>
-      </div>
-    );
-  }
-  return <Badge label="مكتمل" type="gray" />;
-};
-const correctionStatusBadge = (v) => {
-  if (v === "تم التصحيح") return <Badge label={v} type="green" />;
-  if (v === "قيد التصحيح") return <Badge label={v} type="orange" />;
-  return <Badge label={v} type="orange" />; // "لم يبدأ التصحيح"
-};
-
-// ─── Actions Menu (three dots + tooltip popover) ──────────────────────────────
-const ActionsMenu = ({ assignment, onView, onEdit, onDelete }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative inline-block" ref={ref}>
-      <button
-        onClick={() => setOpen((p) => !p)}
-        className="p-2 flex items-center justify-center rounded-lg text-[#575F69] hover:bg-gray-100 transition-all duration-200"
+    <div className="inline-flex flex-col items-start gap-1">
+      <span
+        className={`inline-flex items-center justify-center px-3 py-1 text-[11px] md:text-xs font-semibold rounded-full whitespace-nowrap ${
+          map[type] ?? map.gray
+        }`}
       >
-        <MoreVertical size={18} />
-      </button>
-
-      {open && (
-        <div className="absolute z-20 left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 bg-[#1F2937] text-white text-xs rounded-xl shadow-lg p-3 text-right">
-          <div className="absolute left-1/2 -translate-x-1/2 top-full w-3 h-3 bg-[#1F2937] rotate-45" />
-          <p className="font-semibold mb-1">تصحيح الطالب ناجي</p>
-          <p className="text-gray-300 leading-5">إرسال نموذج الحل عبر شات</p>
-
-          <div className="flex items-center gap-1 mt-3 pt-2 border-t border-white/10">
-            <button
-              onClick={() => {
-                onView?.(assignment.id);
-                setOpen(false);
-              }}
-              className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg hover:bg-white/10 transition"
-            >
-              <Eye size={14} /> عرض
-            </button>
-            <button
-              onClick={() => {
-                onEdit?.(assignment.id);
-                setOpen(false);
-              }}
-              className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg hover:bg-white/10 transition"
-            >
-              <Pencil size={14} /> تعديل
-            </button>
-            <button
-              onClick={() => {
-                onDelete?.(assignment.id);
-                setOpen(false);
-              }}
-              className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg hover:bg-white/10 transition text-red-300"
-            >
-              <Trash2 size={14} /> حذف
-            </button>
-          </div>
-        </div>
+        {label}
+      </span>
+      {subLabel && (
+        <span className="text-[11px] text-[#8C9198] whitespace-nowrap">{subLabel}</span>
       )}
     </div>
   );
 };
+
+const examStatusBadge = (status, timeRemaining) => {
+  if (status === "نشط") {
+    return (
+      <Badge
+        label={status}
+        type="blue"
+        subLabel={timeRemaining ? `الوقت المتبقي ${timeRemaining}` : null}
+      />
+    );
+  }
+  return <Badge label="مكتمل" type="gray" />;
+};
+
+const correctionStatusBadge = (v) => {
+  if (v === "تم التصحيح") return <Badge label={v} type="green" />;
+  if (v === "قيد التصحيح") return <Badge label={v} type="orange" />;
+  return <Badge label={v} type="gray" />;
+};
+
+// ─── View Action ──────────────────────────────────────────────────────────────
+const ViewAction = ({ examId, onView }) => (
+  <button
+    onClick={() => onView?.(examId)}
+    className="p-2 flex items-center justify-center rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-all duration-200"
+    aria-label="عرض تفاصيل الاختبار"
+  >
+    <Eye size={18} />
+  </button>
+);
 
 // ─── Mobile Row Field ─────────────────────────────────────────────────────────
 const MobileField = ({ label, children }) => (
@@ -108,38 +64,143 @@ const MobileField = ({ label, children }) => (
   </div>
 );
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+const ExamTable = ({ Exams = [], onView }) => {
+  const navigate = useNavigate();
 
-const ExamTable = ({ Exams = [], onView, onEdit, onDelete }) => {
- 
+  const handleView = (examId) => {
+    if (onView) {
+      onView(examId);
+    } else {
+      navigate(`/teacher/exams/${examId}`);
+    }
+  };
+
+  if (Exams.length === 0) {
+    return (
+      <div
+        dir="rtl"
+        className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm sm:text-base text-[#575F69]"
+      >
+        لا توجد اختبارات متاحة
+      </div>
+    );
+  }
 
   return (
-    <div dir="rtl" className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-200 text-right">
-          <thead>
-            <tr className="bg-[#F9FAFA]">
-              {["عنوان الاختبار", "المجموعة", "الحصة", "موعد الاختبار", "تم التسليم", "حالة الاختبار", "حالة التصحيح", "الإجراءات"].map((h) => (
-                <th key={h} className="px-6 py-4 text-[#575F69] text-sm font-medium">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {Exams.map((a) => (
-              <tr key={a.id} className="hover:bg-gray-50/80">
-                <td className="px-6 py-4 font-medium text-[#575F69]">{a.title}</td>
-                <td className="px-6 py-4 text-sm">{a.group}</td>
-                <td className="px-6 py-4 text-sm">{a.lesson}</td>
-                <td className="px-6 py-4 text-sm whitespace-nowrap">{a.dateTime}</td>
-                <td className="px-6 py-4 text-sm">{a.submitted}/{a.totalStudents}</td>
-                <td className="px-6 py-4">{assignmentStatusBadge(a)}</td>
-                <td className="px-6 py-4">{correctionStatusBadge(a.correctionStatus)}</td>
-                <td className="px-6 py-4">
-                  <ActionsMenu assignment={a} onView={onView} onEdit={onEdit} onDelete={onDelete} />
-                </td>
+    <div dir="rtl" className="w-full">
+
+      {/* ── Desktop Table ── */}
+      <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-right">
+            <thead>
+              <tr style={{ backgroundColor: "#F9FAFA", fontFamily: "IBM Plex Sans Arabic, sans-serif" }}>
+                {[
+                  "عنوان الاختبار",
+                  "المجموعة",
+                  "الحصة",
+                  "موعد الاختبار",
+                  "تم التسليم",
+                  "حالة الاختبار",
+                  "حالة التصحيح",
+                  "الإجراءات",
+                ].map((header) => (
+                  <th
+                    key={header}
+                    className="px-3 py-3 text-[#575F69] text-[13px] font-medium text-right whitespace-nowrap"
+                    style={{ fontWeight: 500, lineHeight: "16px" }}
+                  >
+                    {header}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {Exams.map((a) => (
+                <tr key={a.id} className="hover:bg-gray-50/80 transition-colors">
+                  {/* Title */}
+                  <td
+                    className="px-3 py-3 text-[#575F69]"
+                    style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 500, fontSize: "15px", lineHeight: "20px" }}
+                  >
+                    {a.title}
+                  </td>
+
+                  {/* Group, Lesson, DateTime */}
+                  {[a.group, a.lesson, a.dateTime].map((cellData, index) => (
+                    <td
+                      key={index}
+                      className="px-3 py-3 text-[#575F69] whitespace-nowrap"
+                      style={{
+                        fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                        fontWeight: 400,
+                        fontSize: "13px",
+                        lineHeight: "24px",
+                      }}
+                    >
+                      {cellData}
+                    </td>
+                  ))}
+
+                  {/* Submitted */}
+                  <td
+                    className="px-3 py-3 text-[#575F69] whitespace-nowrap"
+                    style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontSize: "13px", lineHeight: "24px" }}
+                  >
+                    {a.submitted}/{a.totalStudents}
+                  </td>
+
+                  {/* Exam Status */}
+                  <td className="px-3 py-3">
+                    {examStatusBadge(a.status, a.timeRemaining)}
+                  </td>
+
+                  {/* Correction Status */}
+                  <td className="px-3 py-3">
+                    {correctionStatusBadge(a.correctionStatus)}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-3 py-3">
+                    <ViewAction examId={a.id} onView={handleView} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Mobile Cards ── */}
+      <div className="md:hidden space-y-3">
+        {Exams.map((a) => (
+          <div key={a.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4
+                className="text-[#1A1A1A] font-semibold text-[16px]"
+                style={{ fontFamily: "Tajawal, sans-serif" }}
+              >
+                {a.title}
+              </h4>
+              <ViewAction examId={a.id} onView={handleView} />
+            </div>
+
+            <div className="flex items-center gap-2 mb-3">
+              {examStatusBadge(a.status, a.timeRemaining)}
+              {correctionStatusBadge(a.correctionStatus)}
+            </div>
+
+            <div className="space-y-0.5">
+              <MobileField label="المجموعة">{a.group}</MobileField>
+              <MobileField label="الحصة">{a.lesson}</MobileField>
+              <MobileField label="موعد الاختبار">{a.dateTime}</MobileField>
+              <MobileField label="تم التسليم">
+                {a.submitted}/{a.totalStudents}
+              </MobileField>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

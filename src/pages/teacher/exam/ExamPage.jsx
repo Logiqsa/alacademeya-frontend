@@ -107,7 +107,7 @@ const ExamPage = () => {
           onChange={setPage}
           totalItems={filtered.length}
           displayedCount={paginatedExams.length}
-          unitLabel="واجب"
+          unitLabel="اختبار"
         />
       </div>
     </TeacherLayout>
