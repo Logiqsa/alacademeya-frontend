@@ -228,7 +228,7 @@ const AccountSettings = () => {
             <div className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) overflow-hidden">
 
                 {/* Avatar + name */}
-                <div className="p-6 flex items-center gap-4 border-b border-(--border-light)">
+                <div className="p-6 flex items-center gap-4 ">
                     <div className="relative w-16 h-16 shrink-0">
                         <div className="w-16 h-16 rounded-full overflow-hidden bg-(--bg-light) flex items-center justify-center">
                             {parent?.avatarUrl ? (
