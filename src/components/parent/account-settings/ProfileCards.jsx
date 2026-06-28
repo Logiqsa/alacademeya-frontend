@@ -89,20 +89,20 @@ const PASSWORD_RULES = [
 
 const SectionHeader = ({ title, subtitle, editing, onEditClick }) => (
   <div className="mb-4">
-    <div className="flex items-center justify-between gap-3 mb-0.5">
-      <h3 className="text-base font-bold text-[var(--text-dark)]">{title}</h3>
+    <div className="flex items-center justify-between gap-3 mb-2">
+      <h3 className="text-[16px] font-bold text-(--text-dark)">{title}</h3>
       {!editing && onEditClick && (
         <button
           type="button"
           onClick={onEditClick}
-          className="flex items-center gap-1.5 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-dark)] transition-colors shrink-0"
+          className="flex items-center gap-1.5 text-[14px]  font-medium text-(--primary) hover:text-(--primary-dark) transition-colors shrink-0"
         >
           <Pencil size={14} />
           تعديل البيانات
         </button>
       )}
     </div>
-    {subtitle && <p className="text-xs sm:text-sm text-[var(--text-light)]">{subtitle}</p>}
+    {subtitle && <p className="text-xs sm:text-sm text-(--text-light)">{subtitle}</p>}
   </div>
 );
 
@@ -113,7 +113,7 @@ const ActionRow = ({ saving, onCancel, error, confirmLabel = 'حفظ التعد�
       <button
         type="submit"
         disabled={saving}
-        className="px-5 py-2.5 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary-dark)] transition-colors flex items-center gap-2 disabled:opacity-60"
+        className="px-5 py-2.5 rounded-lg bg-(--primary) text-white text-sm font-medium hover:bg-(--primary-dark) transition-colors flex items-center gap-2 disabled:opacity-60"
       >
         {saving && <Loader2 size={14} className="animate-spin" />}
         {confirmLabel}
@@ -121,7 +121,7 @@ const ActionRow = ({ saving, onCancel, error, confirmLabel = 'حفظ التعد�
       <button
         type="button"
         onClick={onCancel}
-        className="px-5 py-2.5 rounded-lg border border-[var(--border-light)] text-[var(--text-dark)] text-sm font-medium hover:bg-[var(--bg-section)] transition-colors"
+        className="px-5 py-2.5 rounded-lg border border-(--border-light) text-(--text-dark) text-sm font-medium hover:bg-(--bg-section) transition-colors"
       >
         إلغاء
       </button>
@@ -132,30 +132,29 @@ const ActionRow = ({ saving, onCancel, error, confirmLabel = 'حفظ التعد�
 /* ---- view mode: plain label/value, 2-col grid inside one bordered box ---- */
 const ViewField = ({ label, value }) => (
   <div className="flex flex-col gap-1.5 min-w-0">
-    <span className="text-xs text-[var(--text-light)]">{label}</span>
-    <span className="text-sm font-semibold text-[var(--text-dark)] break-words">{value || '—'}</span>
+    <span className="text-[14px] mb-1 text-(--text-light)">{label}</span>
+    <span className="text-sm font-semibold text-(--text-dark) wrap-break-word">{value || '—'}</span>
   </div>
 );
 
 const ViewGrid = ({ children }) => (
-  <div className="border border-[var(--border-light)] rounded-xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+  <div className="border  border-x-4  border-[#123C9180] rounded-xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
     {children}
   </div>
 );
 
-/* ---- edit mode: real inputs, single column, inside a primary-tinted box ---- */
 const EditBox = ({ children }) => (
-  <div className="border border-[var(--primary)]/40 rounded-xl p-5 grid grid-cols-1 gap-5">{children}</div>
+  <div className="border  border-x-4  border-[#123C9180] rounded-xl p-5 grid grid-cols-1 gap-5">{children}</div>
 );
 
 const TextInput = ({ label, value, onChange, type = 'text' }) => (
   <div>
-    <label className="block text-xs text-[var(--text-light)] mb-1.5">{label}</label>
+    <label className="block text-2xs text-(--text-light) mb-1.5">{label}</label>
     <input
       type={type}
       value={value ?? ''}
       onChange={onChange}
-      className="w-full h-11 px-3.5 rounded-lg border border-[var(--border-light)] bg-[var(--bg-section)] text-sm text-[var(--text-dark)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-opacity-20 transition-all"
+      className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-[14px] text-(--text-dark) outline-none focus:border-(--primary) focus:ring-2 focus:ring-(--primary) focus:ring-opacity-20 transition-all"
     />
   </div>
 );
@@ -164,17 +163,17 @@ const TextInput = ({ label, value, onChange, type = 'text' }) => (
 // so it always renders as a locked field with the dial-code chip.
 const LockedPhoneField = ({ label, code, number }) => (
   <div>
-    <label className="block text-xs text-[var(--text-light)] mb-1.5">{label}</label>
+    <label className="block text-2xs text-(--text-light) mb-1.5">{label}</label>
     <div
       dir="ltr"
-      className="w-full h-11 rounded-lg border border-[var(--border-light)] bg-[var(--bg-section)] flex items-stretch overflow-hidden opacity-80 cursor-not-allowed"
+      className="w-full h-11 rounded-lg border border-(--border-light) bg-(--bg-section) flex items-stretch overflow-hidden opacity-80 cursor-not-allowed"
     >
       {code && (
-        <span className="px-3 flex items-center bg-[var(--border-light)] text-[var(--text-light)] text-sm shrink-0">
+        <span className="px-3 flex items-center bg-(--border-light) text-(--text-light) text-sm shrink-0">
           {code}
         </span>
       )}
-      <span className="flex-1 px-3 flex items-center text-sm text-[var(--text-light)] truncate">
+      <span className="flex-1 px-3 flex items-center text-sm text-(--text-light) truncate">
         {number || '—'}
       </span>
     </div>
@@ -185,20 +184,20 @@ const PasswordField = ({ label, value, onChange }) => {
   const [show, setShow] = useState(false);
   return (
     <div>
-      <label className="block text-xs text-[var(--text-light)] mb-1.5">{label}</label>
+      <label className="block text-[16px] text-(--text-light) mb-1.5">{label}</label>
       <div className="relative">
         <input
           type={show ? 'text' : 'password'}
           value={value}
           onChange={onChange}
           dir="ltr"
-          className="w-full h-11 pl-10 pr-3.5 rounded-lg border border-[var(--border-light)] bg-[var(--bg-section)] text-sm text-[var(--text-dark)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-opacity-20 transition-all"
+          className="w-full h-11 pl-10 pr-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-[14px] text-(--text-dark) outline-none focus:border-(--primary) focus:ring-2 focus:ring-(--primary) focus:ring-opacity-20 transition-all"
         />
         <button
           type="button"
           tabIndex={-1}
           onClick={() => setShow((s) => !s)}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-light)]"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-light)"
         >
           {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
@@ -209,12 +208,12 @@ const PasswordField = ({ label, value, onChange }) => {
 
 const PasswordRulesList = ({ password }) => (
   <div>
-    <p className="text-xs text-[var(--text-light)] mb-2">يجب أن تتضمن كلمة المرور:</p>
+    <p className="text-xs text-(--text-light) mb-2">يجب أن تتضمن كلمة المرور:</p>
     <ul className="text-xs space-y-1 list-disc pr-4">
       {PASSWORD_RULES.map((rule) => {
         const met = rule.test(password || '');
         return (
-          <li key={rule.id} className={met ? 'text-[var(--primary)] font-medium' : 'text-[var(--text-light)]'}>
+          <li key={rule.id} className={met ? 'text-(--primary) font-medium' : 'text-(--text-light)'}>
             {rule.label}
           </li>
         );
@@ -241,24 +240,24 @@ const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', l
 
   return (
     <div ref={ref} className="relative">
-      <label className="block text-xs text-[var(--text-light)] mb-1.5">{label}</label>
+      <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
       <button
         type="button"
         onClick={() => !isDisabled && setOpen((o) => !o)}
         disabled={isDisabled}
-        className={`w-full h-11 px-3.5 rounded-lg border border-[var(--border-light)] bg-[var(--bg-section)] text-sm text-right flex items-center justify-between transition-colors ${
-          isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-[var(--primary)]'
+        className={`w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-sm text-right flex items-center justify-between transition-colors ${
+          isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-(--primary)'
         }`}
       >
-        <span className={selected ? 'text-[var(--text-dark)]' : 'text-[var(--text-light)]'}>
+        <span className={selected ? 'text-(--text-dark)' : 'text-(--text-light)'}>
           {loading ? 'جارٍ التحميل...' : selected ? selected.label : placeholder}
         </span>
-        <ChevronDown size={16} className={`text-[var(--text-light)] transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={16} className={`text-(--text-light) transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && !isDisabled && (
-        <ul className="absolute z-20 top-full right-0 left-0 mt-1 max-h-56 overflow-y-auto bg-[var(--white)] border border-[var(--border-light)] rounded-lg shadow-lg">
-          {options.length === 0 && <li className="px-3.5 py-2.5 text-sm text-[var(--text-light)]">لا توجد عناصر</li>}
+        <ul className="absolute z-20 top-full right-0 left-0 mt-1 max-h-56 overflow-y-auto bg-(--white) border border-(--border-light) rounded-lg shadow-lg">
+          {options.length === 0 && <li className="px-3.5 py-2.5 text-sm text-(--text-light)">لا توجد عناصر</li>}
           {options.map((opt) => (
             <li
               key={opt.id}
@@ -266,7 +265,7 @@ const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', l
                 onChange(opt.id);
                 setOpen(false);
               }}
-              className="px-3.5 py-2.5 text-sm cursor-pointer hover:bg-[var(--bg-section)] text-[var(--text-dark)]"
+              className="px-3.5 py-2.5 text-sm cursor-pointer hover:bg-(--bg-section) text-(--text-dark)"
             >
               {opt.label}
             </li>
@@ -350,7 +349,7 @@ export const ParentProfileCard = ({ parent, countries = [], loadingCountries, on
   const { code: phoneCode, rest: phoneRest } = splitPhone(parent?.phone);
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[var(--white)] border border-[var(--border-light)] rounded-2xl shadow-[var(--shadow)] p-6">
+    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
       <SectionHeader
         title="البيانات الشخصية"
         subtitle="هذا القسم يحتوي على بياناتك الأساسية التي تُستخدم في جميع الخدمات الرسمية داخل المنصة."
@@ -462,7 +461,7 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[var(--white)] border border-[var(--border-light)] rounded-2xl shadow-[var(--shadow)] p-6">
+    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
       <SectionHeader
         title="البيانات الشخصية"
         subtitle="هذا القسم يحتوي على بيانات ابنك الأساسية التي تُستخدم في جميع الخدمات الرسمية داخل المنصة."
@@ -647,7 +646,7 @@ export const StudentAcademicCard = ({ student, curriculums = [], loadingCurricul
   const gradeDisplay = resolveDisplay(student?.grade, viewGrades);
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[var(--white)] border border-[var(--border-light)] rounded-2xl shadow-[var(--shadow)] p-6">
+    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
       <SectionHeader
         title="البيانات الأكاديمية"
         subtitle="هذا القسم يحتوي على بيانات ابنك التعليمية الأساسية، والتي تُستخدم لإدارة رحلته التعليمية داخل المنصة."
@@ -746,7 +745,7 @@ export const SecurityCard = ({ onSave, lastChangedLabel = 'آخر تغيير م�
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[var(--white)] border border-[var(--border-light)] rounded-2xl shadow-[var(--shadow)] p-6">
+    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
       <SectionHeader
         title="الأمان وكلمة المرور"
         subtitle="تغيير كلمة المرور وإعدادات الأمان"
@@ -755,10 +754,10 @@ export const SecurityCard = ({ onSave, lastChangedLabel = 'آخر تغيير م�
       />
 
       {!editing ? (
-        <div className="border border-[var(--border-light)] rounded-xl p-5">
-          <p className="text-xs text-[var(--text-light)] mb-1.5">كلمة المرور</p>
-          <p className="text-sm font-semibold text-[var(--text-dark)] mb-1 tracking-widest">••••••••</p>
-          <p className="text-xs text-[var(--text-light)]">{lastChangedLabel}</p>
+        <div className="border  border-x-4  border-[#123C9180] rounded-xl p-5">
+          <p className="text-xs text-(--text-light) mb-1.5">كلمة المرور</p>
+          <p className="text-sm font-semibold text-(--text-dark) mb-1 tracking-widest">••••••••</p>
+          <p className="text-xs text-(--text-light)">{lastChangedLabel}</p>
         </div>
       ) : (
         <EditBox>
