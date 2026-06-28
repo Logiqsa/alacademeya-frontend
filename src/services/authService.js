@@ -1,11 +1,16 @@
 import axios from 'axios';
 
+// In dev mode, this goes through the Vite proxy (see vite.config.js)
+// which forwards /api/* to the real backend server-to-server, avoiding
+// the CORS preflight block. In production, point this back to the full
+// domain ('https://api.alacademeya.com/api') unless your prod server
+// also proxies /api.
 const API = axios.create({
-  baseURL: 'https://api.alacademeya.com/api',
+  baseURL: '/api',
 });
 
 const ROOT_API = axios.create({
-  baseURL: 'https://api.alacademeya.com/api',
+  baseURL: '/api',
 });
 
 const attachToken = (config) => {
@@ -47,6 +52,18 @@ export const removeStudent = (studentId) => API.delete(`/parents/students/${stud
 export const addStudent = (payload) => API.post('/parents/students', payload);
 export const getMyStudents = () => API.get('/parents/students');
 export const getStudentsStatistics = () => API.get('/parents/students/statistics');
+
+// ===== Parent / Account profile =====
+export const getMyProfile = () => API.get('/users/me');
+export const updateMyProfile = (payload) => API.patch('/users/me', payload);
+
+// ===== Student record (single child) =====
+// NOTE: no dedicated "update student" endpoint exists yet in the backend docs
+// provided. Following the same REST pattern as removeStudent/addStudent
+// (/parents/students/:id), this PATCH call is wired up ready to go —
+// if the real backend route differs, only this one line needs to change.
+export const updateStudent = (studentId, payload) =>
+  API.patch(`/parents/students/${studentId}`, payload);
 
 // ===== Subscriptions =====
 export const createSubscription = (payload) => API.post('/subscriptions', payload);

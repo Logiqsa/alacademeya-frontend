@@ -8,4 +8,16 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    // Dev-only fix for the CORS error on login/API calls:
+    // any request starting with /api gets forwarded server-to-server
+    // to the real backend, so the browser never sees a cross-origin call.
+    proxy: {
+      '/api': {
+        target: 'https://api.alacademeya.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })

@@ -43,6 +43,8 @@ import AddAssignmentPage from "./components/teacher/assignments/AddAssignmentPag
 import Notificationss from "./pages/teacher/notifications/Notifications";
 import AssignmentDetailsPage from "./pages/teacher/assignments/AssignmentDetailsPage";
 import TeacherMessages from "./pages/teacher/messages/Messages";
+import AccountSettingsPage from "./pages/parent/AccountSettings";
+import AccountViewPage from "./pages/parent/AccountViewPage";
 
 
 function App() {
@@ -113,7 +115,7 @@ function App() {
           element={user ? <Messages /> : <Navigate to="/login" replace />}
         />
 
-        
+
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -131,71 +133,80 @@ function App() {
         />
 
         <Route
-          path="/teacher/groups/:groupId/lessons"                        
+          path="/teacher/groups/:groupId/lessons"
           element={user ? <GroupLessonsPage /> : <Navigate to="/login" replace />}
         />
 
         <Route
-          path="/teacher/groups/:groupId/students"                        
+          path="/teacher/groups/:groupId/students"
           element={user ? <GroupStudentsPage /> : <Navigate to="/login" replace />}
         />
 
         <Route
-          path="/teacher/groups/:groupId/students/:studentId"                       
+          path="/teacher/groups/:groupId/students/:studentId"
           element={user ? <StudentDetailsPage /> : <Navigate to="/login" replace />}
         />
         <Route
-          path="/add-new-group"                       
+          path="/add-new-group"
           element={user ? <CreateGroupPage /> : <Navigate to="/login" replace />}
         />
         <Route
-          path="/add-new-lesson"                       
+          path="/add-new-lesson"
           element={user ? <CreateLessonPage /> : <Navigate to="/login" replace />}
         />
         <Route
-          path="/teacher/tasks"                       
+          path="/teacher/tasks"
           element={user ? <AssignmentsPage /> : <Navigate to="/login" replace />}
         />
         <Route
-          path="/teacher/exams"                       
+          path="/teacher/exams"
           element={user ? <ExamPage /> : <Navigate to="/login" replace />}
         />
         <Route
-          path="/teacher/schedule"                       
+          path="/teacher/schedule"
           element={user ? <Schedule /> : <Navigate to="/login" replace />}
         />
         <Route
-         path="/lessons/:lessonId"                       
+          path="/lessons/:lessonId"
           element={user ? <LessonDetailsPage /> : <Navigate to="/login" replace />}
         />
 
         <Route
-         path="/assignments/new"                       
+          path="/assignments/new"
           element={user ? <AddAssignmentPage /> : <Navigate to="/login" replace />}
         />
 
         <Route
-         path="/teacher/notifications"                       
+          path="/teacher/notifications"
           element={user ? <Notificationss /> : <Navigate to="/login" replace />}
         />
 
         {/* Assignment details — shows correction stats and per-student submission status */}
         <Route
-         path="/teacher/assignments/:assignmentId"
+          path="/teacher/assignments/:assignmentId"
           element={user ? <AssignmentDetailsPage /> : <Navigate to="/login" replace />}
         />
         <Route
-         path="//teacher/messages"
-          element={user ? <TeacherMessages/> : <Navigate to="/login" replace />}
+          path="/teacher/messages"
+          element={user ? <TeacherMessages /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/parent/settings"
+          element={user ? <AccountViewPage /> : <Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/parent/settings/edit"
+          element={user ? <AccountSettingsPage /> : <Navigate to="/login" replace />}
         />
 
 
-        
-       
 
-        
 
-      
+
+
+
+
 
         {/* <Route
           path="/teacher-dashboard"
@@ -207,7 +218,7 @@ function App() {
           path="/student-dashboard"
           element={user ? <StudentHome /> : <Navigate to="/login" replace />}
         />
-         
+
       </Routes>
     </>
   );
