@@ -188,7 +188,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
                     }`}
                   >
                     {isEditing ? (
-                      <div className="flex items-center gap-2 min-w-[160px]">
+                      <div className="flex items-center gap-2 min-w-40">
                         <input
                           autoFocus
                           value={editText}
@@ -207,7 +207,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
                         </button>
                       </div>
                     ) : (
-                      <p className="text-sm leading-relaxed break-words">{m.text}</p>
+                      <p className="text-sm leading-relaxed wrap-break-word">{m.text}</p>
                     )}
 
                     <div className={`mt-1 flex items-center gap-1 ${isMe ? "justify-start" : "justify-end"}`}>
