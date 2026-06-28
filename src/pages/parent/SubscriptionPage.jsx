@@ -6,7 +6,10 @@ import SubscriptionFilters from "../../components/parent/subscription/Subscripti
 
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
-import { getMyStudentsSubscriptions } from "../../services/authService";
+import {
+  getMyStudentsSubscriptions,
+  getMyStudents,
+} from "../../services/authService";
 
 const STATUS_MAP = {
   active: "نشطة",
@@ -16,9 +19,30 @@ const STATUS_MAP = {
 
 const mapStatus = (status) => STATUS_MAP[status] || status;
 
-const mapSubscriptionToRows = (sub) => {
+// Same shape-handling used across the app: `grade` always arrives as an
+// already-populated { id, name } object from getMyStudents(), so unlike
+// `stage`/`curriculum` it never needs an extra lookup call to resolve.
+function nameOf(obj) {
+  if (!obj) return '';
+  const n = obj.name;
+  if (!n) return '';
+  if (typeof n === 'string') return n;
+  return n.ar || n.en || '';
+}
+function resolveGradeName(gradeValue) {
+  if (!gradeValue) return '';
+  if (typeof gradeValue === 'object') return nameOf(gradeValue) || '';
+  // Defensive fallback in case a grade ever arrives as a bare id instead
+  // of the usual populated object — nothing to resolve it against here,
+  // so it just shows "—" via the card's fallback rather than a raw id.
+  return '';
+}
+
+const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
   const groupId = sub.id;
+  const studentId = sub.student?.id;
   const studentName = sub.student?.user?.fullName || "--";
+  const studentGrade = gradeNameByStudentId[studentId] || "";
   const startDate = sub.createdAt
     ? new Date(sub.createdAt).toLocaleDateString("en-GB")
     : "--";
@@ -31,6 +55,7 @@ const mapSubscriptionToRows = (sub) => {
         groupId,
         groupSize: 1,
         name: studentName,
+        stage: studentGrade,
         subjectName: "--",
         teacherName: "",
         totalHours: "--",
@@ -41,7 +66,7 @@ const mapSubscriptionToRows = (sub) => {
         endDate: "--",
         amount: "--",
         status,
-        studentId: sub.student?.id,
+        studentId,
       },
     ];
   }
@@ -57,19 +82,20 @@ const mapSubscriptionToRows = (sub) => {
       groupId,
       groupSize,
       name: studentName,
+      stage: studentGrade,
       subjectName,
       teacherName,
-     
+
       totalHours: item.package?.sessions != null ? `${item.package.sessions} ساعة` : "--",
       consumed: "--",
       remaining: "--",
       duration: "شهر",
       startDate,
-  
+
       endDate: "--",
       amount: item.finalPrice != null ? `EGP ${item.finalPrice.toLocaleString()}` : "--",
       status: mapStatus(item.status || sub.status),
-      studentId: sub.student?.id,
+      studentId,
     };
   });
 };
@@ -78,6 +104,12 @@ const SubscriptionPage = () => {
   const navigate = useNavigate();
 
   const [subscriptions, setSubscriptions] = useState([]);
+  // id -> resolved Arabic grade name, built once from getMyStudents()
+  // (the subscriptions endpoint only ever returns { user: { fullName, id } }
+  // for `student`, never the academic fields, so grade has to come from
+  // here instead). Unlike stage/curriculum, grade arrives pre-populated
+  // with its name, so no extra lookup call is needed.
+  const [gradeNameByStudentId, setGradeNameByStudentId] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -86,13 +118,24 @@ const SubscriptionPage = () => {
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   useEffect(() => {
-    const fetchSubscriptions = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-    
-        const res = await getMyStudentsSubscriptions();
-        setSubscriptions(res.data?.data || []);
+        const [subsRes, studentsRes] = await Promise.all([
+          getMyStudentsSubscriptions(),
+          getMyStudents(),
+        ]);
+
+        setSubscriptions(subsRes.data?.data || []);
+
+        const students = studentsRes.data?.data || [];
+
+        const gradeMap = {};
+        students.forEach((s) => {
+          gradeMap[s.id] = resolveGradeName(s.grade);
+        });
+        setGradeNameByStudentId(gradeMap);
       } catch (err) {
         console.error("Failed to fetch subscriptions:", err);
         setError("حدث خطأ أثناء تحميل الاشتراكات، حاول مرة أخرى.");
@@ -101,10 +144,12 @@ const SubscriptionPage = () => {
       }
     };
 
-    fetchSubscriptions();
+    fetchData();
   }, []);
 
-  const tableRows = subscriptions.flatMap(mapSubscriptionToRows);
+  const tableRows = subscriptions.flatMap((sub) =>
+    mapSubscriptionToRows(sub, gradeNameByStudentId)
+  );
 
   const studentOptions = [...new Set(tableRows.map((row) => row.name))];
   const statusOptions = [...new Set(tableRows.map((row) => row.status))];
@@ -207,7 +252,7 @@ const SubscriptionPage = () => {
           </button>
         </div>
 
-      
+
         {isLoading && (
           <div className="text-center py-10 text-[#575F69]">
             جاري تحميل الاشتراكات...
@@ -234,6 +279,7 @@ const SubscriptionPage = () => {
                   <ChildCard
                     key={row.groupId}
                     name={row.name}
+                    stage={row.stage}
                     plan={
                       row.teacherName
                         ? `${row.subjectName} - ${row.teacherName}`

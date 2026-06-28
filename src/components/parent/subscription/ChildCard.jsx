@@ -2,6 +2,7 @@ import React from "react";
 
 const ChildCard = ({
   name,
+  stage,
   plan,
   status,
   date,
@@ -78,7 +79,7 @@ const ChildCard = ({
                 sm:text-[13px]
               "
             >
-              الصف الثاني الثانوي
+              {stage || "—"}
             </p>
           </div>
         </div>
