@@ -56,7 +56,7 @@ export function useChatRooms(currentUserId) {
         const rooms = await fetchRooms();
         if (isMounted) {
           setConversations(rooms);
-          setActiveId(rooms[0]?.id ?? null);
+          // لا نحدد أي محادثة تلقائيًا — تفضل فاضية لحد ما المستخدم يضغط (زي واتساب)
         }
       } catch (err) {
         console.error("فشل تحميل المحادثات:", err);
@@ -104,6 +104,9 @@ export function useChatRooms(currentUserId) {
   const openConversation = useCallback(async (roomId) => {
     setActiveId(roomId);
     currentRoomRef.current = roomId;
+
+    // لو roomId فاضي (null) يبقى المستخدم رجع للقائمة فقط — مفيش حاجة تانية مطلوبة
+    if (!roomId) return;
 
     const socket = getSocket();
     socket.emit("joinRoom", roomId);

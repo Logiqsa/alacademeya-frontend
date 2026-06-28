@@ -37,13 +37,15 @@ export default function Messages() {
   const handleBackToList = () => {
     leaveConversation(activeId);
     setShowChatOnMobile(false);
+    openConversation(null);
   };
 
   const activeConversation = conversations.find((c) => c.id === activeId);
+  const shouldShowChat = Boolean(activeConversation);
 
   return (
     <ParentLayout>
-      {/* Animation keyframes for ChatBox entrance */}
+      {/* Animation keyframes for ChatBox entrance - no tailwind config needed */}
       <style>{`
         @keyframes chatBoxIn {
           from {
@@ -66,7 +68,7 @@ export default function Messages() {
       `}</style>
 
       <div
-        className="mx-auto flex h-full max-w-7xl flex-col pb-3 font-['IBM_Plex_Sans_Arabic'] text-right md:h-auto md:pb-0"
+        className="mx-auto flex h-full w-full max-w-7xl min-w-0 flex-col overflow-x-hidden font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"
       >
         <div className="shrink-0 pb-3 md:pb-6">
@@ -86,7 +88,7 @@ export default function Messages() {
             </div>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 gap-4 md:h-175">
+          <div className="flex min-h-0 min-w-0 flex-1 gap-0 md:gap-4">
 
             {/* قائمة المحادثات */}
             <div
@@ -95,6 +97,7 @@ export default function Messages() {
                 md:flex
                 w-full md:w-[320px] lg:w-90
                 shrink-0
+                min-w-0
                 flex-col
                 bg-white
                 rounded-3xl
@@ -115,27 +118,31 @@ export default function Messages() {
             </div>
 
             {/* صندوق المحادثة */}
-            <div
-              key={activeId} // 👈 يفرض إعادة mount عند تغيير المحادثة فتشتغل الأنيميشن من جديد كل مرة
-              className={`
-                ${showChatOnMobile ? "flex" : "hidden"}
-                md:flex
-                flex-1
-                flex-col
-                bg-white
-                rounded-3xl
-                border border-[#E5E5E5]
-                min-h-0
-                overflow-visible
-                ${activeConversation ? "animate-chatBoxIn" : ""}
-              `}
-            >
-              <ChatBox
-                conversation={activeConversation}
-                onSend={sendMessage}
-                onBack={handleBackToList}
-              />
-            </div>
+            {shouldShowChat && (
+              <div
+                key={activeId}
+                className={`
+                  ${showChatOnMobile ? "flex" : "hidden"}
+                  md:flex
+                  w-full
+                  min-w-0
+                  flex-1
+                  flex-col
+                  bg-white
+                  rounded-3xl
+                  border border-[#E5E5E5]
+                  min-h-0
+                  overflow-hidden
+                  animate-chatBoxIn
+                `}
+              >
+                <ChatBox
+                  conversation={activeConversation}
+                  onSend={sendMessage}
+                  onBack={handleBackToList}
+                />
+              </div>
+            )}
 
           </div>
         )}

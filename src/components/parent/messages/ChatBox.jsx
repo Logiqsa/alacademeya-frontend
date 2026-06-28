@@ -14,6 +14,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
   const [localMessages, setLocalMessages] = useState([]);
   const endRef = useRef(null);
   const menuRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     setLocalMessages(conversation?.messages ?? []);
@@ -33,10 +34,14 @@ export default function ChatBox({ conversation, onSend, onBack }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpenId]);
 
+  useEffect(() => {
+    if (conversation?.id) inputRef.current?.focus();
+  }, [conversation?.id]);
+
   if (!conversation) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center p-6">
-        <div className="w-16 h-16 rounded-full bg-[#EAF4FF] flex items-center justify-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EAF4FF]">
           <MessageCircle size={28} className="text-blue-900 opacity-40" />
         </div>
         <p className="text-[15px] font-medium text-slate-700">اختر محادثة لعرض الرسائل</p>
@@ -96,34 +101,38 @@ export default function ChatBox({ conversation, onSend, onBack }) {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
 
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3 shrink-0">
+      <div className="flex min-w-0 shrink-0 items-center gap-3 border-b border-gray-100 px-4 py-3.5 md:px-5 md:py-4">
         <button
           type="button"
           onClick={onBack}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-gray-100 md:hidden"
+          aria-label="رجوع"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-gray-100 md:hidden"
         >
           <ArrowRight size={18} />
         </button>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-900 text-sm font-bold text-white">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-900 text-sm font-bold text-white md:h-11 md:w-11">
           {conversation.avatarInitial}
         </div>
-        <div>
-          <p className="text-[15px] font-semibold text-slate-800 leading-tight">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-semibold leading-tight text-slate-800 md:text-base">
             {conversation.name}
           </p>
-          <p className="text-[12px] text-gray-400">{conversation.role}</p>
+          <p className="truncate text-xs text-gray-400">{conversation.role}</p>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-5">
-        <div className="flex flex-col gap-3 justify-end min-h-full">
+      <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 md:px-6 md:py-5">
+        <div className="flex min-h-full min-w-0 flex-col justify-end gap-2.5 md:gap-3">
           {localMessages.length === 0 && (
-            <div className="flex flex-col items-center justify-center flex-1 gap-2 py-10 text-center">
-              <p className="text-sm text-gray-400">لا توجد رسائل بعد</p>
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF4FF]">
+                <MessageCircle size={20} className="text-blue-900 opacity-50" />
+              </div>
+              <p className="text-sm font-medium text-gray-400">لا توجد رسائل بعد</p>
               <p className="text-xs text-gray-300">ابدأ المحادثة الآن</p>
             </div>
           )}
@@ -136,10 +145,10 @@ export default function ChatBox({ conversation, onSend, onBack }) {
             return (
               <div
                 key={m.id}
-                className={`flex items-end gap-2 ${isMe ? "justify-start" : "justify-end"}`}
+                className={`flex min-w-0 items-end gap-2 ${isMe ? "justify-start" : "justify-end"}`}
               >
                 {/* Bubble */}
-                <div className={`relative group max-w-[78%] md:max-w-[68%] ${isMe ? "mt-2" : ""}`}>
+                <div className={`group relative min-w-0 max-w-[70%] sm:max-w-[75%] md:max-w-[65%] ${isMe ? "mt-2" : ""}`}>
 
                   {/* Menu button */}
                   {isMe && !isEditing && (
@@ -147,7 +156,8 @@ export default function ChatBox({ conversation, onSend, onBack }) {
                       <button
                         type="button"
                         onClick={() => setMenuOpenId(menuOpen ? null : m.id)}
-                        className="flex h-6 w-6 items-center justify-center rounded-full bg-white border border-gray-200 text-gray-400 hover:text-gray-600 shadow-md transition-all opacity-0 group-hover:opacity-100"
+                        aria-label="خيارات الرسالة"
+                        className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 opacity-0 shadow-md transition-all hover:text-gray-600 group-hover:opacity-100 focus-visible:opacity-100"
                       >
                         <MoreVertical size={12} />
                       </button>
@@ -155,12 +165,12 @@ export default function ChatBox({ conversation, onSend, onBack }) {
                       {menuOpen && (
                         <div
                           ref={menuRef}
-                          className="absolute top-7 right-0 z-50 w-36 rounded-xl border border-gray-100 bg-white shadow-2xl overflow-hidden"
+                          className="absolute top-7 right-0 z-50 w-36 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-2xl"
                         >
                           <button
                             type="button"
                             onClick={() => handleStartEdit(m)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 transition-colors"
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 transition-colors hover:bg-blue-50"
                           >
                             <Pencil size={14} className="text-blue-600" />
                             تعديل
@@ -169,7 +179,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
                           <button
                             type="button"
                             onClick={() => handleDelete(m.id)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 transition-colors hover:bg-red-50"
                           >
                             <Trash2 size={14} />
                             حذف
@@ -181,14 +191,14 @@ export default function ChatBox({ conversation, onSend, onBack }) {
 
                   {/* Bubble content */}
                   <div
-                    className={`rounded-2xl px-4 py-2.5 ${
+                    className={`min-w-0 rounded-2xl px-3.5 py-2.5 shadow-sm md:px-4 ${
                       isMe
-                        ? "bg-blue-900 text-white rounded-tl-sm"
-                        : "bg-[#EAF4FF] text-slate-700 border border-blue-100 rounded-tr-sm"
+                        ? "rounded-tl-sm bg-blue-900 text-white"
+                        : "rounded-tr-sm border border-blue-100 bg-[#EAF4FF] text-slate-700"
                     }`}
                   >
                     {isEditing ? (
-                      <div className="flex items-center gap-2 min-w-40">
+                      <div className="flex w-full min-w-0 items-center gap-2">
                         <input
                           autoFocus
                           value={editText}
@@ -197,17 +207,17 @@ export default function ChatBox({ conversation, onSend, onBack }) {
                             if (e.key === "Enter") handleConfirmEdit(m.id);
                             if (e.key === "Escape") handleCancelEdit();
                           }}
-                          className="flex-1 min-w-0 bg-white/20 rounded-lg px-2 py-1 text-sm text-white outline-none border border-white/30 focus:border-white/70"
+                          className="min-w-0 flex-1 rounded-lg border border-white/30 bg-white/20 px-2 py-1 text-sm text-white outline-none focus:border-white/70"
                         />
-                        <button type="button" onClick={() => handleConfirmEdit(m.id)} className="shrink-0 text-green-300 hover:text-green-200">
+                        <button type="button" onClick={() => handleConfirmEdit(m.id)} aria-label="تأكيد التعديل" className="shrink-0 text-green-300 hover:text-green-200">
                           <Check size={15} />
                         </button>
-                        <button type="button" onClick={handleCancelEdit} className="shrink-0 text-blue-200 hover:text-white">
+                        <button type="button" onClick={handleCancelEdit} aria-label="إلغاء التعديل" className="shrink-0 text-blue-200 hover:text-white">
                           <X size={15} />
                         </button>
                       </div>
                     ) : (
-                      <p className="text-sm leading-relaxed wrap-break-word">{m.text}</p>
+                      <p className="wrap-break-word text-sm leading-relaxed md:text-[15px]">{m.text}</p>
                     )}
 
                     <div className={`mt-1 flex items-center gap-1 ${isMe ? "justify-start" : "justify-end"}`}>
@@ -228,19 +238,22 @@ export default function ChatBox({ conversation, onSend, onBack }) {
       </div>
 
       {/* Input */}
-      <div className="shrink-0 flex items-center gap-2 border-t border-gray-100 p-3 md:gap-3 md:p-4">
+      <div className="flex min-w-0 shrink-0 items-center gap-2 border-t border-gray-100 p-3 md:gap-3 md:p-4">
         <input
+          ref={inputRef}
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="اكتب رسالتك هنا..."
-          className="flex-1 min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-gray-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
+          className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-gray-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300 md:text-[15px]"
         />
         <button
           type="button"
           onClick={handleSend}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white hover:bg-blue-800 transition-colors md:h-auto md:w-auto md:gap-2 md:px-5 md:py-2.5"
+          disabled={!text.trim()}
+          aria-label="إرسال"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-blue-900/40 md:h-auto md:w-auto md:gap-2 md:px-5 md:py-2.5"
         >
           <Send size={16} />
           <span className="hidden text-sm font-medium md:inline">إرسال</span>
