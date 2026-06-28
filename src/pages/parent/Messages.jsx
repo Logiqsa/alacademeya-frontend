@@ -43,6 +43,28 @@ export default function Messages() {
 
   return (
     <ParentLayout>
+      {/* Animation keyframes for ChatBox entrance */}
+      <style>{`
+        @keyframes chatBoxIn {
+          from {
+            opacity: 0;
+            transform: scale(0.97) translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        .animate-chatBoxIn {
+          animation: chatBoxIn 0.28s ease-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-chatBoxIn {
+            animation: none;
+          }
+        }
+      `}</style>
+
       <div
         className="mx-auto flex h-full max-w-7xl flex-col pb-3 font-['IBM_Plex_Sans_Arabic'] text-right md:h-auto md:pb-0"
         dir="rtl"
@@ -64,14 +86,14 @@ export default function Messages() {
             </div>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 gap-4 md:h-[700px]">
+          <div className="flex min-h-0 flex-1 gap-4 md:h-175">
 
             {/* قائمة المحادثات */}
             <div
               className={`
                 ${showChatOnMobile ? "hidden" : "flex"}
                 md:flex
-                w-full md:w-[320px] lg:w-[360px]
+                w-full md:w-[320px] lg:w-90
                 shrink-0
                 flex-col
                 bg-white
@@ -94,6 +116,7 @@ export default function Messages() {
 
             {/* صندوق المحادثة */}
             <div
+              key={activeId} // 👈 يفرض إعادة mount عند تغيير المحادثة فتشتغل الأنيميشن من جديد كل مرة
               className={`
                 ${showChatOnMobile ? "flex" : "hidden"}
                 md:flex
@@ -104,6 +127,7 @@ export default function Messages() {
                 border border-[#E5E5E5]
                 min-h-0
                 overflow-visible
+                ${activeConversation ? "animate-chatBoxIn" : ""}
               `}
             >
               <ChatBox
