@@ -18,7 +18,6 @@ const Home = () => {
           getMyStudents(),
           getStudentsStatistics(),
         ]);
-
         setStudents(studentsRes.data?.data || []);
         setStats(statsRes.data?.data || null);
       } catch (err) {
@@ -33,30 +32,36 @@ const Home = () => {
   if (loading) {
     return (
       <ParentLayout>
-        <div className="p-2" dir="rtl">
-          <p className="text-[#1F2937BF]">جاري التحميل...</p>
+        <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-[#123C91] border-t-transparent rounded-full animate-spin" />
+            <p className="text-[#6B7280] text-sm font-['IBM_Plex_Sans_Arabic']">جاري التحميل...</p>
+          </div>
         </div>
       </ParentLayout>
     );
   }
 
-  const hasChildren = students.length > 0;
-
   return (
     <ParentLayout>
-      <div className="space-y-6 p-2" dir="rtl">
-        <WelcomeSection hasChildren={hasChildren} />
+      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 max-w-7xl mx-auto" dir="rtl">
 
-        <StatsCards stats={stats} hasChildren={hasChildren} />
+        {/* Welcome */}
+        <WelcomeSection hasChildren={students.length > 0} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="lg:col-span-1">
+        {/* Stats */}
+        <StatsCards stats={stats} hasChildren={students.length > 0} />
+
+        {/* Bottom Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 sm:gap-6">
+          <div className="xl:col-span-2">
             <NotificationsSection />
           </div>
-          <div className="lg:col-span-1">
+          <div className="xl:col-span-3">
             <ChildrenOverviewSection children={students} />
           </div>
         </div>
+
       </div>
     </ParentLayout>
   );

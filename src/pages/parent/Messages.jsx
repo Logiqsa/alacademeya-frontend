@@ -1,3 +1,4 @@
+// Messages.jsx
 import React, { useContext, useState } from "react";
 import ConversationsList from "../../components/parent/messages/ConversationsList";
 import ChatBox from "../../components/parent/messages/ChatBox";
@@ -6,8 +7,6 @@ import { useChatRooms } from "../../api/useChatRooms";
 import { AuthContext } from "../../context/AuthContext";
 
 export default function Messages() {
-  // ⚠️ تأكد إن AuthContext فيه user._id أو user.id - عدّل السطر ده لو
-  // اسم الحقل مختلف عندك.
   const { user } = useContext(AuthContext);
   const currentUserId = user?._id ?? user?.id;
 
@@ -18,20 +17,17 @@ export default function Messages() {
     openConversation,
     leaveConversation,
     sendMessage,
-    startSupportConversation, // 👈 جديد
+    startSupportConversation,
   } = useChatRooms(currentUserId);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [showChatOnMobile, setShowChatOnMobile] = useState(false);
 
   const handleNewConversation = async () => {
     const newId = await startSupportConversation();
     if (newId) setShowChatOnMobile(true);
   };
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
-
-  // على الموبايل: بيتحكم في إظهار الـ ChatBox بدل القائمة.
-  // من md فوق القائمتين بيبانوا دايمًا جنب بعض فمتغيرة دي مالها قيمة هناك.
-  const [showChatOnMobile, setShowChatOnMobile] = useState(false);
 
   const handleSelect = (id) => {
     openConversation(id);
@@ -41,10 +37,6 @@ export default function Messages() {
   const handleBackToList = () => {
     leaveConversation(activeId);
     setShowChatOnMobile(false);
-  };
-
-  const handleSend = (conversationId, text) => {
-    sendMessage(conversationId, text);
   };
 
   const activeConversation = conversations.find((c) => c.id === activeId);
@@ -60,32 +52,39 @@ export default function Messages() {
             مركز الرسائل
           </h1>
           <p className="hidden text-[16px] font-normal leading-6 text-[#575F69] md:block">
-            التواصل مع المعلمين و الإدارة حول أبنائك
+            التواصل مع المعلمين والإدارة حول أبنائك
           </p>
         </div>
 
         {loading ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
-            جاري تحميل المحادثات...
+          <div className="flex flex-1 items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-7 h-7 border-2 border-blue-900 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-gray-400">جاري تحميل المحادثات...</p>
+            </div>
           </div>
         ) : (
-          <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 md:flex-none md:grid-cols-[1.3fr_3fr]">
-            {/* قائمة المحادثات - على الموبايل تبان بس لو مفيش محادثة مفتوحة */}
+          <div className="flex min-h-0 flex-1 gap-4 md:h-[700px]">
+
+            {/* قائمة المحادثات */}
             <div
-              className={`${showChatOnMobile ? "hidden" : "flex"} md:flex min-h-0 flex-col overflow-hidden bg-white md:h-[700px]`}
-              style={{
-                borderRadius: "24px",
-                border: "1px solid #E5E5E5",
-                paddingLeft: "10px",
-                paddingRight: "10px",
-                gap: "8px",
-              }}
+              className={`
+                ${showChatOnMobile ? "hidden" : "flex"}
+                md:flex
+                w-full md:w-[320px] lg:w-[360px]
+                shrink-0
+                flex-col
+                bg-white
+                rounded-3xl
+                border border-[#E5E5E5]
+                min-h-0
+              `}
             >
               <ConversationsList
                 conversations={conversations}
                 activeId={activeId}
                 onSelect={handleSelect}
-                onNewConversation={handleNewConversation} // 👈 جديد
+                onNewConversation={handleNewConversation}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 activeFilter={activeFilter}
@@ -93,17 +92,27 @@ export default function Messages() {
               />
             </div>
 
-            {/* صندوق المحادثة - على الموبايل يبان بس لو فيه محادثة مفتوحة */}
+            {/* صندوق المحادثة */}
             <div
-              className={`${showChatOnMobile ? "flex" : "hidden"} md:flex min-h-0 flex-col overflow-hidden bg-white md:h-[700px]`}
-              style={{
-                borderRadius: "24px",
-                border: "1px solid #E5E5E5",
-                gap: "24px",
-              }}
+              className={`
+                ${showChatOnMobile ? "flex" : "hidden"}
+                md:flex
+                flex-1
+                flex-col
+                bg-white
+                rounded-3xl
+                border border-[#E5E5E5]
+                min-h-0
+                overflow-visible
+              `}
             >
-              <ChatBox conversation={activeConversation} onSend={handleSend} onBack={handleBackToList} />
+              <ChatBox
+                conversation={activeConversation}
+                onSend={sendMessage}
+                onBack={handleBackToList}
+              />
             </div>
+
           </div>
         )}
       </div>
