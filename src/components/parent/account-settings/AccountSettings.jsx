@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useContext, useRef } from 'react';
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import toast from 'react-hot-toast';
 
 import { User, Camera, Loader2 } from 'lucide-react';
@@ -56,37 +56,38 @@ const TabButton = ({ label, isActive, onClick }) => (
     <button
         type="button"
         onClick={onClick}
-        className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${isActive ? 'text-[var(--primary)]' : 'text-[var(--text-light)] hover:text-[var(--text-dark)]'
+        className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${isActive ? 'text-(--primary)' : 'text-(--text-light) hover:text-(--text-dark)'
             }`}
     >
         {label}
-        {isActive && <span className="absolute bottom-0 right-0 left-0 h-0.5 bg-[var(--primary)] rounded-full" />}
+        {isActive && <span className="absolute bottom-0 right-0 left-0 h-0.5 bg-(--primary) rounded-full" />}
     </button>
 );
 
 /**
  * AccountSettings
  *
- * Layout matches the design screenshots:
- *   - Header card: avatar + name/email + tabs (حسابي | one per child)
- *   - Below: cards for personal / academic / security data
- *   - Every card has its own pencil → live edit mode, matching the
- *     edit-mode screenshots (single-column inputs/dropdowns, locked phone
- *     field with dial-code chip, password rules checklist).
+ * Single page: view your data, click the pencil on any card to edit it
+ * in place, save, done. No separate "view" page and no separate "edit"
+ * page — ProfileCards already implements the view/edit toggle per card,
+ * so that's the only place this logic should live.
  *
- * Country / curriculum lookups are the exact same endpoints used on the
- * register screen (getCountries, getCurriculums, getCurriculumStages,
- * getStageGrades), so a child's stage/grade/curriculum/country edit
- * dropdowns are wired to real data, with the curriculum → stage → grade
- * cascade handled inside StudentAcademicCard.
+ * Data notes (confirmed against the real API responses):
+ *   - GET /users/me only ever returns { user: { fullName, id }, id,
+ *     freeTrialUsed, createdAt, updatedAt }. username / email / phone /
+ *     countryCode are NOT in that response. They were captured once at
+ *     registration time and stashed in localStorage('parentProfile'), so
+ *     we merge that in as a fallback — same trick AccountView used to do,
+ *     now also applied here so the edit page isn't missing fields that
+ *     the view page had.
+ *   - GET /parents/students returns each student's `user` as only
+ *     { fullName, id } too (no username/phone there), `curriculum` and
+ *     `stage` as bare ID strings, and `grade` as an already-populated
+ *     { id, name: { ar, en } } object. There is no country/countryCode
+ *     field on a student at all — the API simply doesn't send one, so we
+ *     don't fabricate a display value for it.
  */
 const AccountSettings = () => {
-    const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-
-    const id = searchParams.get("id");
-    const section = searchParams.get("section");
-
     const { logout } = useContext(AuthContext);
     const fileInputRef = useRef(null);
 
@@ -109,14 +110,37 @@ const AccountSettings = () => {
         try {
             const [profileRes, studentsRes] = await Promise.all([getMyProfile(), getMyStudents()]);
 
-            // GET /users/me → merge outer fields + user node
+            // GET /users/me → { data: { user: { fullName, id }, id, ... } }
             const outerData = profileRes?.data?.data ?? {};
             const userNode = outerData.user ?? {};
-            setParent({ ...outerData, ...userNode });
 
-            // GET /parents/students → data is a direct array
+            // username / email / phone / countryCode never come back from this
+            // endpoint — they were saved to localStorage once, at registration.
+            let savedProfile = {};
+            try {
+                const raw = localStorage.getItem('parentProfile');
+                if (raw) savedProfile = JSON.parse(raw);
+            } catch {
+                savedProfile = {};
+            }
+
+            setParent({
+                // fullName always comes from the API — it's the freshest copy.
+                fullName: userNode.fullName || outerData.fullName || savedProfile.fullName || null,
+                // everything else falls back to what was saved at registration.
+                username: userNode.username || outerData.username || savedProfile.username || null,
+                email: userNode.email || outerData.email || savedProfile.email || null,
+                phone: userNode.phone || outerData.phone || savedProfile.phone || null,
+                countryCode: userNode.countryCode || outerData.countryCode || savedProfile.countryCode || null,
+                countryName: userNode.countryName || outerData.countryName || savedProfile.countryName || null,
+                avatarUrl: userNode.avatarUrl || outerData.avatarUrl || null,
+                id: outerData.id || userNode.id,
+            });
+
+            // GET /parents/students → data is a direct array. Drop removed students.
             const raw = studentsRes?.data?.data;
-            setStudents(Array.isArray(raw) ? raw : []);
+            const activeStudents = Array.isArray(raw) ? raw.filter((s) => s.status !== 'removed') : [];
+            setStudents(activeStudents);
         } catch {
             setError('حدث خطأ أثناء تحميل بيانات الحساب، حاول مرة أخرى.');
         } finally {
@@ -144,7 +168,7 @@ const AccountSettings = () => {
     const afterSave = async (changedSensitive) => {
         if (changedSensitive) {
             toast.success('تم تحديث بياناتك بنجاح، يرجى تسجيل الدخول مرة أخرى.');
-            setTimeout(() => { logout(); navigate('/login'); }, 2000);
+            setTimeout(() => { logout(); }, 2000);
             return;
         }
         toast.success('تم حفظ التعديلات بنجاح');
@@ -152,7 +176,16 @@ const AccountSettings = () => {
     };
 
     /* ── save handlers ── */
-    const handleSaveParentInfo = async (payload, sens) => { await updateMyProfile(payload); await afterSave(sens); };
+    const handleSaveParentInfo = async (payload, sens) => {
+        await updateMyProfile(payload);
+        // Keep localStorage in sync since /users/me never echoes these back.
+        try {
+            const raw = localStorage.getItem('parentProfile');
+            const prev = raw ? JSON.parse(raw) : {};
+            localStorage.setItem('parentProfile', JSON.stringify({ ...prev, ...payload }));
+        } catch {}
+        await afterSave(sens);
+    };
     const handleSaveParentSecurity = async (payload) => { await updateMyProfile(payload); await afterSave(true); };
     const handleSaveStudentInfo = async (payload, sens) => { await updateStudent(activeStudent.id, payload); await afterSave(sens); };
     const handleSaveStudentAcademic = async (payload) => { await updateStudent(activeStudent.id, payload); await afterSave(false); };
@@ -179,37 +212,36 @@ const AccountSettings = () => {
 
     const activeStudent = activeTab !== 'parent' ? students.find((s) => s.id === activeTab) : null;
 
-    useEffect(() => {
-        if (!loading && id) {
-            if (id === "parent") {
-                setActiveTab("parent");
-            } else {
-                setActiveTab(id);
-            }
-        }
-    }, [loading, id]);
     /* ═══════════════════════════════════════════════════════════════ */
     return (
         <div className="space-y-5" dir="rtl">
+            <div className="max-w-7xl mx-auto p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+                <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">
+                    إعدادات الحساب
+                </h1>
+                <p className="text-[16px] font-normal leading-6 text-[#575F69]">
+                    إدارة معلومات حسابك وتفضيلاتك
+                </p>
+            </div>
 
             {/* ── Header card ── */}
-            <div className="bg-[var(--white)] border border-[var(--border-light)] rounded-2xl shadow-[var(--shadow)] overflow-hidden">
+            <div className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) overflow-hidden">
 
                 {/* Avatar + name */}
-                <div className="p-6 flex items-center gap-4 border-b border-[var(--border-light)]">
+                <div className="p-6 flex items-center gap-4 border-b border-(--border-light)">
                     <div className="relative w-16 h-16 shrink-0">
-                        <div className="w-16 h-16 rounded-full overflow-hidden bg-[var(--bg-light)] flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full overflow-hidden bg-(--bg-light) flex items-center justify-center">
                             {parent?.avatarUrl ? (
                                 <img src={parent.avatarUrl} alt={parent?.fullName} className="w-full h-full object-cover" />
                             ) : (
-                                <User size={28} className="text-[var(--primary)]" />
+                                <User size={28} className="text-(--primary)" />
                             )}
                         </div>
                         <button
                             type="button"
                             onClick={handleAvatarClick}
                             disabled={uploadingAvatar}
-                            className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full bg-[var(--primary)] text-white flex items-center justify-center border-2 border-white disabled:opacity-60"
+                            className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full bg-(--primary) text-white flex items-center justify-center border-2 border-white disabled:opacity-60"
                             aria-label="تغيير الصورة"
                         >
                             {uploadingAvatar ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
@@ -219,11 +251,11 @@ const AccountSettings = () => {
 
                     <div className="min-w-0">
                         {loading ? (
-                            <div className="h-5 w-32 bg-[var(--bg-section)] rounded animate-pulse mb-1" />
+                            <div className="h-5 w-32 bg-(--bg-section) rounded animate-pulse mb-1" />
                         ) : (
-                            <h2 className="text-lg font-bold text-[var(--text-dark)] truncate">{parent?.fullName || '—'}</h2>
+                            <h2 className="text-lg font-bold text-(--text-dark) truncate">{parent?.fullName || '—'}</h2>
                         )}
-                        {parent?.email && <p className="text-sm text-[var(--text-light)] truncate">{parent.email}</p>}
+                        {parent?.email && <p className="text-sm text-(--text-light) truncate">{parent.email}</p>}
                     </div>
                 </div>
 
@@ -243,7 +275,7 @@ const AccountSettings = () => {
 
             {/* ── Loading ── */}
             {loading && (
-                <div className="flex items-center justify-center py-16 text-[var(--text-light)]">
+                <div className="flex items-center justify-center py-16 text-(--text-light)">
                     <Loader2 size={22} className="animate-spin ml-2" />
                     جاري تحميل البيانات...
                 </div>
@@ -257,7 +289,12 @@ const AccountSettings = () => {
             {/* ── Parent tab ── */}
             {!loading && !error && activeTab === 'parent' && parent && (
                 <>
-                    <ParentProfileCard parent={parent} onSave={handleSaveParentInfo} />
+                    <ParentProfileCard
+                        parent={parent}
+                        countries={countries}
+                        loadingCountries={loadingCountries}
+                        onSave={handleSaveParentInfo}
+                    />
                     <SecurityCard onSave={handleSaveParentSecurity} />
                 </>
             )}

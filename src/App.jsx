@@ -192,11 +192,6 @@ function App() {
         />
         <Route
           path="/parent/settings"
-          element={user ? <AccountViewPage /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/parent/settings/edit"
           element={user ? <AccountSettingsPage /> : <Navigate to="/login" replace />}
         />
 

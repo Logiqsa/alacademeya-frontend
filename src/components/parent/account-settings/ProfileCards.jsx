@@ -23,14 +23,15 @@ function idOf(value) {
   return value;
 }
 
-// Display label for a field that might be a populated object, an id string
-// that matches something in `list`, or already a plain label string.
+// Display label for a field that might already be a populated object
+// (like `grade`), a bare id string that needs matching against `list`
+// (like `curriculum` / `stage`), or already a plain label string.
 function resolveDisplay(value, list) {
   if (!value) return '—';
   if (typeof value === 'object') return nameOf(value) || value.id || '—';
   const match = list?.find((item) => item.id === value);
   if (match) return nameOf(match) || value;
-  return value;
+  return '—';
 }
 
 function formatDate(d) {
@@ -278,12 +279,33 @@ const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', l
 
 /* ================================================================== */
 /* ParentProfileCard                                                   */
+/* `parent` here is the merged object built in AccountSettings.jsx —   */
+/* fullName always from the API, username/email/phone/countryCode     */
+/* falling back to the localStorage copy saved at registration since   */
+/* GET /users/me never returns them (confirmed: PATCH /users/me echoes */
+/* back the exact same minimal shape, so the response can't be used to */
+/* tell what changed either — the comparison has to happen client-side */
+/* against the previous `parent` values before the request is sent).   */
+/*                                                                      */
+/* Logout-after-save rule: only an email or password change forces a    */
+/* re-login. Changing fullName or username alone must NOT log the      */
+/* parent out — the API still needs a fresh token issued for a new     */
+/* email, but a username on its own doesn't invalidate the session.     */
 /* ================================================================== */
-export const ParentProfileCard = ({ parent, onSave }) => {
+export const ParentProfileCard = ({ parent, countries = [], loadingCountries, onSave }) => {
+  const resolveCountryId = () => {
+    if (!countries.length) return '';
+    const byId = countries.find((c) => c.id === parent?.countryId);
+    if (byId) return byId.id;
+    const byCode = countries.find((c) => c.code === parent?.countryCode);
+    return byCode?.id || '';
+  };
+
   const buildForm = () => ({
     fullName: parent?.fullName || '',
     username: parent?.username || '',
     email: parent?.email || '',
+    countryId: resolveCountryId(),
   });
 
   const [editing, setEditing] = useState(false);
@@ -291,10 +313,16 @@ export const ParentProfileCard = ({ parent, onSave }) => {
   const [error, setError] = useState('');
   const [form, setForm] = useState(buildForm);
 
-  useEffect(() => { setForm(buildForm()); }, [parent]);
+  useEffect(() => { setForm(buildForm()); }, [parent, countries]);
 
   const handleChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
   const handleCancel = () => { setForm(buildForm()); setError(''); setEditing(false); };
+
+  const selectedCountry = countries.find((c) => c.id === form.countryId);
+  const countryDisplay = (() => {
+    const current = countries.find((c) => c.id === resolveCountryId());
+    return current?.name || parent?.countryName || parent?.countryCode || '—';
+  })();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -302,7 +330,14 @@ export const ParentProfileCard = ({ parent, onSave }) => {
     setSaving(true);
     try {
       const payload = { fullName: form.fullName, username: form.username, email: form.email };
-      const changedSensitive = payload.email !== (parent?.email || '') || payload.username !== (parent?.username || '');
+      if (form.countryId && selectedCountry) {
+        payload.country = selectedCountry.id;
+        payload.countryCode = selectedCountry.code;
+        payload.countryName = selectedCountry.name;
+      }
+      // Only an email change requires a fresh login — username/fullName/country
+      // changing on their own must not log the parent out.
+      const changedSensitive = payload.email !== (parent?.email || '');
       await onSave(payload, changedSensitive);
       setEditing(false);
     } catch (err) {
@@ -329,12 +364,21 @@ export const ParentProfileCard = ({ parent, onSave }) => {
           <ViewField label="اسم المستخدم" value={parent?.username} />
           <ViewField label="البريد الإلكتروني" value={parent?.email} />
           <ViewField label="رقم الهاتف" value={parent?.phone} />
+          <ViewField label="الدولة" value={countryDisplay} />
         </ViewGrid>
       ) : (
         <EditBox>
           <TextInput label="الاسم بالكامل" value={form.fullName} onChange={handleChange('fullName')} />
           <TextInput label="اسم المستخدم" value={form.username} onChange={handleChange('username')} />
           <TextInput label="البريد الإلكتروني" value={form.email} onChange={handleChange('email')} type="email" />
+          <Dropdown
+            label="الدولة"
+            value={form.countryId}
+            options={countries.map((c) => ({ id: c.id, label: c.name }))}
+            onChange={(id) => setForm((prev) => ({ ...prev, countryId: id }))}
+            loading={loadingCountries}
+            placeholder="اختر الدولة"
+          />
           <LockedPhoneField label="رقم الهاتف" code={phoneCode} number={phoneRest} />
         </EditBox>
       )}
@@ -342,7 +386,7 @@ export const ParentProfileCard = ({ parent, onSave }) => {
       {editing && (
         <>
           <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-4">
-            تغيير البريد الإلكتروني أو اسم المستخدم سيتطلب تسجيل الدخول مرة أخرى.
+            تغيير البريد الإلكتروني سيتطلب تسجيل الدخول مرة أخرى.
           </p>
           <ActionRow saving={saving} onCancel={handleCancel} error={error} confirmLabel="تعديل البيانات" />
         </>
@@ -353,6 +397,12 @@ export const ParentProfileCard = ({ parent, onSave }) => {
 
 /* ================================================================== */
 /* StudentPersonalCard                                                 */
+/* The student record's `user` sub-object only carries { fullName, id } */
+/* from the real API — username/phone are NOT nested under `user`, so   */
+/* they're read straight off the student record itself. The API doesn't */
+/* currently send country/countryCode on a student either, but the      */
+/* field stays visible here (showing "—" when unset) since the parent   */
+/* expects to see and edit it in this card regardless.                  */
 /* ================================================================== */
 export const StudentPersonalCard = ({ student, countries = [], loadingCountries, onSave }) => {
   const u = student?.user || {};
@@ -367,8 +417,8 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
 
   const buildForm = () => ({
     fullName: u.fullName || student?.fullName || '',
-    username: student?.username || u.username || '',
-    birthDate: toInputDate(student?.birthDate || u.birthDate),
+    username: student?.username || '',
+    birthDate: toInputDate(student?.birthDate),
     countryId: resolveCountryId(),
   });
 
@@ -385,10 +435,10 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
   const selectedCountry = countries.find((c) => c.id === form.countryId);
   const countryDisplay = (() => {
     const current = countries.find((c) => c.id === resolveCountryId());
-    return current?.name || student?.countryCode || u.countryCode || '—';
+    return current?.name || student?.countryCode || '—';
   })();
 
-  const { code: phoneCode, rest: phoneRest } = splitPhone(student?.phone || u.phone, selectedCountry?.phoneCode);
+  const { code: phoneCode, rest: phoneRest } = splitPhone(student?.phone, selectedCountry?.phoneCode);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -401,7 +451,7 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
         payload.country = selectedCountry.id;
         payload.countryCode = selectedCountry.code;
       }
-      const changedSensitive = form.username !== (student?.username || u.username || '');
+      const changedSensitive = form.username !== (student?.username || '');
       await onSave(payload, changedSensitive);
       setEditing(false);
     } catch (err) {
@@ -423,10 +473,10 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
       {!editing ? (
         <ViewGrid>
           <ViewField label="الاسم الكامل" value={u.fullName || student?.fullName} />
-          <ViewField label="اسم المستخدم" value={student?.username || u.username} />
-          <ViewField label="تاريخ الميلاد" value={formatDate(student?.birthDate || u.birthDate)} />
+          <ViewField label="اسم المستخدم" value={student?.username} />
+          <ViewField label="تاريخ الميلاد" value={formatDate(student?.birthDate)} />
           <ViewField label="الدولة" value={countryDisplay} />
-          <ViewField label="رقم الهاتف" value={student?.phone || u.phone} />
+          <ViewField label="رقم الهاتف" value={student?.phone} />
         </ViewGrid>
       ) : (
         <EditBox>
@@ -459,18 +509,27 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
 
 /* ================================================================== */
 /* StudentAcademicCard                                                 */
-/* curriculum -> stage -> grade cascade, same lookups as registration. */
-/* Field ORDER on screen matches the design (stage, grade, curriculum, */
-/* language) even though the dependency runs curriculum -> stage ->    */
-/* grade; the fetch effects key off form state, not render order, so   */
-/* picking a new curriculum further down still refreshes the stage     */
-/* list shown above it.                                                */
+/* In the real API: `student.curriculum` and `student.stage` are bare   */
+/* ID strings (need matching against fetched lists), while             */
+/* `student.grade` already arrives as a populated { id, name } object.  */
+/* This card fetches the stage list for the student's *current*         */
+/* curriculum and the grade list for the student's *current* stage on   */
+/* mount — independent of whatever the user later picks while editing — */
+/* so the read-only view can always resolve a real label instead of a   */
+/* dash, even before edit mode is opened.                               */
 /* ================================================================== */
 export const StudentAcademicCard = ({ student, curriculums = [], loadingCurriculums, onSave }) => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Lists used by the *view* (read-only) labels — keyed to the student's
+  // saved curriculum/stage, fetched once per student regardless of editing.
+  const [viewStages, setViewStages] = useState([]);
+  const [viewGrades, setViewGrades] = useState([]);
+
+  // Lists used by the *edit* dropdowns — keyed to whatever the form
+  // currently has selected, which changes as the user picks things.
   const [stages, setStages] = useState([]);
   const [grades, setGrades] = useState([]);
   const [loadingStages, setLoadingStages] = useState(false);
@@ -485,15 +544,42 @@ export const StudentAcademicCard = ({ student, curriculums = [], loadingCurricul
 
   const [form, setForm] = useState(buildForm);
 
-  // student (tab) changed — reset everything and let the effects below refetch
+  // student (tab) changed — reset the form and re-resolve the view labels.
   useEffect(() => {
     setForm(buildForm());
     setStages([]);
     setGrades([]);
+
+    const curriculumId = idOf(student?.curriculum);
+    const stageId = idOf(student?.stage);
+
+    if (curriculumId) {
+      getCurriculumStages(curriculumId)
+        .then((res) => {
+          const raw = res?.data?.data ?? res?.data ?? [];
+          setViewStages(Array.isArray(raw) ? raw : []);
+        })
+        .catch(() => setViewStages([]));
+    } else {
+      setViewStages([]);
+    }
+
+    if (stageId) {
+      getStageGrades(stageId)
+        .then((res) => {
+          const raw = res?.data?.data ?? res?.data ?? [];
+          setViewGrades(Array.isArray(raw) ? raw : []);
+        })
+        .catch(() => setViewGrades([]));
+    } else {
+      setViewGrades([]);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [student]);
 
+  // Edit-mode cascade: curriculum -> stages, stage -> grades.
   useEffect(() => {
+    if (!editing) return;
     if (!form.curriculumId) { setStages([]); return; }
     let active = true;
     setLoadingStages(true);
@@ -506,9 +592,10 @@ export const StudentAcademicCard = ({ student, curriculums = [], loadingCurricul
       .catch(() => { if (active) setStages([]); })
       .finally(() => { if (active) setLoadingStages(false); });
     return () => { active = false; };
-  }, [form.curriculumId]);
+  }, [editing, form.curriculumId]);
 
   useEffect(() => {
+    if (!editing) return;
     if (!form.stageId) { setGrades([]); return; }
     let active = true;
     setLoadingGrades(true);
@@ -521,7 +608,7 @@ export const StudentAcademicCard = ({ student, curriculums = [], loadingCurricul
       .catch(() => { if (active) setGrades([]); })
       .finally(() => { if (active) setLoadingGrades(false); });
     return () => { active = false; };
-  }, [form.stageId]);
+  }, [editing, form.stageId]);
 
   const curriculumOptions = curriculums.map((c) => ({ id: c.id, label: nameOf(c) || c.id }));
   const stageOptions = stages.map((s) => ({ id: s.id, label: nameOf(s) || s.id }));
@@ -551,9 +638,13 @@ export const StudentAcademicCard = ({ student, curriculums = [], loadingCurricul
     }
   };
 
+  // `grade` already comes populated from the API, so it resolves on its
+  // own. `curriculum` and `stage` are bare ids — resolve against the lists
+  // fetched specifically for this student's saved values (viewStages),
+  // and against the curriculums prop passed down from the page.
   const curriculumDisplay = resolveDisplay(student?.curriculum, curriculums);
-  const stageDisplay = resolveDisplay(student?.stage, stages);
-  const gradeDisplay = resolveDisplay(student?.grade, grades);
+  const stageDisplay = resolveDisplay(student?.stage, viewStages);
+  const gradeDisplay = resolveDisplay(student?.grade, viewGrades);
 
   return (
     <form onSubmit={handleSubmit} className="bg-[var(--white)] border border-[var(--border-light)] rounded-2xl shadow-[var(--shadow)] p-6">
@@ -574,6 +665,14 @@ export const StudentAcademicCard = ({ student, curriculums = [], loadingCurricul
       ) : (
         <EditBox>
           <Dropdown
+            label="المنهج الدراسي"
+            value={form.curriculumId}
+            options={curriculumOptions}
+            onChange={handleCurriculumChange}
+            loading={loadingCurriculums}
+            placeholder="اختر المنهج الدراسي"
+          />
+          <Dropdown
             label="المرحلة الدراسية"
             value={form.stageId}
             options={stageOptions}
@@ -590,14 +689,6 @@ export const StudentAcademicCard = ({ student, curriculums = [], loadingCurricul
             loading={loadingGrades}
             disabled={!form.stageId}
             placeholder={form.stageId ? 'اختر الصف الدراسي' : 'اختر المرحلة الدراسية أولاً'}
-          />
-          <Dropdown
-            label="المنهج الدراسي"
-            value={form.curriculumId}
-            options={curriculumOptions}
-            onChange={handleCurriculumChange}
-            loading={loadingCurriculums}
-            placeholder="اختر المنهج الدراسي"
           />
           <Dropdown
             label="لغة التعلم المفضلة"
