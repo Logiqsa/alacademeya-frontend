@@ -39,6 +39,13 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       path: "/Admin/supervisors",
     },
     {
+      title: "التسجيلات",
+      icon: childrenIcon,
+      path: "/Admin/records",
+    },
+
+   
+    {
       title: "الرسائل",
       icon: messagesIcon,
       path: "/parent/messages",
