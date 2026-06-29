@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 
-import GroupsStatsBar from "../../../components/admin/groups/GroupsStatsBar";
-import GroupsFilters from "../../../components/admin/groups/GroupsFilters";
+
 import GroupsTable from "../../../components/admin/groups/GroupsTable";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import GroupsStatsBar from "../../../components/admin/groups/GroupsStatsBar";
+import GroupsFilters from "../../../components/admin/groups/GroupsFilters";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const MOCK_GROUPS = [
