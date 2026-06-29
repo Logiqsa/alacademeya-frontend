@@ -48,6 +48,7 @@ import AccountViewPage from "./pages/parent/AccountViewPage";
 import TeacherAccountSettingsPage from "./pages/teacher/TeacherAccountSettingsPage";
 import EarningsPage from "./pages/teacher/EarningsPage";
 import ExamDetailsPage from "./pages/teacher/exam/ExamDetailsPage";
+import CreateExamPage from "./pages/teacher/exam/addExam/CreateExamPage";
 
 
 function App() {
@@ -213,6 +214,10 @@ function App() {
           element={user ? <ExamDetailsPage /> : <Navigate to="/login" replace />}
         />
 
+        <Route
+          path="/teacher/exams/new"
+          element={user ? <CreateExamPage /> : <Navigate to="/login" replace />}
+        />
 
 
 
