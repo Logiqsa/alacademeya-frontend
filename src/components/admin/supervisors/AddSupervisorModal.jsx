@@ -58,16 +58,27 @@ const AddSupervisorModal = ({ open, onClose }) => {
   };
 
   return (
-    /* Backdrop */
+    /* Backdrop — full screen, scrollable on small phones */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-0 sm:px-4"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      {/* Modal */}
+      {/* Modal — slides up from bottom on mobile, centered on desktop */}
       <div
-        className="bg-white rounded-2xl w-full max-w-135 mx-4 p-6 shadow-xl"
+        className="
+          bg-white w-full sm:max-w-120
+          rounded-t-3xl sm:rounded-2xl
+          p-6 pb-8 sm:pb-6
+          shadow-xl
+          max-h-[92dvh] overflow-y-auto
+        "
         dir="rtl"
       >
+        {/* Drag handle — visible only on mobile */}
+        <div className="flex justify-center mb-4 sm:hidden">
+          <div className="w-10 h-1 rounded-full bg-[#E5E5E5]" />
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[18px] text-[#1F2937]">
@@ -105,8 +116,9 @@ const AddSupervisorModal = ({ open, onClose }) => {
             <label className="block font-['Tajawal'] font-medium text-[15px] text-right text-[#1F2937] pb-1">
               رقم الهاتف
             </label>
-            <div className="flex gap-2">
-              <div className="flex items-center justify-center h-12 px-4 border border-[#E5E5E5] rounded-lg bg-[#F3F4F6] text-[14px] text-[#575F69] shrink-0 font-['IBM_Plex_Sans_Arabic']">
+            <div className={`flex h-12 w-full border rounded-lg bg-[#F9FAFA] overflow-hidden transition-all focus-within:ring-2
+              ${errors.phone ? "border-red-400 focus-within:ring-red-300" : "border-[#E5E5E5] focus-within:ring-[#123C91]"}`}>
+              <div className="flex items-center justify-center px-3 bg-[#F3F4F6] border-l border-[#E5E5E5] text-[14px] text-[#575F69] shrink-0 font-['IBM_Plex_Sans_Arabic'] select-none">
                 ‎+20
               </div>
               <input
@@ -114,8 +126,7 @@ const AddSupervisorModal = ({ open, onClose }) => {
                 value={data.phone}
                 onChange={(e) => handleField("phone", e.target.value)}
                 placeholder="رقم الهاتف"
-                className={`flex-1 h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 transition-all placeholder:text-[#8C9198] text-right
-                  ${errors.phone ? "border-red-400 focus:ring-red-300" : "border-[#E5E5E5] focus:ring-[#123C91]"}`}
+                className="flex-1 min-w-0 h-full px-3 bg-transparent font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none placeholder:text-[#8C9198] text-right"
               />
             </div>
             {errors.phone && (
