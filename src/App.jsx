@@ -55,6 +55,9 @@ import AdminHome from "./pages/admin/AdminHome";
 import AdminAccountSettingsPage from "./pages/admin/AdminAccountSettingsPage";
 import AdminNotificationss from "./pages/admin/notifications/Notifications";
 import UsersPage from "./pages/admin/users/Userspage";
+import GroupsPages from "./pages/admin/groups/Groupspage";
+import AttendancePage from "./pages/admin/groups/attendance/AttendancePage";
+import CreateGroupPages from "./pages/admin/groups/CreateGroupPage";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -126,7 +129,10 @@ function App() {
            <Route path="/Admin/settings" element={user ? <AdminAccountSettingsPage /> : <Navigate to="/login" replace />} />
            <Route path="/Admin/notifications" element={user ? <AdminNotificationss /> : <Navigate to="/login" replace />} />
            <Route path="/Admin/users" element={user ? <UsersPage /> : <Navigate to="/login" replace />} />
-           
+           <Route path="/admin/groups" element={user ? <GroupsPages /> : <Navigate to="/login" replace />} />
+           <Route path="/admin/groups/:groupId/attendance" element={user ? <AttendancePage  /> : <Navigate to="/login" replace />} />
+           <Route path="/admin/groups/new" element={user ? <CreateGroupPages  /> : <Navigate to="/login" replace />} />
+            
        
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

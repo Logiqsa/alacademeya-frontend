@@ -28,9 +28,9 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       path: "/Admin/users",
     },
     {
-      title: "الجدول",
+      title: "المجموعات",
       icon: scheduleIcon,
-      path: "/parent/schedule",
+      path: "/Admin/groups",
     },
     {
       title: "الرسائل",
