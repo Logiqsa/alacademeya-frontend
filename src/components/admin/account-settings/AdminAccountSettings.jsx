@@ -1,0 +1,407 @@
+import React, { useState, useRef } from 'react';
+import { Pencil, Eye, EyeOff, ChevronDown, User, Camera, Loader2 } from 'lucide-react';
+
+/* ------------------------------------------------------------------ */
+/* Static Data                                                          */
+/* ------------------------------------------------------------------ */
+
+const STATIC_ADMIN = {
+  fullName: 'محمد أحمد',
+  username: 'mohamed_ahmed',
+  email: 'adel@gmail.com',
+  phone: '+20 1000 456987',
+  country: 'مصر',
+  avatarUrl: null,
+  lastPasswordChange: 'آخر تغيير منذ 3 أشهر',
+};
+
+const PASSWORD_RULES = [
+  { id: 'len', label: 'الحد الأدنى 8 أحرف', test: (p) => p.length >= 8 },
+  { id: 'upper', label: 'حرف كبير واحد على الأقل', test: (p) => /[A-Z]/.test(p) },
+  { id: 'lower', label: 'حرف صغير واحد على الأقل', test: (p) => /[a-z]/.test(p) },
+  { id: 'digit', label: 'رقم واحد على الأقل', test: (p) => /[0-9]/.test(p) },
+  { id: 'special', label: 'رمز خاص واحد على الأقل', test: (p) => /[^A-Za-z0-9\s]/.test(p) },
+  { id: 'nospace', label: 'لا يحتوي على مسافات', test: (p) => p.length > 0 && !/\s/.test(p) },
+];
+
+const COUNTRY_OPTIONS = [
+  { id: 'eg', label: 'مصر' },
+  { id: 'sa', label: 'السعودية' },
+  { id: 'ae', label: 'الإمارات' },
+  { id: 'kw', label: 'الكويت' },
+  { id: 'jo', label: 'الأردن' },
+];
+
+/* ------------------------------------------------------------------ */
+/* Shared Components                                                    */
+/* ------------------------------------------------------------------ */
+
+const SectionHeader = ({ title, subtitle, editing, onEditClick }) => (
+  <div className="mb-4">
+    <div className="flex items-center justify-between gap-3 mb-2">
+      <h3 className="text-[16px] font-bold text-(--text-dark)">{title}</h3>
+      {!editing && onEditClick && (
+        <button
+          type="button"
+          onClick={onEditClick}
+          className="flex items-center gap-1.5 text-[14px] font-medium text-(--primary) hover:text-(--primary-dark) transition-colors shrink-0"
+        >
+          <Pencil size={14} />
+          تعديل البيانات
+        </button>
+      )}
+    </div>
+    {subtitle && <p className="text-xs sm:text-sm text-(--text-light)">{subtitle}</p>}
+  </div>
+);
+
+const ActionRow = ({ saving, onCancel, confirmLabel = 'حفظ التعديلات', error }) => (
+  <>
+    {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
+    <div className="flex items-center gap-3 mt-5">
+      <button
+        type="submit"
+        disabled={saving}
+        className="px-5 py-2.5 rounded-lg bg-(--primary) text-white text-sm font-medium hover:bg-(--primary-dark) transition-colors flex items-center gap-2 disabled:opacity-60"
+      >
+        {saving && <Loader2 size={14} className="animate-spin" />}
+        {confirmLabel}
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="px-5 py-2.5 rounded-lg border border-(--border-light) text-(--text-dark) text-sm font-medium hover:bg-(--bg-section) transition-colors"
+      >
+        إلغاء
+      </button>
+    </div>
+  </>
+);
+
+const ViewField = ({ label, value }) => (
+  <div className="flex flex-col gap-1.5 min-w-0">
+    <span className="text-[14px] mb-1 text-(--text-light)">{label}</span>
+    <span className="text-sm font-semibold text-(--text-dark) wrap-break-word">{value || '—'}</span>
+  </div>
+);
+
+const ViewGrid = ({ children }) => (
+  <div className="border border-x-4 border-[#123C9180] rounded-xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+    {children}
+  </div>
+);
+
+const EditBox = ({ children }) => (
+  <div className="border border-x-4 border-[#123C9180] rounded-xl p-5 grid grid-cols-1 gap-5">{children}</div>
+);
+
+const TextInput = ({ label, value, onChange, type = 'text' }) => (
+  <div>
+    <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
+    <input
+      type={type}
+      value={value ?? ''}
+      onChange={onChange}
+      className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-[14px] text-(--text-dark) outline-none focus:border-(--primary) focus:ring-2 focus:ring-(--primary) focus:ring-opacity-20 transition-all"
+    />
+  </div>
+);
+
+const LockedPhoneField = ({ label, value }) => (
+  <div>
+    <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
+    <div
+      dir="ltr"
+      className="w-full h-11 rounded-lg border border-(--border-light) bg-(--bg-section) flex items-stretch overflow-hidden opacity-80 cursor-not-allowed"
+    >
+      <span className="flex-1 px-3 flex items-center text-sm text-(--text-light) truncate">
+        {value || '—'}
+      </span>
+    </div>
+  </div>
+);
+
+const PasswordField = ({ label, value, onChange }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div>
+      <label className="block text-[16px] text-(--text-light) mb-1.5">{label}</label>
+      <div className="relative">
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={onChange}
+          dir="ltr"
+          className="w-full h-11 pl-10 pr-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-[14px] text-(--text-dark) outline-none focus:border-(--primary) focus:ring-2 focus:ring-(--primary) focus:ring-opacity-20 transition-all"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setShow((s) => !s)}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-light)"
+        >
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const PasswordRulesList = ({ password }) => (
+  <div>
+    <p className="text-xs text-(--text-light) mb-2">يجب أن تتضمن كلمة المرور:</p>
+    <ul className="text-xs space-y-1 list-disc pr-4">
+      {PASSWORD_RULES.map((rule) => {
+        const met = rule.test(password || '');
+        return (
+          <li key={rule.id} className={met ? 'text-(--primary) font-medium' : 'text-(--text-light)'}>
+            {rule.label}
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+);
+
+const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', disabled }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = options.find((o) => o.id === value);
+
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
+      <button
+        type="button"
+        onClick={() => !disabled && setOpen((o) => !o)}
+        disabled={disabled}
+        className={`w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-sm text-right flex items-center justify-between transition-colors ${
+          disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-(--primary)'
+        }`}
+      >
+        <span className={selected ? 'text-(--text-dark)' : 'text-(--text-light)'}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <ChevronDown size={16} className={`text-(--text-light) transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && !disabled && (
+        <ul className="absolute z-20 top-full right-0 left-0 mt-1 max-h-56 overflow-y-auto bg-(--white) border border-(--border-light) rounded-lg shadow-lg">
+          {options.map((opt) => (
+            <li
+              key={opt.id}
+              onClick={() => { onChange(opt.id); setOpen(false); }}
+              className="px-3.5 py-2.5 text-sm cursor-pointer hover:bg-(--bg-section) text-(--text-dark)"
+            >
+              {opt.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* Cards                                                               */
+/* ------------------------------------------------------------------ */
+
+const AdminPersonalCard = ({ admin }) => {
+  const buildForm = () => ({
+    fullName: admin.fullName,
+    username: admin.username,
+    email: admin.email,
+    countryId: 'eg',
+  });
+
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error] = useState('');
+  const [form, setForm] = useState(buildForm);
+
+  const handleChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleCancel = () => { setForm(buildForm()); setEditing(false); };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setTimeout(() => { setSaving(false); setEditing(false); }, 800);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
+      <SectionHeader
+        title="البيانات الشخصية"
+        subtitle="هذا القسم يحتوي على بياناتك الأساسية التي تُستخدم في جميع الخدمات الرسمية داخل المنصة."
+        editing={editing}
+        onEditClick={() => setEditing(true)}
+      />
+
+      {!editing ? (
+        <ViewGrid>
+          <ViewField label="الاسم الكامل" value={admin.fullName} />
+          <ViewField label="اسم المستخدم" value={admin.username} />
+          <ViewField label="البريد الإلكتروني" value={admin.email} />
+          <ViewField label="رقم الهاتف" value={admin.phone} />
+          <ViewField label="الدولة" value={admin.country} />
+        </ViewGrid>
+      ) : (
+        <EditBox>
+          <TextInput label="الاسم بالكامل" value={form.fullName} onChange={handleChange('fullName')} />
+          <TextInput label="اسم المستخدم" value={form.username} onChange={handleChange('username')} />
+          <TextInput label="البريد الإلكتروني" value={form.email} onChange={handleChange('email')} type="email" />
+          <Dropdown
+            label="الدولة"
+            value={form.countryId}
+            options={COUNTRY_OPTIONS}
+            onChange={(id) => setForm((prev) => ({ ...prev, countryId: id }))}
+            placeholder="اختر الدولة"
+          />
+          <LockedPhoneField label="رقم الهاتف" value={admin.phone} />
+        </EditBox>
+      )}
+
+      {editing && (
+        <>
+          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-4">
+            تغيير البريد الإلكتروني سيتطلب تسجيل الدخول مرة أخرى.
+          </p>
+          <ActionRow saving={saving} onCancel={handleCancel} error={error} confirmLabel="تعديل البيانات" />
+        </>
+      )}
+    </form>
+  );
+};
+
+const SecurityCard = () => {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [form, setForm] = useState({ currentPassword: '', password: '', passwordConfirm: '' });
+
+  const handleChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleCancel = () => {
+    setForm({ currentPassword: '', password: '', passwordConfirm: '' });
+    setError('');
+    setEditing(false);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    if (!form.password) { setError('أدخل كلمة المرور الجديدة'); return; }
+    if (form.password !== form.passwordConfirm) { setError('كلمة المرور وتأكيدها غير متطابقين'); return; }
+    if (!PASSWORD_RULES.every((r) => r.test(form.password))) {
+      setError('كلمة المرور الجديدة لا تستوفي جميع الشروط المطلوبة');
+      return;
+    }
+    setSaving(true);
+    setTimeout(() => { setSaving(false); handleCancel(); }, 800);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
+      <SectionHeader
+        title="الأمان وكلمة المرور"
+        subtitle="تغيير كلمة المرور وإعدادات الأمان"
+        editing={editing}
+        onEditClick={() => setEditing(true)}
+      />
+
+      {!editing ? (
+        <div className="border border-x-4 border-[#123C9180] rounded-xl p-5">
+          <p className="text-xs text-(--text-light) mb-1.5">كلمة المرور</p>
+          <p className="text-sm font-semibold text-(--text-dark) mb-1 tracking-widest">••••••••</p>
+          <p className="text-xs text-(--text-light)">{STATIC_ADMIN.lastPasswordChange}</p>
+        </div>
+      ) : (
+        <EditBox>
+          <PasswordField label="كلمة المرور الحالية" value={form.currentPassword} onChange={handleChange('currentPassword')} />
+          <PasswordField label="كلمة المرور الجديدة" value={form.password} onChange={handleChange('password')} />
+          <PasswordRulesList password={form.password} />
+          <PasswordField label="تأكيد كلمة المرور الجديدة" value={form.passwordConfirm} onChange={handleChange('passwordConfirm')} />
+        </EditBox>
+      )}
+
+      {editing && <ActionRow saving={saving} onCancel={handleCancel} error={error} confirmLabel="تغيير كلمة المرور" />}
+    </form>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* Main Page                                                           */
+/* ------------------------------------------------------------------ */
+
+const AdminAccountSettings = () => {
+  const admin = STATIC_ADMIN;
+  const fileInputRef = useRef(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(admin.avatarUrl);
+
+  const handleAvatarClick = () => fileInputRef.current?.click();
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarUrl(reader.result);
+      setUploadingAvatar(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  return (
+    <div className="space-y-5" dir="rtl">
+      {/* Page title */}
+      <div className="max-w-7xl mx-auto p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+        <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">إعدادات الحساب</h1>
+        <p className="text-[16px] font-normal leading-6 text-[#575F69]">إدارة معلومات حسابك وتفضيلاتك</p>
+      </div>
+
+      {/* Header card — avatar + name */}
+      <div className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) overflow-hidden">
+        <div className="p-6 flex items-center gap-4">
+          <div className="relative w-16 h-16 shrink-0">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-(--bg-light) flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={admin.fullName} className="w-full h-full object-cover" />
+              ) : (
+                <User size={28} className="text-(--primary)" />
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleAvatarClick}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full bg-(--primary) text-white flex items-center justify-center border-2 border-white disabled:opacity-60"
+              aria-label="تغيير الصورة"
+            >
+              {uploadingAvatar ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          </div>
+
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-(--text-dark) truncate">{admin.fullName}</h2>
+            <p className="text-sm text-(--text-light) truncate">{admin.email}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Cards */}
+      <AdminPersonalCard admin={admin} />
+      <SecurityCard />
+    </div>
+  );
+};
+
+export default AdminAccountSettings;

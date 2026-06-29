@@ -50,7 +50,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
     {
       title: "الإعدادات",
       icon: settingsIcon,
-      path: "/parent/settings",
+      path: "/Admin/settings",
     },
   ];
 

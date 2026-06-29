@@ -52,6 +52,7 @@ import CreateExamPage from "./pages/teacher/exam/addExam/CreateExamPage";
 import TeacherGuard from "./guards/TeacherGuard";
 import StudentGuard from "./guards/StudentGuard";
 import AdminHome from "./pages/admin/AdminHome";
+import AdminAccountSettingsPage from "./pages/admin/AdminAccountSettingsPage";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -120,6 +121,8 @@ function App() {
        
        {/* Admin */}
            <Route path="/admin-dashboard" element={user ? <AdminHome /> : <Navigate to="/login" replace />} />
+           <Route path="/Admin/settings" element={user ? <AdminAccountSettingsPage /> : <Navigate to="/login" replace />} />
+           
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
