@@ -19,65 +19,63 @@ const LoginForm = () => {
       const data = await login(credentials);
       toast.success("تم تسجيل الدخول بنجاح!");
       const role = data?.user?.role;
-      if (role === "parent") navigate("/parent-dashboard");
-      else if (role === "student") navigate("/student-dashboard");
-      else if (role === "teacher") navigate("/teacher-dashboard");
-      else navigate("/");
+   const status = data?.user?.registrationStatus;
+
+      console.log("user data:", JSON.stringify(data.user)); 
+
+if (role === "student") {
+  if (data?.user?.registrationStatus === "active") {
+    navigate("/student-dashboard");
+  } else {
+    navigate("/account-state", { state: { role } });
+  }
+} else if (role === "parent") {
+  navigate("/parent-dashboard");
+} else if (role === "teacher") {
+  navigate("/teacher-dashboard");
+} else {
+  navigate("/");
+}
+      
     } catch (error) {
-      const message =
+      toast.error(
         error.response?.data?.message ||
-        "حدث خطأ أثناء تسجيل الدخول، يرجى المحاولة لاحقاً.";
-      toast.error(message);
+        "حدث خطأ أثناء تسجيل الدخول، يرجى المحاولة لاحقاً."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-   <div className="w-full max-w-2xl mx-auto p-8 flex flex-col items-center" dir="rtl">
+    <div className="w-full max-w-2xl mx-auto p-8 flex flex-col items-center" dir="rtl">
       <div className="w-full max-w-150 flex flex-col items-start mb-10">
-        <img
-          src={logo}
-          alt="logo"
-          className="cursor-pointer mb-4"
-          style={{ width: "176px", height: "32px" }}
-        />
-        <h2
-          className="font-bold text-[24px] text-[#1F2937]"
-          style={{ fontFamily: "Tajawal, sans-serif" }}
-        >
+        <img src={logo} alt="logo" className="cursor-pointer mb-4" style={{ width: "176px", height: "32px" }} />
+        <h2 className="font-bold text-[24px] text-[#1F2937]" style={{ fontFamily: "Tajawal, sans-serif" }}>
           مرحباً بك...
         </h2>
       </div>
 
       <form className="w-full space-y-5" onSubmit={handleSubmit}>
         <div>
-          <label className="block text-[14px] font-medium text-[#1F2937] mb-2">
-            البريد الإلكتروني
-          </label>
+          <label className="block text-[14px] font-medium text-[#1F2937] mb-2">البريد الإلكتروني</label>
           <input
             type="email"
             placeholder="أدخل بريدك الإلكتروني"
             required
-            onChange={(e) =>
-              setCredentials({ ...credentials, email: e.target.value })
-            }
+            onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
             className="w-full h-12 px-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91] text-[14px]"
           />
         </div>
 
         <div>
-          <label className="block text-[14px] font-medium text-[#1F2937] mb-2">
-            كلمة المرور
-          </label>
+          <label className="block text-[14px] font-medium text-[#1F2937] mb-2">كلمة المرور</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="********"
               required
-              onChange={(e) =>
-                setCredentials({ ...credentials, password: e.target.value })
-              }
+              onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
               className="w-full h-12 px-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91] text-[14px]"
             />
             <button
@@ -95,13 +93,12 @@ const LoginForm = () => {
             <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[#123C91]" />
             تذكرني
           </label>
-          <Link
-            to="/forgot-password"
-            className="text-[14px] font-medium text-[#123C91] border-b border-[#123C91]"
-          >
+          <Link to="/forgot-password" className="text-[14px] font-medium text-[#123C91] border-b border-[#123C91]">
             نسيت كلمة المرور؟
           </Link>
-        </div><button
+        </div>
+
+        <button
           type="submit"
           disabled={loading}
           className="w-full h-14 rounded-lg bg-[#123C91] text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
@@ -112,10 +109,7 @@ const LoginForm = () => {
 
         <div className="flex items-center justify-center gap-1 pt-2">
           <span className="text-[14px] text-[#1F2937]">ليس لديك حساب؟</span>
-          <Link
-            to="/select-account-type"
-            className="text-[14px] font-medium text-[#123C91] border-b border-[#123C91]"
-          >
+          <Link to="/select-account-type" className="text-[14px] font-medium text-[#123C91] border-b border-[#123C91]">
             إنشاء حساب
           </Link>
         </div>

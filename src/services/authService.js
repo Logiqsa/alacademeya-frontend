@@ -28,6 +28,12 @@ export const register = (userData) => API.post('/auth/register', userData);
 export const resendOtp = (email, role, country) => API.post('/auth/resend-otp', { email, role, country });
 export const verifyAccount = (data) => API.post('/auth/verifyAccount', data);
 
+// ===== Student profile completion =====
+// Matches the "Complete Student Profile" request in Postman:
+// POST /api/auth/completeStudentProfile (Bearer Token auth — handled
+// automatically by the attachToken interceptor above).
+export const completeStudentProfile = (payload) => API.post('/auth/completeStudentProfile', payload);
+
 export const saveStudentInterests = (payload) => API.post('/auth/student/interests', payload);
 export const saveTeacherDetails = (payload) => API.post('/auth/teacher/details', payload);
 export const getAccountState = () => API.get('/auth/account-state');

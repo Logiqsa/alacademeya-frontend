@@ -4,7 +4,13 @@ import { ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
-import { getCurriculums, getCurriculumStages, getStageGrades } from "../../services/authService";
+import {
+    getCurriculums,
+    getCurriculumStages,
+    getStageGrades,
+    completeStudentProfile,
+    getAccountState,
+} from "../../services/authService";
 
 
 const Dropdown = ({ label, placeholder, value, onChange, options, loading, disabled }) => {
@@ -68,6 +74,29 @@ const Dropdown = ({ label, placeholder, value, onChange, options, loading, disab
         </div>
     );
 };
+
+// ── Adjust these two to match your actual router/backend contract ──
+// Where an approved student should land.
+const DASHBOARD_ROUTE = "/dashboard";
+// Where a student who is still awaiting approval should land.
+const PENDING_ROUTE = "/register/pending";
+
+// Reads the approval status out of an /auth/account-state response.
+// Tries a couple of common shapes ({ status } or { data: { status } })
+// since the exact field name/casing wasn't confirmed against the live
+// backend response — adjust this one function if the real field differs.
+const extractStatus = (res) => {
+    const raw =
+        res?.data?.status ??
+        res?.data?.data?.status ??
+        res?.data?.profileStatus ??
+        res?.data?.data?.profileStatus ??
+        "";
+    return String(raw).toLowerCase();
+};
+
+const isApprovedStatus = (status) =>
+    ["approved", "active", "accepted"].includes(status);
 
 const StudentDetailsPages = () => {
     const { state } = useLocation();
@@ -163,18 +192,40 @@ const StudentDetailsPages = () => {
 
         setLoading(true);
         try {
-            navigate("/register/subjects", {
-                state: {
-                    email,
-                    role,
-                    academicLevel,
-                    countryId,
-                    curriculumId,
-                    stageId,
-                    gradeId,
-                    serviceType,
-                },
+            // 1) Actually persist the profile — this was missing before,
+            // which is why nothing reached the database.
+            await completeStudentProfile({
+                email,
+                role,
+                academicLevel,
+                countryId,
+                curriculumId,
+                stageId,
+                gradeId,
+                serviceType,
             });
+
+            // 2) Find out whether this student account is already approved.
+            let approved = false;
+            try {
+                const stateRes = await getAccountState();
+                approved = isApprovedStatus(extractStatus(stateRes));
+            } catch (err) {
+                console.log("account-state error:", err.response?.status, err.response?.data);
+            }
+
+            toast.success("تم حفظ بيانات الطالب بنجاح!");
+
+            if (approved) {
+                navigate(DASHBOARD_ROUTE);
+            } else {
+                navigate(PENDING_ROUTE, {
+                    state: { email, role, academicLevel, countryId, curriculumId, stageId, gradeId, serviceType },
+                });
+            }
+        } catch (err) {
+            console.log("completeStudentProfile error:", err.response?.status, err.response?.data);
+            toast.error(err.response?.data?.message || "حدث خطأ أثناء حفظ البيانات");
         } finally {
             setLoading(false);
         }

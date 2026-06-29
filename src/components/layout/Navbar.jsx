@@ -3,23 +3,46 @@ import logo from "../../assets/icons/logo.svg";
 import { Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import { getAccountState } from "../../services/authService";
 
 // ── الـ role بيحدد الداشبورد ──────────────────────────────────────────────
 // teacher  → /teacher-dashboard
 // student  → لو status=approved يروح /student-dashboard، غير كده /register/success
 // parent   → /parent-dashboard (default)
-const getDashboardPath = (user) => {
+//
+// ملاحظة: لطلاب الـ "student"، الحالة المخزّنة في AuthContext (user.status)
+// ممكن تكون قديمة (محفوظة من وقت تسجيل الدخول/التسجيل)، ولو الإدارة وافقت
+// على الحساب بعد كده، الـ context مش بيتحدث لوحده. فبدل ما نعتمد على
+// user.status المخزّن، بنسأل السيرفر عن الحالة الفعلية الحالية أول ما
+// المستخدم يدوس على "لوحة التحكم"، وبعدين نوجّهه على أساس الرد الجديد.
+const goToDashboard = async (user, navigate) => {
   const role = user?.role;
-  if (role === "teacher") return "/teacher-dashboard";
-  if (role === "student") {
-    return user?.status === "approved" ? "/student-dashboard" : "/register/success";
+
+  if (role === "teacher") {
+    navigate("/teacher-dashboard");
+    return;
   }
-  return "/parent-dashboard";
+
+  if (role === "student") {
+    try {
+      const res = await getAccountState();
+      const status = res?.data?.status ?? res?.data?.data?.status;
+      navigate(String(status).toLowerCase() === "approved" ? "/student-dashboard" : "/register/success");
+    } catch (err) {
+      console.log("account-state error:", err.response?.status, err.response?.data);
+      // تعذر الوصول للسيرفر — رجوع مؤقت للقيمة المخزنة بدل ما المستخدم يعلّق.
+      navigate(user?.status === "approved" ? "/student-dashboard" : "/register/success");
+    }
+    return;
+  }
+
+  navigate("/parent-dashboard");
 };
 
 const Navbar = () => {
   const { user } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [checkingDashboard, setCheckingDashboard] = useState(false);
   const navigate = useNavigate();
 
   const links = [
@@ -34,6 +57,16 @@ const Navbar = () => {
     const section = document.getElementById(id);
     if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
     setMenuOpen(false);
+  };
+
+  const handleDashboardClick = async () => {
+    if (checkingDashboard) return;
+    setCheckingDashboard(true);
+    try {
+      await goToDashboard(user, navigate);
+    } finally {
+      setCheckingDashboard(false);
+    }
   };
 
   return (
@@ -77,10 +110,11 @@ const Navbar = () => {
                   مرحباً، {user.fullName || "عزيزي المستخدم"}
                 </span>
                 <button
-                  onClick={() => navigate(getDashboardPath(user))}
-                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white text-[16px] font-medium"
+                  onClick={handleDashboardClick}
+                  disabled={checkingDashboard}
+                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white text-[16px] font-medium disabled:opacity-70"
                 >
-                  لوحة التحكم
+                  {checkingDashboard ? "جاري التحقق..." : "لوحة التحكم"}
                 </button>
               </div>
             ) : (
@@ -152,10 +186,11 @@ const Navbar = () => {
                 مرحباً، {user.fullName || "عزيزي المستخدم"}
               </span>
               <button
-                onClick={() => { navigate(getDashboardPath(user)); setMenuOpen(false); }}
-                className="h-10 w-full rounded-lg bg-[#123C91] text-white text-[16px] font-medium"
+                onClick={async () => { await handleDashboardClick(); setMenuOpen(false); }}
+                disabled={checkingDashboard}
+                className="h-10 w-full rounded-lg bg-[#123C91] text-white text-[16px] font-medium disabled:opacity-70"
               >
-                لوحة التحكم
+                {checkingDashboard ? "جاري التحقق..." : "لوحة التحكم"}
               </button>
             </div>
           ) : (
