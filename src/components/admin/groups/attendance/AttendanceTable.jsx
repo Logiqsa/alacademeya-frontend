@@ -25,7 +25,7 @@ const AttendanceTable = ({ records = [] }) => {
       {/* Desktop table */}
       <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-right">
+          <table className="w-full min-w-150 text-right">
             <thead>
               <tr
                 style={{
