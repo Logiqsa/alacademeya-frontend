@@ -94,9 +94,7 @@ const ExamPage = () => {
         <div className="mt-4">
           <ExamTable
             Exams={paginatedExams}
-            onView={(id) => console.log("view", id)}
-            onEdit={(id) => console.log("edit", id)}
-            onDelete={(id) => console.log("delete", id)}
+           onView={(id) => navigate(`/teacher/exam/${id}`)}
           />
         </div>
 

@@ -47,6 +47,7 @@ import AccountSettingsPage from "./pages/parent/AccountSettings";
 import AccountViewPage from "./pages/parent/AccountViewPage";
 import TeacherAccountSettingsPage from "./pages/teacher/TeacherAccountSettingsPage";
 import EarningsPage from "./pages/teacher/EarningsPage";
+import ExamDetailsPage from "./pages/teacher/exam/ExamDetailsPage";
 
 
 function App() {
@@ -205,6 +206,11 @@ function App() {
         <Route
           path="/teacher/earnings"
           element={user ? <EarningsPage /> : <Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/teacher/exam/:examId"
+          element={user ? <ExamDetailsPage /> : <Navigate to="/login" replace />}
         />
 
 

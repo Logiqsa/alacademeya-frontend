@@ -72,7 +72,7 @@ const ExamTable = ({ Exams = [], onView }) => {
     if (onView) {
       onView(examId);
     } else {
-      navigate(`/teacher/exams/${examId}`);
+      navigate(`/teacher/exam/${examId}`);
     }
   };
 
