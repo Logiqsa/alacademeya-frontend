@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import TeacherLayout from '../../../components/teacher/layout/TeacherLayout';
 import ExamBasicInfoStep from '../../../../components/teacher/exam/addExam/ExamBasicInfoStep';
 import ExamQuestionsStep from '../../../../components/teacher/exam/addExam/ExamQuestionsStep';
 import ExamReviewStep from '../../../../components/teacher/exam/addExam/ExamReviewStep';
+import TeacherLayout from '../../../../components/teacher/layout/TeacherLayout';
+import ExamStepsNavigation from '../../../../components/teacher/exam/addExam/ExamStepsNavigation';
 
 
 const stepTitles = {
@@ -36,7 +37,7 @@ const CreateExamPage = () => {
 
   return (
     <TeacherLayout>
-      <div className="max-w-3xl mx-auto px-2 sm:px-4 py-4 sm:py-6 font-['IBM_Plex_Sans_Arabic']" dir="rtl">
+      <div className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-4 sm:py-6 font-['IBM_Plex_Sans_Arabic']">
         {/* Header */}
         <div className="text-right mb-4">
           <h1 className="font-semibold text-[22px] sm:text-[26px] text-[#123C91]">إنشاء اختبار جديد</h1>
