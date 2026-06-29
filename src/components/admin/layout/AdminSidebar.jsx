@@ -45,7 +45,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
     {
       title: "الإشعارات",
       icon: notificationsIcon,
-      path: "/parent/notifications",
+      path: "/Admin/notifications",
     },
     {
       title: "الإعدادات",

@@ -6,7 +6,7 @@ import AdminLayout from '../../../components/admin/layout/AdminLayout';
 
 
 
-const Notificationss = () => {
+const AdminNotificationss = () => {
     return (
         <AdminLayout>
             <div className="max-w-7xl mx-auto p-2 space-y-6 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
@@ -25,4 +25,4 @@ const Notificationss = () => {
         </AdminLayout>
     );
 };
-export default Notificationss;
+export default AdminNotificationss;
