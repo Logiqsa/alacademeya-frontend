@@ -1,3 +1,5 @@
+import NotificationsSection from "../../components/admin/dashboard/NotificationsSection";
+import UpcomingLessonsSection from "../../components/admin/dashboard/UpcomingLessonsSection";
 import Welcome from "../../components/admin/dashboard/Welcome";
 import AdminLayout from "../../components/admin/layout/AdminLayout";
 
@@ -11,14 +13,14 @@ const AdminHome = () => {
         {/* <StatsTeacherCard /> */}
 
 
-        {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
           <div className="lg:col-span-2 flex">
             <UpcomingLessonsSection />
           </div>
           <div className="lg:col-span-1 flex">
             <NotificationsSection />
           </div>
-        </div> */}
+        </div>
       </div>
 
     </AdminLayout >
