@@ -1,0 +1,28 @@
+import Welcome from "../../components/admin/dashboard/Welcome";
+import AdminLayout from "../../components/admin/layout/AdminLayout";
+
+
+
+const AdminHome = () => {
+  return (
+    <AdminLayout>
+      <div className="space-y-6 p-1" dir="rtl">
+        <Welcome />
+        {/* <StatsTeacherCard /> */}
+
+
+        {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          <div className="lg:col-span-2 flex">
+            <UpcomingLessonsSection />
+          </div>
+          <div className="lg:col-span-1 flex">
+            <NotificationsSection />
+          </div>
+        </div> */}
+      </div>
+
+    </AdminLayout >
+  );
+};
+
+export default AdminHome;

@@ -17,6 +17,10 @@ import { getAccountState } from "../../services/authService";
 // المستخدم يدوس على "لوحة التحكم"، وبعدين نوجّهه على أساس الرد الجديد.
 const goToDashboard = async (user, navigate) => {
   const role = user?.role;
+  if (role === "admin") {
+    navigate("/admin-dashboard");
+    return;
+  }
 
   if (role === "teacher") {
     navigate("/teacher-dashboard");

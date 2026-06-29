@@ -25,14 +25,12 @@ const LoginForm = () => {
       console.log("user data:", JSON.stringify(data.user));
 
       if (role === "teacher") {
-        // ✅ المعلم: لو active يدخل الداشبورد، غير كده pending
         if (status === "active") {
           navigate("/teacher-dashboard");
         } else {
           navigate("/pending");
         }
       } else if (role === "student") {
-        // ✅ الطالب: لو active يدخل الداشبورد، غير كده pending
         if (status === "active") {
           navigate("/student-dashboard");
         } else {
@@ -40,6 +38,9 @@ const LoginForm = () => {
         }
       } else if (role === "parent") {
         navigate("/parent-dashboard");
+      } else if (role === "admin") {
+        // ✅ الأدمن
+        navigate("/admin-dashboard");
       } else {
         navigate("/");
       }
