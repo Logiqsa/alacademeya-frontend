@@ -1,22 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { verifyAccount, resendOtp } from "../../services/authService";
+import { AuthContext } from "../../context/AuthContext";
 
 const OTP_LENGTH = 6;
 const TIMER_START = 60;
 
 const NEXT_ROUTE = {
   parent: "/parent-dashboard",
-  student: "/register/interests",
+  student: "/register/student-details",
   teacher: "/register/teacher-details",
 };
 
 const OtpPage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { setUser } = useContext(AuthContext);
+
   const email = state?.email || "";
   const role = state?.role || "student";
 
@@ -25,12 +28,10 @@ const OtpPage = () => {
   const [loading, setLoading] = useState(false);
   const inputRefs = useRef([]);
 
-  // redirect if landed without email
   useEffect(() => {
     if (!email) navigate("/select-account-type");
   }, [email, navigate]);
 
-  // countdown
   useEffect(() => {
     if (timer <= 0) return;
     const id = setInterval(() => setTimer((t) => t - 1), 1000);
@@ -41,7 +42,7 @@ const OtpPage = () => {
     const val = e.target.value;
     if (isNaN(val)) return;
     const newOtp = [...otp];
-    newOtp[index] = val.slice(-1); // only last char
+    newOtp[index] = val.slice(-1);
     setOtp(newOtp);
     if (val && index < OTP_LENGTH - 1) inputRefs.current[index + 1].focus();
   };
@@ -73,7 +74,19 @@ const OtpPage = () => {
     }
     setLoading(true);
     try {
-      await verifyAccount({ email, code });
+      const res = await verifyAccount({ email, code });
+      console.log("verifyAccount response:", res.data);
+
+      // ✅ احفظ الـ token والـ user
+      const token = res.data?.token || res.data?.data?.token;
+      const userData = res.data?.data || res.data?.user;
+
+      if (token) localStorage.setItem("token", token);
+      if (userData) {
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+      }
+
       toast.success("تم تفعيل الحساب بنجاح!");
       navigate(NEXT_ROUTE[role] || "/login", { state: { email, role } });
     } catch (err) {
@@ -97,10 +110,7 @@ const OtpPage = () => {
 
   return (
     <AuthLayout>
-      <div
-        className="w-full max-w-md mx-auto p-8 flex flex-col items-center"
-        dir="rtl"
-      >
+      <div className="w-full max-w-md mx-auto p-8 flex flex-col items-center" dir="rtl">
         <div className="w-16 h-16 rounded-full bg-[#EEF2FF] flex items-center justify-center mb-5">
           <Mail size={28} className="text-[#123C91]" />
         </div>
@@ -118,7 +128,6 @@ const OtpPage = () => {
           {email}
         </p>
 
-        {/* OTP inputs */}
         <div className="flex gap-3 mb-5" dir="ltr" onPaste={handlePaste}>
           {otp.map((digit, i) => (
             <input
@@ -135,12 +144,9 @@ const OtpPage = () => {
           ))}
         </div>
 
-        {/* Timer / Resend */}
         <div className="mb-6 text-center">
           {timer > 0 ? (
-            <p className="text-[15px] font-bold text-[#123C91]">
-              {timer} ثانية
-            </p>
+            <p className="text-[15px] font-bold text-[#123C91]">{timer} ثانية</p>
           ) : (
             <button
               onClick={handleResend}

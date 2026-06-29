@@ -25,6 +25,14 @@ const normalizeCountries = (raw) => {
     }));
 };
 
+// Ensures the dialing code always has a leading "+", regardless of how
+// the backend sends it (e.g. "20" or "+20" should both become "+20").
+const normalizePhoneCode = (code) => {
+    if (!code) return "";
+    const trimmed = String(code).trim();
+    return trimmed.startsWith("+") ? trimmed : `+${trimmed}`;
+};
+
 const FlagIcon = ({ country }) => {
     if (country?.flagUrl) {
         return (
@@ -180,7 +188,7 @@ const RegisterForm = ({ type }) => {
     }, [showOtpModal, timer]);
 
     const selectedCountry = countries.find((c) => c.id === formData.country);
-    const phoneCode = selectedCountry?.phoneCode || "";
+    const phoneCode = normalizePhoneCode(selectedCountry?.phoneCode);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -303,7 +311,7 @@ const RegisterForm = ({ type }) => {
     // - parent                             -> straight to dashboard
     // - student, university                -> straight to dashboard
     // - student, primary/middle/high       -> student-details -> subjects -> success -> account-state
-    // - teacher                            -> success -> account-state
+    // - teacher                            -> teacher-details -> pending
     const resolvePostVerifyRoute = () => {
         if (type === "parent") {
             return { path: "/parent-dashboard", state: { email: formData.email, role: type } };
@@ -323,44 +331,42 @@ const RegisterForm = ({ type }) => {
             };
         }
         if (type === "teacher") {
-            return { path: "/register/success", state: { role: type } };
+            return { path: "/register/teacher-details", state: { email: formData.email, role: type } };
         }
         return { path: "/login", state: { email: formData.email, role: type } };
     };
 
-const handleVerify = async () => {
-    const code = otp.join("");
-    if (code.length !== OTP_LENGTH) {
-        toast.error("يرجى إدخال رمز التفعيل كاملاً");
-        return;
-    }
-    setOtpLoading(true);
-    try {
-        const found = countries.find((c) => c.id === formData.country);
-        
-        console.log("sending country code:", found?.code); 
+    const handleVerify = async () => {
+        const code = otp.join("");
+        if (code.length !== OTP_LENGTH) {
+            toast.error("يرجى إدخال رمز التفعيل كاملاً");
+            return;
+        }
+        setOtpLoading(true);
+        try {
+            const found = countries.find((c) => c.id === formData.country);
 
-        const res = await verifyAccount({
-            email: formData.email,
-            code,
-            country: found?.code, 
-        });
+            const res = await verifyAccount({
+                email: formData.email,
+                code,
+                country: found?.code,
+            });
 
-        const token = res.data?.token;
-        if (token) localStorage.setItem("token", token);
-        
-        toast.success("تم تفعيل الحساب بنجاح!");
-        setShowOtpModal(false);
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        const { path, state } = resolvePostVerifyRoute();
-        navigate(path, { state });
-    } catch (err) {
-        console.error("خطأ من السيرفر (verify):", err.response?.data);
-        toast.error(err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى");
-    } finally {
-        setOtpLoading(false);
-    }
-};
+            const token = res.data?.token;
+            if (token) localStorage.setItem("token", token);
+
+            toast.success("تم تفعيل الحساب بنجاح!");
+            setShowOtpModal(false);
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            const { path, state } = resolvePostVerifyRoute();
+            navigate(path, { state });
+        } catch (err) {
+            console.error("خطأ من السيرفر (verify):", err.response?.data);
+            toast.error(err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى");
+        } finally {
+            setOtpLoading(false);
+        }
+    };
 
     const handleResend = async () => {
         setResendLoading(true);

@@ -1,22 +1,21 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, Upload } from "lucide-react";
+import { ChevronDown, Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
-import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
-// import {
-//   completeTeacherProfile,
-//   getCurriculums,
-//   getCurriculumStages,
-//   getAllSubjects,
-// } from "../../services/authService";
+import { AuthContext } from "../../context/AuthContext";
+import {
+  completeTeacherProfile,
+  getCurriculums,
+  getCurriculumStages,
+  getStageGrades,
+  getAllSubjects,
+} from "../../services/authService";
 
+// Single-select dropdown
 const SelectField = ({ label, name, value, onChange, options = [], placeholder, disabled }) => {
-  const getDisplayValue = (o) => {
-    // If the API returns an object for name, extract the Arabic property
-    if (typeof o === 'object' && o !== null) {
-      return o.name?.ar || o.name?.en || o.name || JSON.stringify(o);
-    }
+  const display = (o) => {
+    if (typeof o === "object" && o !== null) return o.name?.ar || o.name?.en || o.name || "";
     return o.name ?? o;
   };
 
@@ -33,9 +32,7 @@ const SelectField = ({ label, name, value, onChange, options = [], placeholder, 
         >
           <option value="" disabled>{disabled ? "جاري التحميل..." : placeholder}</option>
           {Array.isArray(options) && options.map((o) => (
-            <option key={o.id ?? o} value={o.id ?? o}>
-              {getDisplayValue(o)}
-            </option>
+            <option key={o.id ?? o} value={o.id ?? o}>{display(o)}</option>
           ))}
         </select>
         <ChevronDown size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
@@ -44,60 +41,189 @@ const SelectField = ({ label, name, value, onChange, options = [], placeholder, 
   );
 };
 
+// Multi-select chips field
+const MultiSelectField = ({ label, options = [], selected, onChange, placeholder, disabled }) => {
+  const display = (o) => {
+    if (typeof o === "object" && o !== null) return o.name?.ar || o.name?.en || o.name || "";
+    return o.name ?? o;
+  };
+
+  const toggle = (id) => {
+    onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[13px] font-medium text-[#1F2937]">{label}</label>
+      <div className={`min-h-12 px-3 py-2 rounded-xl border border-[#1F293733] bg-[#F9FAFA] flex flex-wrap gap-2 ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
+        {disabled && <span className="text-[14px] text-[#9CA3AF] self-center">جاري التحميل...</span>}
+        {!disabled && options.length === 0 && <span className="text-[14px] text-[#9CA3AF] self-center">{placeholder}</span>}
+        {!disabled && options.map((o) => {
+          const id = o.id ?? o;
+          const active = selected.includes(id);
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => toggle(id)}
+              className={`px-3 py-1 rounded-lg text-[13px] font-medium border transition-colors ${
+                active
+                  ? "bg-[#123C91] text-white border-[#123C91]"
+                  : "bg-white text-[#6B7280] border-[#1F293733] hover:border-[#123C91]"
+              }`}
+            >
+              {display(o)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// Main page
 const TeacherDetailsPage = () => {
   const navigate = useNavigate();
   const fileRef = useRef(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [loadingCurricula, setLoadingCurricula] = useState(true);
-  const [loadingStages, setLoadingStages] = useState(false);
-  const [loadingSubjects, setLoadingSubjects] = useState(false);
-  const [curricula, setCurricula] = useState([]);
-  const [stages, setStages] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [fileName, setFileName] = useState("");
-  const [fileObj, setFileObj] = useState(null);
-  const [form, setForm] = useState({ curriculum: "", stage: "", subject: "", experience: "" });
+  const { user, setUser } = useContext(AuthContext);
+   console.log("token:", localStorage.getItem("token"));
+  console.log("user:", localStorage.getItem("user"));
 
+  const [submitting, setSubmitting]             = useState(false);
+  const [loadingCurricula, setLoadingCurricula] = useState(true);
+  const [loadingStages, setLoadingStages]       = useState(false);
+  const [loadingGrades, setLoadingGrades]       = useState(false);
+  const [loadingSubjects, setLoadingSubjects]   = useState(false);
+
+  const [curricula, setCurricula] = useState([]);
+  const [stages, setStages]       = useState([]);
+  const [grades, setGrades]       = useState([]);
+  const [subjects, setSubjects]   = useState([]);
+
+  const [form, setForm] = useState({
+    curriculum: "",
+    stage: "",
+    grades: [],
+    subjects: [],
+    experienceYears: "",
+  });
+
+  const [fileName, setFileName] = useState("");
+  const [fileObj, setFileObj]   = useState(null);
+
+  // Load curricula once
   useEffect(() => {
-    getCurriculums().then(res => setCurricula(res.data?.data || res.data || [])).catch(() => toast.error("فشل تحميل المناهج")).finally(() => setLoadingCurricula(false));
+    getCurriculums()
+      .then((res) => setCurricula(res.data?.data || res.data || []))
+      .catch(() => toast.error("فشل تحميل المناهج"))
+      .finally(() => setLoadingCurricula(false));
   }, []);
 
+  // Load stages when curriculum changes
   useEffect(() => {
-    if (!form.curriculum) { setStages([]); setSubjects([]); return; }
+    if (!form.curriculum) {
+      setStages([]);
+      setGrades([]);
+      setSubjects([]);
+      return;
+    }
     setLoadingStages(true);
-    getCurriculumStages(form.curriculum).then(res => setStages(res.data?.data || res.data || [])).catch(() => toast.error("فشل تحميل المراحل")).finally(() => setLoadingStages(false));
+    setStages([]);
+    setGrades([]);
+    setSubjects([]);
+    setForm((p) => ({ ...p, stage: "", grades: [], subjects: [] }));
+
+    getCurriculumStages(form.curriculum)
+      .then((res) => setStages(res.data?.data || res.data || []))
+      .catch(() => toast.error("فشل تحميل المراحل"))
+      .finally(() => setLoadingStages(false));
   }, [form.curriculum]);
 
+  // Load grades when stage changes
   useEffect(() => {
-    if (!form.stage) { setSubjects([]); return; }
-    setLoadingSubjects(true);
-    getAllSubjects({ stage: form.stage, curriculum: form.curriculum }).then(res => setSubjects(res.data?.data || res.data || [])).catch(() => toast.error("فشل تحميل المواد")).finally(() => setLoadingSubjects(false));
+    if (!form.stage) {
+      setGrades([]);
+      setSubjects([]);
+      return;
+    }
+    setLoadingGrades(true);
+    setGrades([]);
+    setSubjects([]);
+    setForm((p) => ({ ...p, grades: [], subjects: [] }));
+
+    getStageGrades(form.stage)
+      .then((res) => setGrades(res.data?.data || res.data || []))
+      .catch(() => toast.error("فشل تحميل الصفوف"))
+      .finally(() => setLoadingGrades(false));
   }, [form.stage]);
 
-  const handleChange = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+  // Load subjects when grades change
+  useEffect(() => {
+    if (!form.grades.length) {
+      setSubjects([]);
+      return;
+    }
+    setLoadingSubjects(true);
+    setSubjects([]);
+    setForm((p) => ({ ...p, subjects: [] }));
+
+    Promise.all(
+      form.grades.map((gradeId) =>
+        getAllSubjects({ grade: gradeId })
+          .then((res) => res.data?.data || res.data || [])
+          .catch(() => [])
+      )
+    )
+      .then((results) => {
+        const merged = results.flat();
+        const unique = merged.filter(
+          (item, idx, self) => self.findIndex((s) => s.id === item.id) === idx
+        );
+        setSubjects(unique);
+      })
+      .finally(() => setLoadingSubjects(false));
+  }, [form.grades]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((p) => ({ ...p, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
-    
-    // Check if token exists
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error("يرجى تسجيل الدخول أولاً");
-      setSubmitting(false);
+
+    if (!form.curriculum || !form.stage || !form.grades.length || !form.subjects.length) {
+      toast.error("يرجى إكمال جميع الحقول المطلوبة");
       return;
     }
 
-    const payload = new FormData();
-    payload.append("curriculum", form.curriculum);
-    payload.append("stage", form.stage);
-    payload.append("subject", form.subject);
-    if (form.experience) payload.append("experience", form.experience);
-    if (fileObj) payload.append("documents", fileObj);
-
+    setSubmitting(true);
     try {
-      await completeTeacherProfile(payload);
-      navigate("/register/pending", { state: { role: "teacher" } });
+      const payload = {
+        language: "ar",
+        curriculum: form.curriculum,
+        experienceYears: form.experienceYears ? Number(form.experienceYears) : undefined,
+        grades: form.grades,
+        subjects: form.subjects,
+      };
+
+      const res = await completeTeacherProfile(payload);
+
+      // ✅ لو الـ API رجّع user محدّث فيه status، احفظه
+      const updatedUser = res.data?.data || res.data?.user;
+
+      if (updatedUser && updatedUser.status) {
+        // الـ backend رجّع user object كامل
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      } else {
+        // الـ backend مش بيرجع user — نحدّث الـ status يدوياً
+        const patched = { ...user, status: "pending" };
+        setUser(patched);
+        localStorage.setItem("user", JSON.stringify(patched));
+      }
+
+      navigate("/pending");
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || "حدث خطأ غير متوقع");
@@ -109,15 +235,112 @@ const TeacherDetailsPage = () => {
   return (
     <AuthLayout>
       <div className="w-full max-w-lg mx-auto px-6 py-8" dir="rtl">
-        <h2 className="text-[26px] font-bold mb-6">مرحباً بك...</h2>
+        <h2
+          className="text-[26px] font-bold mb-2 text-[#1F2937]"
+          style={{ fontFamily: "Tajawal, sans-serif" }}
+        >
+          أكمل بيانات حسابك
+        </h2>
+        <p className="text-[14px] text-[#6B7280] mb-6">
+          نحتاج بعض التفاصيل قبل مراجعة حسابك
+        </p>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <SelectField label="المنهج" name="curriculum" value={form.curriculum} onChange={handleChange} options={curricula} placeholder="اختر المنهج" disabled={loadingCurricula} />
-          <SelectField label="المرحلة" name="stage" value={form.stage} onChange={handleChange} options={stages} placeholder="اختر المرحلة" disabled={!form.curriculum || loadingStages} />
-          <SelectField label="المادة" name="subject" value={form.subject} onChange={handleChange} options={subjects} placeholder="اختر المادة" disabled={!form.stage || loadingSubjects} />
-          <input name="experience" placeholder="سنوات الخبرة" value={form.experience} onChange={handleChange} className="w-full h-12 px-4 rounded-xl border border-[#1F293733]" />
-          <button type="button" onClick={() => fileRef.current?.click()} className="w-full py-5 border-dashed border-2 rounded-xl">{fileName || "ارفع الملفات"}</button>
-          <input ref={fileRef} type="file" className="hidden" onChange={(e) => { setFileName(e.target.files[0]?.name); setFileObj(e.target.files[0]); }} />
-          <button type="submit" disabled={submitting} className="w-full h-14 bg-[#123C91] text-white rounded-xl">
+
+          {/* Curriculum */}
+          <SelectField
+            label="المنهج"
+            name="curriculum"
+            value={form.curriculum}
+            onChange={handleChange}
+            options={curricula}
+            placeholder="اختر المنهج"
+            disabled={loadingCurricula}
+          />
+
+          {/* Stage */}
+          <SelectField
+            label="المرحلة الدراسية"
+            name="stage"
+            value={form.stage}
+            onChange={handleChange}
+            options={stages}
+            placeholder={form.curriculum ? "اختر المرحلة" : "اختر المنهج أولاً"}
+            disabled={!form.curriculum || loadingStages}
+          />
+
+          {/* Grades */}
+          <MultiSelectField
+            label="الصفوف الدراسية"
+            options={grades}
+            selected={form.grades}
+            onChange={(val) => setForm((p) => ({ ...p, grades: val, subjects: [] }))}
+            placeholder={form.stage ? "اختر الصفوف" : "اختر المرحلة أولاً"}
+            disabled={!form.stage || loadingGrades}
+          />
+
+          {/* Subjects */}
+          <MultiSelectField
+            label="المواد التي تدرّسها"
+            options={subjects}
+            selected={form.subjects}
+            onChange={(val) => setForm((p) => ({ ...p, subjects: val }))}
+            placeholder={form.grades.length ? "اختر المواد" : "اختر الصفوف أولاً"}
+            disabled={!form.grades.length || loadingSubjects}
+          />
+
+          {/* Experience years */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] font-medium text-[#1F2937]">سنوات الخبرة</label>
+            <input
+              type="number"
+              name="experienceYears"
+              placeholder="مثال: 5"
+              min="0"
+              value={form.experienceYears}
+              onChange={handleChange}
+              className="w-full h-12 px-4 rounded-xl border border-[#1F293733] bg-[#F9FAFA] text-[14px] outline-none focus:border-[#123C91] transition-colors"
+            />
+          </div>
+
+          {/* File upload */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] font-medium text-[#1F2937]">
+              المستندات <span className="text-[#9CA3AF] font-normal">(اختياري)</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-full py-4 border-dashed border-2 border-[#1F293733] rounded-xl flex items-center justify-center gap-2 text-[14px] text-[#6B7280] hover:border-[#123C91] hover:text-[#123C91] transition-colors"
+            >
+              <Upload size={16} />
+              {fileName || "ارفع مستنداتك هنا"}
+            </button>
+            {fileName && (
+              <div className="flex items-center justify-between bg-[#F0F4FF] rounded-lg px-3 py-2">
+                <span className="text-[13px] text-[#123C91] truncate max-w-[80%]">{fileName}</span>
+                <button type="button" onClick={() => { setFileName(""); setFileObj(null); }}>
+                  <X size={14} className="text-[#6B7280]" />
+                </button>
+              </div>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                setFileName(e.target.files[0]?.name || "");
+                setFileObj(e.target.files[0] || null);
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full h-14 bg-[#123C91] text-white rounded-xl font-semibold text-[15px] hover:bg-[#0f3278] transition-colors disabled:opacity-60 mt-2"
+            style={{ fontFamily: "Tajawal, sans-serif" }}
+          >
             {submitting ? "جاري الإرسال..." : "تقديم الطلب"}
           </button>
         </form>

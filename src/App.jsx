@@ -22,7 +22,6 @@ import ChildrenPage from "./pages/parent/ChildrenPage";
 
 import { AuthContext } from "./context/AuthContext";
 
-import StudentSubjectsPage from "./pages/auth/StudentSubjectsPages";
 import RegisterSuccessPage from "./pages/auth/RegisterSuccessPage";
 import TeacherHome from "./pages/teacher/TeacherHome";
 import StudentHome from "./pages/student/StudentHome";
@@ -44,12 +43,14 @@ import Notificationss from "./pages/teacher/notifications/Notifications";
 import AssignmentDetailsPage from "./pages/teacher/assignments/AssignmentDetailsPage";
 import TeacherMessages from "./pages/teacher/messages/Messages";
 import AccountSettingsPage from "./pages/parent/AccountSettings";
-import AccountViewPage from "./pages/parent/AccountViewPage";
 import TeacherAccountSettingsPage from "./pages/teacher/TeacherAccountSettingsPage";
 import EarningsPage from "./pages/teacher/EarningsPage";
 import ExamDetailsPage from "./pages/teacher/exam/ExamDetailsPage";
 import CreateExamPage from "./pages/teacher/exam/addExam/CreateExamPage";
 
+// ✅ Guards
+import TeacherGuard from "./guards/TeacherGuard";
+import StudentGuard from "./guards/StudentGuard";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -59,11 +60,7 @@ function App() {
       <Toaster
         position="top-left"
         reverseOrder={false}
-        toastOptions={{
-          style: {
-            direction: "ltr",
-          },
-        }}
+        toastOptions={{ style: { direction: "ltr" } }}
       />
 
       <Routes>
@@ -72,11 +69,8 @@ function App() {
           <Route index element={<Landing />} />
         </Route>
 
-        {/* Auth — guests only */}
-        <Route
-          path="/login"
-          element={user ? <Navigate to="/" replace /> : <LoginPage />}
-        />
+        {/* Auth */}
+        <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/select-account-type" element={<AccountTypePage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -84,161 +78,46 @@ function App() {
         <Route path="/register/student-details" element={<StudentDetailsPages />} />
         <Route path="/register/subjects" element={<StudentSubjectsPages />} />
         <Route path="/register/success" element={<RegisterSuccessPage />} />
-        {/* <Route path="/register/interests" element={<StudentInterestsPage />} /> */}
         <Route path="/register/teacher-details" element={<TeacherDetailsPage />} />
         <Route path="/pending" element={<PendingPage />} />
         <Route path="/account-state" element={<AccountStatePage />} />
 
-        {/* Parent — authenticated only */}
-        <Route
-          path="/parent-dashboard"
-          element={user ? <Home /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/parent-dashboard/add-child"
-          element={user ? <AddChildPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/parent/schedule"
-          element={user ? <LessonsSchedule /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/parent/children"
-          element={user ? <ChildrenPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/parent/notifications"
-          element={user ? <Notifications /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/parent/subscription"
-          element={user ? <SubscriptionPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/parent/messages"
-          element={user ? <Messages /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/parent/settings"
-          element={user ? <AccountSettingsPage /> : <Navigate to="/login" replace />}
-        />
+        {/* Parent */}
+        <Route path="/parent-dashboard" element={user ? <Home /> : <Navigate to="/login" replace />} />
+        <Route path="/parent-dashboard/add-child" element={user ? <AddChildPage /> : <Navigate to="/login" replace />} />
+        <Route path="/parent/schedule" element={user ? <LessonsSchedule /> : <Navigate to="/login" replace />} />
+        <Route path="/parent/children" element={user ? <ChildrenPage /> : <Navigate to="/login" replace />} />
+        <Route path="/parent/notifications" element={user ? <Notifications /> : <Navigate to="/login" replace />} />
+        <Route path="/parent/subscription" element={user ? <SubscriptionPage /> : <Navigate to="/login" replace />} />
+        <Route path="/parent/messages" element={user ? <Messages /> : <Navigate to="/login" replace />} />
+        <Route path="/parent/settings" element={user ? <AccountSettingsPage /> : <Navigate to="/login" replace />} />
 
+        {/* ✅ Student — محمي بـ StudentGuard */}
+        <Route path="/student-dashboard" element={<StudentGuard><StudentHome /></StudentGuard>} />
 
+        {/* ✅ Teacher — محمي بـ TeacherGuard */}
+        <Route path="/teacher-dashboard" element={<TeacherGuard><TeacherHome /></TeacherGuard>} />
+        <Route path="/teacher/groups" element={<TeacherGuard><GroupsPage /></TeacherGuard>} />
+        <Route path="/teacher/groups/:groupId/lessons" element={<TeacherGuard><GroupLessonsPage /></TeacherGuard>} />
+        <Route path="/teacher/groups/:groupId/students" element={<TeacherGuard><GroupStudentsPage /></TeacherGuard>} />
+        <Route path="/teacher/groups/:groupId/students/:studentId" element={<TeacherGuard><StudentDetailsPage /></TeacherGuard>} />
+        <Route path="/add-new-group" element={<TeacherGuard><CreateGroupPage /></TeacherGuard>} />
+        <Route path="/add-new-lesson" element={<TeacherGuard><CreateLessonPage /></TeacherGuard>} />
+        <Route path="/teacher/tasks" element={<TeacherGuard><AssignmentsPage /></TeacherGuard>} />
+        <Route path="/teacher/exams" element={<TeacherGuard><ExamPage /></TeacherGuard>} />
+        <Route path="/teacher/schedule" element={<TeacherGuard><Schedule /></TeacherGuard>} />
+        <Route path="/lessons/:lessonId" element={<TeacherGuard><LessonDetailsPage /></TeacherGuard>} />
+        <Route path="/assignments/new" element={<TeacherGuard><AddAssignmentPage /></TeacherGuard>} />
+        <Route path="/teacher/notifications" element={<TeacherGuard><Notificationss /></TeacherGuard>} />
+        <Route path="/teacher/assignments/:assignmentId" element={<TeacherGuard><AssignmentDetailsPage /></TeacherGuard>} />
+        <Route path="/teacher/messages" element={<TeacherGuard><TeacherMessages /></TeacherGuard>} />
+        <Route path="/teacher/settings" element={<TeacherGuard><TeacherAccountSettingsPage /></TeacherGuard>} />
+        <Route path="/teacher/earnings" element={<TeacherGuard><EarningsPage /></TeacherGuard>} />
+        <Route path="/teacher/exam/:examId" element={<TeacherGuard><ExamDetailsPage /></TeacherGuard>} />
+        <Route path="/teacher/exams/new" element={<TeacherGuard><CreateExamPage /></TeacherGuard>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
-
-        {/* Teacher */}
-
-        <Route
-          path="/teacher-dashboard"
-          element={user ? <TeacherHome /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/teacher/groups"
-          element={user ? <GroupsPage /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/teacher/groups/:groupId/lessons"
-          element={user ? <GroupLessonsPage /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/teacher/groups/:groupId/students"
-          element={user ? <GroupStudentsPage /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/teacher/groups/:groupId/students/:studentId"
-          element={user ? <StudentDetailsPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/add-new-group"
-          element={user ? <CreateGroupPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/add-new-lesson"
-          element={user ? <CreateLessonPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/teacher/tasks"
-          element={user ? <AssignmentsPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/teacher/exams"
-          element={user ? <ExamPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/teacher/schedule"
-          element={user ? <Schedule /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/lessons/:lessonId"
-          element={user ? <LessonDetailsPage /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/assignments/new"
-          element={user ? <AddAssignmentPage /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/teacher/notifications"
-          element={user ? <Notificationss /> : <Navigate to="/login" replace />}
-        />
-
-        {/* Assignment details — shows correction stats and per-student submission status */}
-        <Route
-          path="/teacher/assignments/:assignmentId"
-          element={user ? <AssignmentDetailsPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/teacher/messages"
-          element={user ? <TeacherMessages /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/teacher/settings"
-          element={user ? <TeacherAccountSettingsPage /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/teacher/earnings"
-          element={user ? <EarningsPage /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/teacher/exam/:examId"
-          element={user ? <ExamDetailsPage /> : <Navigate to="/login" replace />}
-        />
-
-        <Route
-          path="/teacher/exams/new"
-          element={user ? <CreateExamPage /> : <Navigate to="/login" replace />}
-        />
-
-
-
-
-
-
-
-
-
-
-        {/* <Route
-          path="/teacher-dashboard"
-          element={ <StudentHome />}
-        /> */}
-
-        {/* Students */}
-        <Route
-          path="/student-dashboard"
-          element={user ? <StudentHome /> : <Navigate to="/login" replace />}
-        />
-
       </Routes>
     </>
   );

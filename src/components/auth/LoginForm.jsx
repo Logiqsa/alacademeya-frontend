@@ -18,25 +18,32 @@ const LoginForm = () => {
     try {
       const data = await login(credentials);
       toast.success("تم تسجيل الدخول بنجاح!");
+
       const role = data?.user?.role;
-   const status = data?.user?.registrationStatus;
+      const status = data?.user?.registrationStatus;
 
-      console.log("user data:", JSON.stringify(data.user)); 
+      console.log("user data:", JSON.stringify(data.user));
 
-if (role === "student") {
-  if (data?.user?.registrationStatus === "active") {
-    navigate("/student-dashboard");
-  } else {
-    navigate("/account-state", { state: { role } });
-  }
-} else if (role === "parent") {
-  navigate("/parent-dashboard");
-} else if (role === "teacher") {
-  navigate("/teacher-dashboard");
-} else {
-  navigate("/");
-}
-      
+      if (role === "teacher") {
+        // ✅ المعلم: لو active يدخل الداشبورد، غير كده pending
+        if (status === "active") {
+          navigate("/teacher-dashboard");
+        } else {
+          navigate("/pending");
+        }
+      } else if (role === "student") {
+        // ✅ الطالب: لو active يدخل الداشبورد، غير كده pending
+        if (status === "active") {
+          navigate("/student-dashboard");
+        } else {
+          navigate("/pending");
+        }
+      } else if (role === "parent") {
+        navigate("/parent-dashboard");
+      } else {
+        navigate("/");
+      }
+
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
