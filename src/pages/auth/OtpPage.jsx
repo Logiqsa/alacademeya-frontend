@@ -96,17 +96,27 @@ const OtpPage = () => {
     }
   };
 
-  const handleResend = async () => {
-    try {
-      await resendOtp(email);
+const handleResend = async () => {
+  try {
+    await resendOtp(email);
+    setTimer(TIMER_START);
+    setOtp(new Array(OTP_LENGTH).fill(""));
+    inputRefs.current[0].focus();
+    toast.success("تم إرسال كود جديد!");
+  } catch (err) {
+    const status = err.response?.status;
+    const msg = err.response?.data?.message || "";
+
+    if (status === 429 || msg.includes("PLEASE_WAIT")) {
+      toast.error("يرجى الانتظار قبل طلب كود جديد");
       setTimer(TIMER_START);
-      setOtp(new Array(OTP_LENGTH).fill(""));
-      inputRefs.current[0].focus();
-      toast.success("تم إرسال كود جديد!");
-    } catch {
+    } else if (status === 503) {
+      toast.error("السيرفر مشغول حالياً، حاول بعد قليل");
+    } else {
       toast.error("فشل إعادة الإرسال، حاول لاحقاً");
     }
-  };
+  }
+};
 
   return (
     <AuthLayout>
