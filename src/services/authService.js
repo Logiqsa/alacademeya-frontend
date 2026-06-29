@@ -6,11 +6,11 @@ import axios from 'axios';
 // domain ('https://api.alacademeya.com/api') unless your prod server
 // also proxies /api.
 const API = axios.create({
-  baseURL: '/api',
+  baseURL: 'https://api.alacademeya.com/api',
 });
 
 const ROOT_API = axios.create({
-  baseURL: '/api',
+  baseURL: 'https://api.alacademeya.com/api',
 });
 
 const attachToken = (config) => {
