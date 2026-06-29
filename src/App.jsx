@@ -58,6 +58,7 @@ import UsersPage from "./pages/admin/users/Userspage";
 import GroupsPages from "./pages/admin/groups/Groupspage";
 import AttendancePage from "./pages/admin/groups/attendance/AttendancePage";
 import CreateGroupPages from "./pages/admin/groups/CreateGroupPage";
+import SupervisorsPage from "./pages/admin/supervisors/SupervisorsPage";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -132,6 +133,7 @@ function App() {
            <Route path="/admin/groups" element={user ? <GroupsPages /> : <Navigate to="/login" replace />} />
            <Route path="/admin/groups/:groupId/attendance" element={user ? <AttendancePage  /> : <Navigate to="/login" replace />} />
            <Route path="/admin/groups/new" element={user ? <CreateGroupPages  /> : <Navigate to="/login" replace />} />
+           <Route path="/Admin/supervisors" element={user ? <SupervisorsPage  /> : <Navigate to="/login" replace />} />
             
        
         {/* Fallback */}
