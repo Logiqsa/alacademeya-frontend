@@ -23,9 +23,9 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       path: "/admin-dashboard",
     },
     {
-      title: "الأبناء",
+      title: "المستخدمين",
       icon: childrenIcon,
-      path: "/parent/children",
+      path: "/Admin/users",
     },
     {
       title: "الجدول",
