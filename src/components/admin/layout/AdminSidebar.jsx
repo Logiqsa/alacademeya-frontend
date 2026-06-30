@@ -25,30 +25,30 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
     {
       title: "المستخدمين",
       icon: childrenIcon,
-      path: "/Admin/users",
+      path: "/admin/users",
     },
     {
       title: "المجموعات",
       icon: scheduleIcon,
-      path: "/Admin/groups",
+      path: "/admin/groups",
     },
 
     {
       title: "المشرفين",
       icon: childrenIcon,
-      path: "/Admin/supervisors",
+      path: "/admin/supervisors",
     },
     {
       title: "التسجيلات",
       icon: childrenIcon,
-      path: "/Admin/records",
+      path: "/admin/records",
     },
 
    
     {
       title: "الرسائل",
       icon: messagesIcon,
-      path: "/parent/messages",
+      path: "/admin/messages",
     },
     {
       title: "الإشتراك",
