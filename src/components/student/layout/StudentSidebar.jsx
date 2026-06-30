@@ -13,7 +13,6 @@ import notificationsIcon from "../../../assets/icons/notifications.png";
 import settingsIcon from "../../../assets/icons/settings.png";
 import logoutIcon from "../../../assets/icons/logout.png";
 
-
 const StudentSidebar = ({ isOpen, setIsOpen }) => {
   const menu = [
     {
@@ -48,15 +47,19 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
     },
   ];
 
-
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  // Note: the initial open/closed state is decided once in the parent
+  // (TeacherLayout) via a lazy useState initializer, based on screen
+  // width at first render. That avoids a flash of the sidebar being
+  // open-then-closing on mobile. From here on, isOpen is just controlled
+  // by the toggle button below.
 
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
-
 
   return (
     <aside
@@ -78,14 +81,8 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       `}
     >
       {/* Header */}
-      <div className="relative flex items-center justify-between  px-6 border-b border-[#FFFFFF14]">
-        {isOpen && (
-          <img
-            src={logo}
-            alt="logo"
-            className="object-contain w-36 h-8"
-          />
-        )}
+      <div className="relative flex items-center justify-between px-6 border-b border-[#FFFFFF14]">
+        {isOpen && <img src={logo} alt="logo" className="object-contain w-36 h-8" />}
 
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -100,16 +97,12 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
             transition
           "
         >
-          <img
-            src={toggleIcon}
-            alt="toggle"
-            className="object-contain w-7 h-7"
-          />
+          <img src={toggleIcon} alt="toggle" className="object-contain w-7 h-7" />
         </button>
       </div>
 
       {/* Menu */}
-      <div className="flex-1 px-3 mt-4">
+      <div className="flex-1 px-3 mt-4 overflow-y-auto">
         {menu.map((item) => (
           <NavLink
             key={item.path}
@@ -118,10 +111,7 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
             className={({ isActive }) => `
               flex
               items-center
-              ${isOpen
-                ? "gap-2 px-3 justify-start"
-                : "justify-center"
-              }
+              ${isOpen ? "gap-2 px-3 justify-start" : "justify-center"}
               py-2
               mb-1
               rounded-lg
@@ -140,16 +130,15 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
                 <img
                   src={item.icon}
                   alt={item.title}
-                  className={`w-5 h-5 shrink-0 transition-all duration-200 ${isActive
-                    ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
-                    : ""
-                    }`}
+                  className={`w-5 h-5 shrink-0 transition-all duration-200 ${
+                    isActive ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200" : ""
+                  }`}
                   style={
                     isActive
                       ? {
-                        filter:
-                          "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
-                      }
+                          filter:
+                            "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
+                        }
                       : {}
                   }
                 />
@@ -165,15 +154,15 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       <div className="p-3 border-t border-[#FFFFFF14]">
         <button
           onClick={handleLogout}
-          className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${isOpen ? "gap-3 justify-start" : "justify-center"
-            }`}
+          className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${
+            isOpen ? "gap-3 justify-start" : "justify-center"
+          }`}
         >
           <img src={logoutIcon} alt="logout" className="w-5 h-5" />
 
           {isOpen && <span className="text-sm">تسجيل الخروج</span>}
         </button>
       </div>
-
     </aside>
   );
 };
