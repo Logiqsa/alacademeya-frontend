@@ -1,46 +1,61 @@
 import React, { useState } from "react";
+import toast from "react-hot-toast";
 import {
   Bell,
   BellRing,
   GraduationCap,
   Settings,
+  Loader2,
 } from "lucide-react";
 import NotificationCard from "./NotificationCard";
+import {
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "../../../services/authService";
 
-const allNotifications = [
-  {
-    id: 1,
-    title: "غياب طالب",
-    desc: "تغيب الطالب أحمد محمد عن درس الرياضيات اليوم. يُرجى متابعة حالته الدراسية.",
-    time: "منذ 5 دقائق",
-    type: "academic",
-    read: false,
-  },
-  {
-    id: 2,
-    title: "تحويل مستحقات مالية",
-    desc: "تم تحويل مبلغ 1,250 جنيه مصري إلى رصيدك بنجاح. يُرجى مراجعة محفظتك للاطلاع على تفاصيل العملية.",
-    time: "منذ ساعة",
-    type: "system",
-    read: true,
-  },
-  {
-    id: 3,
-    title: "تنبيه بخصوص مجموعة متوقفة",
-    desc: "تم إيقاف إحدى مجموعاتك التعليمية مؤقتًا لحين مراجعة بعض البيانات من قبل الإدارة.",
-    time: "منذ 3 أيام",
-    type: "system",
-    read: false,
-  },
-  {
-    id: 4,
-    title: "درس قادم",
-    desc: "لديك درس رياضيات غداً الساعة 2:00 م مع مجموعة الصف الثالث الإعدادي.",
-    time: "منذ 5 أيام",
-    type: "academic",
-    read: true,
-  },
-];
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+// تصنيف كل إشعار كـ "academic" أو "system" حسب نوعه
+// زوّد هنا أي key/type جديد يوصل من الباك إند
+const ACADEMIC_TYPES = ["lesson", "absence", "attendance", "academic"];
+const categoryOf = (n) => {
+  if (ACADEMIC_TYPES.includes(n.type) || ACADEMIC_TYPES.includes(n.key)) {
+    return "academic";
+  }
+  return "system";
+};
+
+// تحويل الـ key لعنوان عربي مفهوم
+const KEY_TITLES = {
+  SUBSCRIPTION_APPROVED: "تمت الموافقة على الاشتراك",
+  SUBSCRIPTION_REJECTED: "تم رفض طلب الاشتراك",
+  SUBSCRIPTION_PENDING: "طلب اشتراك جديد",
+};
+const titleOf = (n) =>
+  KEY_TITLES[n.key] ||
+  n.title ||
+  n.key?.replaceAll("_", " ") ||
+  "إشعار جديد";
+
+const descOf = (n) => {
+  if (n.description || n.desc) return n.description || n.desc;
+  if (n.data?.studentName) {
+    return `بخصوص الطالب: ${n.data.studentName}`;
+  }
+  return "";
+};
+
+const timeAgo = (dateStr) => {
+  if (!dateStr) return "";
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "الآن";
+  if (mins < 60) return `منذ ${mins} دقيقة`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `منذ ${hours} ساعة`;
+  const days = Math.floor(hours / 24);
+  return `منذ ${days} يوم`;
+};
 
 const tabs = [
   { key: "all", label: "الكل", icon: Bell },
@@ -49,26 +64,68 @@ const tabs = [
   { key: "system", label: "النظام والإدارة", icon: Settings },
 ];
 
-const NotificationsSection = () => {
+/**
+ * notifications: المصفوفة الراجعة من GET /notifications
+ * loading / loadError: حالة التحميل (تتولّد من الصفحة الأب)
+ * onChange: callback يستقبل المصفوفة الجديدة بعد أي تحديث محلي (علشان StatsCards يتحدث برضه)
+ */
+const NotificationsSection = ({
+  notifications = [],
+  loading = false,
+  loadError = "",
+  onChange,
+}) => {
   const [activeTab, setActiveTab] = useState("all");
+  const [markingAll, setMarkingAll] = useState(false);
 
-  const [readState, setReadState] = useState(() =>
-    Object.fromEntries(allNotifications.map((n) => [n.id, n.read]))
-  );
-
-  const filtered = allNotifications.filter((n) => {
+  const filtered = notifications.filter((n) => {
     if (activeTab === "all") return true;
-    if (activeTab === "unread") return !readState[n.id];
-    if (activeTab === "academic") return n.type === "academic";
-    if (activeTab === "system") return n.type === "system";
-    return true;
+    if (activeTab === "unread") return !n.isRead;
+    return categoryOf(n) === activeTab;
   });
 
-  const toggleRead = (id) => {
-    setReadState((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+  const toggleRead = async (n) => {
+    const id = n._id || n.id;
+    const prevState = notifications;
+
+    if (n.isRead) {
+      // السيرفر مفيهوش endpoint لإلغاء القراءة، فده تحديث محلي بس
+      onChange?.(
+        notifications.map((x) =>
+          (x._id || x.id) === id ? { ...x, isRead: false } : x
+        )
+      );
+      return;
+    }
+
+    onChange?.(
+      notifications.map((x) =>
+        (x._id || x.id) === id ? { ...x, isRead: true } : x
+      )
+    );
+
+    try {
+      await markNotificationRead(id);
+    } catch (err) {
+      onChange?.(prevState); // rollback
+      toast.error(err.response?.data?.message || "تعذر تحديث حالة الإشعار");
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    if (markingAll) return;
+    setMarkingAll(true);
+    const prevState = notifications;
+    onChange?.(notifications.map((n) => ({ ...n, isRead: true })));
+    try {
+      await markAllNotificationsRead();
+      toast.success("تم تحديد جميع الإشعارات كمقروءة");
+    } catch (err) {
+      onChange?.(prevState);
+      toast.error(err.response?.data?.message || "تعذر تحديث الإشعارات");
+    } finally {
+      setMarkingAll(false);
+    }
   };
 
   return (
@@ -84,13 +141,27 @@ const NotificationsSection = () => {
         border-[#E5E5E5]
       "
     >
-      <h2 className="text-[16px] font-medium text-[#1F2937] mb-2">
-        جميع الإشعارات
-      </h2>
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div>
+          <h2 className="text-[16px] font-medium text-[#1F2937]">
+            جميع الإشعارات
+          </h2>
+          <p className="text-[14px] sm:text-[16px] text-[#6B7280]">
+            تصفية وإدارة الإشعارات حسب النوع
+          </p>
+        </div>
 
-      <p className="text-[14px] sm:text-[16px] text-[#6B7280] mb-5">
-        تصفية وإدارة الإشعارات حسب النوع
-      </p>
+        {notifications.some((n) => !n.isRead) && (
+          <button
+            onClick={handleMarkAllRead}
+            disabled={markingAll}
+            className="shrink-0 flex items-center gap-1.5 text-[13px] text-[#123C91] hover:underline disabled:opacity-60"
+          >
+            {markingAll && <Loader2 size={14} className="animate-spin" />}
+            تحديد الكل كمقروء
+          </button>
+        )}
+      </div>
 
       <div
         className="
@@ -99,6 +170,7 @@ const NotificationsSection = () => {
           rounded-full
           p-1
           mb-5
+          mt-4
           grid
           grid-cols-2
           sm:grid-cols-4
@@ -134,19 +206,42 @@ const NotificationsSection = () => {
         ))}
       </div>
 
-      <div className="space-y-3">
-        {filtered.map((n) => (
-          <NotificationCard
-            key={n.id}
-            title={n.title}
-            description={n.desc}
-            time={n.time}
-            type={n.type}
-            isRead={readState[n.id]}
-            onToggleRead={() => toggleRead(n.id)}
-          />
-        ))}
-      </div>
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 size={22} className="animate-spin text-[#123C91]" />
+        </div>
+      )}
+
+      {!loading && loadError && (
+        <div className="py-10 text-center">
+          <p className="text-[14px] text-red-500">{loadError}</p>
+        </div>
+      )}
+
+      {!loading && !loadError && (
+        <div className="space-y-3">
+          {filtered.map((n) => {
+            const id = n._id || n.id;
+            return (
+              <NotificationCard
+                key={id}
+                title={titleOf(n)}
+                description={descOf(n)}
+                time={timeAgo(n.createdAt)}
+                type={categoryOf(n)}
+                isRead={n.isRead}
+                onToggleRead={() => toggleRead(n)}
+              />
+            );
+          })}
+
+          {filtered.length === 0 && (
+            <p className="text-center text-[14px] text-[#8C9198] py-10">
+              لا توجد إشعارات لعرضها.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

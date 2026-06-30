@@ -269,31 +269,29 @@ const CreateCurriculumPage = () => {
 
 const handleSubmit = async () => {
   if (!validate()) return;
-  if (saving) return; // يمنع الضغط المتكرر أثناء الحفظ
+  if (saving) return;
 
   setSaving(true);
 
   try {
+    // 1) إنشاء المنهج
     const curriculumRes = await createCurriculum({
-      name: {
-        ar: data.nameAr.trim(),
-        en: data.nameEn.trim(),
-      },
+      name: { ar: data.nameAr.trim(), en: data.nameEn.trim() },
       country: data.countryId,
     });
-
     const curriculum = curriculumRes.data.data || curriculumRes.data;
     const curriculumId = curriculum._id || curriculum.id;
 
+    // 2) لكل مرحلة، إنشاء الـ stage مربوط بالمنهج
     for (const stage of stages) {
       const stageRes = await createStage({
         curriculum: curriculumId,
         name: { ar: stage.name, en: stage.name },
       });
-
       const createdStage = stageRes.data.data || stageRes.data;
       const stageId = createdStage._id || createdStage.id;
 
+      // 3) لكل صف داخل المرحلة، إنشاء الـ grade مربوط بالمرحلة
       for (const grade of stage.grades) {
         await createGrade({
           stage: stageId,
@@ -304,18 +302,14 @@ const handleSubmit = async () => {
 
     toast.success('تم إضافة المنهج بنجاح');
     navigate('/admin/curriculum');
-  }  catch (err) {
-  console.log('Full error response:', err.response?.data);
-  console.log('Validation details:', err.response?.data?.errors || err.response?.data?.details);
-    
+  } catch (err) {
     const status = err.response?.status;
-    if (status === 409 || err.response?.data?.message?.includes('duplicate')) {
+    const code = err.response?.data?.message;
+    if (status === 409 || code === 'DUPLICATE_FIELD' || code?.toLowerCase?.().includes('duplicate')) {
       toast.error('يوجد منهج بنفس الاسم لهذه الدولة بالفعل');
     } else {
-      toast.error(err.response?.data?.message || 'حدث خطأ أثناء إضافة المنهج');
+      toast.error(code || 'حدث خطأ أثناء إضافة المنهج');
     }
-    console.log('Status:', status);
-    console.log('Error:', err.response?.data);
   } finally {
     setSaving(false);
   }
