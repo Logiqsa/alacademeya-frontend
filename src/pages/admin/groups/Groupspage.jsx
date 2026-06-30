@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
-import GroupsFilters from "../../../components/admin/groups/GroupsFilters";
+import GroupsFilters from "../../../components/admin/groups/Groupsfilters";
 import GroupTable from "../../../components/admin/groups/Groupstable";
 import GroupsStatsBar from "../../../components/admin/groups/Groupsstatsbar";
 
