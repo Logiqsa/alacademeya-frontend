@@ -65,6 +65,7 @@ import SubscriptionsPage from "./pages/admin/subscriptions/SubscriptionsPage";
 import SubscriptionRequestsPage from "./pages/admin/subscriptions/SubscriptionRequestsPage";
 import RequestDetailsPage from "./pages/admin/subscriptions/RequestDetailsPage";
 import ActivateSubscriptionPage from "./pages/admin/subscriptions/ActivateSubscriptionPage";
+import CreateCurriculumPage from "./pages/admin/curriculum/CreateCurriculumPage";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -147,9 +148,10 @@ function App() {
 
            {/* <Route path="/admin/subscriptions/requests/:id" element={user ? <RequestDetailsPage  /> : <Navigate to="/login" replace />} />     */}
            <Route path="/admin/subscriptions/requests/:id/activate" element={user ? <ActivateSubscriptionPage  /> : <Navigate to="/login" replace />} />    
+           <Route path="/admin/curriculum/create" element={user ? <CreateCurriculumPage   /> : <Navigate to="/login" replace />} />    
 
        
-       /admin/subscriptions/requests
+   
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

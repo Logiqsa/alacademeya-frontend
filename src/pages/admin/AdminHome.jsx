@@ -1,3 +1,4 @@
+import AcademicStructureSection from "../../components/admin/curriculum/AcademicStructureSection";
 import NotificationsSection from "../../components/admin/dashboard/NotificationsSection";
 import UpcomingLessonsSection from "../../components/admin/dashboard/UpcomingLessonsSection";
 import Welcome from "../../components/admin/dashboard/Welcome";
@@ -21,6 +22,8 @@ const AdminHome = () => {
             <NotificationsSection />
           </div>
         </div>
+
+        <AcademicStructureSection />
       </div>
 
     </AdminLayout >
