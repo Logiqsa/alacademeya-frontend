@@ -1,63 +1,123 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import UsersStatsBar from "../../../components/admin/users/Usersstatsbar";
 import UsersFilters from "../../../components/admin/users/Usersfilters";
 import UsersTable from "../../../components/admin/users/Userstable";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_USERS = [
-  { id: 1, name: "محمد أحمد", email: "mohamed@gmail.com", role: "معلم", status: "نشط", joinDate: "2024-09-01" },
-  { id: 2, name: "محمد أحمد", email: "mohamed@gmail.com", role: "طالب", status: "نشط", joinDate: "2024-09-01" },
-  { id: 3, name: "محمد أحمد", email: "mohamed@gmail.com", role: "طالب", status: "معلق", joinDate: "2024-09-01" },
-  { id: 4, name: "محمد أحمد", email: "mohamed@gmail.com", role: "ولي أمر", status: "نشط", joinDate: "2024-09-01" },
-  { id: 5, name: "محمد أحمد", email: "mohamed@gmail.com", role: "معلم", status: "موقوف", joinDate: "2024-09-01" },
-  { id: 6, name: "محمد أحمد", email: "mohamed@gmail.com", role: "ولي أمر", status: "نشط", joinDate: "2024-09-01" },
-  { id: 7, name: "محمد أحمد", email: "mohamed@gmail.com", role: "طالب", status: "نشط", joinDate: "2024-09-02" },
-  { id: 8, name: "محمد أحمد", email: "mohamed@gmail.com", role: "معلم", status: "نشط", joinDate: "2024-09-02" },
-  { id: 9, name: "محمد أحمد", email: "mohamed@gmail.com", role: "طالب", status: "معلق", joinDate: "2024-09-02" },
-  { id: 10, name: "محمد أحمد", email: "mohamed@gmail.com", role: "ولي أمر", status: "نشط", joinDate: "2024-09-02" },
-  { id: 11, name: "محمد أحمد", email: "mohamed@gmail.com", role: "طالب", status: "نشط", joinDate: "2024-09-03" },
-  { id: 12, name: "محمد أحمد", email: "mohamed@gmail.com", role: "معلم", status: "نشط", joinDate: "2024-09-03" },
-];
+import { getUsers, deleteUser as deleteUserApi, updateUser } from "../../../services/authService";
 
 const PAGE_SIZE = 6;
 
+// ─── Mapping helpers ──────────────────────────────────────────────────────────
+const ROLE_MAP = { student: "طالب", teacher: "معلم", parent: "ولي أمر" };
+
+const statusOf = (u) => {
+  if (u.isDeleted) return "محذوف";
+  if (!u.isActive) return "موقوف";
+  if (u.registrationStatus === "pending") return "معلق";
+  return "نشط";
+};
+
+const mapUser = (u) => ({
+  id: u.id || u._id,
+  name: u.fullName || u.name || "—",
+  username: u.username,
+  email: u.email,
+  phone: u.phone,
+  role: ROLE_MAP[u.role] || u.role,
+  rawRole: u.role,
+  country: u.country,
+  isVerified: u.isVerified,
+  isDeleted: !!u.isDeleted,
+  isActive: !!u.isActive,
+  registrationStatus: u.registrationStatus,
+  status: statusOf(u),
+  joinDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-CA") : "—",
+});
+
 const UsersPage = () => {
   const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("جميع المستخدمين");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
-  const filtered = MOCK_USERS.filter(
+  const fetchUsers = useCallback(() => {
+    setLoading(true);
+    getUsers()
+      .then((res) => {
+        const list = res.data?.data || [];
+        setUsers(Array.isArray(list) ? list.map(mapUser) : []);
+      })
+      .catch(() => toast.error("تعذر تحميل المستخدمين"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // استبعد أي مستخدم متعمله soft-delete من كل الحسابات والعرض
+  const activeUsers = users.filter((u) => !u.isDeleted);
+
+  const filtered = activeUsers.filter(
     (u) =>
-      (u.name.includes(search) || u.email.includes(search)) &&
+      (u.name?.includes(search) || u.email?.includes(search)) &&
       (filterRole === "جميع المستخدمين" || u.role === filterRole) &&
       (filterStatus === "جميع الحالات" || u.status === filterStatus)
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+  // لو الصفحة الحالية بقت برّه النطاق (بعد حذف/فلترة) رجّعها لآخر صفحة متاحة
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
+
   const paginatedUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const stats = {
-    admins: MOCK_USERS.filter((u) => u.role === "ولي أمر").length,
-    teachers: MOCK_USERS.filter((u) => u.role === "معلم").length,
-    students: MOCK_USERS.filter((u) => u.role === "طالب").length,
-    total: MOCK_USERS.length,
+    admins: activeUsers.filter((u) => u.role === "ولي أمر").length,
+    teachers: activeUsers.filter((u) => u.role === "معلم").length,
+    students: activeUsers.filter((u) => u.role === "طالب").length,
+    total: activeUsers.length,
   };
 
   const handleView = (id) => navigate(`/admin/users/${id}`);
   const handleEdit = (id) => navigate(`/admin/users/${id}/edit`);
-  const handleToggleStatus = (id) => {
-    // Wire up to real API call as needed
-    console.log("toggle status for", id);
+
+  const handleToggleStatus = async (user) => {
+    const willActivate = user.status === "موقوف" || user.status === "معلق";
+    try {
+      await updateUser(user.id, { isActive: willActivate });
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id
+            ? { ...u, isActive: willActivate, status: willActivate ? "نشط" : "موقوف" }
+            : u
+        )
+      );
+      toast.success(willActivate ? "تم تفعيل الحساب" : "تم إيقاف الحساب");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "تعذر تحديث حالة المستخدم");
+    }
   };
-  const handleDelete = (id) => {
-    // Wire up to real API call / confirmation modal as needed
-    console.log("delete user", id);
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteUserApi(id);
+      // شيل المستخدم فورًا من القائمة (الجدول والـ stats بتتحدث تلقائيًا لإنهم بيقروا من نفس الـ state)
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      toast.success("تم حذف المستخدم");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "تعذر حذف المستخدم");
+    }
   };
 
   return (
@@ -101,13 +161,19 @@ const UsersPage = () => {
 
         {/* Table */}
         <div className="mt-4">
-          <UsersTable
-            users={paginatedUsers}
-            onView={handleView}
-            onEdit={handleEdit}
-            onToggleStatus={handleToggleStatus}
-            onDelete={handleDelete}
-          />
+          {loading ? (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69] font-['IBM_Plex_Sans_Arabic']">
+              جاري التحميل...
+            </div>
+          ) : (
+            <UsersTable
+              users={paginatedUsers}
+              onView={handleView}
+              onEdit={handleEdit}
+              onToggleStatus={handleToggleStatus}
+              onDelete={handleDelete}
+            />
+          )}
         </div>
 
         {/* Pagination */}

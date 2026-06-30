@@ -185,3 +185,20 @@ export const markNotificationRead = (id) =>
 
 export const markAllNotificationsRead = () =>
   API.patch('/notifications/read-all');
+
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Users (Admin)
+// ──────────────────────────────────────────────────────────────────────────────
+
+export const getUsers = (params) =>
+  API.get('/users/', { params });
+
+export const getUser = (id) =>
+  API.get(`/users/${id}`);
+
+export const updateUser = (id, payload) =>
+  API.patch(`/users/${id}`, payload);
+
+export const deleteUser = (id) =>
+  API.delete(`/users/${id}`);

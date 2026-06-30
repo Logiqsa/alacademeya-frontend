@@ -4,11 +4,11 @@ import { MoreVertical, Eye, Ban, CheckCircle2, Trash2, User, X, Info } from "luc
 // ─── Badge ────────────────────────────────────────────────────────────────────
 const Badge = ({ label, type }) => {
   const map = {
-    green:  "bg-[#00A63E26] text-[#00A63E]",
-    blue:   "bg-[#EAF4FF] text-[#123C91]",
+    green: "bg-[#00A63E26] text-[#00A63E]",
+    blue: "bg-[#EAF4FF] text-[#123C91]",
     orange: "bg-[#FF8A0026] text-[#FF8A00]",
-    red:    "bg-red-100 text-red-600",
-    gray:   "bg-gray-100 text-[#8C9198]",
+    red: "bg-red-100 text-red-600",
+    gray: "bg-gray-100 text-[#8C9198]",
   };
   return (
     <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${map[type] ?? map.gray}`}>
@@ -18,15 +18,15 @@ const Badge = ({ label, type }) => {
 };
 
 const statusBadge = (status) => {
-  if (status === "نشط")   return <Badge label={status} type="green" />;
-  if (status === "معلق")  return <Badge label={status} type="orange" />;
+  if (status === "نشط") return <Badge label={status} type="green" />;
+  if (status === "معلق") return <Badge label={status} type="orange" />;
   if (status === "موقوف") return <Badge label={status} type="red" />;
   return <Badge label={status} type="gray" />;
 };
 
 const roleBadge = (role) => {
-  if (role === "معلم")    return <Badge label={role} type="green" />;
-  if (role === "طالب")   return <Badge label={role} type="blue" />;
+  if (role === "معلم") return <Badge label={role} type="green" />;
+  if (role === "طالب") return <Badge label={role} type="blue" />;
   if (role === "ولي أمر") return <Badge label={role} type="orange" />;
   return <Badge label={role} type="gray" />;
 };
@@ -60,7 +60,7 @@ const UserDetailsModal = ({ open, onClose, user }) => {
   if (!open || !user) return null;
 
   const isTeacher = user.role === "معلم";
-  const isParent  = user.role === "ولي أمر";
+  const isParent = user.role === "ولي أمر";
   const isStudent = user.role === "طالب";
 
   return (
@@ -171,14 +171,14 @@ const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete }) => {
   }, []);
 
   const isSuspended = user.status === "موقوف";
-  const isPending   = user.status === "معلق";
+  const isPending = user.status === "معلق";
 
   const items = [
-    { key: "view",    label: "عرض",         Icon: Eye,          onClick: () => onView?.(user) },
-    { key: "approve", label: "قبول الطلب",  Icon: CheckCircle2, onClick: () => onApprove?.(user), tone: "text-[#123C91]" },
+    { key: "view", label: "عرض", Icon: Eye, onClick: () => onView?.(user) },
+    { key: "approve", label: "قبول الطلب", Icon: CheckCircle2, onClick: () => onApprove?.(user), tone: "text-[#123C91]" },
     isSuspended || isPending
       ? { key: "activate", label: "تفعيل", Icon: CheckCircle2, onClick: () => onToggleStatus?.(user), tone: "text-green-600" }
-      : { key: "suspend",  label: "رفض",   Icon: Ban,          onClick: () => onToggleStatus?.(user), tone: "text-orange-500" },
+      : { key: "suspend", label: "رفض", Icon: Ban, onClick: () => onToggleStatus?.(user), tone: "text-orange-500" },
     { key: "delete", label: "حذف", Icon: Trash2, onClick: () => onDelete?.(user), tone: "text-red-600" },
   ];
 
@@ -237,16 +237,16 @@ const MobileCard = ({ u, onView, onApprove, onToggleStatus, onDelete }) => (
 );
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-const UsersTable = ({ users = [] }) => {
+const UsersTable = ({ users = [], onView, onEdit, onToggleStatus, onDelete }) => {
   const [detailsUser, setDetailsUser] = useState(null);
-  const [deleteUser,  setDeleteUser]  = useState(null);
+  const [deleteUser, setDeleteUser] = useState(null);
   const [approveUser, setApproveUser] = useState(null);
   const [suspendUser, setSuspendUser] = useState(null);
   const [activateUser, setActivateUser] = useState(null);
 
-  const handleView         = (user) => setDetailsUser(user);
-  const handleApprove      = (user) => setApproveUser(user);
-  const handleDelete       = (user) => setDeleteUser(user);
+  const handleView = (user) => setDetailsUser(user);
+  const handleApprove = (user) => setApproveUser(user);
+  const handleDelete = (user) => setDeleteUser(user);
   const handleToggleStatus = (user) => {
     if (user.status === "موقوف" || user.status === "معلق") {
       setActivateUser(user);
@@ -329,7 +329,7 @@ const UsersTable = ({ users = [] }) => {
       <ConfirmDialog
         open={!!approveUser}
         onClose={() => setApproveUser(null)}
-        onConfirm={() => { console.log("approve", approveUser?.id); setApproveUser(null); }}
+        onConfirm={() => { onToggleStatus?.(approveUser); setApproveUser(null); }}
         title="الموافقة على الطلب"
         message="هل تريد الموافقة على طلب تسجيل هذا المستخدم وتفعيل حسابه؟"
         confirmLabel="موافقة"
@@ -341,7 +341,7 @@ const UsersTable = ({ users = [] }) => {
       <ConfirmDialog
         open={!!activateUser}
         onClose={() => setActivateUser(null)}
-        onConfirm={() => { console.log("activate", activateUser?.id); setActivateUser(null); }}
+        onConfirm={() => { onToggleStatus?.(activateUser); setActivateUser(null); }}
         title="تفعيل الحساب"
         message="هل تريد تفعيل حساب هذا المستخدم؟"
         confirmLabel="تفعيل"
@@ -353,7 +353,7 @@ const UsersTable = ({ users = [] }) => {
       <ConfirmDialog
         open={!!suspendUser}
         onClose={() => setSuspendUser(null)}
-        onConfirm={() => { console.log("suspend", suspendUser?.id); setSuspendUser(null); }}
+        onConfirm={() => { onToggleStatus?.(suspendUser); setSuspendUser(null); }}
         title="رفض المستخدم"
         message="هل تريد رفض هذا المستخدم وإيقاف حسابه؟"
         confirmLabel="رفض"
@@ -365,7 +365,7 @@ const UsersTable = ({ users = [] }) => {
       <ConfirmDialog
         open={!!deleteUser}
         onClose={() => setDeleteUser(null)}
-        onConfirm={() => { console.log("delete", deleteUser?.id); setDeleteUser(null); }}
+        onConfirm={() => { onDelete?.(deleteUser.id); setDeleteUser(null); }}
         title="حذف المستخدم"
         message="هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع."
         confirmLabel="حذف"
