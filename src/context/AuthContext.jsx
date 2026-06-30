@@ -42,7 +42,6 @@ export const AuthContextProvider = ({ children }) => {
     return { user: finalUser, token };
   };
 
-  // بتستخدم بعد أي تعديل في البروفايل (عدا تغيير الإيميل/الباسورد) عشان نحدّث الـ context والـ localStorage مع بعض
   const updateUser = (updatedUser) => {
     setUser(updatedUser);
     localStorage.setItem("user", JSON.stringify(updatedUser));

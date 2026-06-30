@@ -8,9 +8,9 @@ const TeacherGuard = ({ children }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const registrationStatus = user.registrationStatus === "approved";
+  const isActive = user.isActive === true || user.registrationStatus === "active";
 
-  if (!registrationStatus) return <Navigate to="/account-state" replace />;
+  if (!isActive) return <Navigate to="/pending" replace />;
 
   return children;
 };

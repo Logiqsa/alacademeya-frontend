@@ -21,8 +21,19 @@ const goToDashboard = (user, navigate) => {
     return;
   }
 
-  if (role === "teacher") {
-    navigate(user?.registrationStatus === "approved" ? "/teacher-dashboard" : "/account-state");
+  // if (role === "teacher") {
+  //   navigate(user?.registrationStatus === "approved" ? "/teacher-dashboard" : "/account-state");
+  //   return;
+  // }
+
+
+    if (role === "teacher") {
+    const isApproved =
+      user?.isActive === true ||
+      user?.registrationStatus === "active" ||
+      user?.status === "approved";
+
+    navigate(isApproved ? "/teacher-dashboard" : "/register/success");
     return;
   }
 

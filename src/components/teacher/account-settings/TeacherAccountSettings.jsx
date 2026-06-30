@@ -12,33 +12,48 @@ import {
 } from '../../../services/authService';
 import { AuthContext } from '../../../context/AuthContext';
 
+const LANG = 'ar'; // change to dynamic locale if you support i18n switching
+
+// بيرجع نص الاسم سواء جاي كـ string عادي أو كـ object {ar, en}
+const pickName = (val) => {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  return val[LANG] || val.ar || val.en || '';
+};
+
+// بيدمج شكل الريسبونس الفعلي:
+// { success, data: { user: {...}, curriculums: [...], grades: [...], subjects: [...], language, status, ... } }
+// في object واحد مسطّح اسمه "teacher" نقدر نستخدمه بسهولة في الكومبوننت
 const extractUser = (resData) => {
   if (!resData) return null;
-  return (
-    resData?.data?.user ||
-    resData?.data?.data?.user ||
-    resData?.user ||
-    resData?.data ||
-    resData
-  );
+  const root = resData?.data || resData;
+  const user = root?.user || root;
+  if (!user) return null;
+
+  const { user: _omit, ...rest } = root || {};
+
+  return {
+    ...user,
+    ...rest, // language, status, certificates, rating, profileSlug, etc.
+    // curriculums/grades/subjects ترجع arrays من objects كاملة (id + name bilingual)
+    curriculums: root?.curriculums || user.curriculums || [],
+    grades: root?.grades || user.grades || [],
+    subjects: root?.subjects || user.subjects || [],
+  };
 };
 
 // بيستخرج array الأوبشنز من أشكال الريسبونس المختلفة اللي ممكن يرجعها الباك إند
 const extractList = (resData) => {
   if (!resData) return [];
-  const raw =
-    resData?.data?.data ||
-    resData?.data ||
-    resData?.data?.items ||
-    resData ||
-    [];
+  const root = resData?.data || resData;
+  const raw = root?.data || root?.items || root || [];
   return Array.isArray(raw) ? raw : [];
 };
 
-// بيوحد شكل العنصر (id / label) مهما كان اسم الحقول جاي من الباك إند
+// بيوحد شكل العنصر (id / label) مهما كان اسم الحقول جاي من الباك إند، وبيدعم الاسم البايلينجوال
 const normalizeOption = (item) => ({
   id: item._id || item.id || item.value || item.code,
-  label: item.name || item.title || item.label || item.nameAr || item.name_ar || '',
+  label: pickName(item.name) || item.title || item.label || item.nameAr || item.name_ar || '',
 });
 
 const LANGUAGE_OPTIONS = [
@@ -228,33 +243,28 @@ const SubjectsDropdown = ({ label, value = [], options, loading, onChange }) => 
   );
 };
 
-const TeacherPersonalCard = ({ teacher, onUpdated }) => {
+const TeacherPersonalCard = ({ teacher, countryOptions, loadingCountries, onUpdated }) => {
   const buildForm = () => ({
     fullName: teacher.fullName || '',
     username: teacher.username || '',
     email: teacher.email || '',
-    countryId: teacher.countryId || teacher.country?._id || teacher.country || '',
+    countryId: teacher.country?._id || teacher.country?.id || teacher.country || '',
   });
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState(buildForm);
-  const [countryOptions, setCountryOptions] = useState([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
 
   useEffect(() => { setForm(buildForm()); }, [teacher]);
 
-  useEffect(() => {
-    if (!editing || countryOptions.length > 0) return;
-    setLoadingCountries(true);
-    getCountries()
-      .then((res) => setCountryOptions(extractList(res.data).map(normalizeOption)))
-      .catch(() => toast.error('تعذر تحميل قائمة الدول'))
-      .finally(() => setLoadingCountries(false));
-  }, [editing]);
-
   const handleChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
   const handleCancel = () => { setForm(buildForm()); setError(''); setEditing(false); };
+
+  // بيدور على اسم الدولة من القائمة عشان نعرضها في وضع العرض (لإن الريسبونس بيرجع ID بس)
+  const countryLabel =
+    pickName(teacher.country?.name) ||
+    countryOptions.find((c) => c.id === (teacher.country?._id || teacher.country?.id || teacher.country))?.label ||
+    '';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -283,7 +293,7 @@ const TeacherPersonalCard = ({ teacher, onUpdated }) => {
           <ViewField label="اسم المستخدم" value={teacher.username} />
           <ViewField label="البريد الإلكتروني" value={teacher.email} />
           <ViewField label="رقم الهاتف" value={teacher.phone} />
-          <ViewField label="الدولة" value={teacher.country?.name || teacher.country} />
+          <ViewField label="الدولة" value={countryLabel} />
         </ViewGrid>
       ) : (
         <EditBox>
@@ -312,12 +322,14 @@ const TeacherPersonalCard = ({ teacher, onUpdated }) => {
 };
 
 const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
+  // الريسبونس بيرجع curriculums/grades/subjects كـ arrays من objects كاملة (المختارة فعلياً)
+  // بناخد أول عنصر للمنهج والمرحلة لإن الفورم هنا بتدعم اختيار واحد بس
   const buildForm = () => ({
-    studyLanguage: teacher.studyLanguage || 'ar',
-    curriculumId: teacher.curriculumId || teacher.curriculum?._id || teacher.curriculum || '',
-    stageId: teacher.stageId || teacher.stage?._id || teacher.stage || '',
+    studyLanguage: teacher.language || teacher.studyLanguage || 'ar',
+    curriculumId: teacher.curriculums?.[0]?._id || teacher.curriculums?.[0]?.id || '',
+    stageId: teacher.grades?.[0]?._id || teacher.grades?.[0]?.id || '',
     experience: teacher.experience || '5y',
-    subjects: teacher.subjects || [],
+    subjects: (teacher.subjects || []).map((s) => s._id || s.id),
   });
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -333,7 +345,6 @@ const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
 
   useEffect(() => { setForm(buildForm()); }, [teacher]);
 
-  // المناهج تتحمل أول ما يفتح وضع التعديل
   useEffect(() => {
     if (!editing || curriculumOptions.length > 0) return;
     setLoadingCurriculums(true);
@@ -343,7 +354,6 @@ const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
       .finally(() => setLoadingCurriculums(false));
   }, [editing]);
 
-  // المراحل بتتجاب بناءً على المنهج المختار
   useEffect(() => {
     if (!editing || !form.curriculumId) { setStageOptions([]); return; }
     setLoadingStages(true);
@@ -353,7 +363,6 @@ const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
       .finally(() => setLoadingStages(false));
   }, [editing, form.curriculumId]);
 
-  // المواد الدراسية، ممكن تتفلتر بالمنهج والمرحلة لو الباك إند بيدعم ده
   useEffect(() => {
     if (!editing) return;
     setLoadingSubjects(true);
@@ -371,14 +380,12 @@ const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
     setSaving(true);
     try {
       const payload = {
-        studyLanguage: form.studyLanguage,
+        language: form.studyLanguage,
         curriculum: form.curriculumId,
         stage: form.stageId,
         experience: form.experience,
         subjects: form.subjects,
       };
-      // لو عندك endpoint مخصص للبيانات المهنية استخدم السطر ده بدل updateMyProfile:
-      // const res = await saveTeacherDetails(payload);
       const res = await updateMyProfile(payload);
       const updatedUser = extractUser(res.data) || payload;
       toast.success('تم تعديل البيانات بنجاح');
@@ -392,23 +399,18 @@ const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
   };
 
   const langLabel = (id) => LANGUAGE_OPTIONS.find((l) => l.id === id)?.label || '—';
-  const subjectsLabel = (ids) => {
-    if (!ids?.length) return '—';
-    // teacher.subjects ممكن تكون array من objects كاملة أو من ids بس
-    if (typeof ids[0] === 'object') return ids.map((s) => s.name || s.label).join('، ') || '—';
-    return subjectOptions.filter((o) => ids.includes(o.id)).map((o) => o.label).join('، ') || '—';
-  };
+  const joinedNames = (arr) => (arr?.length ? arr.map((i) => pickName(i.name)).filter(Boolean).join('، ') : '—');
 
   return (
     <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
       <SectionHeader title="البيانات الأكاديمية" subtitle="يتضمن هذا القسم بياناتك التعليمية والمهنية الأساسية، والتي تُستخدم لإدارة الحصص والمجموعات الدراسية والتواصل مع الطلاب داخل المنصة." editing={editing} onEditClick={() => setEditing(true)} />
       {!editing ? (
         <ViewGrid>
-          <ViewField label="اللغة" value={langLabel(teacher.studyLanguage)} />
-          <ViewField label="المنهج الدراسي" value={teacher.curriculum?.name || teacher.curriculum} />
-          <ViewField label="المرحلة الدراسية" value={teacher.stage?.name || teacher.stage} />
+          <ViewField label="اللغة" value={langLabel(teacher.language)} />
+          <ViewField label="المنهج الدراسي" value={joinedNames(teacher.curriculums)} />
+          <ViewField label="المرحلة الدراسية" value={joinedNames(teacher.grades)} />
           <ViewField label="سنوات الخبرة" value={teacher.experience} />
-          <ViewField label="المواد" value={subjectsLabel(teacher.subjects)} />
+          <ViewField label="المواد" value={joinedNames(teacher.subjects)} />
         </ViewGrid>
       ) : (
         <EditBox>
@@ -503,6 +505,10 @@ const TeacherAccountSettings = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
 
+  // قائمة الدول بنحملها مرة واحدة هنا عشان نستخدمها في العرض والتعديل مع
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+
   const fetchProfile = async () => {
     setLoading(true);
     setLoadError('');
@@ -523,6 +529,14 @@ const TeacherAccountSettings = () => {
   };
 
   useEffect(() => { fetchProfile(); }, []);
+
+  useEffect(() => {
+    setLoadingCountries(true);
+    getCountries()
+      .then((res) => setCountryOptions(extractList(res.data).map(normalizeOption)))
+      .catch(() => toast.error('تعذر تحميل قائمة الدول'))
+      .finally(() => setLoadingCountries(false));
+  }, []);
 
   const handleProfileUpdated = (updatedUser) => {
     setTeacher((prev) => {
@@ -576,7 +590,7 @@ const TeacherAccountSettings = () => {
         </div>
       </div>
 
-      <TeacherPersonalCard teacher={teacher} onUpdated={handleProfileUpdated} />
+      <TeacherPersonalCard teacher={teacher} countryOptions={countryOptions} loadingCountries={loadingCountries} onUpdated={handleProfileUpdated} />
       <TeacherProfessionalCard teacher={teacher} onUpdated={handleProfileUpdated} />
       <SecurityCard lastPasswordChange={teacher.lastPasswordChange || 'آخر تحديث غير متاح'} />
     </div>
