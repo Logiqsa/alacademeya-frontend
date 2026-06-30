@@ -80,12 +80,20 @@
 
 import axios from 'axios';
 
+// const API = axios.create({
+//   baseURL: '/api',
+// });
+
+// const ROOT_API = axios.create({
+//   baseURL: '/api',
+// });
+
 const API = axios.create({
-  baseURL: '/api',
+  baseURL: 'https://api.alacademeya.com/api',
 });
 
 const ROOT_API = axios.create({
-  baseURL: '/api',
+  baseURL: 'https://api.alacademeya.com/api',
 });
 
 const attachToken = (config) => {
