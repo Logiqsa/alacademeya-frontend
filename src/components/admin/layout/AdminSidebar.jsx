@@ -53,17 +53,17 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
     {
       title: "الإشتراك",
       icon: subscriptionIcon,
-      path: "/parent/subscription",
+      path: "/admin/subscription",
     },
     {
       title: "الإشعارات",
       icon: notificationsIcon,
-      path: "/Admin/notifications",
+      path: "/admin/notifications",
     },
     {
       title: "الإعدادات",
       icon: settingsIcon,
-      path: "/Admin/settings",
+      path: "/admin/settings",
     },
   ];
 
