@@ -12,16 +12,15 @@ const CalendarStrip = ({ selectedDay = 1, onSelectDay = () => {} }) => {
   ];
 
   return (
-    <div dir="rtl" className="mb-6 sm:mb-8 lg:mb-10">
+    <div dir="rtl" className="mb-2">
       <div
         className="
-          flex md:grid
-          md:grid-cols-7
-          gap-3
-          overflow-x-auto
-          md:overflow-visible
+          flex sm:grid sm:grid-cols-7
+          gap-2 sm:gap-3
+          overflow-x-auto sm:overflow-visible
           pb-2
           scrollbar-hide
+          -mx-1 px-1 sm:mx-0 sm:px-0
         "
       >
         {days.map((item, i) => {
@@ -33,22 +32,13 @@ const CalendarStrip = ({ selectedDay = 1, onSelectDay = () => {} }) => {
               type="button"
               onClick={() => onSelectDay(i)}
               className={`
-                min-w-22.5
-                sm:min-w-25
-                md:min-w-0
-                h-22
-                sm:h-24
-                rounded-xl
-                border
-                flex
-                flex-col
-                items-center
-                justify-center
-                transition-all
-                duration-200
-                shadow-sm
-                hover:shadow-md
-                hover:-translate-y-0.5
+                shrink-0
+                w-16 sm:w-auto
+                h-18 sm:h-22 lg:h-24
+                rounded-xl border
+                flex flex-col items-center justify-center
+                transition-all duration-200
+                shadow-sm hover:shadow-md hover:-translate-y-0.5
                 ${
                   isActive
                     ? "bg-[#EAF4FF] border-[#123C91]"
@@ -58,10 +48,7 @@ const CalendarStrip = ({ selectedDay = 1, onSelectDay = () => {} }) => {
             >
               <span
                 className={`
-                  font-normal
-                  text-[13px]
-                  sm:text-[14px]
-                  mb-2
+                  font-normal text-[11.5px] sm:text-[13px] lg:text-[14px] mb-1.5 sm:mb-2
                   ${isActive ? "text-[#123C91]" : "text-[#6B7280]"}
                 `}
                 style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
@@ -71,9 +58,7 @@ const CalendarStrip = ({ selectedDay = 1, onSelectDay = () => {} }) => {
 
               <span
                 className={`
-                  font-bold
-                  text-[18px]
-                  sm:text-[20px]
+                  font-bold text-[16px] sm:text-[18px] lg:text-[20px]
                   ${isActive ? "text-[#123C91]" : "text-[#1F2937]"}
                 `}
                 style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
