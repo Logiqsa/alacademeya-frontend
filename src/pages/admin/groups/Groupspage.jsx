@@ -2,14 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 
-
-import GroupsTable from "../../../components/admin/groups/GroupsTable";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
-import GroupsStatsBar from "../../../components/admin/groups/GroupsStatsBar";
 import GroupsFilters from "../../../components/admin/groups/GroupsFilters";
+import GroupTable from "../../../components/admin/groups/Groupstable";
+import GroupsStatsBar from "../../../components/admin/groups/Groupsstatsbar";
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
 const MOCK_GROUPS = [
   { id: 1, name: "مجموعة الرياضيات A", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 25, capacity: 25, status: "مكتملة العدد" },
   { id: 2, name: "مجموعة الرياضيات A", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 18, capacity: 25, status: "نشطة" },
@@ -53,8 +51,6 @@ const GroupsPage = () => {
     total: MOCK_GROUPS.length,
   };
 
-  const handleOpenAttendance = (groupId) => navigate(`/admin/groups/${groupId}/attendance`);
-
   return (
     <AdminLayout>
       <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
@@ -84,26 +80,17 @@ const GroupsPage = () => {
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <GroupsFilters
             search={search}
-            onSearchChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
+            onSearchChange={(v) => { setSearch(v); setPage(1); }}
             filterSubject={filterSubject}
-            onFilterSubjectChange={(v) => {
-              setFilterSubject(v);
-              setPage(1);
-            }}
+            onFilterSubjectChange={(v) => { setFilterSubject(v); setPage(1); }}
             filterStatus={filterStatus}
-            onFilterStatusChange={(v) => {
-              setFilterStatus(v);
-              setPage(1);
-            }}
+            onFilterStatusChange={(v) => { setFilterStatus(v); setPage(1); }}
           />
         </div>
 
         {/* Table */}
         <div className="mt-4">
-          <GroupsTable groups={paginatedGroups} onOpenAttendance={handleOpenAttendance} />
+          <GroupTable groups={paginatedGroups} />
         </div>
 
         {/* Pagination */}
