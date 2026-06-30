@@ -1,18 +1,25 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { Pencil, Eye, EyeOff, ChevronDown, User, Camera, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { getMyProfile, updateMyProfile } from '../../../services/authService';
+import { AuthContext } from '../../../context/AuthContext'; // عدّل المسار حسب مشروعك
 
 /* ------------------------------------------------------------------ */
-/* Static Data                                                          */
+/* Helpers                                                              */
 /* ------------------------------------------------------------------ */
 
-const STATIC_ADMIN = {
-  fullName: 'محمد أحمد',
-  username: 'mohamed_ahmed',
-  email: 'adel@gmail.com',
-  phone: '+20 1000 456987',
-  country: 'مصر',
-  avatarUrl: null,
-  lastPasswordChange: 'آخر تغيير منذ 3 أشهر',
+// شكل الـ response عندنا: { success: true, data: { fullName, username, ... } }
+// الدالة دي بتدوّر على الـ user جوه أي شكل شائع برضه احتياطًا
+const extractUser = (resData) => {
+  if (!resData) return null;
+  if (resData.data && typeof resData.data === 'object' && !Array.isArray(resData.data)) {
+    // لو فيه data.user أو data.data.user (أشكال تانية محتملة) خد الأعمق
+    if (resData.data.user) return resData.data.user;
+    if (resData.data.data?.user) return resData.data.data.user;
+    return resData.data;
+  }
+  return resData.user || resData;
 };
 
 const PASSWORD_RULES = [
@@ -33,7 +40,7 @@ const COUNTRY_OPTIONS = [
 ];
 
 /* ------------------------------------------------------------------ */
-/* Shared Components                                                    */
+/* Shared Components (زي ما هي بالظبط)                                  */
 /* ------------------------------------------------------------------ */
 
 const SectionHeader = ({ title, subtitle, editing, onEditClick }) => (
@@ -168,7 +175,7 @@ const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', d
   const ref = useRef(null);
   const selected = options.find((o) => o.id === value);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     };
@@ -213,26 +220,56 @@ const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', d
 /* Cards                                                               */
 /* ------------------------------------------------------------------ */
 
-const AdminPersonalCard = ({ admin }) => {
+const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
   const buildForm = () => ({
-    fullName: admin.fullName,
-    username: admin.username,
-    email: admin.email,
-    countryId: 'eg',
+    fullName: admin.fullName || '',
+    username: admin.username || '',
+    email: admin.email || '',
+    countryId: admin.countryId || 'eg',
   });
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error] = useState('');
+  const [error, setError] = useState('');
   const [form, setForm] = useState(buildForm);
 
-  const handleChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
-  const handleCancel = () => { setForm(buildForm()); setEditing(false); };
+  useEffect(() => { setForm(buildForm()); }, [admin]);
 
-  const handleSubmit = (e) => {
+  const handleChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleCancel = () => { setForm(buildForm()); setError(''); setEditing(false); };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setSaving(true);
-    setTimeout(() => { setSaving(false); setEditing(false); }, 800);
+    try {
+      const payload = {
+        fullName: form.fullName,
+        username: form.username,
+        email: form.email,
+        country: form.countryId,
+      };
+
+      const emailChanged = form.email.trim() !== (admin.email || '').trim();
+
+      const res = await updateMyProfile(payload);
+
+      if (emailChanged) {
+        // الإيميل اتغيّر -> الـ token القديم بيبقى غير صالح منطقيًا، لازم يسجل دخول تاني
+        toast.success('تم تغيير البريد الإلكتروني، يرجى تسجيل الدخول مرة أخرى');
+        onEmailChanged();
+        return;
+      }
+
+      const updatedUser = extractUser(res.data) || payload;
+      toast.success('تم تعديل البيانات بنجاح');
+      onUpdated(updatedUser);
+      setEditing(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'حدث خطأ أثناء تعديل البيانات');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -280,7 +317,7 @@ const AdminPersonalCard = ({ admin }) => {
   );
 };
 
-const SecurityCard = () => {
+const SecurityCard = ({ lastPasswordChange, onPasswordChanged }) => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -293,9 +330,10 @@ const SecurityCard = () => {
     setEditing(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!form.currentPassword) { setError('أدخل كلمة المرور الحالية'); return; }
     if (!form.password) { setError('أدخل كلمة المرور الجديدة'); return; }
     if (form.password !== form.passwordConfirm) { setError('كلمة المرور وتأكيدها غير متطابقين'); return; }
     if (!PASSWORD_RULES.every((r) => r.test(form.password))) {
@@ -303,7 +341,20 @@ const SecurityCard = () => {
       return;
     }
     setSaving(true);
-    setTimeout(() => { setSaving(false); handleCancel(); }, 800);
+    try {
+      await updateMyProfile({
+        currentPassword: form.currentPassword,
+        password: form.password,
+        passwordConfirm: form.passwordConfirm,
+      });
+      toast.success('تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى');
+      handleCancel();
+      onPasswordChanged();
+    } catch (err) {
+      setError(err.response?.data?.message || 'حدث خطأ أثناء تغيير كلمة المرور');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -319,7 +370,7 @@ const SecurityCard = () => {
         <div className="border border-x-4 border-[#123C9180] rounded-xl p-5">
           <p className="text-xs text-(--text-light) mb-1.5">كلمة المرور</p>
           <p className="text-sm font-semibold text-(--text-dark) mb-1 tracking-widest">••••••••</p>
-          <p className="text-xs text-(--text-light)">{STATIC_ADMIN.lastPasswordChange}</p>
+          <p className="text-xs text-(--text-light)">{lastPasswordChange}</p>
         </div>
       ) : (
         <EditBox>
@@ -340,10 +391,53 @@ const SecurityCard = () => {
 /* ------------------------------------------------------------------ */
 
 const AdminAccountSettings = () => {
-  const admin = STATIC_ADMIN;
+  const { user: ctxUser, updateUser, logout } = useContext(AuthContext) || {};
+  const navigate = useNavigate();
+
+  const [admin, setAdmin] = useState(ctxUser || null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
   const fileInputRef = useRef(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(admin.avatarUrl);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const res = await getMyProfile();
+      const userData = extractUser(res.data);
+      if (userData) {
+        setAdmin(userData);
+        setAvatarUrl(userData.avatarUrl || null);
+        // نخزّن آخر نسخة من المستخدم محليًا
+        localStorage.setItem('user', JSON.stringify(userData));
+        updateUser?.(userData);
+      }
+    } catch (err) {
+      setLoadError(err.response?.data?.message || 'تعذر تحميل بيانات الحساب');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchProfile(); }, []);
+
+  const handleProfileUpdated = (updatedUser) => {
+    setAdmin((prev) => {
+      const next = { ...prev, ...updatedUser };
+      localStorage.setItem('user', JSON.stringify(next));
+      updateUser?.(next);
+      return next;
+    });
+  };
+
+  // بيتنده لما الإيميل أو الباسورد يتغيروا: يعمل تسجيل خروج فعلي ويوديه لصفحة اللوجين
+  const handleForceReLogin = () => {
+    logout?.();
+    navigate('/login', { replace: true });
+  };
 
   const handleAvatarClick = () => fileInputRef.current?.click();
   const handleAvatarChange = (e) => {
@@ -354,10 +448,27 @@ const AdminAccountSettings = () => {
     reader.onload = () => {
       setAvatarUrl(reader.result);
       setUploadingAvatar(false);
+      // ملاحظة: لازم endpoint مخصص لرفع الصورة (مش موجود حاليًا) عشان يتبعت فعليًا للسيرفر
     };
     reader.readAsDataURL(file);
     e.target.value = '';
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20" dir="rtl">
+        <Loader2 size={28} className="animate-spin text-(--primary)" />
+      </div>
+    );
+  }
+
+  if (loadError || !admin) {
+    return (
+      <div className="text-center py-20 text-red-500" dir="rtl">
+        {loadError || 'تعذر تحميل البيانات'}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5" dir="rtl">
@@ -398,8 +509,15 @@ const AdminAccountSettings = () => {
       </div>
 
       {/* Cards */}
-      <AdminPersonalCard admin={admin} />
-      <SecurityCard />
+      <AdminPersonalCard
+        admin={admin}
+        onUpdated={handleProfileUpdated}
+        onEmailChanged={handleForceReLogin}
+      />
+      <SecurityCard
+        lastPasswordChange={admin.lastPasswordChange || 'آخر تحديث غير متاح'}
+        onPasswordChanged={handleForceReLogin}
+      />
     </div>
   );
 };

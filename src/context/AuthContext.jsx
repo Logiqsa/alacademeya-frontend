@@ -42,6 +42,12 @@ export const AuthContextProvider = ({ children }) => {
     return { user: finalUser, token };
   };
 
+  // بتستخدم بعد أي تعديل في البروفايل (عدا تغيير الإيميل/الباسورد) عشان نحدّث الـ context والـ localStorage مع بعض
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
@@ -49,7 +55,7 @@ export const AuthContextProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
