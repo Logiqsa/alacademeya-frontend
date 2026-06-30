@@ -6,10 +6,9 @@ import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
 
 import dashboardIcon from "../../../assets/icons/dashboard.png";
-import childrenIcon from "../../../assets/icons/children.png";
-import scheduleIcon from "../../../assets/icons/schedule.png";
+import assignmentsIcon from "../../../assets/icons/children.png";
+import examsIcon from "../../../assets/icons/schedule.png";
 import messagesIcon from "../../../assets/icons/messages.png";
-import subscriptionIcon from "../../../assets/icons/subscription.png";
 import notificationsIcon from "../../../assets/icons/notifications.png";
 import settingsIcon from "../../../assets/icons/settings.png";
 import logoutIcon from "../../../assets/icons/logout.png";
@@ -22,36 +21,31 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       icon: dashboardIcon,
       path: "/student-dashboard",
     },
-    // {
-    //   title: "الأبناء",
-    //   icon: childrenIcon,
-    //   path: "/parent/children",
-    // },
-    // {
-    //   title: "الجدول",
-    //   icon: scheduleIcon,
-    //   path: "/parent/schedule",
-    // },
-    // {
-    //   title: "الرسائل",
-    //   icon: messagesIcon,
-    //   path: "/parent/messages",
-    // },
-    // {
-    //   title: "الإشتراك",
-    //   icon: subscriptionIcon,
-    //   path: "/parent/subscription",
-    // },
-    // {
-    //   title: "الإشعارات",
-    //   icon: notificationsIcon,
-    //   path: "/parent/notifications",
-    // },
-    // {
-    //   title: "الإعدادات",
-    //   icon: settingsIcon,
-    //   path: "/parent/settings",
-    // },
+    {
+      title: "الواجبات",
+      icon: assignmentsIcon,
+      path: "/student/assignments",
+    },
+    {
+      title: "الاختبارات",
+      icon: examsIcon,
+      path: "/student/exams",
+    },
+    {
+      title: "الرسائل",
+      icon: messagesIcon,
+      path: "/student/messages",
+    },
+    {
+      title: "الإشعارات",
+      icon: notificationsIcon,
+      path: "/student/notifications",
+    },
+    {
+      title: "الإعدادات",
+      icon: settingsIcon,
+      path: "/student/settings",
+    },
   ];
 
 
@@ -166,23 +160,6 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
           </NavLink>
         ))}
       </div>
-
-      {/* Footer Links */}
-      {/* {isOpen && (
-        <div className="px-4 py-3 mx-3 mb-3 space-y-2 rounded-lg">
-          <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
-            روابط مهمة
-          </p>
-
-          <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
-            المدرسة الرئيسية
-          </p>
-
-          <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
-            المجموعات
-          </p>
-        </div>
-      )} */}
 
       {/* Logout */}
       <div className="p-3 border-t border-[#FFFFFF14]">

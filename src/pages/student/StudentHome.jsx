@@ -1,41 +1,48 @@
-import StudentWelcome from "../../components/student/dashboard/StudentWelcome";
+import React from "react";
+import WelcomeHeader from "../../components/student/dashboard/WelcomeHeader";
+import StatsOverview from "../../components/student/dashboard/StatsOverview";
+import SubscriptionsCard from "../../components/student/dashboard/SubscriptionsCard";
+import GroupsCard from "../../components/student/dashboard/GroupsCard";
+import ScheduleSection from "../../components/student/dashboard/ScheduleSection";
+import LessonsList from "../../components/student/dashboard/LessonsList";
 import StudentLayout from "../../components/student/layout/StudentLayout";
-
 
 
 const StudentHome = () => {
   return (
     <StudentLayout>
-      <div className="space-y-6 p-2" dir="rtl">
-        <StudentWelcome />
-        {/* <StatsCards /> */}
+    <div dir="rtl" className=" min-h-screen p-4 sm:p-6 lg:p-1">
+      <WelcomeHeader studentName="محمد" />
 
+      <StatsOverview
+        upcomingLessons={4}
+        activeExams={1}
+        activeAssignments={2}
+        activeGroups={4}
+      />
 
-        {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-        
-          <div className="lg:col-span-2">
-            <ChildrenOverviewSection />
-          </div>
-
-          <div className="lg:col-span-1">
-            <NotificationsSection />
-          </div>
-          
-        </div> */}
-
-        {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          <div className="lg:col-span-1">
-            <UpcomingLessonsSection />
-          </div>
-
-          <div className="lg:col-span-1">
-            <NotificationsSection />
-          </div>
-
-        </div> */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="lg:col-span-1">
+          <SubscriptionsCard />
+        </div>
+        <div className="lg:col-span-2">
+          <GroupsCard />
+        </div>
       </div>
+
+      <ScheduleSection weekLabel="22 يونيو 2026" />
+
+      <div className="mb-2">
+        <h3
+          className="text-[#1F2937] font-semibold text-[16px] mb-4"
+          style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
+        >
+          دروس اليوم
+        </h3>
+        <LessonsList />
+        
+      </div>
+    </div>
     </StudentLayout>
   );
 };
