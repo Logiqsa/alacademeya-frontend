@@ -69,6 +69,9 @@ import CreateCurriculumPage from "./pages/admin/curriculum/CreateCurriculumPage"
 import StudentAccountSettingsPage from "./pages/student/StudentAccountSettingsPage";
 import StudentNotifications from "./pages/student/Notifications";
 import StudentMessagess from "./pages/student/messages/Messages";
+import StudentExamsPage from "./pages/student/exam/Studentexamspage";
+import TakeExamPage from "./pages/student/exam/Takeexampage";
+import ExamResultPage from "./pages/student/exam/Examresultpage";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -115,6 +118,9 @@ function App() {
         <Route path="/student/settings" element={<StudentGuard><StudentAccountSettingsPage /></StudentGuard>} />
         <Route path="/student/notifications" element={<StudentGuard><StudentNotifications /></StudentGuard>} />
         <Route path="/student/messages" element={<StudentGuard><StudentMessagess  /></StudentGuard>} />
+        <Route path="/student/exams" element={<StudentGuard><StudentExamsPage  /></StudentGuard>} />
+        <Route path="/student/exams/:id/take" element={<StudentGuard><TakeExamPage   /></StudentGuard>} />
+        <Route path="/student/exams/:id/result" element={<StudentGuard><ExamResultPage  /></StudentGuard>} />
 
         {/* ✅ Teacher — محمي بـ TeacherGuard */}
         <Route path="/teacher-dashboard" element={<TeacherGuard><TeacherHome /></TeacherGuard>} />
