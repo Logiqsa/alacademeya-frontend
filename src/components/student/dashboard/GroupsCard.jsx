@@ -1,17 +1,20 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Clock, GraduationCap } from "lucide-react";
 
-const GroupCard = ({ name, teacher, status, statusType, nextLesson, done, total, remaining }) => {
+const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, done, total, remaining, onClick }) => {
   const isGroup = statusType === "group";
 
   return (
     <div
       dir="rtl"
+      onClick={onClick}
       className="
         bg-white border border-[#E5E7EB] rounded-xl
         p-3.5 sm:p-4
         min-w-0
         flex flex-col
+        cursor-pointer hover:border-[#123C91] hover:shadow-md transition-all
       "
     >
       {/* Badge */}
@@ -73,6 +76,7 @@ const GroupCard = ({ name, teacher, status, statusType, nextLesson, done, total,
 const GroupsCard = ({
   groups = [
     {
+      groupId: "g1",
       name: "مجموعة الفيزياء A",
       teacher: "علياء محمد",
       status: "مجموعة",
@@ -83,6 +87,7 @@ const GroupsCard = ({
       remaining: 5,
     },
     {
+      groupId: "g2",
       name: "مجموعة الرياضيات A",
       teacher: "عادل منصور",
       status: "خاصة",
@@ -94,11 +99,10 @@ const GroupsCard = ({
     },
   ],
 }) => {
+  const navigate = useNavigate();
+
   return (
-    <div
-      dir="rtl"
-      className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-4 sm:p-5 h-full"
-    >
+    <div dir="rtl" className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-4 sm:p-5 h-full">
       <div className="mb-4">
         <h3
           className="text-[#1F2937] font-semibold text-[15px] sm:text-[16px]"
@@ -116,7 +120,11 @@ const GroupsCard = ({
 
       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
         {groups.map((g, i) => (
-          <GroupCard key={i} {...g} />
+          <GroupCard
+            key={g.groupId ?? i}
+            {...g}
+            onClick={() => navigate(`/student/groups/${g.groupId}/lessons`)}
+          />
         ))}
       </div>
     </div>

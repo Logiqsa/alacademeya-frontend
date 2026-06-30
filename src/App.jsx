@@ -73,6 +73,9 @@ import StudentExamsPage from "./pages/student/exam/Studentexamspage";
 import TakeExamPage from "./pages/student/exam/Takeexampage";
 import ExamResultPage from "./pages/student/exam/Examresultpage";
 import StudentAssignmentsPage from "./pages/student/assignments/StudentAssignmentsPage";
+import StudentGroupLessonsPage from "./pages/student/groupLessons/Studentgrouplessonspage";
+import StudentLessonDetailsPage from "./pages/student/groupLessons/Studentlessondetailspage";
+import LessonFilesPage from "./pages/student/groupLessons/Lessonfilespage";
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -123,6 +126,10 @@ function App() {
         <Route path="/student/exams/:id/take" element={<StudentGuard><TakeExamPage   /></StudentGuard>} />
         <Route path="/student/exams/:id/result" element={<StudentGuard><ExamResultPage  /></StudentGuard>} />
         <Route path="/student/assignments" element={<StudentGuard><StudentAssignmentsPage  /></StudentGuard>} />
+        <Route path="/student/groups/:groupId/lessons" element={<StudentGuard><StudentGroupLessonsPage  /></StudentGuard>} />
+        <Route path="/student/groups/:groupId/lessons/:lessonId" element={<StudentGuard><StudentLessonDetailsPage  /></StudentGuard>} />
+        <Route path="/student/groups/:groupId/lessons/:lessonId/files" element={<StudentGuard><LessonFilesPage  /></StudentGuard>} />
+
 
         {/* ✅ Teacher — محمي بـ TeacherGuard */}
         <Route path="/teacher-dashboard" element={<TeacherGuard><TeacherHome /></TeacherGuard>} />
