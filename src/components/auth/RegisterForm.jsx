@@ -158,6 +158,9 @@ const RegisterForm = ({ type }) => {
         specialization: "",
         country: "",
         academicLevel: "",
+        // نوع الطالب: مدرسي (school) أو جامعي (university) — بتتحدد من
+        // المستخدم صراحةً وبترتبط مباشرة بحقل studentType في الباك إند.
+        studentType: "school",
         role: type || "student",
     });
 
@@ -232,7 +235,7 @@ const RegisterForm = ({ type }) => {
             toast.error("كلمتا المرور غير متطابقتين");
             return false;
         }
-        if (type === "student" && !formData.academicLevel) {
+        if (type === "student" && formData.studentType === "school" && !formData.academicLevel) {
             toast.error("يرجى اختيار المرحلة الدراسية");
             return false;
         }
@@ -263,7 +266,10 @@ const RegisterForm = ({ type }) => {
                 role: formData.role,
             };
 
-            if (type === "student") payload.academicLevel = formData.academicLevel;
+            if (type === "student") {
+                payload.academicLevel = formData.studentType === "school" ? formData.academicLevel : "university";
+                payload.studentType = formData.studentType;
+            }
             if (type === "teacher") payload.specialization = formData.specialization;
 
             await register(payload);
@@ -317,7 +323,7 @@ const RegisterForm = ({ type }) => {
             return { path: "/parent-dashboard", state: { email: formData.email, role: type } };
         }
         if (type === "student") {
-            if (formData.academicLevel === "university") {
+            if (formData.studentType === "university") {
                 return { path: "/student-dashboard", state: { email: formData.email, role: type } };
             }
             return {
@@ -327,6 +333,8 @@ const RegisterForm = ({ type }) => {
                     role: type,
                     academicLevel: formData.academicLevel,
                     countryId: formData.country,
+                    // نوع الطالب اللي اختاره المستخدم صراحةً من الـ toggle.
+                    studentType: formData.studentType,
                 },
             };
         }
@@ -450,6 +458,8 @@ const RegisterForm = ({ type }) => {
                         </div>
                     </div>
                 )}
+
+                {/* المرحلة الدراسية = نوع الطالب نفسه (ابتدائي/إعدادي/ثانوي/جامعي) */}
 
                 <CountryDropdown
                     value={formData.country}

@@ -234,7 +234,7 @@ const TeacherDetailsPage = () => {
 
   return (
     <AuthLayout>
-      <div className="w-full max-w-lg mx-auto px-6 py-8" dir="rtl">
+      <div className="w-full mx-auto px-1 py-8" dir="rtl">
         <h2
           className="text-[26px] font-bold mb-2 text-[#1F2937]"
           style={{ fontFamily: "Tajawal, sans-serif" }}

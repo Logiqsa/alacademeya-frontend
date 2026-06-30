@@ -8,8 +8,6 @@ import {
     getCurriculums,
     getCurriculumStages,
     getStageGrades,
-    completeStudentProfile,
-    getAccountState,
 } from "../../services/authService";
 
 
@@ -102,10 +100,9 @@ const StudentDetailsPages = () => {
     const { state } = useLocation();
     const navigate = useNavigate();
 
-    const { email, role, academicLevel, countryId } = state || {};
+    const { email, role, academicLevel, countryId, studentType } = state || {};
 
-   
-    const [serviceType, setServiceType] = useState("private");
+
     const [curriculumId, setCurriculumId] = useState("");
     const [stageId, setStageId] = useState("");
     const [gradeId, setGradeId] = useState("");
@@ -124,7 +121,7 @@ const StudentDetailsPages = () => {
 
     const toLabel = (nameObj) => nameObj?.ar || nameObj?.en || "—";
 
-  
+
     useEffect(() => {
         if (!countryId) {
             console.log("countryId is empty:", countryId);
@@ -145,7 +142,7 @@ const StudentDetailsPages = () => {
             .finally(() => setLoadingCurriculums(false));
     }, [countryId]);
 
-    
+
     useEffect(() => {
         if (!curriculumId) { setStages([]); setStageId(""); setGrades([]); setGradeId(""); return; }
         setLoadingStages(true);
@@ -190,45 +187,12 @@ const StudentDetailsPages = () => {
         if (!stageId) { toast.error("يرجى اختيار المرحلة الدراسية"); return; }
         if (!gradeId) { toast.error("يرجى اختيار الصف الدراسي"); return; }
 
-        setLoading(true);
-        try {
-            // 1) Actually persist the profile — this was missing before,
-            // which is why nothing reached the database.
-            await completeStudentProfile({
-                email,
-                role,
-                academicLevel,
-                countryId,
-                curriculumId,
-                stageId,
-                gradeId,
-                serviceType,
-            });
-
-            // 2) Find out whether this student account is already approved.
-            let approved = false;
-            try {
-                const stateRes = await getAccountState();
-                approved = isApprovedStatus(extractStatus(stateRes));
-            } catch (err) {
-                console.log("account-state error:", err.response?.status, err.response?.data);
-            }
-
-            toast.success("تم حفظ بيانات الطالب بنجاح!");
-
-            if (approved) {
-                navigate(DASHBOARD_ROUTE);
-            } else {
-                navigate(PENDING_ROUTE, {
-                    state: { email, role, academicLevel, countryId, curriculumId, stageId, gradeId, serviceType },
-                });
-            }
-        } catch (err) {
-            console.log("completeStudentProfile error:", err.response?.status, err.response?.data);
-            toast.error(err.response?.data?.message || "حدث خطأ أثناء حفظ البيانات");
-        } finally {
-            setLoading(false);
-        }
+        // البيانات لسه ناقصة (preferredSubjects)، فمش بنبعت completeStudentProfile
+        // هنا. بنجمع كل حاجة ونوديها لصفحة المواد المفضلة، وهي اللي هتبعت
+        // الطلب النهائي بكل الحقول مع بعض.
+        navigate("/register/subjects", {
+            state: { email, role, academicLevel, countryId, curriculumId, stageId, gradeId, studentType },
+        });
     };
 
     return (
@@ -243,35 +207,6 @@ const StudentDetailsPages = () => {
                 </h2>
 
                 <form className="space-y-5" onSubmit={handleSubmit}>
-
-                    {/* Service type toggle */}
-                    <div>
-                        <label className="block text-[13px] font-medium text-[#1F2937] mb-2">
-                            اختر نوع الخدمة
-                        </label>
-                        <div className="grid grid-cols-2 gap-0 border border-[#1F293733] rounded-lg overflow-hidden">
-                            <button
-                                type="button"
-                                onClick={() => setServiceType("private")}
-                                className={`h-12 text-[14px] font-medium transition-colors ${serviceType === "private"
-                                    ? "bg-[#123C91] text-white"
-                                    : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
-                                    }`}
-                            >
-                                خاص
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setServiceType("group")}
-                                className={`h-12 text-[14px] font-medium transition-colors border-r border-[#1F293733] ${serviceType === "group"
-                                    ? "bg-[#123C91] text-white"
-                                    : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
-                                    }`}
-                            >
-                                مجموعة
-                            </button>
-                        </div>
-                    </div>
 
                     {/* Curriculum */}
                     <Dropdown

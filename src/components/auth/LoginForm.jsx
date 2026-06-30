@@ -20,26 +20,18 @@ const LoginForm = () => {
       toast.success("تم تسجيل الدخول بنجاح!");
 
       const role = data?.user?.role;
-      const status = data?.user?.registrationStatus;
+      const isApproved = data?.user?.registrationStatus === "approved";
 
+      // اطبع شكل اليوزر الفعلي اللي راجع من الـ login عشان نتأكد من اسم الحقل الصح
       console.log("user data:", JSON.stringify(data.user));
 
       if (role === "teacher") {
-        if (status === "active") {
-          navigate("/teacher-dashboard");
-        } else {
-          navigate("/pending");
-        }
+        navigate(isApproved ? "/teacher-dashboard" : "/account-state");
       } else if (role === "student") {
-        if (status === "active") {
-          navigate("/student-dashboard");
-        } else {
-          navigate("/pending");
-        }
+        navigate(isApproved ? "/student-dashboard" : "/register/success");
       } else if (role === "parent") {
         navigate("/parent-dashboard");
       } else if (role === "admin") {
-        // ✅ الأدمن
         navigate("/admin-dashboard");
       } else {
         navigate("/");

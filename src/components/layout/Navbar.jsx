@@ -3,40 +3,36 @@ import logo from "../../assets/icons/logo.svg";
 import { Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { getAccountState } from "../../services/authService";
 
 // ── الـ role بيحدد الداشبورد ──────────────────────────────────────────────
-// teacher  → /teacher-dashboard
-// student  → لو status=approved يروح /student-dashboard، غير كده /register/success
+// admin    → /admin-dashboard
+// teacher  → لو isActive=true يروح /teacher-dashboard، غير كده /account-state
+// student  → لو isActive=true يروح /student-dashboard، غير كده /register/success
 // parent   → /parent-dashboard (default)
 //
-// ملاحظة: لطلاب الـ "student"، الحالة المخزّنة في AuthContext (user.status)
-// ممكن تكون قديمة (محفوظة من وقت تسجيل الدخول/التسجيل)، ولو الإدارة وافقت
-// على الحساب بعد كده، الـ context مش بيتحدث لوحده. فبدل ما نعتمد على
-// user.status المخزّن، بنسأل السيرفر عن الحالة الفعلية الحالية أول ما
-// المستخدم يدوس على "لوحة التحكم"، وبعدين نوجّهه على أساس الرد الجديد.
-const goToDashboard = async (user, navigate) => {
+// ملاحظة: زي الـ teacher بالظبط، بنعتمد على القيمة المخزّنة في الـ user
+// (isActive / registrationStatus / status) جوه الـ AuthContext، من غير ما
+// نضرب أي API إضافي (زي /auth/account-state اللي بترجع 404 حالياً).
+const goToDashboard = (user, navigate) => {
   const role = user?.role;
+
   if (role === "admin") {
     navigate("/admin-dashboard");
     return;
   }
 
   if (role === "teacher") {
-    navigate("/teacher-dashboard");
+    navigate(user?.registrationStatus === "approved" ? "/teacher-dashboard" : "/account-state");
     return;
   }
 
   if (role === "student") {
-    try {
-      const res = await getAccountState();
-      const status = res?.data?.status ?? res?.data?.data?.status;
-      navigate(String(status).toLowerCase() === "approved" ? "/student-dashboard" : "/register/success");
-    } catch (err) {
-      console.log("account-state error:", err.response?.status, err.response?.data);
-      // تعذر الوصول للسيرفر — رجوع مؤقت للقيمة المخزنة بدل ما المستخدم يعلّق.
-      navigate(user?.status === "approved" ? "/student-dashboard" : "/register/success");
-    }
+    const isApproved =
+      user?.isActive === true ||
+      user?.registrationStatus === "active" ||
+      user?.status === "approved";
+
+    navigate(isApproved ? "/student-dashboard" : "/register/success");
     return;
   }
 
@@ -46,7 +42,6 @@ const goToDashboard = async (user, navigate) => {
 const Navbar = () => {
   const { user } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [checkingDashboard, setCheckingDashboard] = useState(false);
   const navigate = useNavigate();
 
   const links = [
@@ -63,14 +58,8 @@ const Navbar = () => {
     setMenuOpen(false);
   };
 
-  const handleDashboardClick = async () => {
-    if (checkingDashboard) return;
-    setCheckingDashboard(true);
-    try {
-      await goToDashboard(user, navigate);
-    } finally {
-      setCheckingDashboard(false);
-    }
+  const handleDashboardClick = () => {
+    goToDashboard(user, navigate);
   };
 
   return (
@@ -115,10 +104,9 @@ const Navbar = () => {
                 </span>
                 <button
                   onClick={handleDashboardClick}
-                  disabled={checkingDashboard}
-                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white text-[16px] font-medium disabled:opacity-70"
+                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white text-[16px] font-medium"
                 >
-                  {checkingDashboard ? "جاري التحقق..." : "لوحة التحكم"}
+                  لوحة التحكم
                 </button>
               </div>
             ) : (
@@ -190,11 +178,10 @@ const Navbar = () => {
                 مرحباً، {user.fullName || "عزيزي المستخدم"}
               </span>
               <button
-                onClick={async () => { await handleDashboardClick(); setMenuOpen(false); }}
-                disabled={checkingDashboard}
-                className="h-10 w-full rounded-lg bg-[#123C91] text-white text-[16px] font-medium disabled:opacity-70"
+                onClick={() => { handleDashboardClick(); setMenuOpen(false); }}
+                className="h-10 w-full rounded-lg bg-[#123C91] text-white text-[16px] font-medium"
               >
-                {checkingDashboard ? "جاري التحقق..." : "لوحة التحكم"}
+                لوحة التحكم
               </button>
             </div>
           ) : (
