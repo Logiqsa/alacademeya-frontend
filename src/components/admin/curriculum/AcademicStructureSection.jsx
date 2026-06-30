@@ -1,35 +1,24 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Trash2, Pencil, Plus, BookOpen } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ChevronDown, ChevronUp, Trash2, Pencil, Plus, BookOpen, Loader2 } from 'lucide-react';
+import { getCurriculums, getCurriculumStages,getStageGrades, deleteCurriculum } from '../../../services/authService';
 
-/* ------------------------------------------------------------------ */
-/* Static / Mock Data — replace with API data when ready                */
-/* ------------------------------------------------------------------ */
+const LANG = 'ar'; // change to dynamic locale if you support i18n switching
 
-const MOCK_CURRICULA = [
-    {
-        id: 'egy',
-        name: 'المنهج المصرى',
-        stages: [
-            {
-                id: 'primary',
-                name: 'ابتدائية',
-                grades: ['الأول الابتدائي', 'الثانى الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي'],
-            },
-            { id: 'middle', name: 'إعدادية', grades: ['الأول الإعدادي', 'الثاني الإعدادي', 'الثالث الإعدادي'] },
-            { id: 'secondary', name: 'ثانوية', grades: ['الأول الثانوي', 'الثاني الثانوي', 'الثالث الثانوي'] },
-        ],
-    },
-    {
-        id: 'sa',
-        name: 'المنهج السعودى',
-        stages: [
-            { id: 'primary', name: 'ابتدائية', grades: ['الأول الابتدائي', 'الثانى الابتدائي', 'الثالث الابتدائي'] },
-            { id: 'middle', name: 'متوسطة', grades: ['الأول المتوسط', 'الثاني المتوسط', 'الثالث المتوسط'] },
-            { id: 'secondary', name: 'ثانوية', grades: ['الأول الثانوي', 'الثاني الثانوي', 'الثالث الثانوي'] },
-        ],
-    },
-];
+// بيرجع نص الاسم سواء جاي كـ string عادي أو كـ object {ar, en}
+const pickName = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    return val[LANG] || val.ar || val.en || '';
+};
+
+const extractList = (resData) => {
+    if (!resData) return [];
+    const root = resData?.data || resData;
+    const raw = root?.data || root || [];
+    return Array.isArray(raw) ? raw : [];
+};
 
 /* ------------------------------------------------------------------ */
 /* Grade Pill                                                           */
@@ -43,10 +32,26 @@ const GradePill = ({ label }) => (
 
 /* ------------------------------------------------------------------ */
 /* Stage Row — collapsible, lists grade pills                           */
+/* بيجيب المراحل من /stages/curriculum/:id أول ما يتفتح                  */
 /* ------------------------------------------------------------------ */
 
 const StageRow = ({ stage, defaultOpen = false }) => {
     const [open, setOpen] = useState(defaultOpen);
+    const [grades, setGrades] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!open) return;
+
+        setLoading(true);
+
+        getStageGrades(stage._id || stage.id)
+            .then((res) => {
+                setGrades(extractList(res.data));
+            })
+            .finally(() => setLoading(false));
+
+    }, [open, stage]);
 
     return (
         <div className="border border-[#E5E5E5] rounded-xl overflow-hidden">
@@ -56,7 +61,7 @@ const StageRow = ({ stage, defaultOpen = false }) => {
                 className="w-full flex items-center justify-between px-4 py-3 bg-[#F9FAFA] hover:bg-[#F2F4F7] transition-colors cursor-pointer"
             >
                 <span className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[14px] sm:text-[15px] text-[#1F2937]">
-                    {stage.name}
+                    {pickName(stage.name)}
                 </span>
                 {open ? (
                     <ChevronUp size={16} className="text-[#575F69]" />
@@ -69,9 +74,13 @@ const StageRow = ({ stage, defaultOpen = false }) => {
                 <div className="px-4 py-4 space-y-2">
                     <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] text-[#8C9198]">الصفوف الدراسية</p>
                     <div className="flex flex-wrap gap-2">
-                        {stage.grades.map((g) => (
-                            <GradePill key={g} label={g} />
-                        ))}
+                        {grades.length > 0 ? (
+                            grades.map((g) => (
+                                <GradePill key={g._id || g.id || g} label={pickName(g.name) || g} />
+                            ))
+                        ) : (
+                            <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] text-[#8C9198]">لا توجد صفوف مضافة لهذه المرحلة.</p>
+                        )}
                     </div>
                 </div>
             )}
@@ -80,11 +89,27 @@ const StageRow = ({ stage, defaultOpen = false }) => {
 };
 
 /* ------------------------------------------------------------------ */
-/* Curriculum Card — collapsible, lists stage rows                      */
+/* Curriculum Card — collapsible, lazy-loads its stages on first open   */
 /* ------------------------------------------------------------------ */
 
 const CurriculumCard = ({ curriculum, onEdit, onDelete, defaultOpen = false }) => {
     const [open, setOpen] = useState(defaultOpen);
+    const [stages, setStages] = useState(null); // null = not fetched yet
+    const [loadingStages, setLoadingStages] = useState(false);
+
+    const curriculumId = curriculum._id || curriculum.id;
+
+    useEffect(() => {
+        if (!open || stages !== null) return;
+        setLoadingStages(true);
+        getCurriculumStages(curriculumId)
+            .then((res) => setStages(extractList(res.data)))
+            .catch(() => {
+                toast.error('تعذر تحميل المراحل الدراسية');
+                setStages([]);
+            })
+            .finally(() => setLoadingStages(false));
+    }, [open, stages, curriculumId]);
 
     return (
         <div className="bg-white border border-[#E5E5E5] rounded-2xl overflow-hidden">
@@ -95,10 +120,10 @@ const CurriculumCard = ({ curriculum, onEdit, onDelete, defaultOpen = false }) =
                     </div>
                     <div>
                         <h3 className="font-['IBM_Plex_Sans_Arabic'] font-medium mb-2 text-[15px] sm:text-[16px] text-[#1F2937]">
-                            {curriculum.name}
+                            {pickName(curriculum.name)}
                         </h3>
                         <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] sm:text-[13px] text-[#8C9198]">
-                            {curriculum.stages.length} مراحل دراسية
+                            {stages ? `${stages.length} مراحل دراسية` : 'اضغط لعرض المراحل الدراسية'}
                         </p>
                     </div>
 
@@ -136,8 +161,16 @@ const CurriculumCard = ({ curriculum, onEdit, onDelete, defaultOpen = false }) =
             {open && (
                 <div className="px-5 pb-5 space-y-3">
                     <p className="font-['IBM_Plex_Sans_Arabic'] text-[13px] text-[#8C9198]">المراحل الدراسية</p>
-                    {curriculum.stages.map((stage, idx) => (
-                        <StageRow key={stage.id} stage={stage} defaultOpen={idx === 0} />
+                    {loadingStages && (
+                        <div className="flex items-center justify-center py-6">
+                            <Loader2 size={18} className="animate-spin text-(--primary)" />
+                        </div>
+                    )}
+                    {!loadingStages && stages?.length === 0 && (
+                        <p className="font-['IBM_Plex_Sans_Arabic'] text-[13px] text-[#8C9198]">لا توجد مراحل دراسية مضافة لهذا المنهج بعد.</p>
+                    )}
+                    {!loadingStages && stages?.map((stage, idx) => (
+                        <StageRow key={stage._id || stage.id} stage={stage} defaultOpen={idx === 0} />
                     ))}
                 </div>
             )}
@@ -151,12 +184,39 @@ const CurriculumCard = ({ curriculum, onEdit, onDelete, defaultOpen = false }) =
 
 const AcademicStructureSection = () => {
     const navigate = useNavigate();
-    const [curricula, setCurricula] = useState(MOCK_CURRICULA);
+    const [curricula, setCurricula] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
+
+    const fetchCurricula = async () => {
+        setLoading(true);
+        setLoadError('');
+        try {
+            const res = await getCurriculums();
+            setCurricula(extractList(res.data));
+        } catch (err) {
+            setLoadError(err.response?.data?.message || 'تعذر تحميل المناهج الدراسية');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchCurricula(); }, []);
 
     const handleAdd = () => navigate('/admin/curriculum/create');
-    const handleEdit = (curriculum) => navigate(`/admin/curriculum/${curriculum.id}/edit`);
-    const handleDelete = (curriculum) => {
-        setCurricula((prev) => prev.filter((c) => c.id !== curriculum.id));
+    const handleEdit = (curriculum) => navigate(`/admin/curriculum/${curriculum._id || curriculum.id}/edit`);
+
+    const handleDelete = async (curriculum) => {
+        const id = curriculum._id || curriculum.id;
+        const prev = curricula;
+        setCurricula((p) => p.filter((c) => (c._id || c.id) !== id)); // optimistic
+        try {
+            await deleteCurriculum(id);
+            toast.success('تم حذف المنهج بنجاح');
+        } catch (err) {
+            setCurricula(prev); // rollback
+            toast.error(err.response?.data?.message || 'تعذر حذف المنهج');
+        }
     };
 
     return (
@@ -179,24 +239,38 @@ const AcademicStructureSection = () => {
                 </button>
             </div>
 
-            <div className="space-y-4">
-                {curricula.map((curriculum) => (
-                    <CurriculumCard
-                        key={curriculum.id}
-                        curriculum={curriculum}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                    />
-                ))}
+            {loading && (
+                <div className="flex items-center justify-center py-16">
+                    <Loader2 size={24} className="animate-spin text-(--primary)" />
+                </div>
+            )}
 
-                {curricula.length === 0 && (
-                    <div className="bg-white border border-dashed border-[#E5E5E5] rounded-2xl py-12 text-center">
-                        <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#8C9198]">
-                            لا توجد مناهج دراسية مضافة بعد.
-                        </p>
-                    </div>
-                )}
-            </div>
+            {!loading && loadError && (
+                <div className="bg-white border border-dashed border-[#E5E5E5] rounded-2xl py-12 text-center">
+                    <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-red-500">{loadError}</p>
+                </div>
+            )}
+
+            {!loading && !loadError && (
+                <div className="space-y-4">
+                    {curricula.map((curriculum) => (
+                        <CurriculumCard
+                            key={curriculum._id || curriculum.id}
+                            curriculum={curriculum}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        />
+                    ))}
+
+                    {curricula.length === 0 && (
+                        <div className="bg-white border border-dashed border-[#E5E5E5] rounded-2xl py-12 text-center">
+                            <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#8C9198]">
+                                لا توجد مناهج دراسية مضافة بعد.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

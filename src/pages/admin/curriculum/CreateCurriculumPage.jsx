@@ -1,13 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Plus, X } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Trash2, Plus, X, ChevronDown, Loader2 } from 'lucide-react';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import { createCurriculum, createStage, createGrade, getCountries } from '../../../services/authService';
+
+const LANG = 'ar';
+const pickName = (val) => {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  return val[LANG] || val.ar || val.en || '';
+};
+const extractList = (resData) => {
+  if (!resData) return [];
+  const root = resData?.data || resData;
+  const raw = root?.data || root || [];
+  return Array.isArray(raw) ? raw : [];
+};
+const normalizeOption = (item) => ({
+  id: item._id || item.id,
+  label: pickName(item.name) || item.label || '',
+});
 
 /* ------------------------------------------------------------------ */
 /* Shared Field Components — styled identically to CreateGroupPages     */
 /* ------------------------------------------------------------------ */
 
-const InputField = ({ label, value, onChange, placeholder, error, textarea }) => (
+const InputField = ({ label, value, onChange, placeholder, error, textarea, dir }) => (
   <div className="w-full">
     <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1">
       {label}
@@ -24,6 +43,7 @@ const InputField = ({ label, value, onChange, placeholder, error, textarea }) =>
     ) : (
       <input
         type="text"
+        dir={dir}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -34,6 +54,44 @@ const InputField = ({ label, value, onChange, placeholder, error, textarea }) =>
     {error && <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>}
   </div>
 );
+
+/* ------------------------------------------------------------------ */
+/* Simple Dropdown — used here for the required "country" field         */
+/* ------------------------------------------------------------------ */
+
+const SelectField = ({ label, value, options, onChange, placeholder = 'اختر', loading, error }) => {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.id === value);
+  return (
+    <div className="w-full relative">
+      <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1">
+        {label}
+      </label>
+      <button
+        type="button"
+        onClick={() => !loading && setOpen((o) => !o)}
+        className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] flex items-center justify-between text-right transition-all
+          ${error ? 'border-red-400' : 'border-[#E5E5E5]'} ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+      >
+        <span className={selected ? 'text-[#1F2937]' : 'text-[#8C9198]'}>
+          {loading ? 'جاري التحميل...' : selected ? selected.label : placeholder}
+        </span>
+        {loading ? <Loader2 size={16} className="animate-spin text-[#8C9198]" /> : <ChevronDown size={16} className={`text-[#8C9198] transition-transform ${open ? 'rotate-180' : ''}`} />}
+      </button>
+      {open && !loading && (
+        <ul className="absolute z-20 top-full right-0 left-0 mt-1 max-h-56 overflow-y-auto bg-white border border-[#E5E5E5] rounded-lg shadow-lg">
+          {options.length === 0 && <li className="px-4 py-2.5 text-sm text-[#8C9198]">لا توجد بيانات</li>}
+          {options.map((opt) => (
+            <li key={opt.id} onClick={() => { onChange(opt.id); setOpen(false); }} className="px-4 py-2.5 text-sm cursor-pointer hover:bg-[#F2F4F7] text-[#1F2937]">
+              {opt.label}
+            </li>
+          ))}
+        </ul>
+      )}
+      {error && <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>}
+    </div>
+  );
+};
 
 /* ------------------------------------------------------------------ */
 /* Grade Tag Input — type a grade name + Enter/+ to add as a pill       */
@@ -162,9 +220,21 @@ const emptyStage = () => ({ id: crypto.randomUUID(), name: '', grades: [], error
 const CreateCurriculumPage = () => {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [nameError, setNameError] = useState(null);
-  const [data, setData] = useState({ name: '', description: '' });
+  const [errors, setErrors] = useState({});
+  // الباك إند بيطلب الاسم بصيغة { ar, en } مش نص واحد، وبيطلب country إجباري
+  const [data, setData] = useState({ nameAr: '', nameEn: '', description: '', countryId: '' });
   const [stages, setStages] = useState([emptyStage()]);
+
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+
+  useEffect(() => {
+    setLoadingCountries(true);
+    getCountries()
+      .then((res) => setCountryOptions(extractList(res.data).map(normalizeOption)))
+      .catch(() => toast.error('تعذر تحميل قائمة الدول'))
+      .finally(() => setLoadingCountries(false));
+  }, []);
 
   const updateStage = (id, updated) => {
     setStages((prev) => prev.map((s) => (s.id === id ? updated : s)));
@@ -178,34 +248,78 @@ const CreateCurriculumPage = () => {
 
   const validate = () => {
     let valid = true;
+    const nextErrors = {};
 
-    if (!data.name.trim()) {
-      setNameError('اسم المنهج مطلوب');
-      valid = false;
-    } else {
-      setNameError(null);
-    }
+    if (!data.nameAr.trim()) { nextErrors.nameAr = 'اسم المنهج بالعربية مطلوب'; valid = false; }
+    if (!data.nameEn.trim()) { nextErrors.nameEn = 'اسم المنهج بالإنجليزية مطلوب'; valid = false; }
+    if (!data.countryId) { nextErrors.countryId = 'الدولة مطلوبة'; valid = false; }
+    setErrors(nextErrors);
 
     const nextStages = stages.map((s) => {
-      const errors = {};
-      if (!s.name.trim()) errors.name = 'اسم المرحلة مطلوب';
-      if (s.grades.length === 0) errors.grades = 'أضف صفًا دراسيًا واحدًا على الأقل';
-      if (Object.keys(errors).length) valid = false;
-      return { ...s, errors };
+      const stageErrors = {};
+      if (!s.name.trim()) stageErrors.name = 'اسم المرحلة مطلوب';
+      if (s.grades.length === 0) stageErrors.grades = 'أضف صفًا دراسيًا واحدًا على الأقل';
+      if (Object.keys(stageErrors).length) valid = false;
+      return { ...s, errors: stageErrors };
     });
     setStages(nextStages);
 
     return valid;
   };
 
-  const handleSubmit = () => {
-    if (!validate()) return;
-    setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
-      navigate('/admin/curriculum');
-    }, 800);
-  };
+const handleSubmit = async () => {
+  if (!validate()) return;
+  if (saving) return; // يمنع الضغط المتكرر أثناء الحفظ
+
+  setSaving(true);
+
+  try {
+    const curriculumRes = await createCurriculum({
+      name: {
+        ar: data.nameAr.trim(),
+        en: data.nameEn.trim(),
+      },
+      country: data.countryId,
+    });
+
+    const curriculum = curriculumRes.data.data || curriculumRes.data;
+    const curriculumId = curriculum._id || curriculum.id;
+
+    for (const stage of stages) {
+      const stageRes = await createStage({
+        curriculum: curriculumId,
+        name: { ar: stage.name, en: stage.name },
+      });
+
+      const createdStage = stageRes.data.data || stageRes.data;
+      const stageId = createdStage._id || createdStage.id;
+
+      for (const grade of stage.grades) {
+        await createGrade({
+          stage: stageId,
+          name: { ar: grade, en: grade },
+        });
+      }
+    }
+
+    toast.success('تم إضافة المنهج بنجاح');
+    navigate('/admin/curriculum');
+  }  catch (err) {
+  console.log('Full error response:', err.response?.data);
+  console.log('Validation details:', err.response?.data?.errors || err.response?.data?.details);
+    
+    const status = err.response?.status;
+    if (status === 409 || err.response?.data?.message?.includes('duplicate')) {
+      toast.error('يوجد منهج بنفس الاسم لهذه الدولة بالفعل');
+    } else {
+      toast.error(err.response?.data?.message || 'حدث خطأ أثناء إضافة المنهج');
+    }
+    console.log('Status:', status);
+    console.log('Error:', err.response?.data);
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <AdminLayout>
@@ -223,11 +337,30 @@ const CreateCurriculumPage = () => {
           <p className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[14px] text-[#1F2937]">بيانات المنهج</p>
 
           <InputField
-            label="اسم المنهج"
-            value={data.name}
-            onChange={(v) => setData((p) => ({ ...p, name: v }))}
+            label="اسم المنهج (عربي)"
+            value={data.nameAr}
+            onChange={(v) => setData((p) => ({ ...p, nameAr: v }))}
             placeholder="مثال: المنهج المصري"
-            error={nameError}
+            error={errors.nameAr}
+          />
+
+          <InputField
+            label="اسم المنهج (إنجليزي)"
+            dir="ltr"
+            value={data.nameEn}
+            onChange={(v) => setData((p) => ({ ...p, nameEn: v }))}
+            placeholder="e.g. Egypt Curriculum"
+            error={errors.nameEn}
+          />
+
+          <SelectField
+            label="الدولة"
+            value={data.countryId}
+            options={countryOptions}
+            loading={loadingCountries}
+            onChange={(id) => setData((p) => ({ ...p, countryId: id }))}
+            placeholder="اختر الدولة"
+            error={errors.countryId}
           />
 
           <InputField
@@ -240,7 +373,12 @@ const CreateCurriculumPage = () => {
         </div>
 
         <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5 space-y-4">
-          <p className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[14px] text-[#1F2937]">المراحل الدراسية</p>
+          <div>
+            <p className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[14px] text-[#1F2937]">المراحل الدراسية</p>
+            <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] text-[#8C9198] mt-1">
+              هذا القسم لسه بيتحفظ محليًا فقط، لإن API إضافة المراحل لكل منهج لسه مش متوفر — تقدر تضيفه بعدين أول ما يتوفر.
+            </p>
+          </div>
 
           <div className="space-y-4">
             {stages.map((stage, idx) => (
@@ -269,8 +407,9 @@ const CreateCurriculumPage = () => {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px] disabled:opacity-60"
+            className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px] disabled:opacity-60 flex items-center justify-center gap-2"
           >
+            {saving && <Loader2 size={16} className="animate-spin" />}
             {saving ? 'جارٍ الإضافة...' : 'إضافة المنهج'}
           </button>
           <button
