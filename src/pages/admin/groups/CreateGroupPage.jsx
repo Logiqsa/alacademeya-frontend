@@ -1,31 +1,20 @@
-import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Link as LinkIcon, Info } from 'lucide-react';
 import AdminLayout from '../../../components/admin/layout/AdminLayout';
+import React, { useState, useEffect } from 'react';
 
+import {
+  createClassroom,
+  getCurriculums,
+  getCurriculumStages,
+  getStageGrades,
+  getAllSubjects,
+  getUsers, // هنستخدمها لجلب قائمة المعلمين role=teacher
+} from '../../../services/authService';
 
 /* ------------------------------------------------------------------ */
 /* Static Data                                                          */
 /* ------------------------------------------------------------------ */
-
-const SUBJECT_OPTIONS = [
-    { id: 'math', name: 'رياضيات' },
-    { id: 'science', name: 'علوم' },
-    { id: 'arabic', name: 'لغة عربية' },
-    { id: 'english', name: 'لغة إنجليزية' },
-];
-
-const STAGE_OPTIONS = [
-    { id: 'primary', name: 'الابتدائية' },
-    { id: 'middle', name: 'الإعدادية' },
-    { id: 'secondary', name: 'الثانوية' },
-];
-
-const GRADE_OPTIONS = {
-    primary: [{ id: 'p4', name: 'الرابع الابتدائي' }, { id: 'p5', name: 'الخامس الابتدائي' }, { id: 'p6', name: 'السادس الابتدائي' }],
-    middle: [{ id: 'm1', name: 'الأول الإعدادي' }, { id: 'm2', name: 'الثاني الإعدادي' }, { id: 'm3', name: 'الثالث الإعدادي' }],
-    secondary: [{ id: 's1', name: 'الأول الثانوي' }, { id: 's2', name: 'الثاني الثانوي' }, { id: 's3', name: 'الثالث الثانوي' }],
-};
 
 // نوع الخدمة: المجموعة خاصة (حصص فردية/مدفوعة لمجموعة صغيرة) أو عامة (مفتوحة لجميع الطلاب المسجلين بالمادة)
 const SERVICE_TYPE_OPTIONS = [
@@ -90,147 +79,274 @@ const InputField = ({ label, value, onChange, placeholder, type = 'text', icon, 
 /* ------------------------------------------------------------------ */
 
 const CreateGroupPages = () => {
-    const navigate = useNavigate();
-    const [saving, setSaving] = useState(false);
-    const [errors, setErrors] = useState({});
-    const [data, setData] = useState({});
+  const navigate = useNavigate();
+  const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [data, setData] = useState({});
 
-    const grades = data.stage ? (GRADE_OPTIONS[data.stage] || []) : [];
+  // خيارات الـ selects القادمة من الباك إند
+  const [curriculums, setCurriculums] = useState([]);
+  const [stages, setStages] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
 
-    const handleField = (field, value) => {
-        setData((prev) => ({ ...prev, [field]: value }));
-        if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
-    };
+  useEffect(() => {
+    getCurriculums().then((res) => setCurriculums(res.data?.data || []));
+    getAllSubjects().then((res) => setSubjects(res.data?.data || []));
 
-    const validate = () => {
-        const next = {};
-        if (!data.subject) next.subject = 'اسم المادة مطلوب';
-        if (!data.stage) next.stage = 'المرحلة الدراسية مطلوبة';
-        if (!data.grade) next.grade = 'الصف الدراسي مطلوب';
-        if (!data.name?.trim()) next.name = 'اسم المجموعة مطلوب';
-        if (!data.serviceType) next.serviceType = 'نوع الخدمة مطلوب';
-        if (!data.capacity) next.capacity = 'عدد الطلاب مطلوب';
-        setErrors(next);
-        return Object.keys(next).length === 0;
-    };
+    setLoadingTeachers(true);
+    getUsers({ role: 'teacher' })
+      .then((res) => {
+        // 🔍 مؤقت: طبع شكل الرد الخام من السيرفر عشان نتأكد من بنية البيانات
+        // وأسماء الحقول الفعلية (افتح الـ Console وابعتلي اللي يطبع هنا)
+        console.log('RAW /users response:', res.data);
 
-    const handleCancel = () => navigate('/admin/groups');
+        // الـ array بيجي غالبًا في res.data.data، لكن لو فيه wrapper تاني
+        // (زي res.data.data.users أو res.data.data.results) بنحاول نلاقيه
+        const raw = res.data?.data;
+        const list = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.users)
+          ? raw.users
+          : Array.isArray(raw?.results)
+          ? raw.results
+          : [];
 
-    const handleSubmit = () => {
-        if (!validate()) return;
-        setSaving(true);
-        setTimeout(() => {
-            setSaving(false);
-            navigate('/admin/groups');
-        }, 800);
-    };
+        console.log('Users list length before filter:', list.length, list[0]);
 
-    return (
-        <AdminLayout>
-            <div dir="rtl" className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right  mx-auto space-y-5">
-                <div>
-                    <h2 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[18px] sm:text-[20px] text-[#1F2937] mb-1">إنشاء مجموعة جديدة</h2>
-                    <p className="font-['IBM_Plex_Sans_Arabic'] text-[#575F69] text-[14px] sm:text-[16px]">أدخل تفاصيل المجموعة.</p>
-                </div>
+        const teachersOnly = list
+          .filter((u) => {
+            const role = (u.role || u.rawRole || '').toString().toLowerCase();
+            const isTeacher = role === 'teacher';
 
-                <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5 space-y-4">
-                    <SelectField
-                        label="اسم المادة"
-                        value={data.subject || ''}
-                        onChange={(v) => handleField('subject', v)}
-                        options={SUBJECT_OPTIONS}
-                        placeholder="اختر المادة الدراسية"
-                        error={errors.subject}
-                    />
+            // نقبل أكتر من تسمية محتملة لحالة التفعيل
+            const isActive =
+              u.isActive === true ||
+              u.active === true ||
+              u.status === 'active' ||
+              u.registrationStatus === 'active';
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <SelectField
-                            label="الصف الدراسي"
-                            value={data.grade || ''}
-                            onChange={(v) => handleField('grade', v)}
-                            options={grades}
-                            placeholder="اختر الصف الدراسي"
-                            disabled={!data.stage}
-                            error={errors.grade}
-                        />
-                        <SelectField
-                            label="المرحلة الدراسية"
-                            value={data.stage || ''}
-                            onChange={(v) => { handleField('stage', v); handleField('grade', ''); }}
-                            options={STAGE_OPTIONS}
-                            placeholder="اختر المرحلة الدراسية"
-                            error={errors.stage}
-                        />
-                    </div>
+            const isDeleted = u.isDeleted === true || u.deleted === true;
 
-                    <InputField
-                        label="اسم المجموعة"
-                        value={data.name || ''}
-                        onChange={(v) => handleField('name', v)}
-                        placeholder="مجموعة أ"
-                        error={errors.name}
-                    />
+            // مهم جدًا: الباك إند بيرفض ربط مجموعة بمعلم لسه pending-verification
+            // أو غير verified، حتى لو isActive=true، فلازم نستبعدهم هنا
+            const isFullyVerified =
+              u.isVerified === true &&
+              u.registrationStatus !== 'pending-verification' &&
+              u.registrationStatus !== 'pending';
 
-                    <SelectField
-                        label="نوع الخدمة"
-                        value={data.serviceType || ''}
-                        onChange={(v) => handleField('serviceType', v)}
-                        options={SERVICE_TYPE_OPTIONS}
-                        placeholder="اختر نوع الخدمة"
-                        error={errors.serviceType}
-                    />
+            return isTeacher && isActive && isFullyVerified && !isDeleted;
+          })
+          .map((u) => ({ ...u, id: u.id || u._id }));
 
-                    <InputField
-                        label="عدد الطلاب (سعة الفصل)"
-                        value={data.capacity || ''}
-                        onChange={(v) => handleField('capacity', v)}
-                        placeholder="20"
-                        type="number"
-                        min="1"
-                        error={errors.capacity}
-                    />
+        console.log('Teachers after filter:', teachersOnly);
+        setTeachers(teachersOnly);
+      })
+      .catch((err) => {
+        console.error('فشل تحميل قائمة المعلمين:', err);
+        setTeachers([]);
+      })
+      .finally(() => setLoadingTeachers(false));
+  }, []);
 
-                    <InputField
-                        label="وصف المجموعة (اختياري)"
-                        value={data.description || ''}
-                        onChange={(v) => handleField('description', v)}
-                        placeholder="رياضيات - الصف الثالث الثانوي...."
-                    />
+  useEffect(() => {
+    if (data.curriculum) {
+      getCurriculumStages(data.curriculum).then((res) => setStages(res.data?.data || []));
+    } else {
+      setStages([]);
+    }
+  }, [data.curriculum]);
 
-                    <InputField
-                        label="رابط المجموعة التعليمية"
-                        value={data.meetingLink || ''}
-                        onChange={(v) => handleField('meetingLink', v)}
-                        placeholder="https://zoom.us/12548"
-                        icon={<LinkIcon size={16} />}
-                    />
+  useEffect(() => {
+    if (data.stage) {
+      getStageGrades(data.stage).then((res) => setGrades(res.data?.data || []));
+    } else {
+      setGrades([]);
+    }
+  }, [data.stage]);
 
-                    <div className="flex items-start gap-2 bg-[#EAF4FF] border border-[#D6E6FB] rounded-lg px-4 py-3">
-                        <Info size={16} className="text-[#123C91] shrink-0 mt-0.5" />
-                        <p className="font-['IBM_Plex_Sans_Arabic'] text-[13px] text-[#1F2937] leading-5">
-                            سيُستخدم هذا الرابط لجميع حصص هذه المجموعة. تأكد من صحة الرابط وإمكانية انضمام الطلاب إليه في الوقت المحدد للحصة.
-                        </p>
-                    </div>
-                </div>
+  const handleField = (field, value) => {
+    setData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
+  };
 
-                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-                    <button
-                        onClick={handleSubmit}
-                        disabled={saving}
-                        className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px] disabled:opacity-60"
-                    >
-                        {saving ? 'جارٍ الإنشاء...' : 'إنشاء المجموعة'}
-                    </button>
-                    <button
-                        onClick={handleCancel}
-                        className="flex-1 py-3 px-6 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium cursor-pointer text-[14px] sm:text-[16px]"
-                    >
-                        إلغاء
-                    </button>
-                </div>
+  const validate = () => {
+    const next = {};
+    if (!data.curriculum) next.curriculum = 'المنهج مطلوب';
+    if (!data.subject) next.subject = 'اسم المادة مطلوب';
+    if (!data.stage) next.stage = 'المرحلة الدراسية مطلوبة';
+    if (!data.grade) next.grade = 'الصف الدراسي مطلوب';
+    if (!data.teacher) next.teacher = 'المعلم مطلوب';
+    if (!data.name?.trim()) next.name = 'اسم المجموعة مطلوب';
+    if (!data.serviceType) next.serviceType = 'نوع الخدمة مطلوب';
+    if (!data.capacity) next.capacity = 'عدد الطلاب مطلوب';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleCancel = () => navigate('/admin/groups');
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    setSaving(true);
+    setSubmitError(null);
+    try {
+      await createClassroom({
+        name: data.name,
+        curriculum: data.curriculum,
+        stage: data.stage,
+        grade: data.grade,
+        subject: data.subject,
+        teacher: data.teacher,
+        type: 'group', // ثابت لأن الصفحة دي خاصة بإنشاء مجموعات
+        capacity: Number(data.capacity),
+        meetingLink: data.meetingLink || '',
+      });
+      navigate('/admin/groups');
+    } catch (err) {
+      console.error(err);
+      setSubmitError(err.response?.data?.message || 'حدث خطأ أثناء إنشاء المجموعة');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return(
+
+     <AdminLayout>
+      <div dir="rtl" className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right mx-auto space-y-5">
+        <div>
+          <h2 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[18px] sm:text-[20px] text-[#1F2937] mb-1">إنشاء مجموعة جديدة</h2>
+          <p className="font-['IBM_Plex_Sans_Arabic'] text-[#575F69] text-[14px] sm:text-[16px]">أدخل تفاصيل المجموعة.</p>
+        </div>
+
+        <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5 space-y-4">
+          <SelectField
+            label="المنهج"
+            value={data.curriculum || ''}
+            onChange={(v) => { handleField('curriculum', v); handleField('stage', ''); handleField('grade', ''); }}
+            options={curriculums.map((c) => ({ id: c.id, name: c.name?.ar || c.name }))}
+            placeholder="اختر المنهج"
+            error={errors.curriculum}
+          />
+
+          <SelectField
+            label="اسم المادة"
+            value={data.subject || ''}
+            onChange={(v) => handleField('subject', v)}
+            options={subjects.map((s) => ({ id: s.id, name: s.name?.ar || s.name }))}
+            placeholder="اختر المادة الدراسية"
+            error={errors.subject}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <SelectField
+              label="المرحلة الدراسية"
+              value={data.stage || ''}
+              onChange={(v) => { handleField('stage', v); handleField('grade', ''); }}
+              options={stages.map((s) => ({ id: s.id, name: s.name?.ar || s.name }))}
+              placeholder="اختر المرحلة الدراسية"
+              disabled={!data.curriculum}
+              error={errors.stage}
+            />
+            <SelectField
+              label="الصف الدراسي"
+              value={data.grade || ''}
+              onChange={(v) => handleField('grade', v)}
+              options={grades.map((g) => ({ id: g.id, name: g.name?.ar || g.name }))}
+              placeholder="اختر الصف الدراسي"
+              disabled={!data.stage}
+              error={errors.grade}
+            />
+          </div>
+
+          <SelectField
+            label="المعلم"
+            value={data.teacher || ''}
+            onChange={(v) => handleField('teacher', v)}
+            options={teachers.map((t) => ({ id: t.id, name: t.fullName }))}
+            placeholder={loadingTeachers ? 'جارٍ تحميل المعلمين...' : (teachers.length ? 'اختر المعلم' : 'لا يوجد معلمون متاحون')}
+            disabled={loadingTeachers}
+            error={errors.teacher}
+          />
+
+          <InputField
+            label="اسم المجموعة"
+            value={data.name || ''}
+            onChange={(v) => handleField('name', v)}
+            placeholder="مجموعة أ"
+            error={errors.name}
+          />
+
+          <SelectField
+            label="نوع الخدمة"
+            value={data.serviceType || ''}
+            onChange={(v) => handleField('serviceType', v)}
+            options={SERVICE_TYPE_OPTIONS}
+            placeholder="اختر نوع الخدمة"
+            error={errors.serviceType}
+          />
+
+          <InputField
+            label="عدد الطلاب (سعة الفصل)"
+            value={data.capacity || ''}
+            onChange={(v) => handleField('capacity', v)}
+            placeholder="20"
+            type="number"
+            min="1"
+            error={errors.capacity}
+          />
+
+          <InputField
+            label="وصف المجموعة (اختياري)"
+            value={data.description || ''}
+            onChange={(v) => handleField('description', v)}
+            placeholder="رياضيات - الصف الثالث الثانوي...."
+          />
+
+          <InputField
+            label="رابط المجموعة التعليمية"
+            value={data.meetingLink || ''}
+            onChange={(v) => handleField('meetingLink', v)}
+            placeholder="https://zoom.us/12548"
+            icon={<LinkIcon size={16} />}
+          />
+
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-[13px] rounded-lg px-4 py-2">
+              {submitError}
             </div>
-        </AdminLayout>
-    );
+          )}
+
+          <div className="flex items-start gap-2 bg-[#EAF4FF] border border-[#D6E6FB] rounded-lg px-4 py-3">
+            <Info size={16} className="text-[#123C91] shrink-0 mt-0.5" />
+            <p className="font-['IBM_Plex_Sans_Arabic'] text-[13px] text-[#1F2937] leading-5">
+              سيُستخدم هذا الرابط لجميع حصص هذه المجموعة. تأكد من صحة الرابط وإمكانية انضمام الطلاب إليه في الوقت المحدد للحصة.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px] disabled:opacity-60"
+          >
+            {saving ? 'جارٍ الإنشاء...' : 'إنشاء المجموعة'}
+          </button>
+          <button
+            onClick={handleCancel}
+            className="flex-1 py-3 px-6 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium cursor-pointer text-[14px] sm:text-[16px]"
+          >
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </AdminLayout>
+  );
 };
 
 export default CreateGroupPages;

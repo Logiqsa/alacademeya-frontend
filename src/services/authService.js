@@ -202,3 +202,33 @@ export const updateUser = (id, payload) =>
 
 export const deleteUser = (id) =>
   API.delete(`/users/${id}`);
+
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Classrooms (Groups)
+// ──────────────────────────────────────────────────────────────────────────────
+
+export const getClassrooms = (params) =>
+  API.get('/classrooms/', { params });
+
+export const getMyClassrooms = (params) =>
+  API.get('/classrooms/my', { params });
+
+export const getClassroom = (id) =>
+  API.get(`/classrooms/${id}`);
+
+export const createClassroom = (payload) =>
+  API.post('/classrooms/', payload);
+
+export const updateClassroom = (id, payload) =>
+  API.patch(`/classrooms/${id}`, payload);
+
+export const deleteClassroom = (id) =>
+  API.delete(`/classrooms/${id}`);
+
+export const getAvailableClassrooms = (params) =>
+  // params: { teacher, subject, type }
+  API.get('/classrooms/available', { params });
+
+export const getClassroomSessions = (classroomId, params) =>
+  API.get(`/classrooms/${classroomId}/sessions/`, { params });

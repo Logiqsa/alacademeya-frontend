@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 
@@ -7,25 +7,20 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import GroupsFilters from "../../../components/admin/groups/Groupsfilters";
 import GroupTable from "../../../components/admin/groups/Groupstable";
 import GroupsStatsBar from "../../../components/admin/groups/Groupsstatsbar";
-
-const MOCK_GROUPS = [
-  { id: 1, name: "مجموعة الرياضيات A", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 25, capacity: 25, status: "مكتملة العدد" },
-  { id: 2, name: "مجموعة الرياضيات A", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 18, capacity: 25, status: "نشطة" },
-  { id: 3, name: "مجموعة الرياضيات A", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 25, capacity: 25, status: "مكتملة العدد" },
-  { id: 4, name: "مجموعة الرياضيات A", teacher: null, subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 0, capacity: 0, status: "قيد التسجيل" },
-  { id: 5, name: "مجموعة الرياضيات A", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 18, capacity: 25, status: "منتهية" },
-  { id: 6, name: "مجموعة الرياضيات A", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 18, capacity: 20, status: "متوقفة" },
-  { id: 7, name: "مجموعة الرياضيات B", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الثاني الثانوي", enrolled: 22, capacity: 25, status: "نشطة" },
-  { id: 8, name: "مجموعة الرياضيات C", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الثالث الثانوي", enrolled: 25, capacity: 25, status: "مكتملة العدد" },
-  { id: 9, name: "مجموعة الرياضيات A", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 10, capacity: 25, status: "نشطة" },
-  { id: 10, name: "مجموعة الرياضيات B", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الثاني الثانوي", enrolled: 25, capacity: 25, status: "مكتملة العدد" },
-  { id: 11, name: "مجموعة الرياضيات C", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الثالث الثانوي", enrolled: 5, capacity: 25, status: "متوقفة" },
-  { id: 12, name: "مجموعة الرياضيات A", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الأول الثانوي", enrolled: 20, capacity: 25, status: "نشطة" },
-  { id: 13, name: "مجموعة الرياضيات B", teacher: null, subject: "رياضيات", stage: "ثانوية", grade: "الثاني الثانوي", enrolled: 0, capacity: 0, status: "قيد التسجيل" },
-  { id: 14, name: "مجموعة الرياضيات C", teacher: "محمد أحمد", subject: "رياضيات", stage: "ثانوية", grade: "الثالث الثانوي", enrolled: 18, capacity: 20, status: "منتهية" },
-];
+import { getClassrooms, getAllSubjects, getAllGrades } from "../../../services/authService";// عدّل المسار حسب مكان ملفك
 
 const PAGE_SIZE = 6;
+
+// ⚠️ عدّل القيم دي لو الباك إند بيرجع أسماء status مختلفة
+const STATUS_LABELS = {
+  active: "نشطة",
+  full: "مكتملة العدد",
+  pending: "قيد التسجيل",
+  paused: "متوقفة",
+  completed: "منتهية",
+};
+
+const SUBJECT_FILTER_OPTIONS = ["جميع المواد", "رياضيات", "علوم", "لغة عربية", "لغة إنجليزية"];
 
 const GroupsPage = () => {
   const navigate = useNavigate();
@@ -34,9 +29,66 @@ const GroupsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
-  const filtered = MOCK_GROUPS.filter(
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchGroups = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // نجيب الـ lookups والـ classrooms مع بعض
+      const [classroomsRes, subjectsRes, gradesRes] = await Promise.all([
+        getClassrooms({ type: "group" }),
+        getAllSubjects(),
+        getAllGrades(),
+      ]);
+
+      const subjects = subjectsRes.data?.data || [];
+      const grades = gradesRes.data?.data || [];
+
+      const subjectMap = Object.fromEntries(
+        subjects.map((s) => [s.id, s.name?.ar || s.name])
+      );
+      const gradeMap = Object.fromEntries(
+        grades.map((g) => [g.id, g.name?.ar || g.name])
+      );
+
+      const mapped = (classroomsRes.data?.data || []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        teacher: c.teacher?.user?.fullName || null,
+        // fallback: لو الماده/الصف مش لاقيينها في الـ map، نجرب نجيبها من بيانات المعلم نفسه
+        subject:
+          subjectMap[c.subject] ||
+          c.teacher?.subjects?.find((s) => s.id === c.subject)?.name?.ar ||
+          "--",
+        grade:
+          gradeMap[c.grade] ||
+          c.teacher?.grades?.find((g) => g.id === c.grade)?.name?.ar ||
+          "--",
+        stage: c.stage, // محتاج /stages/{id} لو عايز اسم المرحلة (موضح تحت)
+        enrolled: c.students?.length || 0,
+        capacity: c.capacity,
+        status: STATUS_LABELS[c.status] || c.status,
+      }));
+
+      setGroups(mapped);
+    } catch (err) {
+      console.error(err);
+      setError("حدث خطأ أثناء تحميل المجموعات");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  const filtered = groups.filter(
     (g) =>
-      (g.name.includes(search) || (g.teacher ?? "").includes(search) || g.subject.includes(search)) &&
+      (g.name?.includes(search) || (g.teacher ?? "").includes(search) || g.subject.includes(search)) &&
       (filterSubject === "جميع المواد" || g.subject === filterSubject) &&
       (filterStatus === "جميع الحالات" || g.status === filterStatus)
   );
@@ -45,16 +97,15 @@ const GroupsPage = () => {
   const paginatedGroups = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const stats = {
-    paused: MOCK_GROUPS.filter((g) => g.status === "متوقفة").length,
-    active: MOCK_GROUPS.filter((g) => g.status === "نشطة").length,
-    full: MOCK_GROUPS.filter((g) => g.status === "مكتملة العدد").length,
-    total: MOCK_GROUPS.length,
+    paused: groups.filter((g) => g.status === "متوقفة").length,
+    active: groups.filter((g) => g.status === "نشطة").length,
+    full: groups.filter((g) => g.status === "مكتملة العدد").length,
+    total: groups.length,
   };
 
   return (
     <AdminLayout>
       <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div className="order-2 sm:order-1">
             <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">إدارة المجموعات</h3>
@@ -71,12 +122,10 @@ const GroupsPage = () => {
           </button>
         </div>
 
-        {/* Stats */}
         <div className="mb-6">
           <GroupsStatsBar {...stats} />
         </div>
 
-        {/* Filters */}
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <GroupsFilters
             search={search}
@@ -88,12 +137,16 @@ const GroupsPage = () => {
           />
         </div>
 
-        {/* Table */}
         <div className="mt-4">
-          <GroupTable groups={paginatedGroups} />
+          {loading ? (
+            <div className="text-center py-10 text-[#575F69]">جارٍ التحميل...</div>
+          ) : error ? (
+            <div className="text-center py-10 text-red-500">{error}</div>
+          ) : (
+            <GroupTable groups={paginatedGroups} />
+          )}
         </div>
 
-        {/* Pagination */}
         <Paginationn
           page={page}
           totalPages={totalPages}
