@@ -7,7 +7,7 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import GroupsFilters from "../../../components/admin/groups/Groupsfilters";
 import GroupTable from "../../../components/admin/groups/Groupstable";
 import GroupsStatsBar from "../../../components/admin/groups/Groupsstatsbar";
-import { getClassrooms, getAllSubjects, getAllGrades } from "../../../services/authService";// عدّل المسار حسب مكان ملفك
+import { getClassrooms, getAllSubjects, getAllGrades, getStage, getUser } from "../../../services/authService";// عدّل المسار حسب مكان ملفك
 
 const PAGE_SIZE = 6;
 
@@ -46,6 +46,7 @@ const GroupsPage = () => {
 
       const subjects = subjectsRes.data?.data || [];
       const grades = gradesRes.data?.data || [];
+      const rawClassrooms = classroomsRes.data?.data || [];
 
       const subjectMap = Object.fromEntries(
         subjects.map((s) => [s.id, s.name?.ar || s.name])
@@ -54,24 +55,70 @@ const GroupsPage = () => {
         grades.map((g) => [g.id, g.name?.ar || g.name])
       );
 
-      const mapped = (classroomsRes.data?.data || []).map((c) => ({
-        id: c.id,
-        name: c.name,
-        teacher: c.teacher?.user?.fullName || null,
-        // fallback: لو الماده/الصف مش لاقيينها في الـ map، نجرب نجيبها من بيانات المعلم نفسه
-        subject:
-          subjectMap[c.subject] ||
-          c.teacher?.subjects?.find((s) => s.id === c.subject)?.name?.ar ||
-          "--",
-        grade:
-          gradeMap[c.grade] ||
-          c.teacher?.grades?.find((g) => g.id === c.grade)?.name?.ar ||
-          "--",
-        stage: c.stage, // محتاج /stages/{id} لو عايز اسم المرحلة (موضح تحت)
-        enrolled: c.students?.length || 0,
-        capacity: c.capacity,
-        status: STATUS_LABELS[c.status] || c.status,
-      }));
+      // مفيش endpoint بيرجع كل المراحل مرة واحدة (getCurriculumStages بياخد curriculum id)
+      // فبنجيب اسم كل مرحلة فريدة (unique) موجودة في المجموعات عن طريق /stages/{id}
+      const uniqueStageIds = [...new Set(rawClassrooms.map((c) => c.stage).filter(Boolean))];
+
+      const stageEntries = await Promise.all(
+        uniqueStageIds.map((id) =>
+          getStage(id)
+            .then((res) => [id, res.data?.data?.name?.ar || res.data?.data?.name || id])
+            .catch(() => [id, id]) // لو فشل الريكوست، نرجع نعرض الـ id كـ fallback بدل ما نكسر الصفحة
+        )
+      );
+      const stageMap = Object.fromEntries(stageEntries);
+
+      // نفس الفكرة بالظبط للمعلم: classrooms ممكن ترجع teacher كـ id خام
+      // بدل object فيه fullName، فبنجيب اسم كل معلم فريد عن طريق /users/{id}
+      const uniqueTeacherIds = [
+        ...new Set(
+          rawClassrooms
+            .map((c) => (typeof c.teacher === "string" ? c.teacher : c.teacher?.id || c.teacher?._id))
+            .filter(Boolean)
+        ),
+      ];
+
+      const teacherEntries = await Promise.all(
+        uniqueTeacherIds.map((id) =>
+          getUser(id)
+            .then((res) => [id, res.data?.data?.fullName || res.data?.data?.user?.fullName || null])
+            .catch(() => [id, null])
+        )
+      );
+      const teacherMap = Object.fromEntries(teacherEntries);
+
+      // اسم المجموعة نفسه ممكن يكون نص عادي أو object {ar, en} زي باقي الحقول
+      const resolveName = (val) => {
+        if (!val) return "--";
+        if (typeof val === "string") return val;
+        return val.ar || val.en || "--";
+      };
+
+      const mapped = rawClassrooms.map((c) => {
+        const teacherId = typeof c.teacher === "string" ? c.teacher : c.teacher?.id || c.teacher?._id;
+        return {
+          id: c.id,
+          name: resolveName(c.name),
+          teacher:
+            c.teacher?.user?.fullName ||
+            c.teacher?.fullName ||
+            teacherMap[teacherId] ||
+            null,
+          // fallback: لو الماده/الصف مش لاقيينها في الـ map، نجرب نجيبها من بيانات المعلم نفسه
+          subject:
+            subjectMap[c.subject] ||
+            c.teacher?.subjects?.find((s) => s.id === c.subject)?.name?.ar ||
+            "--",
+          grade:
+            gradeMap[c.grade] ||
+            c.teacher?.grades?.find((g) => g.id === c.grade)?.name?.ar ||
+            "--",
+          stage: stageMap[c.stage] || c.stage || "--",
+          enrolled: c.students?.length || 0,
+          capacity: c.capacity,
+          status: STATUS_LABELS[c.status] || c.status,
+        };
+      });
 
       setGroups(mapped);
     } catch (err) {
