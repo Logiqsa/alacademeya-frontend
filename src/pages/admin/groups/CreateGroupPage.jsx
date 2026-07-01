@@ -8,7 +8,7 @@ import {
   getCurriculums,
   getCurriculumStages,
   getStageGrades,
-  getAllSubjects,
+  getSubjects, // بنستخدم النسخة اللي بتاخد params عشان نفلتر المواد حسب الصف
   getUsers, // هنستخدمها لجلب قائمة المعلمين role=teacher
 } from '../../../services/authService';
 
@@ -91,94 +91,147 @@ const CreateGroupPages = () => {
   const [grades, setGrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
+
+  const [loadingStages, setLoadingStages] = useState(false);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
 
+  /* ---------------------------------------------------------------- */
+  /* 1) المنهج — بيتحمل أول ما الصفحة تفتح                              */
+  /* ---------------------------------------------------------------- */
   useEffect(() => {
     getCurriculums().then((res) => setCurriculums(res.data?.data || []));
-    getAllSubjects().then((res) => setSubjects(res.data?.data || []));
-
-    setLoadingTeachers(true);
-    getUsers({ role: 'teacher' })
-      .then((res) => {
-        // 🔍 مؤقت: طبع شكل الرد الخام من السيرفر عشان نتأكد من بنية البيانات
-        // وأسماء الحقول الفعلية (افتح الـ Console وابعتلي اللي يطبع هنا)
-        console.log('RAW /users response:', res.data);
-
-        // الـ array بيجي غالبًا في res.data.data، لكن لو فيه wrapper تاني
-        // (زي res.data.data.users أو res.data.data.results) بنحاول نلاقيه
-        const raw = res.data?.data;
-        const list = Array.isArray(raw)
-          ? raw
-          : Array.isArray(raw?.users)
-          ? raw.users
-          : Array.isArray(raw?.results)
-          ? raw.results
-          : [];
-
-        console.log('Users list length before filter:', list.length, list[0]);
-
-        const teachersOnly = list
-          .filter((u) => {
-            const role = (u.role || u.rawRole || '').toString().toLowerCase();
-            const isTeacher = role === 'teacher';
-
-            // نقبل أكتر من تسمية محتملة لحالة التفعيل
-            const isActive =
-              u.isActive === true ||
-              u.active === true ||
-              u.status === 'active' ||
-              u.registrationStatus === 'active';
-
-            const isDeleted = u.isDeleted === true || u.deleted === true;
-
-            // مهم جدًا: الباك إند بيرفض ربط مجموعة بمعلم لسه pending-verification
-            // أو غير verified، حتى لو isActive=true، فلازم نستبعدهم هنا
-            const isFullyVerified =
-              u.isVerified === true &&
-              u.registrationStatus !== 'pending-verification' &&
-              u.registrationStatus !== 'pending';
-
-            return isTeacher && isActive && isFullyVerified && !isDeleted;
-          })
-          .map((u) => ({ ...u, id: u.id || u._id }));
-
-        console.log('Teachers after filter:', teachersOnly);
-        setTeachers(teachersOnly);
-      })
-      .catch((err) => {
-        console.error('فشل تحميل قائمة المعلمين:', err);
-        setTeachers([]);
-      })
-      .finally(() => setLoadingTeachers(false));
   }, []);
 
+  /* ---------------------------------------------------------------- */
+  /* 2) المرحلة — بتعتمد على المنهج المختار                             */
+  /* ---------------------------------------------------------------- */
   useEffect(() => {
-    if (data.curriculum) {
-      getCurriculumStages(data.curriculum).then((res) => setStages(res.data?.data || []));
-    } else {
+    if (!data.curriculum) {
       setStages([]);
+      return;
     }
+    setLoadingStages(true);
+    getCurriculumStages(data.curriculum)
+      .then((res) => setStages(res.data?.data || []))
+      .catch(() => setStages([]))
+      .finally(() => setLoadingStages(false));
   }, [data.curriculum]);
 
+  /* ---------------------------------------------------------------- */
+  /* 3) الصف — بيعتمد على المرحلة المختارة                              */
+  /* ---------------------------------------------------------------- */
   useEffect(() => {
-    if (data.stage) {
-      getStageGrades(data.stage).then((res) => setGrades(res.data?.data || []));
-    } else {
+    if (!data.stage) {
       setGrades([]);
+      return;
     }
+    setLoadingGrades(true);
+    getStageGrades(data.stage)
+      .then((res) => setGrades(res.data?.data || []))
+      .catch(() => setGrades([]))
+      .finally(() => setLoadingGrades(false));
   }, [data.stage]);
 
+  /* ---------------------------------------------------------------- */
+  /* 4) المادة — تعتمد على الصف المختار                                */
+  /* ---------------------------------------------------------------- */
+  useEffect(() => {
+    if (!data.grade) {
+      setSubjects([]);
+      return;
+    }
+    setLoadingSubjects(true);
+    getSubjects({ grade: data.grade })
+      .then((res) => setSubjects(res.data?.data || []))
+      .catch(() => setSubjects([]))
+      .finally(() => setLoadingSubjects(false));
+  }, [data.grade]);
+
+  /* ---------------------------------------------------------------- */
+  /* المعلمين — النشطين والموثّقين بس، مستقلين عن باقي السلسلة           */
+  /* ---------------------------------------------------------------- */
+useEffect(() => {
+  setLoadingTeachers(true);
+
+  getUsers({ role: "teacher" })
+    .then((res) => {
+      const raw = res.data?.data;
+
+      const list = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.users)
+        ? raw.users
+        : Array.isArray(raw?.results)
+        ? raw.results
+        : [];
+
+      console.log("Teachers Response:", list);
+
+      const teachersOnly = list
+        .filter((u) => {
+          const role = (u.role || u.rawRole || "")
+            .toString()
+            .toLowerCase();
+
+          const isTeacher = role === "teacher";
+
+          // const isDeleted =
+          //   u.isDeleted === true ||
+          //   u.deleted === true;
+
+          const isActive =
+            u.isActive === true ||
+            u.active === true ||
+            u.status === "active";
+
+          const isApproved =
+            (u.registrationStatus || "").toLowerCase() === "approved";
+
+          // اعرض أي Teacher يكون Active أو Approved
+          return isTeacher && !isDeleted && (isActive || isApproved);
+        })
+        .map((u) => ({
+          ...u,
+          id: u.id || u._id,
+        }));
+
+      console.log("Filtered Teachers:", teachersOnly);
+
+      setTeachers(teachersOnly);
+    })
+    .catch((err) => {
+      console.error("فشل تحميل قائمة المعلمين:", err);
+      setTeachers([]);
+    })
+    .finally(() => setLoadingTeachers(false));
+}, []);
   const handleField = (field, value) => {
-    setData((prev) => ({ ...prev, [field]: value }));
+    setData((prev) => {
+      const next = { ...prev, [field]: value };
+      // أي حلقة في السلسلة بتترستّت لما اللي قبلها يتغيّر
+      if (field === 'curriculum') {
+        next.stage = '';
+        next.grade = '';
+        next.subject = '';
+      } else if (field === 'stage') {
+        next.grade = '';
+        next.subject = '';
+      } else if (field === 'grade') {
+        next.subject = '';
+      }
+      return next;
+    });
     if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
   };
 
   const validate = () => {
     const next = {};
     if (!data.curriculum) next.curriculum = 'المنهج مطلوب';
-    if (!data.subject) next.subject = 'اسم المادة مطلوب';
     if (!data.stage) next.stage = 'المرحلة الدراسية مطلوبة';
     if (!data.grade) next.grade = 'الصف الدراسي مطلوب';
+    if (!data.subject) next.subject = 'اسم المادة مطلوب';
     if (!data.teacher) next.teacher = 'المعلم مطلوب';
     if (!data.name?.trim()) next.name = 'اسم المجموعة مطلوب';
     if (!data.serviceType) next.serviceType = 'نوع الخدمة مطلوب';
@@ -224,51 +277,76 @@ const CreateGroupPages = () => {
         </div>
 
         <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5 space-y-4">
+          {/* 1. المنهج */}
           <SelectField
             label="المنهج"
             value={data.curriculum || ''}
-            onChange={(v) => { handleField('curriculum', v); handleField('stage', ''); handleField('grade', ''); }}
+            onChange={(v) => handleField('curriculum', v)}
             options={curriculums.map((c) => ({ id: c.id, name: c.name?.ar || c.name }))}
             placeholder="اختر المنهج"
             error={errors.curriculum}
           />
 
+          {/* 2. المرحلة الدراسية — تعتمد على المنهج */}
+          <SelectField
+            label="المرحلة الدراسية"
+            value={data.stage || ''}
+            onChange={(v) => handleField('stage', v)}
+            options={stages.map((s) => ({ id: s.id, name: s.name?.ar || s.name }))}
+            placeholder={
+              !data.curriculum
+                ? 'اختر المنهج أولاً'
+                : loadingStages
+                ? 'جارٍ تحميل المراحل...'
+                : 'اختر المرحلة الدراسية'
+            }
+            disabled={!data.curriculum || loadingStages}
+            error={errors.stage}
+          />
+
+          {/* 3. الصف الدراسي — يعتمد على المرحلة */}
+          <SelectField
+            label="الصف الدراسي"
+            value={data.grade || ''}
+            onChange={(v) => handleField('grade', v)}
+            options={grades.map((g) => ({ id: g.id, name: g.name?.ar || g.name }))}
+            placeholder={
+              !data.stage
+                ? 'اختر المرحلة أولاً'
+                : loadingGrades
+                ? 'جارٍ تحميل الصفوف...'
+                : 'اختر الصف الدراسي'
+            }
+            disabled={!data.stage || loadingGrades}
+            error={errors.grade}
+          />
+
+          {/* 4. المادة — تعتمد على الصف */}
           <SelectField
             label="اسم المادة"
             value={data.subject || ''}
             onChange={(v) => handleField('subject', v)}
             options={subjects.map((s) => ({ id: s.id, name: s.name?.ar || s.name }))}
-            placeholder="اختر المادة الدراسية"
+            placeholder={
+              !data.grade
+                ? 'اختر الصف أولاً'
+                : loadingSubjects
+                ? 'جارٍ تحميل المواد...'
+                : subjects.length
+                ? 'اختر المادة الدراسية'
+                : 'لا توجد مواد لهذا الصف'
+            }
+            disabled={!data.grade || loadingSubjects}
             error={errors.subject}
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SelectField
-              label="المرحلة الدراسية"
-              value={data.stage || ''}
-              onChange={(v) => { handleField('stage', v); handleField('grade', ''); }}
-              options={stages.map((s) => ({ id: s.id, name: s.name?.ar || s.name }))}
-              placeholder="اختر المرحلة الدراسية"
-              disabled={!data.curriculum}
-              error={errors.stage}
-            />
-            <SelectField
-              label="الصف الدراسي"
-              value={data.grade || ''}
-              onChange={(v) => handleField('grade', v)}
-              options={grades.map((g) => ({ id: g.id, name: g.name?.ar || g.name }))}
-              placeholder="اختر الصف الدراسي"
-              disabled={!data.stage}
-              error={errors.grade}
-            />
-          </div>
-
+          {/* 5. المعلم — مستقل، لكن نعرض النشطين والموثّقين بس */}
           <SelectField
             label="المعلم"
             value={data.teacher || ''}
             onChange={(v) => handleField('teacher', v)}
             options={teachers.map((t) => ({ id: t.id, name: t.fullName }))}
-            placeholder={loadingTeachers ? 'جارٍ تحميل المعلمين...' : (teachers.length ? 'اختر المعلم' : 'لا يوجد معلمون متاحون')}
+            placeholder={loadingTeachers ? 'جارٍ تحميل المعلمين...' : (teachers.length ? 'اختر المعلم' : 'لا يوجد معلمون نشطون متاحون')}
             disabled={loadingTeachers}
             error={errors.teacher}
           />

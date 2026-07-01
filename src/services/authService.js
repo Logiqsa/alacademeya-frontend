@@ -27,6 +27,32 @@ export const resendOtp = (email) =>
 export const verifyAccount = (data) =>
   API.post('/auth/verifyAccount', data);
 
+export const forgotPassword = (email) =>
+
+  API.post("/auth/forgotPassword", { email });
+
+
+
+export const verifyPasswordResetCode = (resetCode) =>
+
+  API.post("/auth/verifyResetCode", {
+
+    resetCode,
+
+  });
+
+
+
+export const resetPassword = ({ email, newPassword }) =>
+
+  API.post("/auth/resetPassword", {
+
+    email,
+
+    newPassword,
+
+  });
+
 export const completeStudentProfile = (payload) =>
   API.post('/auth/completeStudentProfile', payload);
 
