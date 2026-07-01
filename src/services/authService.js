@@ -130,6 +130,7 @@ export const markAllNotificationsRead = () => API.patch('/notifications/read-all
 // ──────────────────────────────────────────────────────────────────────────────
 export const getUsers = (params) => API.get('/users/', { params });
 export const getUser = (id) => API.get(`/users/${id}`);
+export const createUser = (payload) => API.post('/users/', payload); // ← جديد
 export const updateUser = (id, payload) => API.patch(`/users/${id}`, payload);
 export const deleteUser = (id) => API.delete(`/users/${id}`);
 

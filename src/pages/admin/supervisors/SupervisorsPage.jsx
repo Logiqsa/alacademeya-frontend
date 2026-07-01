@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import SupervisorsStatsBar from "../../../components/admin/supervisors/SupervisorsStatsBar";
@@ -6,24 +6,18 @@ import SupervisorsFilters from "../../../components/admin/supervisors/Supervisor
 import SupervisorsTable from "../../../components/admin/supervisors/SupervisorsTable";
 import AddSupervisorModal from "../../../components/admin/supervisors/AddSupervisorModal";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_SUPERVISORS = [
-  { id: 1,  name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "نشط" },
-  { id: 2,  name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "نشط" },
-  { id: 3,  name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "نشط" },
-  { id: 4,  name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "متوقف" },
-  { id: 5,  name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "نشط" },
-  { id: 6,  name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "متوقف" },
-  { id: 7,  name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "نشط" },
-  { id: 8,  name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "نشط" },
-  { id: 9,  name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "متوقف" },
-  { id: 10, name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "نشط" },
-  { id: 11, name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "نشط" },
-  { id: 12, name: "محمد أحمد", email: "mohamed@gmail.com", phone: "+20 100 123 4567", status: "متوقف" },
-];
+import { getUsers } from "../../../services/authService"; 
 
 const PAGE_SIZE = 6;
+
+// حوّل شكل اليوزر الراجع من الـ API لشكل الجدول
+const mapUserToSupervisor = (u) => ({
+  id: u.id || u._id,
+  name: u.fullName || u.username,
+  email: u.email,
+  phone: u.phone,
+  status: (u.isActive ?? u.isVerified) ? "نشط" : "متوقف", // ⚠️ عدّل حسب اسم الحقل الفعلي
+});
 
 const SupervisorsPage = () => {
   const [search, setSearch] = useState("");
@@ -31,19 +25,48 @@ const SupervisorsPage = () => {
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const filtered = MOCK_SUPERVISORS.filter(
-    (s) =>
-      (s.name.includes(search) || s.email.includes(search)) &&
-      (filterStatus === "جميع الحالات" || s.status === filterStatus)
+  const [supervisors, setSupervisors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchSupervisors = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getUsers({ role: "admin" });
+      // شكل الـ response ممكن يكون res.data أو res.data.data أو res.data.users
+      const list = res.data?.data || res.data?.users || res.data || [];
+      const onlyAdmins = list.filter((u) => u.role === "admin"); // فلترة إضافية احتياطية
+      setSupervisors(onlyAdmins.map(mapUserToSupervisor));
+    } catch (err) {
+      console.error(err);
+      setError("حدث خطأ أثناء تحميل بيانات المشرفين");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSupervisors();
+  }, []);
+
+  const filtered = useMemo(
+    () =>
+      supervisors.filter(
+        (s) =>
+          (s.name?.includes(search) || s.email?.includes(search)) &&
+          (filterStatus === "جميع الحالات" || s.status === filterStatus)
+      ),
+    [supervisors, search, filterStatus]
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const stats = {
-    paused: MOCK_SUPERVISORS.filter((s) => s.status === "متوقف").length,
-    active: MOCK_SUPERVISORS.filter((s) => s.status === "نشط").length,
-    total:  MOCK_SUPERVISORS.length,
+    paused: supervisors.filter((s) => s.status === "متوقف").length,
+    active: supervisors.filter((s) => s.status === "نشط").length,
+    total: supervisors.length,
   };
 
   return (
@@ -86,7 +109,13 @@ const SupervisorsPage = () => {
 
         {/* Table */}
         <div className="mt-4">
-          <SupervisorsTable supervisors={paginated} />
+          {loading ? (
+            <div className="text-center py-12 text-[#9CA3AF] text-[14px]">جارٍ التحميل...</div>
+          ) : error ? (
+            <div className="text-center py-12 text-red-500 text-[14px]">{error}</div>
+          ) : (
+            <SupervisorsTable supervisors={paginated} />
+          )}
         </div>
 
         {/* Pagination */}
@@ -103,6 +132,7 @@ const SupervisorsPage = () => {
         <AddSupervisorModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
+          onSuccess={fetchSupervisors} // يحدّث الجدول بعد الإضافة
         />
       </div>
     </AdminLayout>
