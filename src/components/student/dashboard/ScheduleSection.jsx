@@ -45,7 +45,7 @@ const ScheduleSection = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOffset]);
 
-  useEffect(() => {
+useEffect(() => {
     let cancelled = false;
 
     const fetchSchedules = async () => {
@@ -54,13 +54,20 @@ const ScheduleSection = () => {
         const { data } = await getMyClassrooms();
         const classrooms = data?.data ?? [];
 
+        // 🔍 تشخيص مؤقت
+        console.log("Classrooms fetched:", classrooms);
+
         const results = await Promise.all(
           classrooms.map(async (classroom) => {
             const id = classroom.id ?? classroom._id;
+            console.log("Fetching schedule for classroom:", id, classroom.name);
             try {
               const res = await getClassroomSchedule(id);
-              return { classroom, schedule: res.data?.data?.schedule ?? [] };
-            } catch {
+              const schedule = res.data?.data?.schedule ?? [];
+              console.log(`Schedule for ${classroom.name}:`, schedule);
+              return { classroom, schedule };
+            } catch (err) {
+              console.error(`getClassroomSchedule FAILED for ${id}:`, err.response?.status, err.response?.data);
               return { classroom, schedule: [] };
             }
           })

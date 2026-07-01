@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import LessonStats from "../../../components/student/groupLesson/Lessonstats";
 import LiveLessonLink from "../../../components/student/groupLesson/Livelessonlink";
@@ -7,29 +7,22 @@ import LessonAssignments from "../../../components/student/groupLesson/Lessonass
 import LessonQuizzes from "../../../components/student/groupLesson/Lessonquizzes";
 import LessonRecordings from "../../../components/student/groupLesson/Lessonrecordings";
 import LessonFiles from "../../../components/student/groupLesson/Lessonfiles";
-import {
-  getClassroom,
-  getClassroomSessions,
-  getSessionAttendance,
-} from "../../../services/authService";
+import { getClassroom, getClassroomSchedule, getSessionAttendance } from "../../../services/authService";
+import { generateLessonInstances, computeLessonStatus, DEFAULT_LESSON_DURATION_MIN } from "../../../utils/scheduleWeek";
 
 const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
 
 const STATUS_LABELS = {
-  scheduled: "قادمة",
   upcoming: "قادمة",
   live: "مباشر الآن",
-  completed: "منتهية",
-  cancelled: "ملغية",
+  ended: "منتهية",
 };
 
-// ─── Status Badge ─────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
   const styles = {
     قادمة: "bg-[#EAF4FF] text-[#123C91]",
     "مباشر الآن": "bg-[#00A63E26] text-[#00A63E]",
     منتهية: "bg-[#D32F2F26] text-[#D32F2F]",
-    ملغية: "bg-[#1F293726] text-[#1F2937]",
   };
   return (
     <span
@@ -42,7 +35,6 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// ─── Page Header ──────────────────────────────────────────────────────────────
 const PageHeader = ({ lesson }) => (
   <div dir="rtl" className="flex items-center justify-between gap-3 flex-wrap">
     <div className="flex items-center gap-3 min-w-0">
@@ -59,10 +51,8 @@ const PageHeader = ({ lesson }) => (
   </div>
 );
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 const StudentLessonDetailsPage = () => {
   const { groupId, lessonId } = useParams();
-  const navigate = useNavigate();
 
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,37 +64,41 @@ const StudentLessonDetailsPage = () => {
     setError(null);
 
     const loadData = async () => {
-      const [classroomResult, sessionsResult] = await Promise.allSettled([
+      const [classroomResult, scheduleResult] = await Promise.allSettled([
         getClassroom(groupId),
-        getClassroomSessions(groupId),
+        getClassroomSchedule(groupId),
       ]);
 
       if (cancelled) return;
 
-      if (sessionsResult.status === "rejected") {
-        console.error("getClassroomSessions failed:", sessionsResult.reason);
+      if (scheduleResult.status === "rejected") {
+        console.error("getClassroomSchedule failed:", scheduleResult.reason);
         setError("حدث خطأ أثناء تحميل بيانات الحصة");
         setLoading(false);
         return;
       }
 
-      const classroom =
-        classroomResult.status === "fulfilled" ? classroomResult.value.data?.data || {} : {};
+      const classroomData =
+        classroomResult.status === "fulfilled"
+          ? classroomResult.value.data?.data?.classroom ?? classroomResult.value.data?.data ?? {}
+          : {};
       if (classroomResult.status === "rejected") {
         console.error("getClassroom failed:", classroomResult.reason);
       }
 
-      const sessions = sessionsResult.value.data?.data || [];
-      // ⚠️ مفيش endpoint مخصص لجلب حصة واحدة بالـ id، فبنلاقيها محليًا جوه القائمة
-      const s = sessions.find((x) => x.id === lessonId);
+      const schedule = scheduleResult.value.data?.data?.schedule ?? [];
+      const instances = generateLessonInstances(schedule, { weeksBack: 8, weeksForward: 4 });
+      const inst = instances.find((x) => x.id === lessonId);
 
-      if (!s) {
+      if (!inst) {
         setError("لم يتم العثور على هذه الحصة");
         setLoading(false);
         return;
       }
 
-      // ─── حضور/غياب الفصل كله في الحصة دي — من GET /sessions/:id/attendance ───
+      // ⚠️ الـ id بتاع الحصة هنا مولّد محليًا مش id حقيقي لسيشن في الباك إند،
+      // فمحاولة جلب الحضور دي على الأغلب هترجع فاضية أو تفشل لحد ما يتضاف
+      // endpoint حقيقي لسجل الحصص الفعلية
       let presentCount = 0;
       let absentCount = 0;
       let totalRecords = 0;
@@ -115,32 +109,30 @@ const StudentLessonDetailsPage = () => {
         presentCount = records.filter((r) => r.status === "present").length;
         absentCount = records.filter((r) => r.status === "absent").length;
       } catch (err) {
-        console.error("getSessionAttendance failed:", err);
+        console.error("getSessionAttendance failed (متوقع طالما الـ id مش سيشن حقيقي):", err);
       }
 
       if (cancelled) return;
 
+      const status = computeLessonStatus(inst.date);
+
       setLesson({
-        id: s.id,
-        title: s.title || "حصة",
-        groupName: resolveName(classroom.name) || "مجموعة",
-        date: s.scheduledDate
-          ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          : "--",
-        time: s.scheduledDate
-          ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })
-          : "--",
-        duration: typeof s.duration === "number" ? `${s.duration} دقيقة` : s.duration ?? "--",
-        status: STATUS_LABELS[s.status] || s.status || "--",
-        totalStudents: totalRecords || classroom.students?.length || 0,
+        id: inst.id,
+        title: "حصة",
+        groupName: resolveName(classroomData.name) || "مجموعة",
+        date: inst.date.toLocaleDateString("ar-EG", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        time: inst.date.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+        duration: `${DEFAULT_LESSON_DURATION_MIN} دقيقة`,
+        status: STATUS_LABELS[status] || status,
+        totalStudents: totalRecords || classroomData.students?.length || 0,
         attendance: presentCount,
         absence: absentCount,
-        lessonUrl: s.meetingLink || classroom.meetingLink || "",
+        lessonUrl: classroomData.meetingLink || "",
       });
       setLoading(false);
     };
@@ -172,22 +164,17 @@ const StudentLessonDetailsPage = () => {
     <StudentLayout>
       <div className="w-full p-1 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
         <div className="mx-auto space-y-5">
-          {/* Header */}
           <PageHeader lesson={lesson} />
 
-          {/* Stats */}
           <LessonStats totalStudents={lesson.totalStudents} attendance={lesson.attendance} absence={lesson.absence} />
 
-          {/* Live Link */}
           <LiveLessonLink
             lessonUrl={lesson.lessonUrl}
             isLive={lesson.status === "مباشر الآن"}
             onJoin={(url) => window.open(url, "_blank")}
           />
 
-          {/* ⚠️ المكونات دي (الملفات/الواجبات/الاختبارات/التسجيلات) لسه بتعرض
-              بيانات افتراضية جوّاها لأنه مفيش endpoints مخصصة لها في api.js
-              الحالي. لما تتضاف، هنوصلها بنفس الطريقة اللي وصلنا بيها الحضور. */}
+          {/* ⚠️ لسه بتعرض بيانات افتراضية جوّاها لأنه مفيش endpoints مخصصة لها */}
           <LessonFiles />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

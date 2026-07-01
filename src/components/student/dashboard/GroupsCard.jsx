@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Clock, GraduationCap, Loader2 } from "lucide-react";
-import { getMyClassrooms, getClassroomSessions } from "../../../services/authService"; // عدّل المسار حسب مكان الملف عندك
+import { getMyClassrooms, getClassroomSchedule } from "../../../services/authService";
+import { generateLessonInstances } from "../../../utils/scheduleWeek";
 
 const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, done, total, remaining, onClick }) => {
   const isGroup = statusType === "group";
@@ -18,7 +19,6 @@ const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, don
         cursor-pointer hover:border-[#123C91] hover:shadow-md transition-all
       "
     >
-      {/* Badge */}
       <div className="mb-3">
         <span
           className={`
@@ -30,7 +30,6 @@ const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, don
         </span>
       </div>
 
-      {/* Title */}
       <h4
         className="text-[#1F2937] font-semibold text-[14px] sm:text-[15px] mb-1 truncate"
         style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
@@ -39,7 +38,6 @@ const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, don
         {name}
       </h4>
 
-      {/* Teacher */}
       <p
         className="text-[#123C91] text-[12.5px] sm:text-[13px] mb-3 truncate"
         style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
@@ -49,13 +47,11 @@ const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, don
 
       <div className="border-t border-[#F1F1F1] mb-3" />
 
-      {/* Next lesson */}
       <div className="flex items-center justify-start gap-1.5 text-[#9CA3AF] text-[11.5px] sm:text-[12px] mb-3">
         <Clock size={13} className="shrink-0" />
         <span className="truncate">{nextLesson}</span>
       </div>
 
-      {/* Footer */}
       <div className="flex items-center justify-between gap-2 mt-auto flex-wrap">
         <span className="flex items-center gap-1 text-[#6B7280] text-[11.5px] sm:text-[12px] shrink-0">
           <GraduationCap size={14} className="text-[#9CA3AF]" />
@@ -74,8 +70,6 @@ const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, don
   );
 };
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
 const getLocalizedName = (val) => {
   if (!val) return "";
   if (typeof val === "string") return val;
@@ -83,37 +77,33 @@ const getLocalizedName = (val) => {
 };
 
 const getTeacherName = (classroom) =>
-  classroom.teacher?.user?.fullName ??
-  classroom.teacher?.fullName ??
-  classroom.teacherName ??
-  "";
+  classroom.teacher?.user?.fullName ?? classroom.teacher?.fullName ?? "";
 
-const formatNextLesson = (sessions = []) => {
+const formatNextLesson = (instances = []) => {
   const now = new Date();
-  const upcoming = sessions
-    .filter((s) => s.startTime && new Date(s.startTime) >= now)
-    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+  const upcoming = instances.filter((i) => i.date >= now);
 
   if (upcoming.length === 0) return "لا توجد حصص قادمة";
 
-  const next = new Date(upcoming[0].startTime);
-  const diffDays = Math.round((next.setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000);
-
-  const time = new Date(upcoming[0].startTime).toLocaleTimeString("ar-EG", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const next = upcoming[0];
+  const diffDays = Math.round(
+    (new Date(next.date).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000
+  );
+  const time = next.date.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
 
   if (diffDays === 0) return `الحصة القادمة اليوم ${time}`;
   if (diffDays === 1) return `الحصة القادمة غداً ${time}`;
   return `الحصة القادمة بعد ${diffDays} أيام`;
 };
 
-const buildGroupCardData = (classroom, sessions = []) => {
-  const total = classroom.totalSessions ?? sessions.length ?? 0;
-  const done = sessions.filter((s) => s.status === "completed" || s.status === "done").length;
-  const remaining = Math.max(total - done, 0);
-  const type = classroom.type ?? classroom.classroomType ?? "group"; // "group" | "private"
+// ⚠️ مفيش بيانات حضور/اكتمال فعلية، فبنعتبر أي حصة معادها فات = "تمت"
+// وأي حصة معادها لسه جاي = "متبقية"، بناءً على نافذة 8 أسابيع سابقة + 4 قادمة
+const buildGroupCardData = (classroom, instances = []) => {
+  const now = new Date();
+  const done = instances.filter((i) => i.date < now).length;
+  const remaining = instances.filter((i) => i.date >= now).length;
+  const total = done + remaining;
+  const type = classroom.type ?? "group";
 
   return {
     groupId: classroom.id ?? classroom._id,
@@ -121,14 +111,12 @@ const buildGroupCardData = (classroom, sessions = []) => {
     teacher: getTeacherName(classroom),
     status: type === "group" ? "مجموعة" : "خاصة",
     statusType: type,
-    nextLesson: formatNextLesson(sessions),
+    nextLesson: formatNextLesson(instances),
     done,
     total,
     remaining,
   };
 };
-
-// ─── Main component ──────────────────────────────────────────────────────────
 
 const GroupsCard = () => {
   const navigate = useNavigate();
@@ -143,24 +131,23 @@ const GroupsCard = () => {
       try {
         setLoading(true);
         const { data } = await getMyClassrooms();
-        const classrooms = data?.data ?? data ?? [];
+        const classrooms = data?.data ?? [];
 
-        // لكل مجموعة، هات الحصص عشان نحسب done/total/remaining والحصة الجاية
-        const withSessions = await Promise.all(
+        const withSchedule = await Promise.all(
           classrooms.map(async (classroom) => {
             const id = classroom.id ?? classroom._id;
             try {
-              const sessionsRes = await getClassroomSessions(id);
-              const sessions = sessionsRes.data?.data ?? sessionsRes.data ?? [];
-              return buildGroupCardData(classroom, sessions);
+              const res = await getClassroomSchedule(id);
+              const schedule = res.data?.data?.schedule ?? [];
+              const instances = generateLessonInstances(schedule, { weeksBack: 8, weeksForward: 4 });
+              return buildGroupCardData(classroom, instances);
             } catch {
-              // لو فشل جلب الحصص لمجموعة معينة، اعرضها من غير بيانات الحصص
               return buildGroupCardData(classroom, []);
             }
           })
         );
 
-        if (isMounted) setGroups(withSessions);
+        if (isMounted) setGroups(withSchedule);
       } catch (err) {
         if (isMounted) setError(err);
       } finally {

@@ -5,22 +5,19 @@ import LessonStatsBar from "../../../components/student/groupLesson/Lessonstatsb
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 import LessonsTable from "../../../components/student/groupLesson/Lessonstable";
 import Paginationn from "../../../components/teacher/groups/lessons/Paginationn";
-import { getClassroom, getClassroomSessions } from "../../../services/authService";
+import { getClassroom, getClassroomSchedule } from "../../../services/authService";
+import { generateLessonInstances, computeLessonStatus, DEFAULT_LESSON_DURATION_MIN } from "../../../utils/scheduleWeek";
 
 const ITEMS_PER_PAGE = 5;
 
-// status enum زي ما راجعة فعلاً من الـ API
 const STATUS_LABELS = {
-  scheduled: "قادمة",
   upcoming: "قادمة",
   live: "مباشر الآن",
-  completed: "منتهية",
-  cancelled: "ملغية",
+  ended: "منتهية",
 };
 
 const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 const StudentGroupLessonsPage = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
@@ -39,49 +36,48 @@ const StudentGroupLessonsPage = () => {
     setLoading(true);
     setError(null);
 
-    // بنستخدم allSettled عشان لو endpoint الـ classroom فشل، الصفحة تفضل تعرض الحصص عادي
-    const [classroomResult, sessionsResult] = await Promise.allSettled([
+    // ⚠️ endpoint الـ sessions مش شغال حاليًا، فبنستخدم /classrooms/:id/schedule
+    // (النمط الأسبوعي المتكرر) وبنولّد منه حصص بتواريخ حقيقية
+    const [classroomResult, scheduleResult] = await Promise.allSettled([
       getClassroom(groupId),
-      getClassroomSessions(groupId),
+      getClassroomSchedule(groupId),
     ]);
 
     if (classroomResult.status === "fulfilled") {
-      setGroupName(resolveName(classroomResult.value.data?.data?.name) || "مجموعة");
+      const classroomData = classroomResult.value.data?.data?.classroom ?? classroomResult.value.data?.data;
+      setGroupName(resolveName(classroomData?.name) || "مجموعة");
     } else {
       console.error("getClassroom failed:", classroomResult.reason);
       setGroupName("مجموعة");
     }
 
-    if (sessionsResult.status === "rejected") {
-      console.error("getClassroomSessions failed:", sessionsResult.reason);
-      setError("حدث خطأ أثناء تحميل الحصص");
+    if (scheduleResult.status === "rejected") {
+      console.error("getClassroomSchedule failed:", scheduleResult.reason);
+      setError("حدث خطأ أثناء تحميل جدول الحصص");
       setLoading(false);
       return;
     }
 
     try {
-      const rawSessions = sessionsResult.value.data?.data || [];
+      const schedule = scheduleResult.value.data?.data?.schedule ?? [];
+      const instances = generateLessonInstances(schedule, { weeksBack: 8, weeksForward: 4 });
 
-      const mapped = rawSessions.map((s) => ({
-        id: s.id,
-        title: s.title || "حصة",
-        date: s.scheduledDate
-          ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          : "--",
-        time: s.scheduledDate
-          ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "--",
-        duration: typeof s.duration === "number" ? s.duration : "--",
-        status: STATUS_LABELS[s.status] || s.status || "--",
-      }));
+      const mapped = instances.map((inst) => {
+        const status = computeLessonStatus(inst.date);
+        return {
+          id: inst.id,
+          title: "حصة",
+          date: inst.date.toLocaleDateString("ar-EG", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+          time: inst.date.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+          duration: DEFAULT_LESSON_DURATION_MIN,
+          status: STATUS_LABELS[status] || status,
+        };
+      });
 
       setLessons(mapped);
     } catch (err) {
@@ -107,13 +103,12 @@ const StudentGroupLessonsPage = () => {
     total: lessons.length,
     upcoming: lessons.filter((l) => l.status === "قادمة").length,
     completed: lessons.filter((l) => l.status === "منتهية").length,
-    cancelled: lessons.filter((l) => l.status === "ملغية").length,
+    cancelled: 0, // ⚠️ مفيش بيانات إلغاء متاحة من الجدول الأسبوعي
   };
 
   return (
     <StudentLayout>
       <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
-        {/* Header */}
         <div className="mb-4">
           <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
             {groupName || "مجموعة"}
@@ -123,7 +118,6 @@ const StudentGroupLessonsPage = () => {
           </p>
         </div>
 
-        {/* Stats */}
         <div className="mb-6">
           <LessonStatsBar
             total={stats.total}
@@ -133,7 +127,6 @@ const StudentGroupLessonsPage = () => {
           />
         </div>
 
-        {/* Filters */}
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <LessonFilters
             search={search}
@@ -151,7 +144,6 @@ const StudentGroupLessonsPage = () => {
           />
         </div>
 
-        {/* Table */}
         <div className="mt-4">
           {loading ? (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
@@ -169,7 +161,6 @@ const StudentGroupLessonsPage = () => {
           )}
         </div>
 
-        {/* Pagination */}
         <Paginationn
           page={page}
           totalPages={totalPages}
