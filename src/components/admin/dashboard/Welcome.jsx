@@ -1,8 +1,12 @@
-// import studentsImg from "../../../assets/student.svg";
-// import { Link } from "react-router-dom";
-// import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../../context/AuthContext";
 
 const Welcome = () => {
+    const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
+
+    const firstName = user?.fullName?.trim()?.split(" ")[0] || "";
 
 
     return (
@@ -11,7 +15,7 @@ const Welcome = () => {
                 className="w-full  rounded-lg flex items-center px-2"
             >
                 <h2 className="font-['IBM_Plex_Sans_Arabic'] font-semibold text-[24px] leading-8 text-primary w-full text-right">
-                    مرحباً بك يا محمد
+                    مرحباً بك يا {firstName}
                 </h2>
             </div>
 

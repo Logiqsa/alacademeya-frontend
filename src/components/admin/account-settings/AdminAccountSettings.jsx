@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { Pencil, Eye, EyeOff, ChevronDown, User, Camera, Loader2 } from 'lucide-react';
+import { Pencil, Eye, EyeOff, ChevronDown, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { getMyProfile, updateMyProfile } from '../../../services/authService';
@@ -398,10 +398,6 @@ const AdminAccountSettings = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
-  const fileInputRef = useRef(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(null);
-
   const fetchProfile = async () => {
     setLoading(true);
     setLoadError('');
@@ -410,7 +406,6 @@ const AdminAccountSettings = () => {
       const userData = extractUser(res.data);
       if (userData) {
         setAdmin(userData);
-        setAvatarUrl(userData.avatarUrl || null);
         // نخزّن آخر نسخة من المستخدم محليًا
         localStorage.setItem('user', JSON.stringify(userData));
         updateUser?.(userData);
@@ -439,21 +434,6 @@ const AdminAccountSettings = () => {
     navigate('/login', { replace: true });
   };
 
-  const handleAvatarClick = () => fileInputRef.current?.click();
-  const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingAvatar(true);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatarUrl(reader.result);
-      setUploadingAvatar(false);
-      // ملاحظة: لازم endpoint مخصص لرفع الصورة (مش موجود حاليًا) عشان يتبعت فعليًا للسيرفر
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20" dir="rtl">
@@ -470,6 +450,8 @@ const AdminAccountSettings = () => {
     );
   }
 
+  const firstLetter = (admin.fullName || '').trim().charAt(0).toUpperCase() || '؟';
+
   return (
     <div className="space-y-5" dir="rtl">
       {/* Page title */}
@@ -478,27 +460,11 @@ const AdminAccountSettings = () => {
         <p className="text-[16px] font-normal leading-6 text-[#575F69]">إدارة معلومات حسابك وتفضيلاتك</p>
       </div>
 
-      {/* Header card — avatar + name */}
+      {/* Header card — avatar letter + name */}
       <div className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) overflow-hidden">
         <div className="p-6 flex items-center gap-4">
-          <div className="relative w-16 h-16 shrink-0">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-(--bg-light) flex items-center justify-center">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={admin.fullName} className="w-full h-full object-cover" />
-              ) : (
-                <User size={28} className="text-(--primary)" />
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={handleAvatarClick}
-              disabled={uploadingAvatar}
-              className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full bg-(--primary) text-white flex items-center justify-center border-2 border-white disabled:opacity-60"
-              aria-label="تغيير الصورة"
-            >
-              {uploadingAvatar ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
-            </button>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          <div className="w-16 h-16 shrink-0 rounded-full overflow-hidden bg-(--primary) flex items-center justify-center">
+            <span className="text-white text-2xl font-bold">{firstLetter}</span>
           </div>
 
           <div className="min-w-0">
