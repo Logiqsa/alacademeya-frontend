@@ -1,99 +1,64 @@
-import React, { useState } from "react";
-
-import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
+// TeacherMessages.jsx
+import React, { useContext, useState } from "react";
 import ConversationsList from "../../../components/teacher/messages/ConversationsList";
 import ChatBox from "../../../components/teacher/messages/ChatBox";
-
-const initialConversations = [
-  {
-    id: 1,
-    name: "عادل منصور",
-    role: "معلم الرياضيات",
-    category: "teachers",
-    avatarInitial: "ع",
-    studentName: "محمد",
-    unreadCount: 2,
-    lastMessageTime: "10:45 ص",
-    lastMessagePreview: "شكراً جزيلاً على متابعتك. سأحرص...",
-    messages: [
-      { id: 1, sender: "them", text: "السلام عليكم، أنا المعلم عادل منصور، معلم الرياضيات لابنك محمد", time: "10:32" },
-      { id: 2, sender: "me", text: "وعليكم السلام، تشرفنا. كيف حال محمد في المادة؟", time: "10:35", status: "read" },
-      { id: 3, sender: "them", text: "الحمد لله، محمد يبلي بلاءً حسناً. لكن أنصح بالتركيز أكثر على الهندسة", time: "10:37" },
-      { id: 4, sender: "them", text: 'من الأفضل مراجعة درس "التحويلات الهندسية" مع محمد لتحسين أداءه', time: "10:37" },
-      { id: 5, sender: "me", text: "شكراً جزيلاً على متابعتك. سأحرص على مراجعة الهندسة معه", time: "10:42", status: "read" },
-    ],
-  },
-  {
-    id: 2,
-    name: "خالد علاء",
-    role: "معلم الجغرافيا",
-    category: "teachers",
-    avatarInitial: "خ",
-    studentName: "سامي",
-    unreadCount: 2,
-    lastMessageTime: "10:45 ص",
-    lastMessagePreview: "تم استلام الواجب المنزلي بنجاح",
-    messages: [
-      { id: 1, sender: "them", text: "تم استلام الواجب المنزلي بنجاح، شكراً على المتابعة", time: "10:45" },
-    ],
-  },
-  {
-    id: 3,
-    name: "سامي محمد",
-    role: "معلم اللغة العربية",
-    category: "teachers",
-    avatarInitial: "س",
-    studentName: "محمد",
-    unreadCount: 1,
-    lastMessageTime: "10:45 ص",
-    lastMessagePreview: "تم استلام الواجب المنزلي بنجاح",
-    messages: [
-      { id: 1, sender: "them", text: "تم استلام الواجب المنزلي بنجاح، أداء محمد ممتاز هذا الأسبوع", time: "10:45" },
-    ],
-  },
-];
+import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
+import { useChatRooms } from "../../../api/useChatRooms"; // ⚠️ عدّل المسار حسب عمق الملف عندك
+import { AuthContext } from "../../../context/AuthContext"; // ⚠️ عدّل المسار
 
 export default function TeacherMessages() {
-  const [conversations, setConversations] = useState(initialConversations);
-  const [activeId, setActiveId] = useState(initialConversations[0]?.id ?? null);
+  const { user } = useContext(AuthContext);
+  const currentUserId = user?._id ?? user?.id;
+
+  const {
+    conversations,
+    activeId,
+    loading,
+    openConversation,
+    leaveConversation,
+    sendMessage,
+    startSupportConversation,
+  } = useChatRooms(currentUserId);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
-
- 
   const [showChatOnMobile, setShowChatOnMobile] = useState(false);
 
+  const handleNewConversation = async () => {
+    const newId = await startSupportConversation();
+    if (newId) setShowChatOnMobile(true);
+  };
+
   const handleSelect = (id) => {
-    setActiveId(id);
-    setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)));
+    openConversation(id);
     setShowChatOnMobile(true);
   };
 
   const handleBackToList = () => {
+    leaveConversation(activeId);
     setShowChatOnMobile(false);
-  };
-
-  const handleSend = (conversationId, text) => {
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id !== conversationId) return c;
-        const newMessage = {
-          id: c.messages.length + 1,
-          sender: "me",
-          text,
-          time: new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
-          status: "sent",
-        };
-        return { ...c, messages: [...c.messages, newMessage], lastMessagePreview: text, lastMessageTime: newMessage.time };
-      })
-    );
+    openConversation(null);
   };
 
   const activeConversation = conversations.find((c) => c.id === activeId);
+  const shouldShowChat = Boolean(activeConversation);
 
   return (
     <TeacherLayout>
+      {/* أنيميشن دخول صندوق المحادثة - زي باقي الصفحات بالظبط */}
+      <style>{`
+        @keyframes chatBoxIn {
+          from { opacity: 0; transform: scale(0.97) translateY(8px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-chatBoxIn { animation: chatBoxIn 0.28s ease-out; }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-chatBoxIn { animation: none; }
+        }
+      `}</style>
+
       <div
-        className="mx-auto flex h-full max-w-7xl flex-col pb-3 font-['IBM_Plex_Sans_Arabic'] text-right md:h-auto md:pb-0"
+        className="mx-auto flex h-full w-full max-w-7xl min-w-0 flex-col overflow-x-hidden font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"
       >
         <div className="shrink-0 pb-3 md:pb-6">
@@ -101,45 +66,76 @@ export default function TeacherMessages() {
             مركز الرسائل
           </h1>
           <p className="hidden text-[16px] font-normal leading-6 text-[#575F69] md:block">
-            التواصل مع المعلمين و الإدارة حول أبنائك
+            التواصل مع أولياء الأمور والإدارة حول طلابك
           </p>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 md:flex-none md:grid-cols-[1.3fr_3fr]">
-       
-          <div
-            className={`${showChatOnMobile ? "hidden" : "flex"} md:flex min-h-0 flex-col overflow-hidden bg-white md:h-175`}
-            style={{
-              borderRadius: "24px",
-              border: "1px solid #E5E5E5",
-              paddingLeft: "10px",
-              paddingRight: "10px",
-              gap: "8px",
-            }}
-          >
-            <ConversationsList
-              conversations={conversations}
-              activeId={activeId}
-              onSelect={handleSelect}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-            />
+        {loading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-7 h-7 border-2 border-blue-900 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-gray-400">جاري تحميل المحادثات...</p>
+            </div>
           </div>
+        ) : (
+          <div className="flex min-h-0 min-w-0 flex-1 gap-0 md:gap-4">
 
-         
-          <div
-            className={`${showChatOnMobile ? "flex" : "hidden"} md:flex min-h-0 flex-col overflow-hidden bg-white md:h-175`}
-            style={{
-              borderRadius: "24px",
-              border: "1px solid #E5E5E5",
-              gap: "24px",
-            }}
-          >
-            <ChatBox conversation={activeConversation} onSend={handleSend} onBack={handleBackToList} />
+            {/* قائمة المحادثات */}
+            <div
+              className={`
+                ${showChatOnMobile ? "hidden" : "flex"}
+                md:flex
+                w-full md:w-[320px] lg:w-90
+                shrink-0
+                min-w-0
+                flex-col
+                bg-white
+                rounded-3xl
+                border border-[#E5E5E5]
+                min-h-0
+              `}
+            >
+              <ConversationsList
+                conversations={conversations}
+                activeId={activeId}
+                onSelect={handleSelect}
+                onNewConversation={handleNewConversation}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+              />
+            </div>
+
+            {/* صندوق المحادثة */}
+            {shouldShowChat && (
+              <div
+                key={activeId}
+                className={`
+                  ${showChatOnMobile ? "flex" : "hidden"}
+                  md:flex
+                  w-full
+                  min-w-0
+                  flex-1
+                  flex-col
+                  bg-white
+                  rounded-3xl
+                  border border-[#E5E5E5]
+                  min-h-0
+                  overflow-hidden
+                  animate-chatBoxIn
+                `}
+              >
+                <ChatBox
+                  conversation={activeConversation}
+                  onSend={sendMessage}
+                  onBack={handleBackToList}
+                />
+              </div>
+            )}
+
           </div>
-        </div>
+        )}
       </div>
     </TeacherLayout>
   );
