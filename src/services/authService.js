@@ -1,20 +1,20 @@
 import axios from 'axios';
 
-// const API = axios.create({
-//   baseURL: '/api',
-// });
-
-// const ROOT_API = axios.create({
-//   baseURL: '/api',
-// });
-
 const API = axios.create({
-  baseURL: 'https://api.alacademeya.com/api',
+  baseURL: '/api',
 });
 
 const ROOT_API = axios.create({
-  baseURL: 'https://api.alacademeya.com/api',
+  baseURL: '/api',
 });
+
+// const API = axios.create({
+//   baseURL: 'https://api.alacademeya.com/api',
+// });
+
+// const ROOT_API = axios.create({
+//   baseURL: 'https://api.alacademeya.com/api',
+// });
 
 const attachToken = (config) => {
   const token = localStorage.getItem('token');

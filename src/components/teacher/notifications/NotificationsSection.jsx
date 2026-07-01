@@ -1,152 +1,166 @@
-import React, { useState } from "react";
-import {
-  Bell,
-  BellRing,
-  GraduationCap,
-  Settings,
-} from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import NotificationCard from "./NotificationCard";
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "../../../services/authService"; // عدّل المسار حسب مكانه عندك
 
-const allNotifications = [
-  {
-    id: 1,
-    title: "غياب طالب",
-    desc: "تغيب الطالب أحمد محمد عن درس الرياضيات اليوم. يُرجى متابعة حالته الدراسية.",
-    time: "منذ 5 دقائق",
-    type: "academic",
-    read: false,
-  },
-  {
-    id: 2,
-    title: "تحويل مستحقات مالية",
-    desc: "تم تحويل مبلغ 1,250 جنيه مصري إلى رصيدك بنجاح. يُرجى مراجعة محفظتك للاطلاع على تفاصيل العملية.",
-    time: "منذ ساعة",
-    type: "system",
-    read: true,
-  },
-  {
-    id: 3,
-    title: "تنبيه بخصوص مجموعة متوقفة",
-    desc: "تم إيقاف إحدى مجموعاتك التعليمية مؤقتًا لحين مراجعة بعض البيانات من قبل الإدارة.",
-    time: "منذ 3 أيام",
-    type: "system",
-    read: false,
-  },
-  {
-    id: 4,
-    title: "درس قادم",
-    desc: "لديك درس رياضيات غداً الساعة 2:00 م مع مجموعة الصف الثالث الإعدادي.",
-    time: "منذ 5 أيام",
-    type: "academic",
-    read: true,
-  },
-];
+const resolveLocalized = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "");
 
-const tabs = [
-  { key: "all", label: "الكل", icon: Bell },
-  { key: "unread", label: "غير مقروءة", icon: BellRing },
-  { key: "academic", label: "الأكاديمية", icon: GraduationCap },
-  { key: "system", label: "النظام والإدارة", icon: Settings },
-];
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const diffMin = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (diffMin < 1) return "الآن";
+  if (diffMin < 60) return `منذ ${diffMin} دقيقة`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `منذ ${diffHours} ساعة`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return "أمس";
+  if (diffDays < 7) return `منذ ${diffDays} أيام`;
+  return date.toLocaleDateString("ar-EG");
+};
 
-const NotificationsSection = () => {
-  const [activeTab, setActiveTab] = useState("all");
+// ⚠️ تصنيف تقريبي بناءً على حقل type الحقيقي من الـ backend
+// (القيمة اللي شفناها فعليًا: "subscription"). عدّل القايمة دي لو عندك أنواع أكاديمية تانية.
+const ACADEMIC_TYPES = ["session", "classroom", "exam", "assignment", "attendance"];
+const getCategory = (type) => (ACADEMIC_TYPES.includes(type) ? "academic" : "system");
 
-  const [readState, setReadState] = useState(() =>
-    Object.fromEntries(allNotifications.map((n) => [n.id, n.read]))
-  );
+const mapNotification = (n) => ({
+  id: n._id ?? n.id,
+  title: resolveLocalized(n.title),
+  description: resolveLocalized(n.body),
+  time: formatRelativeTime(n.createdAt),
+  type: getCategory(n.type),
+  isRead: !!n.isRead,
+});
 
-  const filtered = allNotifications.filter((n) => {
-    if (activeTab === "all") return true;
-    if (activeTab === "unread") return !readState[n.id];
-    if (activeTab === "academic") return n.type === "academic";
-    if (activeTab === "system") return n.type === "system";
-    return true;
-  });
+const NotificationsSection = ({ onStatsUpdate }) => {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filter, setFilter] = useState("all");
 
-  const toggleRead = (id) => {
-    setReadState((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data } = await getNotifications();
+      const mapped = (data?.data ?? []).map(mapNotification);
+      setNotifications(mapped);
+      onStatsUpdate?.(mapped);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [onStatsUpdate]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  const handleToggleRead = async (notification) => {
+    if (notification.isRead) return;
+    try {
+      await markNotificationRead(notification.id);
+      setNotifications((prev) => {
+        const updated = prev.map((n) =>
+          n.id === notification.id ? { ...n, isRead: true } : n
+        );
+        onStatsUpdate?.(updated);
+        return updated;
+      });
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      setNotifications((prev) => {
+        const updated = prev.map((n) => ({ ...n, isRead: true }));
+        onStatsUpdate?.(updated);
+        return updated;
+      });
+    } catch (err) {
+      console.error("Failed to mark all notifications as read:", err);
+    }
+  };
+
+  const filters = [
+    { id: "all", label: "الكل" },
+    { id: "unread", label: "غير مقروءة" },
+    { id: "academic", label: "أكاديمية" },
+    { id: "system", label: "عامة" },
+  ];
+
+  const filtered = notifications.filter((n) => {
+    if (filter === "all") return true;
+    if (filter === "unread") return !n.isRead;
+    return n.type === filter;
+  });
+
   return (
-    <div
-      dir="rtl"
-      className="
-        w-full
-        bg-white
-        p-4
-        sm:p-6
-        rounded-2xl
-        border
-        border-[#E5E5E5]
-      "
-    >
-      <h2 className="text-[16px] font-medium text-[#1F2937] mb-2">
-        جميع الإشعارات
-      </h2>
+    <div dir="rtl" className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {filters.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`
+                px-3 py-1.5 rounded-lg text-[12.5px] sm:text-[13px] font-medium transition-colors
+                ${filter === f.id
+                  ? "bg-[#123C91] text-white"
+                  : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"}
+              `}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
 
-      <p className="text-[14px] sm:text-[16px] text-[#6B7280] mb-5">
-        تصفية وإدارة الإشعارات حسب النوع
-      </p>
-
-      <div
-        className="
-          w-full
-          bg-[#EAF4FF]
-          rounded-full
-          p-1
-          mb-5
-          grid
-          grid-cols-2
-          sm:grid-cols-4
-          gap-1
-        "
-      >
-        {tabs.map(({ icon: Icon, key, label }) => (
-          <button
-            key={key}
-            onClick={() => setActiveTab(key)}
-            className={`
-              flex
-              items-center
-              justify-center
-              gap-1
-              py-2
-              px-2
-              rounded-full
-              text-[12px]
-              sm:text-[14px]
-              font-medium
-              transition-all
-              ${
-                activeTab === key
-                  ? "bg-white text-[#123C91] shadow-sm"
-                  : "text-[#1F2937]"
-              }
-            `}
-          >
-            <Icon size={15} />
-            <span>{label}</span>
-          </button>
-        ))}
+        <button
+          onClick={handleMarkAllRead}
+          className="text-[12.5px] sm:text-[13px] text-[#123C91] font-medium hover:underline"
+        >
+          تحديد الكل كمقروء
+        </button>
       </div>
 
-      <div className="space-y-3">
-        {filtered.map((n) => (
-          <NotificationCard
-            key={n.id}
-            title={n.title}
-            description={n.desc}
-            time={n.time}
-            type={n.type}
-            isRead={readState[n.id]}
-            onToggleRead={() => toggleRead(n.id)}
-          />
-        ))}
-      </div>
+      {loading && (
+        <p className="text-center text-[#9CA3AF] text-[13px] py-8">جاري التحميل...</p>
+      )}
+
+      {!loading && error && (
+        <p className="text-center text-[#E54848] text-[13px] py-8">
+          حدث خطأ أثناء تحميل الإشعارات
+        </p>
+      )}
+
+      {!loading && !error && (
+        <div className="flex flex-col gap-3">
+          {filtered.length ? (
+            filtered.map((n) => (
+              <NotificationCard
+                key={n.id}
+                title={n.title}
+                description={n.description}
+                time={n.time}
+                type={n.type}
+                isRead={n.isRead}
+                onToggleRead={() => handleToggleRead(n)}
+              />
+            ))
+          ) : (
+            <p className="text-center text-[#9CA3AF] text-[13px] py-8">
+              لا توجد إشعارات لعرضها
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

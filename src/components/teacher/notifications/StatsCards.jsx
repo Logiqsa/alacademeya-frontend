@@ -1,59 +1,34 @@
-import { Bell, BellOff, GraduationCap, Settings } from "lucide-react";
+import React from "react";
+import { Bell, BellRing, GraduationCap, Settings } from "lucide-react";
 
-const cards = [
-  {
-    title: "إجمالي الإشعارات",
-    value: "10",
-    icon: Bell,
-    iconBg: "bg-[#12C6B01A]",
-    iconColor: "text-[#12C6B0]",
-  },
-  {
-    title: "غير مقروءة",
-    value: "3",
-    icon: BellOff,
-    iconBg: "bg-[#EAF4FF]",
-    iconColor: "text-[#123C91]",
-  },
-  {
-    title: "إشعارات أكاديمية",
-    value: "4",
-    icon: GraduationCap,
-    iconBg: "bg-[#12C6B01A]",
-    iconColor: "text-[#12C6B0]",
-  },
-  {
-    title: "إشعارات النظام والإدارة",
-    value: "3",
-    icon: Settings,
-    iconBg: "bg-[#EAF4FF]",
-    iconColor: "text-[#123C91]",
-  },
-];
+const StatsCards = ({ notifications = [] }) => {
+  const total = notifications.length;
+  const unread = notifications.filter((n) => !n.isRead).length;
+  const academic = notifications.filter((n) => n.type === "academic").length;
+  const system = notifications.filter((n) => n.type === "system").length;
 
+  const stats = [
+    { label: "إجمالي الإشعارات", value: total, icon: Bell, color: "text-teal-600", bg: "bg-teal-50" },
+    { label: "غير مقروءة", value: unread, icon: BellRing, color: "text-orange-500", bg: "bg-orange-50" },
+    { label: "أكاديمية", value: academic, icon: GraduationCap, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "عامة", value: system, icon: Settings, color: "text-blue-600", bg: "bg-blue-50" },
+  ];
 
-const StatsCardds = () => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card, index) => {
-        const Icon = card.icon;
-
+    <div dir="rtl" className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {stats.map((s) => {
+        const Icon = s.icon;
         return (
           <div
-            key={index}
-            className="bg-white border border-gray-100 rounded-xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-all"
+            key={s.label}
+            className="bg-white border border-gray-100 rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md transition-all"
           >
-            <div className={`p-3 rounded-lg ${card.iconBg} shrink-0`}>
-              <Icon size={24} className={card.iconColor} />
+            <div className={`shrink-0 p-2.5 sm:p-3 rounded-lg ${s.bg}`}>
+              <Icon size={22} className={s.color} />
             </div>
-
-            <div className="text-right flex-1">
-              <h3 className="text-xl font-bold text-gray-800">
-                {card.value}
-              </h3>
-              <p className="text-gray-500 text-sm mt-1 font-medium">
-                {card.title}
-              </p>
+            <div className="text-right min-w-0">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-800">{s.value}</h3>
+              <p className="text-gray-500 text-[11px] sm:text-sm mt-1 truncate">{s.label}</p>
             </div>
           </div>
         );
@@ -62,4 +37,4 @@ const StatsCardds = () => {
   );
 };
 
-export default StatsCardds;
+export default StatsCards;
