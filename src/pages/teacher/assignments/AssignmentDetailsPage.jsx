@@ -6,27 +6,66 @@ import AssignmentDetailsStatsCards from "../../../components/teacher/assignments
 import AssignmentDetailsFilters from "../../../components/teacher/assignments/AssignmentDetailsFilters";
 import StudentSubmissionsTable from "../../../components/teacher/assignments/StudentSubmissionsTable";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-import { getAssignment } from "../../../services/authService"; // عدّل المسار حسب مكان api.js عندك
+import {
+  getAssignment,
+  getAssignmentSubmissions,
+  getClassroomStudents,
+  gradeSubmission, // TODO: عدّل الاستدعاء في handleAction لما تأكدلي شكل الـ endpoint
+} from "../../../services/authService"; // عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 5;
 
-// TODO: GET /assignments/:id بيرجع بيانات الواجب نفسه بس مش بيرجع تسليمات
-// الطلاب ولا إحصائيات التصحيح. لما يتوفر endpoint زي
-// GET /assignments/:id/submissions حط استدعاؤه هنا واستبدل students/stats.
-const mapAssignmentDetails = (a) => ({
-  id: a.id,
-  title: a.title,
-  subtitle: a.description || "إدارة ومتابعة واجبات الطلاب وتصحيحها.",
-  dueDate: a.dueDate,
-  totalScore: a.totalScore,
-  attachments: a.attachments || [],
-  stats: {
-    pendingCorrection: 0, // TODO: من endpoint التسليمات
-    corrected: 0, // TODO: من endpoint التسليمات
-    totalSubmissions: 0, // TODO: من endpoint التسليمات
-  },
-  students: [], // TODO: من endpoint التسليمات
-});
+const formatBytes = (bytes) => {
+  if (!bytes) return null;
+  const mb = bytes / (1024 * 1024);
+  return mb >= 1 ? `${mb.toFixed(1)}MB` : `${Math.round(bytes / 1024)}KB`;
+};
+
+// بيدمج: بيانات الواجب + قايمة تسليمات الطلاب + قايمة كل طلاب الفصل
+// عشان نعرف مين سلّم ومين لأ (submissions بترجع بس اللي سلّموا فعلاً)
+const buildAssignmentDetails = (assignmentRaw, submissionsRaw, rosterRaw) => {
+  const submissionByStudentId = {};
+  submissionsRaw.forEach((s) => {
+    submissionByStudentId[s.student?.id] = s;
+  });
+
+  const students = rosterRaw.map((st) => {
+    const fullName = st.user?.fullName ?? st.fullName ?? "طالب";
+    const base = {
+      id: st.id ?? st.user?.id,
+      name: fullName,
+      initial: fullName.trim().charAt(0),
+    };
+
+    const sub = submissionByStudentId[st.id ?? st.user?.id];
+    if (!sub) {
+      return { ...base, submitted: false };
+    }
+
+    const graded = sub.status === "graded";
+    return {
+      ...base,
+      submitted: true,
+      submissionId: sub.id,
+      submittedCount: graded ? `${sub.score}/${assignmentRaw.totalScore}` : undefined,
+      correctionStatus: graded ? "تم التصحيح" : "قيد التصحيح",
+      fileName: sub.attachments?.[0]?.originalName,
+      fileSize: formatBytes(sub.attachments?.[0]?.size) ?? undefined,
+    };
+  });
+
+  const totalSubmissions = submissionsRaw.length;
+  const corrected = submissionsRaw.filter((s) => s.status === "graded").length;
+  const pendingCorrection = totalSubmissions - corrected;
+
+  return {
+    id: assignmentRaw.id,
+    title: assignmentRaw.title,
+    subtitle: assignmentRaw.description || "إدارة ومتابعة واجبات الطلاب وتصحيحها.",
+    stats: { pendingCorrection, corrected, totalSubmissions },
+    students,
+  };
+};
 
 const AssignmentDetailsPage = () => {
   const { assignmentId } = useParams();
@@ -44,8 +83,23 @@ const AssignmentDetailsPage = () => {
     try {
       setLoading(true);
       setErrorMsg("");
-      const res = await getAssignment(assignmentId);
-      setAssignment(mapAssignmentDetails(res.data?.data));
+
+      const assignmentRes = await getAssignment(assignmentId);
+      const assignmentRaw = assignmentRes.data?.data;
+      const classroomId = assignmentRaw.classroom?.id ?? assignmentRaw.classroom;
+
+      const [submissionsRes, rosterRes] = await Promise.all([
+        getAssignmentSubmissions(assignmentId),
+        getClassroomStudents(classroomId).catch(() => ({ data: { data: [] } })),
+      ]);
+
+      setAssignment(
+        buildAssignmentDetails(
+          assignmentRaw,
+          submissionsRes.data?.data || [],
+          rosterRes.data?.data || []
+        )
+      );
     } catch (err) {
       setErrorMsg(
         err?.response?.data?.message || "حدث خطأ أثناء تحميل بيانات الواجب"
@@ -58,6 +112,21 @@ const AssignmentDetailsPage = () => {
   useEffect(() => {
     fetchAssignment();
   }, [fetchAssignment]);
+
+  // TODO: أظبط الـ payload لما تأكدلي شكل الـ Grade/Review Submission endpoint
+  const handleAction = async ({ student, type, grade }) => {
+    if (type === "تصحيح" || type === "تعديل") {
+      if (!student.submissionId) return;
+      try {
+        await gradeSubmission(student.submissionId, { score: Number(grade) });
+        fetchAssignment(); // إعادة تحميل عشان نعرض الدرجة والحالة الجديدة
+      } catch (err) {
+        setErrorMsg(
+          err?.response?.data?.message || "حدث خطأ أثناء حفظ الدرجة"
+        );
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -128,9 +197,7 @@ const AssignmentDetailsPage = () => {
         <div className="mt-4">
           <StudentSubmissionsTable
             students={paginatedStudents}
-            onAction={(payload) =>
-              console.log("correct/edit submission", payload, "in assignment", assignmentId)
-            }
+            onAction={handleAction}
           />
         </div>
 

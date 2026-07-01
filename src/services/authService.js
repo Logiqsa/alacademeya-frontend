@@ -220,3 +220,13 @@ export const updateAssignment = (assignmentId, payload) =>
   API.patch(`/assignments/${assignmentId}`, payload);
 
 export const deleteAssignment = (assignmentId) => API.delete(`/assignments/${assignmentId}`);
+
+// GET /assignments/:assignmentId/submissions → { success, results, data: [...] }
+// كل عنصر: { assignment, student: {...}, attachments, score, feedback, status, submittedAt, id }
+export const getAssignmentSubmissions = (assignmentId) =>
+  API.get(`/assignments/${assignmentId}/submissions`);
+
+// TODO: تأكيد الـ URL والـ body بالظبط من Postman (Grade/Review Submission).
+// افتراض مؤقت: PATCH /submissions/:submissionId  body: { score, feedback }
+export const gradeSubmission = (submissionId, payload) =>
+  API.patch(`/submissions/${submissionId}`, payload);
