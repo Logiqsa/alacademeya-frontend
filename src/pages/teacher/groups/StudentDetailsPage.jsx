@@ -1,35 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import StudentStatsCards from "../../../components/teacher/groups/students/StudentStatsCards";
 import StudentLessonFilters from "../../../components/teacher/groups/students/StudentLessonFilters";
 import StudentLessonsTable from "../../../components/teacher/groups/students/StudentLessonsTable";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_STUDENT = {
-  id: 1,
-  name: "محمد أحمد",
-  level: "المستوى الثالث الثانوي",
-  totalLessons: 22,
-  attendanceCount: 18,
-  absenceCount: 4,
-  homeworkDone: 24,
-  homeworkTotal: 25,
-  lessons: [
-    { id: 1, title: "المصفوفات_2", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "تم التسليم", grade: "19/20", gradeStatus: "مكتمل", examGrade: "19/20" },
-    { id: 2, title: "المصفوفات_1", date: "21 يونيو 2026", attendance: "غائب", homeworkStatus: "تم التسليم", grade: "19/20", gradeStatus: "قيد الانتظار", examGrade: "لم يتم التصحيح" },
-    { id: 3, title: "المتتاليات", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "تم تسليم", grade: "—", gradeStatus: "مكتمل", examGrade: "19/20" },
-    { id: 4, title: "العدد الأولى", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "تم التسليم", grade: "19/20", gradeStatus: "لايوجد اختبار", examGrade: "—" },
-    { id: 5, title: "القيل الحسابي", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "لا يوجد واجب", grade: "19/20", gradeStatus: "مكتمل", examGrade: "19/20" },
-    { id: 5, title: "القيل الحسابي", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "لا يوجد واجب", grade: "19/20", gradeStatus: "مكتمل", examGrade: "19/20" },
-    { id: 5, title: "القيل الحسابي", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "لا يوجد واجب", grade: "19/20", gradeStatus: "مكتمل", examGrade: "19/20" },
-    { id: 5, title: "القيل الحسابي", date: "21 يونيو 2026", attendance: "حاضر", homeworkStatus: "لا يوجد واجب", grade: "19/20", gradeStatus: "مكتمل", examGrade: "19/20" },
-  ],
-};
+import { getClassroomStudents, getClassroomSessions } from "../../../services/authService";
 
 const PAGE_SIZE = 5;
+
+const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const StudentDetailsPage = () => {
@@ -40,19 +20,115 @@ const StudentDetailsPage = () => {
   const [sortBy, setSortBy] = useState("تاريخ الإنضمام");
   const [page, setPage] = useState(1);
 
-  const student = MOCK_STUDENT;
+  const [student, setStudent] = useState(null);
+  const [lessons, setLessons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filtered = student.lessons.filter(
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // GET /classrooms/:groupId/students/ -> data: [Student entity]
+      const studentsRes = await getClassroomStudents(groupId);
+      const rawStudents = studentsRes.data?.data || [];
+      const entry = rawStudents.find(
+        (s) => s.id === studentId || s.user?.id === studentId
+      );
+
+      if (!entry) {
+        setError("لم يتم العثور على بيانات الطالب");
+        setStudent(null);
+        setLessons([]);
+        return;
+      }
+
+      setStudent({
+        id: entry.id,
+        name: entry.user?.fullName || "—",
+        level: resolveName(entry.grade?.name) || resolveName(entry.stage?.name) || "--",
+        joinDate: entry.createdAt
+          ? new Date(entry.createdAt).toLocaleDateString("ar-EG", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : "--",
+        averageScore: entry.averageScore ?? "--",
+        totalStudySessions: entry.totalStudySessions ?? 0,
+      });
+
+      // الحصص: من GET /classrooms/:groupId/sessions/
+      // ⚠️ TODO: شكل الـ response بتاع الـ endpoint ده لسه مش مؤكد عندي،
+      // وغير مؤكد لو فيه حضور/درجات لكل طالب على حدة جوّه كل session أو لأ.
+      const sessionsRes = await getClassroomSessions(groupId);
+      const rawSessions = sessionsRes.data?.data || [];
+
+      const mappedLessons = rawSessions.map((session, idx) => ({
+        id: session.id || session._id || idx,
+        title: session.title || resolveName(session.name) || "--",
+        date: session.date || session.startTime
+          ? new Date(session.date || session.startTime).toLocaleDateString("ar-EG", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : "--",
+        // ⚠️ غير متوفرة في الـ response الحالي — TODO لحد ما يبقى عندنا endpoint لحضور/درجات الطالب لكل حصة
+        attendance: "--",
+        homeworkStatus: "--",
+        grade: "--",
+        gradeStatus: "--",
+        examGrade: "--",
+      }));
+
+      setLessons(mappedLessons);
+    } catch (err) {
+      console.error(err);
+      setError("حدث خطأ أثناء تحميل بيانات الطالب");
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId, studentId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const filtered = lessons.filter(
     (l) => l.title.includes(search) && (filterStatus === "جميع الحالات" || l.attendance === filterStatus)
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedLessons = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  if (loading) {
+    return (
+      <TeacherLayout>
+        <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
+            جاري التحميل...
+          </div>
+        </div>
+      </TeacherLayout>
+    );
+  }
+
+  if (error || !student) {
+    return (
+      <TeacherLayout>
+        <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-red-500">
+            {error || "حدث خطأ أثناء تحميل بيانات الطالب"}
+          </div>
+        </div>
+      </TeacherLayout>
+    );
+  }
+
   return (
     <TeacherLayout>
       <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
-       
 
         {/* Student header */}
         <div className="mb-6">
@@ -61,8 +137,18 @@ const StudentDetailsPage = () => {
         </div>
 
         {/* Stats */}
+        {/* ⚠️ TODO: attendanceCount/absenceCount/homeworkDone/homeworkTotal لسه مش متوفرين في أي endpoint.
+            totalLessons بقى حقيقي (عدد الحصص الراجعة من sessions)، averageScore حقيقي كمان. */}
         <div className="mb-6">
-          <StudentStatsCards student={student} />
+          <StudentStatsCards
+            student={{
+              totalLessons: lessons.length,
+              attendanceCount: "--",
+              absenceCount: "--",
+              homeworkDone: "--",
+              homeworkTotal: "--",
+            }}
+          />
         </div>
 
         {/* Filters */}

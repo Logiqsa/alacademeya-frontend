@@ -1,23 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import GroupStatsBar from "../../../components/teacher/groups/GroupStatsBar";
 import GroupCard from "../../../components/teacher/groups/GroupCard";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import Pagination from "../../../components/teacher/groups/Pagination";
-
-// ─── Data ────────────────────────────────────────────────────────────────────
-const MOCK_GROUPS = [
-  { id: 1, name: "مجموعة الرياضيات A", grade: "الصف الثالث الثانوي", subject: "رياضيات", status: "نشطة", enrolled: 22, max: 30, nextLesson: "الحصة القادمة غداً" },
-  { id: 2, name: "مجموعة الرياضيات B", grade: "الصف الثالث الثانوي", subject: "رياضيات", status: "معلقة", enrolled: 22, max: 30, nextLesson: "هذه المجموعة غير نشطة حالياً" },
-  { id: 3, name: "مجموعة الرياضيات C", grade: "الصف الثالث الثانوي", subject: "رياضيات", status: "قيد التسجيل", enrolled: 22, max: 30, nextLesson: "التسجيل مفتوح" },
-  { id: 4, name: "مجموعة الرياضيات D", grade: "الصف الثالث الثانوي", subject: "رياضيات", status: "نشطة", enrolled: 22, max: 30, nextLesson: "الحصة القادمة غداً" },
-  { id: 5, name: "مجموعة الرياضيات E", grade: "الصف الثالث الثانوي", subject: "رياضيات", status: "نشطة", enrolled: 22, max: 30, nextLesson: "الحصة القادمة غداً" },
-  { id: 6, name: "مجموعة الرياضيات F", grade: "الصف الثالث الثانوي", subject: "رياضيات", status: "نشطة", enrolled: 22, max: 30, nextLesson: "الحصة القادمة غداً" },
-  { id: 7, name: "مجموعة الرياضيات G", grade: "الصف الثالث الثانوي", subject: "رياضيات", status: "نشطة", enrolled: 22, max: 30, nextLesson: "الحصة القادمة غداً" },
-];
+import {
+  getMyClassrooms,
+  getAllSubjects,
+  getAllGrades,
+  deleteClassroom,
+} from "../../../services/authService"; // عدّل المسار حسب مكان ملفك
 
 const ITEMS_PER_PAGE = 6;
+
+// ⚠️ عدّل القيم دي لو الباك إند بيرجع أسماء status مختلفة
+const STATUS_LABELS = {
+  active: "نشطة",
+  paused: "معلقة",
+  pending: "قيد التسجيل",
+  full: "مكتملة العدد",
+  completed: "منتهية",
+};
+
+// اسم الحقل ممكن يكون نص عادي أو object {ar, en}
+const resolveName = (val) => {
+  if (!val) return "--";
+  if (typeof val === "string") return val;
+  return val.ar || val.en || "--";
+};
 
 // ─── Page Component ──────────────────────────────────────────────────────────
 const GroupsPage = () => {
@@ -26,15 +37,97 @@ const GroupsPage = () => {
   const [toast, setToast] = useState(false);
   const [page, setPage] = useState(1);
 
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchGroups = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [classroomsRes, subjectsRes, gradesRes] = await Promise.all([
+        getMyClassrooms({ type: "group" }),
+        getAllSubjects(),
+        getAllGrades(),
+      ]);
+
+      const subjects = subjectsRes.data?.data || [];
+      const grades = gradesRes.data?.data || [];
+      const rawClassrooms = classroomsRes.data?.data || [];
+
+      const subjectMap = Object.fromEntries(
+        subjects.map((s) => [s.id, resolveName(s.name)])
+      );
+      const gradeMap = Object.fromEntries(
+        grades.map((g) => [g.id, resolveName(g.name)])
+      );
+
+      // لو الحقل جه كـ object كامل (populated من الباك إند) نجيب اسمه مباشرة
+      // لو جه كـ id string نبحث عنه في الـ map
+      const resolveField = (field, map) => {
+        if (!field) return "--";
+        if (typeof field === "object") return resolveName(field.name) || "--";
+        return map[field] || "--";
+      };
+
+      const mapped = rawClassrooms.map((c) => {
+        const enrolled = c.students?.length || 0;
+        const capacity = c.capacity || 0;
+        const nextLessonText = c.nextSession?.date
+          ? `الحصة القادمة: ${new Date(c.nextSession.date).toLocaleDateString("ar-EG")}`
+          : c.status === "paused"
+          ? "هذه المجموعة غير نشطة حالياً"
+          : c.status === "pending"
+          ? "التسجيل مفتوح"
+          : "لا توجد حصص قادمة حالياً";
+
+        return {
+          id: c.id,
+          name: resolveName(c.name),
+          grade: resolveField(c.grade, gradeMap),
+          subject: resolveField(c.subject, subjectMap),
+          status: STATUS_LABELS[c.status] || c.status,
+          enrolled,
+          max: capacity,
+          nextLesson: nextLessonText,
+        };
+      });
+
+      setGroups(mapped);
+    } catch (err) {
+      console.error(err);
+      setError("حدث خطأ أثناء تحميل المجموعات");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
   useEffect(() => {
     if (location.state?.showSuccessToast) {
       setToast(true);
       setTimeout(() => setToast(false), 3000);
       window.history.replaceState({}, document.title);
+      // بعد إنشاء مجموعة جديدة بنجاح، نعيد تحميل القائمة عشان تظهر فورًا
+      fetchGroups();
     }
-  }, [location]);
+  }, [location, fetchGroups]);
 
-  const paginatedGroups = MOCK_GROUPS.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(groups.length / ITEMS_PER_PAGE));
+  const paginatedGroups = groups.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteClassroom(id);
+      setGroups((prev) => prev.filter((g) => g.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "تعذر حذف المجموعة");
+    }
+  };
 
   return (
     <TeacherLayout>
@@ -55,35 +148,52 @@ const GroupsPage = () => {
               استعرض جميع مجموعاتك الدراسية، ونظّم الحصص والمهام والاختبارات.
             </p>
           </div>
-          <button
+          {/* <button
             onClick={() => navigate("/add-new-group")}
             className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 hover:bg-[#0e2d6b] transition-all shrink-0"
           >
             إنشاء مجموعة
-          </button>
+          </button> */}
         </div>
 
         {/* Stats */}
         <div className="mb-6">
-          <GroupStatsBar />
+          <GroupStatsBar
+            total={groups.length}
+            active={groups.filter((g) => g.status === "نشطة").length}
+            paused={groups.filter((g) => g.status === "معلقة").length}
+            pending={groups.filter((g) => g.status === "قيد التسجيل").length}
+          />
         </div>
 
         {/* Groups grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {paginatedGroups.map((g) => (
-            <GroupCard
-              key={g.id}
-              group={g}
-              onViewLessons={(id) => navigate(`/teacher/groups/${id}/lessons`)}
-              onViewStudents={(id) => navigate(`/teacher/groups/${id}/students`)}
-              onEdit={(id) => console.log("edit", id)}
-              onDelete={(id) => console.log("delete", id)}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-10 text-[#575F69]">جارٍ التحميل...</div>
+        ) : error ? (
+          <div className="text-center py-10 text-red-500">{error}</div>
+        ) : groups.length === 0 ? (
+          <div className="text-center py-10 text-[#575F69] bg-white rounded-2xl border border-gray-200">
+            لا توجد مجموعات بعد، ابدأ بإنشاء مجموعتك الأولى.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {paginatedGroups.map((g) => (
+              <GroupCard
+                key={g.id}
+                group={g}
+                onViewLessons={(id) => navigate(`/teacher/groups/${id}/lessons`)}
+                onViewStudents={(id) => navigate(`/teacher/groups/${id}/students`)}
+                onEdit={(id) => navigate(`/teacher/groups/${id}/edit`)}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Pagination */}
-        <Pagination page={page} totalItems={MOCK_GROUPS.length} itemsPerPage={ITEMS_PER_PAGE} onChange={setPage} />
+        {!loading && !error && groups.length > 0 && (
+          <Pagination page={page} totalItems={groups.length} itemsPerPage={ITEMS_PER_PAGE} onChange={setPage} />
+        )}
       </div>
     </TeacherLayout>
   );

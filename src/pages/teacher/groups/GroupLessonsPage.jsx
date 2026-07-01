@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
@@ -6,18 +6,25 @@ import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTabl
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 import Pagination from "../../../components/teacher/groups/lessons/Paginationn";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_LESSONS = [
-  { id: 1, title: "المصفوفات_2", date: "السبت 21 يونيو 2026", time: "06:00 PM", duration: 45, attendance: null, absence: null, status: "قادمة" },
-  { id: 2, title: "المصفوفات_1", date: "غداً 18 يونيو 2026", time: "08:30 PM", duration: 40, attendance: null, absence: null, status: "قادمة" },
-  { id: 3, title: "التبادليل والتوافيق", date: "اليوم 17 يونيو 2026", time: "06:00 PM", duration: 60, attendance: 21, absence: 1, status: "مباشر الآن" },
-  { id: 4, title: "المتتاليات", date: "السبت 24 مايو 2026", time: "05:30 PM", duration: 50, attendance: null, absence: null, status: "ملغية" },
-  { id: 5, title: "العدد الأولى", date: "السبت 24 مايو 2026", time: "11:00 AM", duration: 40, attendance: 19, absence: 3, status: "منتهية" },
-  { id: 6, title: "القيل الحسابي", date: "السبت 24 مايو 2026", time: "06:00 PM", duration: 60, attendance: 22, absence: 0, status: "منتهية" },
-];
+import {
+  getClassroomSessions,
+  getClassroom,
+  deleteClassroom,
+  getSessionAttendance,
+} from "../../../services/authService"; // عدّل المسار حسب مكان ملفك
 
 const ITEMS_PER_PAGE = 5;
+
+// status enum زي ما راجعة فعلاً من الـ API (شفتها من الـ response: "completed")
+const STATUS_LABELS = {
+  scheduled: "قادمة",
+  upcoming: "قادمة",
+  live: "مباشر الآن",
+  completed: "منتهية",
+  cancelled: "ملغية",
+};
+
+const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const GroupLessonsPage = () => {
@@ -29,12 +36,118 @@ const GroupLessonsPage = () => {
   const [filterTime, setFilterTime] = useState("جميع الاوقات");
   const [page, setPage] = useState(1);
 
-  const filtered = MOCK_LESSONS.filter(
+  const [groupName, setGroupName] = useState("");
+  const [lessons, setLessons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    // بنستخدم allSettled عشان لو endpoint الـ classroom فشل، الصفحة تفضل تعرض الحصص عادي
+    const [classroomResult, sessionsResult] = await Promise.allSettled([
+      getClassroom(groupId),
+      getClassroomSessions(groupId),
+    ]);
+
+    if (classroomResult.status === "fulfilled") {
+      setGroupName(resolveName(classroomResult.value.data?.data?.name) || "مجموعة");
+    } else {
+      console.error("getClassroom failed:", classroomResult.reason);
+      setGroupName("مجموعة");
+    }
+
+    if (sessionsResult.status === "rejected") {
+      console.error("getClassroomSessions failed:", sessionsResult.reason);
+      setError("حدث خطأ أثناء تحميل الحصص");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const sessionsRes = sessionsResult.value;
+
+      // شكل الـ response الحقيقي (من التست بتاعك):
+      // { success, results, data: [ { classroom, title, description, attachments,
+      //   scheduledDate, duration, recording, status, createdBy, startAt, endAt, id } ] }
+      const rawSessions = sessionsRes.data?.data || [];
+
+      // ─── بنجيب سجل الحضور لكل حصة على حدة (GET /sessions/:id/attendance) ───
+      // بنستخدم allSettled عشان لو حصة معينة فشلت، الباقي يفضل يشتغل عادي
+      const attendanceResults = await Promise.allSettled(
+        rawSessions.map((s) => getSessionAttendance(s.id))
+      );
+
+      const mapped = rawSessions.map((s, index) => {
+        let attendance = null;
+        let absence = null;
+
+        const attResult = attendanceResults[index];
+        if (attResult.status === "fulfilled") {
+          const records = attResult.value.data?.data || [];
+          attendance = records.filter((r) => r.status === "present").length;
+          absence = records.filter((r) => r.status === "absent").length;
+        } else {
+          console.error(`getSessionAttendance failed for session ${s.id}:`, attResult.reason);
+        }
+
+        return {
+          id: s.id,
+          title: s.title || "حصة",
+          date: s.scheduledDate
+            ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "--",
+          time: s.scheduledDate
+            ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "--",
+          duration:
+            typeof s.duration === "number" ? `${s.duration} دقيقة` : s.duration ?? "--",
+          attendance,
+          absence,
+          status: STATUS_LABELS[s.status] || s.status || "--",
+        };
+      });
+
+      setLessons(mapped);
+    } catch (err) {
+      console.error(err);
+      setError("حدث خطأ أثناء تحميل الحصص");
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const filtered = lessons.filter(
     (l) => l.title.includes(search) && (filterStatus === "جميع الحالات" || l.status === filterStatus)
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginatedLessons = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const stats = {
+    total: lessons.length,
+    upcoming: lessons.filter((l) => l.status === "قادمة").length,
+    completed: lessons.filter((l) => l.status === "منتهية").length,
+    cancelled: lessons.filter((l) => l.status === "ملغية").length,
+  };
+
+  // ⚠️ مفيش endpoint لحذف/تعديل حصة منفردة في api.js الحالي (مفيش deleteSession/updateSession)
+  // فالأزرار دي مؤقتًا بتعمل log بس لحد ما الـ endpoints دي تتضاف
+  const handleEdit = (id) => console.log("TODO: updateSession endpoint not available yet —", id);
+  const handleDelete = (id) => console.log("TODO: deleteSession endpoint not available yet —", id);
 
   return (
     <TeacherLayout>
@@ -43,14 +156,14 @@ const GroupLessonsPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div>
             <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
-              مجموعة الرياضيات A
+              {groupName || "مجموعة"}
             </h3>
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في مكان واحد.
             </p>
           </div>
           <button
-            onClick={() => navigate("/add-new-lesson")}
+            onClick={() => navigate(`/teacher/groups/${groupId}/lessons/new`)}
             className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 shrink-0"
           >
             إنشاء حصة جديدة
@@ -59,22 +172,16 @@ const GroupLessonsPage = () => {
 
         {/* Stats */}
         <div className="mb-6">
-          <LessonStatsBar />
+          <LessonStatsBar total={stats.total} upcoming={stats.upcoming} completed={stats.completed} cancelled={stats.cancelled} />
         </div>
 
         {/* Filters */}
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <LessonFilters
             search={search}
-            onSearchChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
+            onSearchChange={(v) => { setSearch(v); setPage(1); }}
             filterStatus={filterStatus}
-            onFilterStatusChange={(v) => {
-              setFilterStatus(v);
-              setPage(1);
-            }}
+            onFilterStatusChange={(v) => { setFilterStatus(v); setPage(1); }}
             filterTime={filterTime}
             onFilterTimeChange={setFilterTime}
           />
@@ -82,12 +189,22 @@ const GroupLessonsPage = () => {
 
         {/* Table */}
         <div className="mt-4">
-          <LessonsTable
-            lessons={paginatedLessons}
-            onView={(id) => console.log("view", id)}
-            onEdit={(id) => console.log("edit", id)}
-            onDelete={(id) => console.log("delete", id)}
-          />
+          {loading ? (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
+              جاري التحميل...
+            </div>
+          ) : error ? (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-red-500">
+              {error}
+            </div>
+          ) : (
+            <LessonsTable
+              lessons={paginatedLessons}
+              groupId={groupId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
         </div>
 
         {/* Pagination */}

@@ -36,11 +36,13 @@ const MobileField = ({ label, children }) => (
   </div>
 );
 
-const LessonsTable = ({ lessons = [], onEdit, onDelete }) => {
+// ⚠️ لازم يتمرر groupId من الصفحة الأب (GroupLessonsPage) عشان الـ navigate
+// يبني الرابط الصح ويوصل صفحة التفاصيل بالـ groupId + lessonId الاتنين
+const LessonsTable = ({ lessons = [], groupId, onEdit, onDelete }) => {
   const navigate = useNavigate();
 
   const handleView = (lessonId) => {
-    navigate(`/lessons/${lessonId}`);
+    navigate(`/teacher/groups/${groupId}/lessons/${lessonId}`);
   };
 
   if (lessons.length === 0) {

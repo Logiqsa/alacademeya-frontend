@@ -232,3 +232,59 @@ export const getAvailableClassrooms = (params) =>
 
 export const getClassroomSessions = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/sessions/`, { params });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Classroom Students
+// ──────────────────────────────────────────────────────────────────────────────
+
+// GET /classrooms/:id/students/
+// Response shape (Student entity - نفس الشكل المؤكد من /students):
+// {
+//   success, results,
+//   data: [
+//     {
+//       user: { fullName, username, email?, phone?, role, country, registrationStatus, isActive, id } | null,
+//       parent: string (ID فقط، مفيش اسم متاح من هنا),
+//       studentType, curriculum,
+//       stage: { name: { ar, en }, id },
+//       grade: { name: { ar, en }, id },
+//       studyLanguage, birthDate, preferredSubjects, averageScore,
+//       status: "active" | "removed" | "pending-contact" | "pending-approval",
+//       totalStudySessions, totalStudyHours,
+//       createdAt, updatedAt,
+//       id
+//     }
+//   ]
+// }
+export const getClassroomStudents = (classroomId, params) =>
+  API.get(`/classrooms/${classroomId}/students/`, { params });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Students (Global / Admin)
+// ──────────────────────────────────────────────────────────────────────────────
+
+// GET /students — نفس شكل الـ Student entity أعلاه، بدون التقييد بمجموعة معينة
+export const getAllStudents = (params) =>
+  API.get('/students', { params });
+
+export const getStudent = (studentId) =>
+  API.get(`/students/${studentId}`);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Sessions — Attendance
+// ──────────────────────────────────────────────────────────────────────────────
+
+// GET /sessions/:sessionId/attendance
+// Response shape:
+// {
+//   success, data: [
+//     {
+//       session: string,
+//       student: { user: { fullName, username, ... }, stage, grade, ... , id },
+//       status: "present" | "absent" | "late" | ...,
+//       notes, createdAt, updatedAt, updatedBy, id
+//     }
+//   ]
+// }
+export const getSessionAttendance = (sessionId) =>
+  API.get(`/sessions/${sessionId}/attendance`);

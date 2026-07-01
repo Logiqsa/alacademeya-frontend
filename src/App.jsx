@@ -31,7 +31,7 @@ import GroupsPage from "./pages/teacher/groups/GroupsPage";
 import GroupLessonsPage from "./pages/teacher/groups/GroupLessonsPage";
 import GroupStudentsPage from "./pages/teacher/groups/GroupStudentsPage";
 import StudentDetailsPage from "./pages/teacher/groups/StudentDetailsPage";
-import CreateGroupPage from "./components/teacher/groups/CreateGroupPage";
+// import CreateGroupPage from "./components/teacher/groups/CreateGroupPage";
 import CreateLessonPage from "./components/teacher/groups/lessons/CreateLessonPage";
 import AssignmentsPage from "./pages/teacher/assignments/AssignmentsPage";
 import ExamPage from "./pages/teacher/exam/ExamPage";
@@ -121,14 +121,14 @@ function App() {
         <Route path="/student-dashboard" element={<StudentGuard><StudentHome /></StudentGuard>} />
         <Route path="/student/settings" element={<StudentGuard><StudentAccountSettingsPage /></StudentGuard>} />
         <Route path="/student/notifications" element={<StudentGuard><StudentNotifications /></StudentGuard>} />
-        <Route path="/student/messages" element={<StudentGuard><StudentMessagess  /></StudentGuard>} />
-        <Route path="/student/exams" element={<StudentGuard><StudentExamsPage  /></StudentGuard>} />
-        <Route path="/student/exams/:id/take" element={<StudentGuard><TakeExamPage   /></StudentGuard>} />
-        <Route path="/student/exams/:id/result" element={<StudentGuard><ExamResultPage  /></StudentGuard>} />
-        <Route path="/student/assignments" element={<StudentGuard><StudentAssignmentsPage  /></StudentGuard>} />
-        <Route path="/student/groups/:groupId/lessons" element={<StudentGuard><StudentGroupLessonsPage  /></StudentGuard>} />
-        <Route path="/student/groups/:groupId/lessons/:lessonId" element={<StudentGuard><StudentLessonDetailsPage  /></StudentGuard>} />
-        <Route path="/student/groups/:groupId/lessons/:lessonId/files" element={<StudentGuard><LessonFilesPage  /></StudentGuard>} />
+        <Route path="/student/messages" element={<StudentGuard><StudentMessagess /></StudentGuard>} />
+        <Route path="/student/exams" element={<StudentGuard><StudentExamsPage /></StudentGuard>} />
+        <Route path="/student/exams/:id/take" element={<StudentGuard><TakeExamPage /></StudentGuard>} />
+        <Route path="/student/exams/:id/result" element={<StudentGuard><ExamResultPage /></StudentGuard>} />
+        <Route path="/student/assignments" element={<StudentGuard><StudentAssignmentsPage /></StudentGuard>} />
+        <Route path="/student/groups/:groupId/lessons" element={<StudentGuard><StudentGroupLessonsPage /></StudentGuard>} />
+        <Route path="/student/groups/:groupId/lessons/:lessonId" element={<StudentGuard><StudentLessonDetailsPage /></StudentGuard>} />
+        <Route path="/student/groups/:groupId/lessons/:lessonId/files" element={<StudentGuard><LessonFilesPage /></StudentGuard>} />
 
 
         {/* ✅ Teacher — محمي بـ TeacherGuard */}
@@ -137,13 +137,12 @@ function App() {
         <Route path="/teacher/groups/:groupId/lessons" element={<TeacherGuard><GroupLessonsPage /></TeacherGuard>} />
         <Route path="/teacher/groups/:groupId/students" element={<TeacherGuard><GroupStudentsPage /></TeacherGuard>} />
         <Route path="/teacher/groups/:groupId/students/:studentId" element={<TeacherGuard><StudentDetailsPage /></TeacherGuard>} />
-        <Route path="/add-new-group" element={<TeacherGuard><CreateGroupPage /></TeacherGuard>} />
+        {/* <Route path="/add-new-group" element={<TeacherGuard><CreateGroupPage /></TeacherGuard>} /> */}
         <Route path="/add-new-lesson" element={<TeacherGuard><CreateLessonPage /></TeacherGuard>} />
         <Route path="/teacher/tasks" element={<TeacherGuard><AssignmentsPage /></TeacherGuard>} />
         <Route path="/teacher/exams" element={<TeacherGuard><ExamPage /></TeacherGuard>} />
         <Route path="/teacher/schedule" element={<TeacherGuard><Schedule /></TeacherGuard>} />
-        <Route path="/lessons/:lessonId" element={<TeacherGuard><LessonDetailsPage /></TeacherGuard>} />
-        <Route path="/assignments/new" element={<TeacherGuard><AddAssignmentPage /></TeacherGuard>} />
+        <Route path="/teacher/groups/:groupId/lessons/:lessonId" element={<TeacherGuard><LessonDetailsPage /></TeacherGuard>} />        <Route path="/assignments/new" element={<TeacherGuard><AddAssignmentPage /></TeacherGuard>} />
         <Route path="/teacher/notifications" element={<TeacherGuard><Notificationss /></TeacherGuard>} />
         <Route path="/teacher/assignments/:assignmentId" element={<TeacherGuard><AssignmentDetailsPage /></TeacherGuard>} />
         <Route path="/teacher/messages" element={<TeacherGuard><TeacherMessages /></TeacherGuard>} />
@@ -152,27 +151,27 @@ function App() {
         <Route path="/teacher/exam/:examId" element={<TeacherGuard><ExamDetailsPage /></TeacherGuard>} />
         <Route path="/teacher/exams/new" element={<TeacherGuard><CreateExamPage /></TeacherGuard>} />
 
-       
-       {/* Admin */}
-           <Route path="/admin-dashboard" element={user ? <AdminHome /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/settings" element={user ? <AdminAccountSettingsPage /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/notifications" element={user ? <AdminNotificationss /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/users" element={user ? <UsersPage /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/groups" element={user ? <GroupsPages /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/groups/:groupId/attendance" element={user ? <AttendancePage  /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/groups/new" element={user ? <CreateGroupPages  /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/supervisors" element={user ? <SupervisorsPage  /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/records" element={user ? <RecordingsPages  /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/messages" element={user ? <AdminMessages  /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/subscription" element={user ? <SubscriptionsPage   /> : <Navigate to="/login" replace />} />
-           <Route path="/admin/subscriptions/requests" element={user ? <SubscriptionRequestsPage   /> : <Navigate to="/login" replace />} />
 
-           {/* <Route path="/admin/subscriptions/requests/:id" element={user ? <RequestDetailsPage  /> : <Navigate to="/login" replace />} />     */}
-           <Route path="/admin/subscriptions/requests/:id/activate" element={user ? <ActivateSubscriptionPage  /> : <Navigate to="/login" replace />} />    
-           <Route path="/admin/curriculum/create" element={user ? <CreateCurriculumPage   /> : <Navigate to="/login" replace />} />    
+        {/* Admin */}
+        <Route path="/admin-dashboard" element={user ? <AdminHome /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/settings" element={user ? <AdminAccountSettingsPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/notifications" element={user ? <AdminNotificationss /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/users" element={user ? <UsersPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/groups" element={user ? <GroupsPages /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/groups/:groupId/attendance" element={user ? <AttendancePage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/groups/new" element={user ? <CreateGroupPages /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/supervisors" element={user ? <SupervisorsPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/records" element={user ? <RecordingsPages /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/messages" element={user ? <AdminMessages /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/subscription" element={user ? <SubscriptionsPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/subscriptions/requests" element={user ? <SubscriptionRequestsPage /> : <Navigate to="/login" replace />} />
 
-       
-   
+        {/* <Route path="/admin/subscriptions/requests/:id" element={user ? <RequestDetailsPage  /> : <Navigate to="/login" replace />} />     */}
+        <Route path="/admin/subscriptions/requests/:id/activate" element={user ? <ActivateSubscriptionPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/curriculum/create" element={user ? <CreateCurriculumPage /> : <Navigate to="/login" replace />} />
+
+
+
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
