@@ -10,14 +10,15 @@ import UsersTable from "../../../components/admin/users/Userstable";
 import { getUsers, deleteUser as deleteUserApi, updateUser } from "../../../services/authService";
 
 const PAGE_SIZE = 6;
+const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
 
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
-const ROLE_MAP = { student: "طالب", teacher: "معلم", parent: "ولي أمر" };
+const ROLE_MAP = { student: "طالب", teacher: "معلم", parent: "ولي أمر", admin: "مشرف" };
 
 const statusOf = (u) => {
   if (u.isDeleted) return "محذوف";
   if (!u.isActive) return "موقوف";
-  if (u.registrationStatus === "pending") return "معلق";
+  if (u.registrationStatus?.startsWith("pending")) return "معلق";
   return "نشط";
 };
 
@@ -38,6 +39,40 @@ const mapUser = (u) => ({
   joinDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-CA") : "—",
 });
 
+// ─── يجيب كل اليوزرز من كل الصفحات (بيتعامل مع أي شكل pagination من السيرفر) ──
+const fetchAllUsers = async () => {
+  let all = [];
+  let page = 1;
+
+  while (true) {
+    const res = await getUsers({ page, limit: FETCH_LIMIT });
+    const body = res.data || {};
+    const list = body.data || body.users || (Array.isArray(body) ? body : []);
+
+    all = all.concat(list);
+
+    // نحاول نلاقي معلومات الـ pagination بأي شكل شائع
+    const total =
+      body.total ?? body.count ?? body.pagination?.total ?? body.meta?.total;
+    const totalPages =
+      body.totalPages ??
+      body.pagination?.totalPages ??
+      (total ? Math.ceil(total / FETCH_LIMIT) : null);
+
+    if (totalPages) {
+      if (page >= totalPages) break;
+    } else {
+      // مفيش معلومات pagination واضحة → لو الصفحة رجعت أقل من الـ limit يبقى خلصنا
+      if (list.length < FETCH_LIMIT) break;
+    }
+
+    page += 1;
+    if (page > 100) break; // حماية من infinite loop
+  }
+
+  return all;
+};
+
 const UsersPage = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
@@ -48,15 +83,17 @@ const UsersPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
-  const fetchUsers = useCallback(() => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
-    getUsers()
-      .then((res) => {
-        const list = res.data?.data || [];
-        setUsers(Array.isArray(list) ? list.map(mapUser) : []);
-      })
-      .catch(() => toast.error("تعذر تحميل المستخدمين"))
-      .finally(() => setLoading(false));
+    try {
+      const list = await fetchAllUsers();
+      setUsers(Array.isArray(list) ? list.map(mapUser) : []);
+    } catch (err) {
+      console.error(err);
+      toast.error("تعذر تحميل المستخدمين");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -75,15 +112,17 @@ const UsersPage = () => {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
-  // لو الصفحة الحالية بقت برّه النطاق (بعد حذف/فلترة) رجّعها لآخر صفحة متاحة
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
 
   const paginatedUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  // ⚠️ الأرقام دي بتحسب من كل اليوزرز اللي جم من السيرفر (visibleUsers) مش
+  // من الصفحة المعروضة بس، وكل رول بياخد عدّاده الصح
   const stats = {
-    admins: visibleUsers.filter((u) => u.role === "ولي أمر").length,
+    parents: visibleUsers.filter((u) => u.role === "ولي أمر").length,
+    admins: visibleUsers.filter((u) => u.role === "مشرف").length,
     teachers: visibleUsers.filter((u) => u.role === "معلم").length,
     students: visibleUsers.filter((u) => u.role === "طالب").length,
     total: visibleUsers.length,
@@ -92,7 +131,6 @@ const UsersPage = () => {
   const handleView = (id) => navigate(`/admin/users/${id}`);
   const handleEdit = (id) => navigate(`/admin/users/${id}/edit`);
 
-  // تفعيل / إيقاف حساب (لليوزر النشط أو الموقوف)
   const handleToggleStatus = async (user) => {
     const willActivate = user.status === "موقوف" || user.status === "معلق";
     try {
@@ -110,29 +148,27 @@ const UsersPage = () => {
     }
   };
 
-  // قبول طلب تسجيل (يوزر معلّق) - لازم نغيّر registrationStatus مش بس isActive
-  const handleApprove = async (user) => {
-    try {
-      await updateUser(user.id, { registrationStatus: "approved", isActive: true });
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === user.id
-            ? {
-                ...u,
-                registrationStatus: "approved",
-                isActive: true,
-                status: statusOf({ ...u, registrationStatus: "approved", isActive: true }),
-              }
-            : u
-        )
-      );
-      toast.success("تم قبول الطلب وتفعيل الحساب");
-    } catch (err) {
+const handleApprove = async (user) => {
+  try {
+    await updateUser(user.id, { registrationStatus: "active", isActive: true });
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === user.id
+          ? { ...u, registrationStatus: "active", isActive: true, status: statusOf({ ...u, registrationStatus: "active", isActive: true }) }
+          : u
+      )
+    );
+    toast.success("تم قبول الطلب وتفعيل الحساب");
+  } catch (err) {
+    if (err.response?.status === 404) {
+      toast.error("هذا المستخدم لم يعد موجودًا، جاري تحديث القائمة");
+      fetchUsers(); // إعادة تحميل كامل بدل الحذف المحلي فقط
+    } else {
       toast.error(err.response?.data?.message || "تعذر قبول الطلب");
     }
-  };
+  }
+};
 
-  // حذف (soft delete من السيرفر) - بيتشال من الجدول فورًا
   const handleDelete = async (id) => {
     try {
       await deleteUserApi(id);
@@ -156,33 +192,21 @@ const UsersPage = () => {
           </p>
         </div>
 
-        {/* Stats */}
         <div className="mb-6">
           <UsersStatsBar {...stats} />
         </div>
 
-        {/* Filters */}
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <UsersFilters
             search={search}
-            onSearchChange={(v) => {
-              setSearch(v);
-              setPage(1);
-            }}
+            onSearchChange={(v) => { setSearch(v); setPage(1); }}
             filterRole={filterRole}
-            onFilterRoleChange={(v) => {
-              setFilterRole(v);
-              setPage(1);
-            }}
+            onFilterRoleChange={(v) => { setFilterRole(v); setPage(1); }}
             filterStatus={filterStatus}
-            onFilterStatusChange={(v) => {
-              setFilterStatus(v);
-              setPage(1);
-            }}
+            onFilterStatusChange={(v) => { setFilterStatus(v); setPage(1); }}
           />
         </div>
 
-        {/* Table */}
         <div className="mt-4">
           {loading ? (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69] font-['IBM_Plex_Sans_Arabic']">
@@ -200,7 +224,6 @@ const UsersPage = () => {
           )}
         </div>
 
-        {/* Pagination */}
         <Paginationn
           page={page}
           totalPages={totalPages}
