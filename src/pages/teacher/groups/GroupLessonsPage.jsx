@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { CheckCircle2, X } from "lucide-react";
 
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
@@ -30,6 +31,7 @@ const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en
 const GroupLessonsPage = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
@@ -40,6 +42,21 @@ const GroupLessonsPage = () => {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [showToast, setShowToast] = useState(false);
+
+  // ─── Toast نجاح إضافة الحصة/الجدول ─────────────────────────────────────────
+  useEffect(() => {
+    if (location.state?.showSuccessToast) {
+      setShowToast(true);
+
+      // بنشيل الـ state من الـ history عشان الرسالة متظهرش تاني لو المستخدم عمل refresh
+      navigate(location.pathname, { replace: true, state: {} });
+
+      const timer = setTimeout(() => setShowToast(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -97,17 +114,17 @@ const GroupLessonsPage = () => {
           title: s.title || "حصة",
           date: s.scheduledDate
             ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
             : "--",
           time: s.scheduledDate
             ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
+              hour: "2-digit",
+              minute: "2-digit",
+            })
             : "--",
           duration:
             typeof s.duration === "number" ? `${s.duration} دقيقة` : s.duration ?? "--",
@@ -151,7 +168,23 @@ const GroupLessonsPage = () => {
 
   return (
     <TeacherLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right relative" dir="rtl">
+        {/* Toast نجاح */}
+        {showToast && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#D6E4C3] shadow-lg rounded-xl px-4 py-3 min-w-[280px]">
+            <CheckCircle2 className="text-green-600 shrink-0" size={20} />
+            <p className="text-sm text-[#1A1A1A] font-medium flex-1">
+              تم إنشاء الحصة بنجاح
+            </p>
+            <button
+              onClick={() => setShowToast(false)}
+              className="text-[#8C9198] hover:text-[#1A1A1A] shrink-0"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div>
@@ -162,12 +195,20 @@ const GroupLessonsPage = () => {
               إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في مكان واحد.
             </p>
           </div>
-          <button
-            onClick={() => navigate(`/teacher/groups/${groupId}/lessons/new`)}
-            className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 shrink-0"
-          >
-            إنشاء حصة جديدة
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
+            <button
+              onClick={() => navigate(`/teacher/groups/${groupId}/lessons/schedule/new`)}
+              className="w-full sm:w-40 h-12 rounded-lg bg-white border border-[#E5E5E5] text-[#1A1A1A] flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
+            >
+              إنشاء جدول
+            </button>
+            <button
+              onClick={() => navigate(`/teacher/groups/${groupId}/lessons/new`)}
+              className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
+            >
+              إنشاء حصة جديدة
+            </button>
+          </div>
         </div>
 
         {/* Stats */}

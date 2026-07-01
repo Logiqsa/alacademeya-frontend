@@ -20,8 +20,8 @@ const GroupCard = ({ group, onViewLessons, onViewStudents, onEdit, onDelete }) =
     <div className="flex items-center justify-between">
       <StatusBadge status={group.status} />
       <div className="flex gap-2.5 text-[#575F69]">
-        <button onClick={() => onDelete(group.id)} className="hover:text-red-500"><Trash2 size={18} /></button>
-        <button onClick={() => onEdit(group.id)} className="hover:text-blue-600"><Edit3 size={18} /></button>
+        {/* <button onClick={() => onDelete(group.id)} className="hover:text-red-500"><Trash2 size={18} /></button>
+        <button onClick={() => onEdit(group.id)} className="hover:text-blue-600"><Edit3 size={18} /></button> */}
       </div>
     </div>
 

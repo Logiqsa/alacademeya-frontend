@@ -294,3 +294,9 @@ export const getClassroomSchedule = (classroomId) =>
 
 export const getMySubscriptions = () =>
   API.get('/subscriptions/my');
+
+
+export const createClassroomSession = (formData) =>
+  API.post('/sessions/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });

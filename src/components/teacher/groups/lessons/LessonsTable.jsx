@@ -130,18 +130,18 @@ const LessonsTable = ({ lessons = [], groupId, onEdit, onDelete }) => {
                       >
                         <HiOutlineEye size={18} />
                       </ActionButton>
-                      <ActionButton
+                      {/* <ActionButton
                         onClick={() => onEdit?.(lesson.id)}
                         colorClass="text-[#575F69] hover:text-amber-600"
                       >
                         <HiOutlinePencil size={18} />
-                      </ActionButton>
-                      <ActionButton
+                      </ActionButton> */}
+                      {/* <ActionButton
                         onClick={() => onDelete?.(lesson.id)}
                         colorClass="text-[#575F69] hover:text-red-600"
                       >
                         <HiOutlineTrash size={18} />
-                      </ActionButton>
+                      </ActionButton> */}
                     </div>
                   </td>
                 </tr>
@@ -180,18 +180,18 @@ const LessonsTable = ({ lessons = [], groupId, onEdit, onDelete }) => {
               >
                 <HiOutlineEye size={18} />
               </ActionButton>
-              <ActionButton
+              {/* <ActionButton
                 onClick={() => onEdit?.(lesson.id)}
                 colorClass="text-[#575F69] hover:text-amber-600 bg-gray-50 flex-1 justify-center"
               >
                 <HiOutlinePencil size={18} />
-              </ActionButton>
-              <ActionButton
+              </ActionButton> */}
+              {/* <ActionButton
                 onClick={() => onDelete?.(lesson.id)}
                 colorClass="text-[#575F69] hover:text-red-600 bg-gray-50 flex-1 justify-center"
               >
                 <HiOutlineTrash size={18} />
-              </ActionButton>
+              </ActionButton> */}
             </div>
           </div>
         ))}

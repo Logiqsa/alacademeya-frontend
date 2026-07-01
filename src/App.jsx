@@ -76,6 +76,8 @@ import StudentAssignmentsPage from "./pages/student/assignments/StudentAssignmen
 import StudentGroupLessonsPage from "./pages/student/groupLessons/Studentgrouplessonspage";
 import StudentLessonDetailsPage from "./pages/student/groupLessons/Studentlessondetailspage";
 import LessonFilesPage from "./pages/student/groupLessons/Lessonfilespage";
+import CreateSchedulePage from "./components/teacher/groups/lessons/CreateSchedulePage";
+
 
 function App() {
   const { user } = useContext(AuthContext);
@@ -138,7 +140,10 @@ function App() {
         <Route path="/teacher/groups/:groupId/students" element={<TeacherGuard><GroupStudentsPage /></TeacherGuard>} />
         <Route path="/teacher/groups/:groupId/students/:studentId" element={<TeacherGuard><StudentDetailsPage /></TeacherGuard>} />
         {/* <Route path="/add-new-group" element={<TeacherGuard><CreateGroupPage /></TeacherGuard>} /> */}
-        <Route path="/add-new-lesson" element={<TeacherGuard><CreateLessonPage /></TeacherGuard>} />
+        <Route path="/teacher/groups/:groupId/lessons/new" element={<CreateLessonPage />} />
+        <Route path="/teacher/groups/:groupId/lessons/:lessonId" element={<LessonDetailsPage />} />
+        <Route path="/teacher/groups/:groupId/lessons/schedule/new" element={<CreateSchedulePage />} />
+
         <Route path="/teacher/tasks" element={<TeacherGuard><AssignmentsPage /></TeacherGuard>} />
         <Route path="/teacher/exams" element={<TeacherGuard><ExamPage /></TeacherGuard>} />
         <Route path="/teacher/schedule" element={<TeacherGuard><Schedule /></TeacherGuard>} />
