@@ -1,16 +1,6 @@
 import React from "react";
 
-const CalendarStrip = ({ selectedDay = 1, onSelectDay = () => {} }) => {
-  const days = [
-    { dayName: "السبت", dayNum: "21" },
-    { dayName: "الأحد", dayNum: "22" },
-    { dayName: "الاثنين", dayNum: "23" },
-    { dayName: "الثلاثاء", dayNum: "24" },
-    { dayName: "الأربعاء", dayNum: "25" },
-    { dayName: "الخميس", dayNum: "26" },
-    { dayName: "الجمعة", dayNum: "27" },
-  ];
-
+const CalendarStrip = ({ weekDates, selectedIndex, onSelectDay }) => {
   return (
     <div dir="rtl" className="mb-2">
       <div
@@ -23,12 +13,12 @@ const CalendarStrip = ({ selectedDay = 1, onSelectDay = () => {} }) => {
           -mx-1 px-1 sm:mx-0 sm:px-0
         "
       >
-        {days.map((item, i) => {
-          const isActive = i === selectedDay;
+        {weekDates.map((item, i) => {
+          const isActive = i === selectedIndex;
 
           return (
             <button
-              key={i}
+              key={item.key}
               type="button"
               onClick={() => onSelectDay(i)}
               className={`
@@ -53,7 +43,7 @@ const CalendarStrip = ({ selectedDay = 1, onSelectDay = () => {} }) => {
                 `}
                 style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
               >
-                {item.dayName}
+                {item.name}
               </span>
 
               <span

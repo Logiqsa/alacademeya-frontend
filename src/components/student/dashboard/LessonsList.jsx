@@ -1,7 +1,7 @@
 import React from "react";
 import { Clock, Video } from "lucide-react";
 
-const LessonCard = ({ title, location, duration, time, status, actionLabel }) => {
+const LessonCard = ({ title, location, duration, time, status, actionLabel, onAction }) => {
   const isEnded = status === "ended";
 
   const badgeLabel = isEnded ? "منتهية" : status === "live" ? "تبدأ الآن" : "قادمة";
@@ -51,44 +51,44 @@ const LessonCard = ({ title, location, duration, time, status, actionLabel }) =>
         <div className="flex items-center gap-1.5 text-[#8C9198] text-[12.5px] sm:text-[14px] order-2 xs:order-1">
           <Clock size={16} className="text-[#9CA3AF] shrink-0" />
           <span className="whitespace-nowrap">{time}</span>
-          <span className="whitespace-nowrap">{duration} د</span>
+          {duration ? <span className="whitespace-nowrap">{duration} د</span> : null}
         </div>
 
-        {isEnded ? (
-          <button
-            className="
-              order-1 xs:order-2
-              border border-[#E5E7EB] text-[#6B7280]
-              text-[12.5px] sm:text-[13px] font-medium
-              px-4 sm:px-5 py-2 rounded-lg
-              hover:bg-[#F9FAFB] transition-colors
-              w-full xs:w-auto
-            "
-          >
-            {actionLabel || "التسجيل"}
-          </button>
-        ) : (
-          <button
-            className="
-              order-1 xs:order-2
-              bg-[#123C91] text-white
-              text-[12.5px] sm:text-[13px] font-medium
-              px-4 sm:px-5 py-2 rounded-lg
-              hover:bg-[#0F2F73] transition-colors
-              w-full xs:w-auto
-            "
-          >
-            {actionLabel || "انضم الآن"}
-          </button>
-        )}
+        <button
+          onClick={onAction}
+          disabled={status !== "live"}
+          className={`
+            order-1 xs:order-2
+            text-[12.5px] sm:text-[13px] font-medium
+            px-4 sm:px-5 py-2 rounded-lg
+            w-full xs:w-auto transition-colors
+            ${
+              status === "live"
+                ? "bg-[#123C91] text-white hover:bg-[#0F2F73]"
+                : "border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] cursor-default"
+            }
+          `}
+        >
+          {actionLabel}
+        </button>
       </div>
     </div>
   );
 };
 
-// ⚠️ تم حذف الـ defaultLessons (الداتا الوهمية الثابتة).
-// الكومبوننت دلوقتي بيعرض بس اللي بييجي فعليًا في prop الـ lessons من الصفحة الأب.
-const LessonsList = ({ lessons = [] }) => {
+const LessonsList = ({ lessons = [], loading }) => {
+  if (loading) {
+    return (
+      <div
+        dir="rtl"
+        className="w-full bg-white border border-[#E5E5E5] rounded-2xl py-10 text-center text-sm text-[#8C9198]"
+        style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
+      >
+        جاري تحميل الحصص...
+      </div>
+    );
+  }
+
   if (lessons.length === 0) {
     return (
       <div
@@ -96,7 +96,7 @@ const LessonsList = ({ lessons = [] }) => {
         className="w-full bg-white border border-[#E5E5E5] rounded-2xl py-10 text-center text-sm text-[#8C9198]"
         style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
       >
-        لا توجد حصص اليوم
+        لا توجد حصص في هذا اليوم
       </div>
     );
   }
