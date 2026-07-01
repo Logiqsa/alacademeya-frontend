@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { Pencil, Eye, EyeOff, ChevronDown, User, Camera, Loader2 } from 'lucide-react';
+import { Pencil, Eye, EyeOff, ChevronDown, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   getMyProfile,
   updateMyProfile,
-  saveTeacherDetails,
   getCountries,
   getCurriculums,
-  getCurriculumStages,
+  getAllGrades,
   getSubjects,
 } from '../../../services/authService';
 import { AuthContext } from '../../../context/AuthContext';
@@ -30,12 +29,14 @@ const extractUser = (resData) => {
   const user = root?.user || root;
   if (!user) return null;
 
-  const { user: _omit, ...rest } = root || {};
+  // ملحوظة: root.id هو ID بتاع الـ Teacher/Parent profile document، مختلف عن user.id
+  // (ID بتاع الـ User document). بنحتفظ بيهم منفصلين عشان محدش يتكتب فوق التاني بالغلط.
+  const { user: _omit, id: profileId, ...restWithoutId } = root || {};
 
   return {
     ...user,
-    ...rest, // language, status, certificates, rating, profileSlug, etc.
-    // curriculums/grades/subjects ترجع arrays من objects كاملة (id + name bilingual)
+    ...restWithoutId, // language, status, certificates, rating, profileSlug, etc.
+    profileId,
     curriculums: root?.curriculums || user.curriculums || [],
     grades: root?.grades || user.grades || [],
     subjects: root?.subjects || user.subjects || [],
@@ -199,7 +200,8 @@ const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', d
   );
 };
 
-const SubjectsDropdown = ({ label, value = [], options, loading, onChange }) => {
+// دروبداون اختيار متعدد عام - بنستخدمه للمواد، الصفوف، والمناهج
+const MultiSelectDropdown = ({ label, value = [], options, loading, onChange, placeholder = 'اختر', emptyLabel = 'لا توجد بيانات' }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -217,14 +219,14 @@ const SubjectsDropdown = ({ label, value = [], options, loading, onChange }) => 
       <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
       <button type="button" onClick={() => !loading && setOpen((o) => !o)} className="w-full min-h-11 px-3.5 py-2 rounded-lg border border-(--border-light) bg-(--bg-section) text-sm text-right flex items-center justify-between gap-2 transition-colors cursor-pointer hover:border-(--primary)">
         <span className={selectedLabels ? 'text-(--text-dark)' : 'text-(--text-light)'}>
-          {loading ? 'جاري التحميل...' : selectedLabels || 'اختر المواد الدراسية'}
+          {loading ? 'جاري التحميل...' : selectedLabels || placeholder}
         </span>
         {loading ? <Loader2 size={14} className="animate-spin text-(--text-light)" /> : <ChevronDown size={16} className={`text-(--text-light) transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />}
       </button>
       {open && !loading && (
         <ul className="absolute z-20 top-full right-0 left-0 mt-1 max-h-56 overflow-y-auto bg-(--white) border border-(--border-light) rounded-lg shadow-lg">
           {options.length === 0 && (
-            <li className="px-3.5 py-2.5 text-sm text-(--text-light)">لا توجد مواد</li>
+            <li className="px-3.5 py-2.5 text-sm text-(--text-light)">{emptyLabel}</li>
           )}
           {options.map((opt) => {
             const checked = value.includes(opt.id);
@@ -243,7 +245,7 @@ const SubjectsDropdown = ({ label, value = [], options, loading, onChange }) => 
   );
 };
 
-const TeacherPersonalCard = ({ teacher, countryOptions, loadingCountries, onUpdated }) => {
+const TeacherPersonalCard = ({ teacher, countryOptions, loadingCountries, onSaved }) => {
   const buildForm = () => ({
     fullName: teacher.fullName || '',
     username: teacher.username || '',
@@ -272,10 +274,9 @@ const TeacherPersonalCard = ({ teacher, countryOptions, loadingCountries, onUpda
     setSaving(true);
     try {
       const payload = { fullName: form.fullName, username: form.username, email: form.email, country: form.countryId };
-      const res = await updateMyProfile(payload);
-      const updatedUser = extractUser(res.data) || payload;
+      await updateMyProfile(payload);
       toast.success('تم تعديل البيانات بنجاح');
-      onUpdated(updatedUser);
+      await onSaved(); // بيعمل fetch كامل من السيرفر بدل ما نخمن شكل الريسبونس
       setEditing(false);
     } catch (err) {
       setError(err.response?.data?.message || 'حدث خطأ أثناء تعديل البيانات');
@@ -321,14 +322,14 @@ const TeacherPersonalCard = ({ teacher, countryOptions, loadingCountries, onUpda
   );
 };
 
-const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
-  // الريسبونس بيرجع curriculums/grades/subjects كـ arrays من objects كاملة (المختارة فعلياً)
-  // بناخد أول عنصر للمنهج والمرحلة لإن الفورم هنا بتدعم اختيار واحد بس
+const TeacherProfessionalCard = ({ teacher, onSaved }) => {
+  // "curriculums" و "grades" و "subjects" كلها arrays في رد السيرفر، فبنعاملهم كلهم
+  // كاختيار متعدد بشكل متسق، بدل ما نفترض إن فيه اختيار واحد بس (ده كان بيضيع باقي الصفوف عند الحفظ).
   const buildForm = () => ({
-    studyLanguage: teacher.language || teacher.studyLanguage || 'ar',
-    curriculumId: teacher.curriculums?.[0]?._id || teacher.curriculums?.[0]?.id || '',
-    stageId: teacher.grades?.[0]?._id || teacher.grades?.[0]?.id || '',
-    experience: teacher.experience || '5y',
+    studyLanguage: teacher.language || 'ar',
+    curriculumIds: (teacher.curriculums || []).map((c) => c._id || c.id),
+    gradeIds: (teacher.grades || []).map((g) => g._id || g.id),
+    experience: teacher.experience || '',
     subjects: (teacher.subjects || []).map((s) => s._id || s.id),
   });
   const [editing, setEditing] = useState(false);
@@ -337,40 +338,40 @@ const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
   const [form, setForm] = useState(buildForm);
 
   const [curriculumOptions, setCurriculumOptions] = useState([]);
-  const [stageOptions, setStageOptions] = useState([]);
+  const [gradeOptions, setGradeOptions] = useState([]);
   const [subjectOptions, setSubjectOptions] = useState([]);
   const [loadingCurriculums, setLoadingCurriculums] = useState(false);
-  const [loadingStages, setLoadingStages] = useState(false);
+  const [loadingGrades, setLoadingGrades] = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   useEffect(() => { setForm(buildForm()); }, [teacher]);
 
-  useEffect(() => {
-    if (!editing || curriculumOptions.length > 0) return;
-    setLoadingCurriculums(true);
-    getCurriculums()
-      .then((res) => setCurriculumOptions(extractList(res.data).map(normalizeOption)))
-      .catch(() => toast.error('تعذر تحميل قائمة المناهج'))
-      .finally(() => setLoadingCurriculums(false));
-  }, [editing]);
-
-  useEffect(() => {
-    if (!editing || !form.curriculumId) { setStageOptions([]); return; }
-    setLoadingStages(true);
-    getCurriculumStages(form.curriculumId)
-      .then((res) => setStageOptions(extractList(res.data).map(normalizeOption)))
-      .catch(() => toast.error('تعذر تحميل المراحل الدراسية'))
-      .finally(() => setLoadingStages(false));
-  }, [editing, form.curriculumId]);
-
+  // بنحمل المناهج والصفوف والمواد مرة واحدة بمجرد فتح وضع التعديل
   useEffect(() => {
     if (!editing) return;
-    setLoadingSubjects(true);
-    getSubjects({ curriculum: form.curriculumId || undefined, stage: form.stageId || undefined })
-      .then((res) => setSubjectOptions(extractList(res.data).map(normalizeOption)))
-      .catch(() => toast.error('تعذر تحميل المواد الدراسية'))
-      .finally(() => setLoadingSubjects(false));
-  }, [editing, form.curriculumId, form.stageId]);
+    if (curriculumOptions.length === 0) {
+      setLoadingCurriculums(true);
+      getCurriculums()
+        .then((res) => setCurriculumOptions(extractList(res.data).map(normalizeOption)))
+        .catch(() => toast.error('تعذر تحميل قائمة المناهج'))
+        .finally(() => setLoadingCurriculums(false));
+    }
+    if (gradeOptions.length === 0) {
+      setLoadingGrades(true);
+      getAllGrades()
+        .then((res) => setGradeOptions(extractList(res.data).map(normalizeOption)))
+        .catch(() => toast.error('تعذر تحميل المراحل الدراسية'))
+        .finally(() => setLoadingGrades(false));
+    }
+    if (subjectOptions.length === 0) {
+      setLoadingSubjects(true);
+      getSubjects()
+        .then((res) => setSubjectOptions(extractList(res.data).map(normalizeOption)))
+        .catch(() => toast.error('تعذر تحميل المواد الدراسية'))
+        .finally(() => setLoadingSubjects(false));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing]);
 
   const handleCancel = () => { setForm(buildForm()); setError(''); setEditing(false); };
 
@@ -379,17 +380,19 @@ const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
     setError('');
     setSaving(true);
     try {
+      // ملحوظة: أسماء الحقول هنا (curriculums / grades) متطابقة مع أسماء الحقول
+      // في رد الـ GET. لو الباك إند فعليًا مستني اسم مختلف (زي curriculum/grade مفرد)
+      // محتاج تتأكد من فريق الباك إند وتظبط الأسماء دي.
       const payload = {
         language: form.studyLanguage,
-        curriculum: form.curriculumId,
-        stage: form.stageId,
+        curriculums: form.curriculumIds,
+        grades: form.gradeIds,
         experience: form.experience,
         subjects: form.subjects,
       };
-      const res = await updateMyProfile(payload);
-      const updatedUser = extractUser(res.data) || payload;
+      await updateMyProfile(payload);
       toast.success('تم تعديل البيانات بنجاح');
-      onUpdated(updatedUser);
+      await onSaved();
       setEditing(false);
     } catch (err) {
       setError(err.response?.data?.message || 'حدث خطأ أثناء تعديل البيانات');
@@ -399,6 +402,7 @@ const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
   };
 
   const langLabel = (id) => LANGUAGE_OPTIONS.find((l) => l.id === id)?.label || '—';
+  const experienceLabel = (id) => EXPERIENCE_OPTIONS.find((o) => o.id === id)?.label || '—';
   const joinedNames = (arr) => (arr?.length ? arr.map((i) => pickName(i.name)).filter(Boolean).join('، ') : '—');
 
   return (
@@ -409,36 +413,39 @@ const TeacherProfessionalCard = ({ teacher, onUpdated }) => {
           <ViewField label="اللغة" value={langLabel(teacher.language)} />
           <ViewField label="المنهج الدراسي" value={joinedNames(teacher.curriculums)} />
           <ViewField label="المرحلة الدراسية" value={joinedNames(teacher.grades)} />
-          <ViewField label="سنوات الخبرة" value={teacher.experience} />
+          <ViewField label="سنوات الخبرة" value={experienceLabel(teacher.experience)} />
           <ViewField label="المواد" value={joinedNames(teacher.subjects)} />
         </ViewGrid>
       ) : (
         <EditBox>
           <Dropdown label="اللغة" value={form.studyLanguage} options={LANGUAGE_OPTIONS} onChange={(id) => setForm((prev) => ({ ...prev, studyLanguage: id }))} placeholder="اختر اللغة" />
-          <Dropdown
+          <MultiSelectDropdown
             label="المنهج الدراسي"
-            value={form.curriculumId}
+            value={form.curriculumIds}
             options={curriculumOptions}
             loading={loadingCurriculums}
-            onChange={(id) => setForm((prev) => ({ ...prev, curriculumId: id, stageId: '' }))}
+            onChange={(ids) => setForm((prev) => ({ ...prev, curriculumIds: ids }))}
             placeholder="اختر المنهج الدراسي"
+            emptyLabel="لا توجد مناهج"
           />
-          <Dropdown
+          <MultiSelectDropdown
             label="المرحلة الدراسية"
-            value={form.stageId}
-            options={stageOptions}
-            loading={loadingStages}
-            disabled={!form.curriculumId}
-            onChange={(id) => setForm((prev) => ({ ...prev, stageId: id }))}
-            placeholder={form.curriculumId ? 'اختر المرحلة الدراسية' : 'اختر المنهج أولاً'}
+            value={form.gradeIds}
+            options={gradeOptions}
+            loading={loadingGrades}
+            onChange={(ids) => setForm((prev) => ({ ...prev, gradeIds: ids }))}
+            placeholder="اختر المرحلة الدراسية"
+            emptyLabel="لا توجد مراحل"
           />
           <Dropdown label="سنوات الخبرة" value={form.experience} options={EXPERIENCE_OPTIONS} onChange={(id) => setForm((prev) => ({ ...prev, experience: id }))} placeholder="اختر سنوات الخبرة" />
-          <SubjectsDropdown
+          <MultiSelectDropdown
             label="المواد الدراسية"
             value={form.subjects}
             options={subjectOptions}
             loading={loadingSubjects}
             onChange={(ids) => setForm((prev) => ({ ...prev, subjects: ids }))}
+            placeholder="اختر المواد الدراسية"
+            emptyLabel="لا توجد مواد"
           />
         </EditBox>
       )}
@@ -496,14 +503,21 @@ const SecurityCard = ({ lastPasswordChange }) => {
   );
 };
 
+// دايرة فيها أول حرف من اسم المعلم بدل رفع صورة
+const AvatarInitial = ({ name }) => {
+  const initial = (name || '').trim().charAt(0).toUpperCase() || '؟';
+  return (
+    <div className="w-16 h-16 rounded-full shrink-0 bg-(--primary) text-white flex items-center justify-center text-2xl font-bold select-none">
+      {initial}
+    </div>
+  );
+};
+
 const TeacherAccountSettings = () => {
   const { user: ctxUser, updateUser } = useContext(AuthContext) || {};
   const [teacher, setTeacher] = useState(ctxUser || null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const fileInputRef = useRef(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(null);
 
   // قائمة الدول بنحملها مرة واحدة هنا عشان نستخدمها في العرض والتعديل مع
   const [countryOptions, setCountryOptions] = useState([]);
@@ -517,7 +531,6 @@ const TeacherAccountSettings = () => {
       const userData = extractUser(res.data);
       if (userData) {
         setTeacher(userData);
-        setAvatarUrl(userData.avatarUrl || null);
         localStorage.setItem('user', JSON.stringify(userData));
         updateUser?.(userData);
       }
@@ -538,26 +551,6 @@ const TeacherAccountSettings = () => {
       .finally(() => setLoadingCountries(false));
   }, []);
 
-  const handleProfileUpdated = (updatedUser) => {
-    setTeacher((prev) => {
-      const next = { ...prev, ...updatedUser };
-      localStorage.setItem('user', JSON.stringify(next));
-      updateUser?.(next);
-      return next;
-    });
-  };
-
-  const handleAvatarClick = () => fileInputRef.current?.click();
-  const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingAvatar(true);
-    const reader = new FileReader();
-    reader.onload = () => { setAvatarUrl(reader.result); setUploadingAvatar(false); };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
   if (loading) {
     return <div className="flex items-center justify-center py-20" dir="rtl"><Loader2 size={28} className="animate-spin text-(--primary)" /></div>;
   }
@@ -574,15 +567,7 @@ const TeacherAccountSettings = () => {
 
       <div className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) overflow-hidden">
         <div className="p-6 flex items-center gap-4">
-          <div className="relative w-16 h-16 shrink-0">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-(--bg-light) flex items-center justify-center">
-              {avatarUrl ? <img src={avatarUrl} alt={teacher.fullName} className="w-full h-full object-cover" /> : <User size={28} className="text-(--primary)" />}
-            </div>
-            <button type="button" onClick={handleAvatarClick} disabled={uploadingAvatar} className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full bg-(--primary) text-white flex items-center justify-center border-2 border-white disabled:opacity-60" aria-label="تغيير الصورة">
-              {uploadingAvatar ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
-            </button>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-          </div>
+          <AvatarInitial name={teacher.fullName} />
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-(--text-dark) truncate">{teacher.fullName}</h2>
             <p className="text-sm text-(--text-light) truncate">{teacher.email}</p>
@@ -590,8 +575,8 @@ const TeacherAccountSettings = () => {
         </div>
       </div>
 
-      <TeacherPersonalCard teacher={teacher} countryOptions={countryOptions} loadingCountries={loadingCountries} onUpdated={handleProfileUpdated} />
-      <TeacherProfessionalCard teacher={teacher} onUpdated={handleProfileUpdated} />
+      <TeacherPersonalCard teacher={teacher} countryOptions={countryOptions} loadingCountries={loadingCountries} onSaved={fetchProfile} />
+      <TeacherProfessionalCard teacher={teacher} onSaved={fetchProfile} />
       <SecurityCard lastPasswordChange={teacher.lastPasswordChange || 'آخر تحديث غير متاح'} />
     </div>
   );

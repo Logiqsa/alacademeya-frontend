@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Clock, GraduationCap, Loader2 } from "lucide-react";
-import { getMyClassrooms, getClassroomSchedule } from "../../../services/authService";
-import { generateLessonInstances } from "../../../utils/scheduleWeek";
+import { getMyClassrooms, getClassroomSessions } from "../../../services/authService";
 
 const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, done, total, remaining, onClick }) => {
   const isGroup = statusType === "group";
@@ -79,30 +78,30 @@ const getLocalizedName = (val) => {
 const getTeacherName = (classroom) =>
   classroom.teacher?.user?.fullName ?? classroom.teacher?.fullName ?? "";
 
-const formatNextLesson = (instances = []) => {
+const formatNextLesson = (sessions = []) => {
   const now = new Date();
-  const upcoming = instances.filter((i) => i.date >= now);
+  const upcoming = sessions
+    .filter((s) => s.status !== "completed" && s.status !== "cancelled")
+    .filter((s) => new Date(s.scheduledDate || s.startAt) >= now)
+    .sort((a, b) => new Date(a.scheduledDate || a.startAt) - new Date(b.scheduledDate || b.startAt));
 
   if (upcoming.length === 0) return "لا توجد حصص قادمة";
 
-  const next = upcoming[0];
+  const nextDate = new Date(upcoming[0].scheduledDate || upcoming[0].startAt);
   const diffDays = Math.round(
-    (new Date(next.date).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000
+    (new Date(nextDate).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000
   );
-  const time = next.date.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+  const time = nextDate.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
 
   if (diffDays === 0) return `الحصة القادمة اليوم ${time}`;
   if (diffDays === 1) return `الحصة القادمة غداً ${time}`;
   return `الحصة القادمة بعد ${diffDays} أيام`;
 };
 
-// ⚠️ مفيش بيانات حضور/اكتمال فعلية، فبنعتبر أي حصة معادها فات = "تمت"
-// وأي حصة معادها لسه جاي = "متبقية"، بناءً على نافذة 8 أسابيع سابقة + 4 قادمة
-const buildGroupCardData = (classroom, instances = []) => {
-  const now = new Date();
-  const done = instances.filter((i) => i.date < now).length;
-  const remaining = instances.filter((i) => i.date >= now).length;
-  const total = done + remaining;
+const buildGroupCardData = (classroom, sessions = []) => {
+  const done = sessions.filter((s) => s.status === "completed").length;
+  const remaining = sessions.filter((s) => s.status !== "completed" && s.status !== "cancelled").length;
+  const total = sessions.filter((s) => s.status !== "cancelled").length;
   const type = classroom.type ?? "group";
 
   return {
@@ -111,7 +110,7 @@ const buildGroupCardData = (classroom, instances = []) => {
     teacher: getTeacherName(classroom),
     status: type === "group" ? "مجموعة" : "خاصة",
     statusType: type,
-    nextLesson: formatNextLesson(instances),
+    nextLesson: formatNextLesson(sessions),
     done,
     total,
     remaining,
@@ -133,21 +132,20 @@ const GroupsCard = () => {
         const { data } = await getMyClassrooms();
         const classrooms = data?.data ?? [];
 
-        const withSchedule = await Promise.all(
+        const withSessions = await Promise.all(
           classrooms.map(async (classroom) => {
             const id = classroom.id ?? classroom._id;
             try {
-              const res = await getClassroomSchedule(id);
-              const schedule = res.data?.data?.schedule ?? [];
-              const instances = generateLessonInstances(schedule, { weeksBack: 8, weeksForward: 4 });
-              return buildGroupCardData(classroom, instances);
+              const res = await getClassroomSessions(id);
+              const sessions = res.data?.data ?? [];
+              return buildGroupCardData(classroom, sessions);
             } catch {
               return buildGroupCardData(classroom, []);
             }
           })
         );
 
-        if (isMounted) setGroups(withSchedule);
+        if (isMounted) setGroups(withSessions);
       } catch (err) {
         if (isMounted) setError(err);
       } finally {

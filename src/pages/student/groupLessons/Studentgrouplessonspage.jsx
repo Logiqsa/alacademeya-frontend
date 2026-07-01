@@ -5,8 +5,7 @@ import LessonStatsBar from "../../../components/student/groupLesson/Lessonstatsb
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 import LessonsTable from "../../../components/student/groupLesson/Lessonstable";
 import Paginationn from "../../../components/teacher/groups/lessons/Paginationn";
-import { getClassroom, getClassroomSchedule } from "../../../services/authService";
-import { generateLessonInstances, computeLessonStatus, DEFAULT_LESSON_DURATION_MIN } from "../../../utils/scheduleWeek";
+import { getMyClassrooms, getClassroomSessions } from "../../../services/authService";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -14,9 +13,26 @@ const STATUS_LABELS = {
   upcoming: "قادمة",
   live: "مباشر الآن",
   ended: "منتهية",
+  cancelled: "ملغاة",
 };
 
 const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
+
+// بيحسب حالة العرض اعتمادًا على status الحقيقي من الباك إند، وعلى التوقيت لو لسه "scheduled"
+const computeDisplayStatus = (session) => {
+  if (session.status === "completed") return "ended";
+  if (session.status === "cancelled") return "cancelled";
+
+  const start = new Date(session.scheduledDate || session.startAt);
+  const end = session.endAt
+    ? new Date(session.endAt)
+    : new Date(start.getTime() + (session.duration || 45) * 60000);
+  const now = new Date();
+
+  if (now < start) return "upcoming";
+  if (now >= start && now <= end) return "live";
+  return "ended";
+};
 
 const StudentGroupLessonsPage = () => {
   const { groupId } = useParams();
@@ -36,48 +52,50 @@ const StudentGroupLessonsPage = () => {
     setLoading(true);
     setError(null);
 
-    // ⚠️ endpoint الـ sessions مش شغال حاليًا، فبنستخدم /classrooms/:id/schedule
-    // (النمط الأسبوعي المتكرر) وبنولّد منه حصص بتواريخ حقيقية
-    const [classroomResult, scheduleResult] = await Promise.allSettled([
-      getClassroom(groupId),
-      getClassroomSchedule(groupId),
+    const [classroomsResult, sessionsResult] = await Promise.allSettled([
+      getMyClassrooms(),
+      getClassroomSessions(groupId),
     ]);
 
-    if (classroomResult.status === "fulfilled") {
-      const classroomData = classroomResult.value.data?.data?.classroom ?? classroomResult.value.data?.data;
+    if (classroomsResult.status === "fulfilled") {
+      const classrooms = classroomsResult.value.data?.data ?? [];
+      const classroomData = classrooms.find((c) => (c.id ?? c._id) === groupId);
       setGroupName(resolveName(classroomData?.name) || "مجموعة");
     } else {
-      console.error("getClassroom failed:", classroomResult.reason);
+      console.error("getMyClassrooms failed:", classroomsResult.reason);
       setGroupName("مجموعة");
     }
 
-    if (scheduleResult.status === "rejected") {
-      console.error("getClassroomSchedule failed:", scheduleResult.reason);
+    if (sessionsResult.status === "rejected") {
+      console.error("getClassroomSessions failed:", sessionsResult.reason);
       setError("حدث خطأ أثناء تحميل جدول الحصص");
       setLoading(false);
       return;
     }
 
     try {
-      const schedule = scheduleResult.value.data?.data?.schedule ?? [];
-      const instances = generateLessonInstances(schedule, { weeksBack: 8, weeksForward: 4 });
+      const sessions = sessionsResult.value.data?.data ?? [];
 
-      const mapped = instances.map((inst) => {
-        const status = computeLessonStatus(inst.date);
-        return {
-          id: inst.id,
-          title: "حصة",
-          date: inst.date.toLocaleDateString("ar-EG", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          }),
-          time: inst.date.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
-          duration: DEFAULT_LESSON_DURATION_MIN,
-          status: STATUS_LABELS[status] || status,
-        };
-      });
+      const mapped = sessions
+        .map((s) => {
+          const date = new Date(s.scheduledDate || s.startAt);
+          const status = computeDisplayStatus(s);
+          return {
+            id: s.id ?? s._id,
+            title: s.title || "حصة",
+            date: date.toLocaleDateString("ar-EG", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+            time: date.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+            duration: s.duration || 45,
+            status: STATUS_LABELS[status] || status,
+            _sortDate: date,
+          };
+        })
+        .sort((a, b) => b._sortDate - a._sortDate);
 
       setLessons(mapped);
     } catch (err) {
@@ -103,7 +121,7 @@ const StudentGroupLessonsPage = () => {
     total: lessons.length,
     upcoming: lessons.filter((l) => l.status === "قادمة").length,
     completed: lessons.filter((l) => l.status === "منتهية").length,
-    cancelled: 0, // ⚠️ مفيش بيانات إلغاء متاحة من الجدول الأسبوعي
+    cancelled: lessons.filter((l) => l.status === "ملغاة").length,
   };
 
   return (

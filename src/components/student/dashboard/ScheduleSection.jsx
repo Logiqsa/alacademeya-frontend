@@ -2,18 +2,22 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import CalendarStrip from "./CalendarStrip";
 import LessonsList from "./LessonsList";
-import { getMyClassrooms, getClassroomSchedule } from "../../../services/authService";
+import { getMyClassrooms, getClassroomSessions } from "../../../services/authService";
 import { buildWeekDates, formatArabicMonthYear } from "../../../utils/scheduleWeek";
 
-// ⚠️ الـ API الحالي (/classrooms/:id/schedule) بيرجّع بس day + startTime،
-// من غير مدة الحصة أو تاريخ نهايتها، فاستخدمت قيمة افتراضية لحد ما تتضاف من الباك إند
 const DEFAULT_DURATION_MIN = 45;
 
-const computeStatus = (dateObj, startTime) => {
-  const [h, m] = startTime.split(":").map(Number);
-  const start = new Date(dateObj);
-  start.setHours(h, m, 0, 0);
-  const end = new Date(start.getTime() + DEFAULT_DURATION_MIN * 60000);
+const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "مجموعة");
+
+// بيحسب الحالة اعتمادًا على status الحقيقي من الباك إند، وعلى التوقيت لو لسه "scheduled"
+const computeStatus = (session) => {
+  if (session.status === "completed") return "ended";
+  if (session.status === "cancelled") return "cancelled";
+
+  const start = new Date(session.scheduledDate || session.startAt);
+  const end = session.endAt
+    ? new Date(session.endAt)
+    : new Date(start.getTime() + (session.duration || DEFAULT_DURATION_MIN) * 60000);
   const now = new Date();
 
   if (now < start) return "upcoming";
@@ -21,12 +25,10 @@ const computeStatus = (dateObj, startTime) => {
   return "ended";
 };
 
-const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "مجموعة");
-
 const ScheduleSection = () => {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [classroomSchedules, setClassroomSchedules] = useState([]); // [{classroom, schedule}]
+  const [classroomSessions, setClassroomSessions] = useState([]); // [{classroom, sessions}]
   const [loading, setLoading] = useState(true);
 
   const referenceDate = useMemo(() => {
@@ -37,7 +39,6 @@ const ScheduleSection = () => {
 
   const weekDates = useMemo(() => buildWeekDates(referenceDate), [referenceDate]);
 
-  // تحديد اليوم النهاردة تلقائيًا لما تفتح الصفحة أو تتنقل للأسبوع الحالي
   useEffect(() => {
     const todayKey = new Date().toDateString();
     const idx = weekDates.findIndex((d) => d.date.toDateString() === todayKey);
@@ -45,43 +46,42 @@ const ScheduleSection = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOffset]);
 
-useEffect(() => {
+  useEffect(() => {
     let cancelled = false;
 
-    const fetchSchedules = async () => {
+    const fetchSessions = async () => {
       try {
         setLoading(true);
         const { data } = await getMyClassrooms();
         const classrooms = data?.data ?? [];
 
-        // 🔍 تشخيص مؤقت
-        console.log("Classrooms fetched:", classrooms);
-
         const results = await Promise.all(
           classrooms.map(async (classroom) => {
             const id = classroom.id ?? classroom._id;
-            console.log("Fetching schedule for classroom:", id, classroom.name);
             try {
-              const res = await getClassroomSchedule(id);
-              const schedule = res.data?.data?.schedule ?? [];
-              console.log(`Schedule for ${classroom.name}:`, schedule);
-              return { classroom, schedule };
+              const res = await getClassroomSessions(id);
+              const sessions = res.data?.data ?? [];
+              return { classroom, sessions };
             } catch (err) {
-              console.error(`getClassroomSchedule FAILED for ${id}:`, err.response?.status, err.response?.data);
-              return { classroom, schedule: [] };
+              console.error(
+                `getClassroomSessions FAILED for ${id}:`,
+                err.response?.status,
+                err.response?.data
+              );
+              return { classroom, sessions: [] };
             }
           })
         );
 
-        if (!cancelled) setClassroomSchedules(results);
+        if (!cancelled) setClassroomSessions(results);
       } catch (err) {
-        console.error("Failed to load classroom schedules:", err);
+        console.error("Failed to load classroom sessions:", err);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
-    fetchSchedules();
+    fetchSessions();
     return () => {
       cancelled = true;
     };
@@ -93,19 +93,24 @@ useEffect(() => {
     if (!selectedDay) return [];
     const items = [];
 
-    classroomSchedules.forEach(({ classroom, schedule }) => {
-      schedule
-        .filter((slot) => slot.day === selectedDay.key)
-        .forEach((slot) => {
-          const status = computeStatus(selectedDay.date, slot.startTime);
+    classroomSessions.forEach(({ classroom, sessions }) => {
+      sessions
+        .filter((s) => {
+          const d = new Date(s.scheduledDate || s.startAt);
+          return d.toDateString() === selectedDay.date.toDateString();
+        })
+        .forEach((s) => {
+          const status = computeStatus(s);
+          const start = new Date(s.scheduledDate || s.startAt);
+
           items.push({
-            id: slot.id ?? slot._id,
-            title: resolveName(classroom.name),
+            id: s.id ?? s._id,
+            title: s.title || resolveName(classroom.name),
             location: classroom.subject?.name?.ar || "حصة أونلاين",
-            time: slot.startTime,
-            duration: DEFAULT_DURATION_MIN,
+            time: start.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+            duration: s.duration || DEFAULT_DURATION_MIN,
             status,
-            actionLabel: status === "ended" ? "التسجيل" : status === "live" ? "انضم الآن" : "قادمة",
+            actionLabel: status === "ended" ? "التفاصيل" : status === "live" ? "انضم الآن" : "قادمة",
             onAction: () => {
               if (status === "live" && classroom.meetingLink) {
                 window.open(classroom.meetingLink, "_blank", "noopener,noreferrer");
@@ -116,7 +121,7 @@ useEffect(() => {
     });
 
     return items.sort((a, b) => a.time.localeCompare(b.time));
-  }, [classroomSchedules, selectedDay]);
+  }, [classroomSessions, selectedDay]);
 
   const goPrevWeek = useCallback(() => setWeekOffset((w) => w - 1), []);
   const goNextWeek = useCallback(() => setWeekOffset((w) => w + 1), []);

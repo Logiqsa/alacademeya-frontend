@@ -7,8 +7,7 @@ import LessonAssignments from "../../../components/student/groupLesson/Lessonass
 import LessonQuizzes from "../../../components/student/groupLesson/Lessonquizzes";
 import LessonRecordings from "../../../components/student/groupLesson/Lessonrecordings";
 import LessonFiles from "../../../components/student/groupLesson/Lessonfiles";
-import { getClassroom, getClassroomSchedule, getSessionAttendance } from "../../../services/authService";
-import { generateLessonInstances, computeLessonStatus, DEFAULT_LESSON_DURATION_MIN } from "../../../utils/scheduleWeek";
+import { getMyClassrooms, getClassroomSessions, getSessionAttendance } from "../../../services/authService";
 
 const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
 
@@ -16,6 +15,22 @@ const STATUS_LABELS = {
   upcoming: "قادمة",
   live: "مباشر الآن",
   ended: "منتهية",
+  cancelled: "ملغاة",
+};
+
+const computeDisplayStatus = (session) => {
+  if (session.status === "completed") return "ended";
+  if (session.status === "cancelled") return "cancelled";
+
+  const start = new Date(session.scheduledDate || session.startAt);
+  const end = session.endAt
+    ? new Date(session.endAt)
+    : new Date(start.getTime() + (session.duration || 45) * 60000);
+  const now = new Date();
+
+  if (now < start) return "upcoming";
+  if (now >= start && now <= end) return "live";
+  return "ended";
 };
 
 const StatusBadge = ({ status }) => {
@@ -23,6 +38,7 @@ const StatusBadge = ({ status }) => {
     قادمة: "bg-[#EAF4FF] text-[#123C91]",
     "مباشر الآن": "bg-[#00A63E26] text-[#00A63E]",
     منتهية: "bg-[#D32F2F26] text-[#D32F2F]",
+    ملغاة: "bg-gray-100 text-gray-500",
   };
   return (
     <span
@@ -64,41 +80,38 @@ const StudentLessonDetailsPage = () => {
     setError(null);
 
     const loadData = async () => {
-      const [classroomResult, scheduleResult] = await Promise.allSettled([
-        getClassroom(groupId),
-        getClassroomSchedule(groupId),
+      const [classroomsResult, sessionsResult] = await Promise.allSettled([
+        getMyClassrooms(),
+        getClassroomSessions(groupId),
       ]);
 
       if (cancelled) return;
 
-      if (scheduleResult.status === "rejected") {
-        console.error("getClassroomSchedule failed:", scheduleResult.reason);
+      if (sessionsResult.status === "rejected") {
+        console.error("getClassroomSessions failed:", sessionsResult.reason);
         setError("حدث خطأ أثناء تحميل بيانات الحصة");
         setLoading(false);
         return;
       }
 
-      const classroomData =
-        classroomResult.status === "fulfilled"
-          ? classroomResult.value.data?.data?.classroom ?? classroomResult.value.data?.data ?? {}
-          : {};
-      if (classroomResult.status === "rejected") {
-        console.error("getClassroom failed:", classroomResult.reason);
+      let classroomData = {};
+      if (classroomsResult.status === "fulfilled") {
+        const classrooms = classroomsResult.value.data?.data ?? [];
+        classroomData = classrooms.find((c) => (c.id ?? c._id) === groupId) ?? {};
+      } else {
+        console.error("getMyClassrooms failed:", classroomsResult.reason);
       }
 
-      const schedule = scheduleResult.value.data?.data?.schedule ?? [];
-      const instances = generateLessonInstances(schedule, { weeksBack: 8, weeksForward: 4 });
-      const inst = instances.find((x) => x.id === lessonId);
+      const sessions = sessionsResult.value.data?.data ?? [];
+      const session = sessions.find((s) => (s.id ?? s._id) === lessonId);
 
-      if (!inst) {
+      if (!session) {
         setError("لم يتم العثور على هذه الحصة");
         setLoading(false);
         return;
       }
 
-      // ⚠️ الـ id بتاع الحصة هنا مولّد محليًا مش id حقيقي لسيشن في الباك إند،
-      // فمحاولة جلب الحضور دي على الأغلب هترجع فاضية أو تفشل لحد ما يتضاف
-      // endpoint حقيقي لسجل الحصص الفعلية
+      // دلوقتي الـ id حقيقي جاي من الباك إند، فمحاولة جلب الحضور هتشتغل فعليًا
       let presentCount = 0;
       let absentCount = 0;
       let totalRecords = 0;
@@ -109,30 +122,33 @@ const StudentLessonDetailsPage = () => {
         presentCount = records.filter((r) => r.status === "present").length;
         absentCount = records.filter((r) => r.status === "absent").length;
       } catch (err) {
-        console.error("getSessionAttendance failed (متوقع طالما الـ id مش سيشن حقيقي):", err);
+        console.error("getSessionAttendance failed:", err);
       }
 
       if (cancelled) return;
 
-      const status = computeLessonStatus(inst.date);
+      const status = computeDisplayStatus(session);
+      const startDate = new Date(session.scheduledDate || session.startAt);
 
       setLesson({
-        id: inst.id,
-        title: "حصة",
+        id: session.id ?? session._id,
+        title: session.title || "حصة",
+        description: session.description || "",
         groupName: resolveName(classroomData.name) || "مجموعة",
-        date: inst.date.toLocaleDateString("ar-EG", {
+        date: startDate.toLocaleDateString("ar-EG", {
           weekday: "long",
           year: "numeric",
           month: "long",
           day: "numeric",
         }),
-        time: inst.date.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
-        duration: `${DEFAULT_LESSON_DURATION_MIN} دقيقة`,
+        time: startDate.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+        duration: `${session.duration || 45} دقيقة`,
         status: STATUS_LABELS[status] || status,
         totalStudents: totalRecords || classroomData.students?.length || 0,
         attendance: presentCount,
         absence: absentCount,
-        lessonUrl: classroomData.meetingLink || "",
+        lessonUrl: session.recording || classroomData.meetingLink || "",
+        attachments: session.attachments || [],
       });
       setLoading(false);
     };
@@ -174,8 +190,7 @@ const StudentLessonDetailsPage = () => {
             onJoin={(url) => window.open(url, "_blank")}
           />
 
-          {/* ⚠️ لسه بتعرض بيانات افتراضية جوّاها لأنه مفيش endpoints مخصصة لها */}
-          <LessonFiles />
+          <LessonFiles attachments={lesson.attachments} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <LessonAssignments />
