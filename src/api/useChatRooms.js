@@ -6,7 +6,10 @@ const normalizeRoom = (room) => ({
   id: room.id ?? room._id,
   name: room.displayName ?? room.name ?? "بدون اسم",
   role: room.subtitle ?? room.role ?? "",
-  category: room.type === "support" ? "admin" : "teachers",
+  // ✅ نسيب القيمة الخام من الباك إند (support / classroom) بدل ترجمتها
+  // لكلمة ثابتة، عشان تشتغل مع فلاتر الوالد ("teachers") والطالب ("groups")
+  // مع بعض من غير تعارض — كل صفحة بتربط الـ key بتاعها بنفس القيمة دي.
+  category: room.type === "support" ? "admin" : "classroom",
   avatarInitial: (room.displayName ?? room.name ?? "?").trim().charAt(0),
   studentName: room.studentName ?? null,
   unreadCount: room.unreadCount ?? 0,
@@ -212,7 +215,10 @@ export function useChatRooms(currentUserId) {
 
   const startSupportConversation = useCallback(async () => {
     try {
-      const res = await startSupportRoom({});
+      // ✅ الباك إند مستني حقل "userId" (مش "participants") — راجع Postman collection
+      const res = await startSupportRoom({
+        userId: currentUserId,
+      });
       const created = res.data?.data ?? res.data;
       const newRoomId = created?.id ?? created?._id;
 
@@ -225,7 +231,7 @@ export function useChatRooms(currentUserId) {
       console.error("فشل بدء محادثة الدعم:", err.response?.data ?? err.message);
       return null;
     }
-  }, [fetchRooms, openConversation]);
+  }, [fetchRooms, openConversation, currentUserId]);
 
   return {
     conversations,
