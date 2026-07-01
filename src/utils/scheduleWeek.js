@@ -30,46 +30,7 @@ export const buildWeekDates = (referenceDate) => {
 export const formatArabicMonthYear = (date) =>
   date.toLocaleDateString("ar-EG", { month: "long", year: "numeric" });
 
-// ⚠️ الـ backend حاليًا مفيهوش endpoint فعلي لـ "حصص محددة بتواريخ وحالات"
-// المصدر الوحيد المؤكد هو /classrooms/:id/schedule اللي بيرجّع نمط أسبوعي
-// متكرر (يوم + وقت بداية) بس. الدالة دي بتولّد "حصص" بتواريخ حقيقية من
-// النمط ده على مدى عدد أسابيع معين، وده تقريب مش بيانات فعلية.
 export const DEFAULT_LESSON_DURATION_MIN = 45;
-
-export const generateLessonInstances = (
-  schedule = [],
-  { weeksBack = 8, weeksForward = 4 } = {}
-) => {
-  const instances = [];
-  const currentWeekStart = getWeekStart(new Date());
-
-  for (let w = -weeksBack; w <= weeksForward; w += 1) {
-    const weekStart = new Date(currentWeekStart);
-    weekStart.setDate(weekStart.getDate() + w * 7);
-
-    schedule.forEach((slot) => {
-      const dayIndex = WEEK_DAYS.findIndex((d) => d.key === slot.day);
-      if (dayIndex === -1 || !slot.startTime) return;
-
-      const date = new Date(weekStart);
-      date.setDate(date.getDate() + dayIndex);
-
-      const [h, m] = slot.startTime.split(":").map(Number);
-      date.setHours(h, m, 0, 0);
-
-      const scheduleId = slot.id ?? slot._id;
-      instances.push({
-        id: `${scheduleId}_${date.toISOString().slice(0, 10)}`,
-        scheduleId,
-        day: slot.day,
-        startTime: slot.startTime,
-        date,
-      });
-    });
-  }
-
-  return instances.sort((a, b) => a.date - b.date);
-};
 
 export const computeLessonStatus = (date, durationMinutes = DEFAULT_LESSON_DURATION_MIN) => {
   const start = new Date(date);
@@ -78,5 +39,62 @@ export const computeLessonStatus = (date, durationMinutes = DEFAULT_LESSON_DURAT
 
   if (now < start) return "upcoming";
   if (now >= start && now <= end) return "live";
-  return "ended";
+  return "completed";
+};
+
+/*
+  ✅ مصدر الجدول الحقيقي المؤكد: GET /classrooms/my (وإحنا مسجلين دخول
+  كـ parent). كل classroom راجع فيه students (array من IDs بتاعة
+  الـ student record، مش user.id) + subject + teacher + schedule.schedule
+  (array من { day, startTime }) — كل حاجة مطلوبة موجودة في نداء واحد،
+  مفيش داعي لأي نداء تاني لجدول منفصل.
+
+  الدالة دي بتاخد:
+   - classrooms: نتيجة getMyClassrooms() (data array)
+   - studentMap: { [studentRecordId]: fullName } مبني من getMyStudents()
+   - weekStart: تاريخ بداية الأسبوع (getWeekStart)
+  وبترجع array من "حصص" حقيقية لأبناء الوالد بس، بتواريخ فعلية للأسبوع ده.
+*/
+export const buildFamilyLessonInstances = (classrooms = [], studentMap = {}, weekStart) => {
+  const instances = [];
+
+  classrooms.forEach((classroom) => {
+    const slots = classroom?.schedule?.schedule || [];
+    const memberIds = classroom?.students || [];
+
+    // الأبناء بتوع الوالد اللي فعلاً مشتركين في الـ classroom ده
+    const myChildrenInClass = memberIds.filter((id) => studentMap[id]);
+    if (myChildrenInClass.length === 0) return;
+
+    slots.forEach((slot) => {
+      const dayIndex = WEEK_DAYS.findIndex((d) => d.key === slot.day);
+      if (dayIndex === -1 || !slot.startTime) return;
+
+      const date = new Date(weekStart);
+      date.setDate(date.getDate() + dayIndex);
+      const [h, m] = slot.startTime.split(":").map(Number);
+      date.setHours(h, m, 0, 0);
+
+      myChildrenInClass.forEach((studentId) => {
+        instances.push({
+          id: `${slot.id || slot._id}_${studentId}_${date.toISOString().slice(0, 10)}`,
+          scheduleSlotId: slot.id || slot._id,
+          classroomId: classroom.id,
+          classroomName: classroom.name,
+          title: classroom?.subject?.name?.ar || classroom?.subject?.name?.en || '—',
+          subjectId: classroom?.subject?.id,
+          teacherName: classroom?.teacher?.user?.fullName || '—',
+          meetingLink: classroom?.meetingLink || null,
+          day: slot.day,
+          startTime: slot.startTime,
+          date,
+          duration: DEFAULT_LESSON_DURATION_MIN,
+          studentId,
+          studentName: studentMap[studentId] || 'ابن/ابنة',
+        });
+      });
+    });
+  });
+
+  return instances.sort((a, b) => a.date - b.date);
 };

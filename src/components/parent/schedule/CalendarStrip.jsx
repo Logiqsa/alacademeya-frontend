@@ -1,18 +1,13 @@
 import React from "react";
 
-const CalendarStrip = () => {
-  const days = [
-    { dayName: "السبت", dayNum: "21" },
-    { dayName: "الأحد", dayNum: "22" },
-    { dayName: "الاثنين", dayNum: "23" },
-    { dayName: "الثلاثاء", dayNum: "24" },
-    { dayName: "الأربعاء", dayNum: "25" },
-    { dayName: "الخميس", dayNum: "26" },
-    { dayName: "الجمعة", dayNum: "27" },
-  ];
-
-  const selectedDay = 1;
-
+/**
+ * CalendarStrip
+ * Pure display component — the real week dates and the "today"/selected
+ * day come from the parent (FamilySchedule.jsx) via buildWeekDates(), so
+ * this strip always reflects the actual current week instead of a
+ * hardcoded 21→27 range.
+ */
+const CalendarStrip = ({ weekDates = [], selectedDayKey, onSelectDay }) => {
   return (
     <div dir="rtl" className="mb-6 sm:mb-8 lg:mb-10">
       <div
@@ -26,13 +21,14 @@ const CalendarStrip = () => {
           scrollbar-hide
         "
       >
-        {days.map((item, i) => {
-          const isActive = i === selectedDay;
+        {weekDates.map((item) => {
+          const isActive = item.key === selectedDayKey;
 
           return (
             <button
-              key={i}
+              key={item.key}
               type="button"
+              onClick={() => onSelectDay?.(item.key)}
               className={`
                 min-w-22.5
                 sm:min-w-25
@@ -63,17 +59,11 @@ const CalendarStrip = () => {
                   text-[13px]
                   sm:text-[14px]
                   mb-2
-                  ${
-                    isActive
-                      ? "text-[#123C91]"
-                      : "text-[#6B7280]"
-                  }
+                  ${isActive ? "text-[#123C91]" : "text-[#6B7280]"}
                 `}
-                style={{
-                  fontFamily: "'IBM Plex Sans Arabic', sans-serif",
-                }}
+                style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
               >
-                {item.dayName}
+                {item.name}
               </span>
 
               <span
@@ -81,15 +71,9 @@ const CalendarStrip = () => {
                   font-bold
                   text-[18px]
                   sm:text-[20px]
-                  ${
-                    isActive
-                      ? "text-[#123C91]"
-                      : "text-[#1F2937]"
-                  }
+                  ${isActive ? "text-[#123C91]" : "text-[#1F2937]"}
                 `}
-                style={{
-                  fontFamily: "'IBM Plex Sans Arabic', sans-serif",
-                }}
+                style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
               >
                 {item.dayNum}
               </span>

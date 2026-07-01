@@ -1,15 +1,22 @@
 import React from "react";
-import { Clock, BookOpen } from "lucide-react";
+import { Clock, BookOpen, Video } from "lucide-react";
+
+const STATUS_STYLES = {
+  completed: { label: "مكتمل", className: "bg-[#00A63E1A] text-[#00A63E]" },
+  live: { label: "جارٍ الآن", className: "bg-[#FEF3C7] text-[#B45309]" },
+  upcoming: { label: "قادم", className: "bg-[#EAF4FF] text-[#123C91]" },
+};
 
 const LessonCard = ({
   title,
-  teacher,
+  teacherName,
   duration,
   time,
   status,
   studentName,
+  meetingLink,
 }) => {
-  const isCompleted = status === "completed";
+  const statusInfo = STATUS_STYLES[status] || STATUS_STYLES.upcoming;
 
   return (
     <div
@@ -41,9 +48,7 @@ const LessonCard = ({
             leading-6
             flex-1
           "
-          style={{
-            fontFamily: "'IBM Plex Sans Arabic', sans-serif",
-          }}
+          style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
         >
           {title}
         </h3>
@@ -55,14 +60,10 @@ const LessonCard = ({
             text-[12px]
             font-medium
             whitespace-nowrap
-            ${
-              isCompleted
-                ? "bg-[#00A63E1A] text-[#00A63E]"
-                : "bg-[#EAF4FF] text-[#123C91]"
-            }
+            ${statusInfo.className}
           `}
         >
-          {isCompleted ? "مكتمل" : "قادم"}
+          {statusInfo.label}
         </span>
       </div>
 
@@ -75,18 +76,16 @@ const LessonCard = ({
           text-[13px]
           mb-4
         "
-        style={{
-          fontFamily: "'IBM Plex Sans Arabic', sans-serif",
-        }}
+        style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
       >
         <BookOpen size={16} className="ml-2 shrink-0" />
-        <span>{teacher}</span>
+        <span>{teacherName}</span>
       </div>
 
       <div className="border-t border-[#F1F1F1] mb-4" />
 
       {/* Footer */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 text-[#8C9198] text-[13px] sm:text-[14px]">
           <Clock size={16} className="text-[#12C6B0]" />
           <span>{time}</span>
@@ -94,44 +93,62 @@ const LessonCard = ({
           <span>{duration} د</span>
         </div>
 
-        <span
-          className="
-            bg-[#F3F4F6]
-            text-[#1F2937]
-            text-[12px]
-            px-3
-            py-1
-            rounded-lg
-            font-medium
-            whitespace-nowrap
-          "
-        >
-          {studentName}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="
+              bg-[#F3F4F6]
+              text-[#1F2937]
+              text-[12px]
+              px-3
+              py-1
+              rounded-lg
+              font-medium
+              whitespace-nowrap
+            "
+          >
+            {studentName}
+          </span>
+
+          {meetingLink && status !== "completed" && (
+            <a
+              href={meetingLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[12px] px-3 py-1 rounded-lg bg-[#123C91] text-white font-medium whitespace-nowrap hover:bg-[#0f2f73] transition-colors"
+            >
+              <Video size={14} />
+              انضم
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-const LessonsList = () => {
-  const lessons = [
-    {
-      title: "اللغة الفرنسية",
-      teacher: "أ. علي محمد",
-      duration: "45",
-      time: "10:00 ص",
-      status: "completed",
-      studentName: "سلمى",
-    },
-    {
-      title: "الرياضيات",
-      teacher: "أ. فاطمة",
-      duration: "60",
-      time: "8:00 م",
-      status: "upcoming",
-      studentName: "أحمد",
-    },
-  ];
+/**
+ * LessonsList
+ * `lessons` is the already-filtered, already-real array built by the
+ * parent (FamilySchedule.jsx) from getMyClassrooms() + getMyStudents().
+ * Each item: { id, title, teacherName, duration, time, status,
+ * studentName, meetingLink }.
+ */
+const LessonsList = ({ lessons = [], loading = false, emptyMessage = 'لا توجد حصص في هذا اليوم.' }) => {
+  if (loading) {
+    return (
+      <div className="w-full py-10 text-center text-[#8C9198] text-sm" dir="rtl">
+        جاري تحميل الجدول...
+      </div>
+    );
+  }
+
+  if (lessons.length === 0) {
+    return (
+      <div className="w-full py-10 text-center text-[#8C9198] text-sm" dir="rtl">
+        {emptyMessage}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full" dir="rtl">
@@ -144,8 +161,8 @@ const LessonsList = () => {
           gap-4
         "
       >
-        {lessons.map((lesson, index) => (
-          <LessonCard key={index} {...lesson} />
+        {lessons.map((lesson) => (
+          <LessonCard key={lesson.id} {...lesson} />
         ))}
       </div>
     </div>
