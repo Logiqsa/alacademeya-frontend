@@ -6,40 +6,45 @@ import SubscriptionsTab from "../../../components/admin/subscriptions/tabs/Subsc
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 
 const TABS = [
-  { key: "packages",      label: "الباقات" },
-  { key: "discounts",     label: "أكواد الخصم" },
+  { key: "packages", label: "الباقات" },
+  { key: "discounts", label: "أكواد الخصم" },
   { key: "subscriptions", label: "الاشتراكات" },
 ];
 
 const SubscriptionsPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab]             = useState("packages");
-  const [showAddPackage, setShowAddPackage]   = useState(false);
+  const [activeTab, setActiveTab] = useState("packages");
+  const [showAddPackage, setShowAddPackage] = useState(false);
   const [showAddDiscount, setShowAddDiscount] = useState(false);
 
   const tabBtnLabel = {
-    packages:      "إضافة باقة",
-    discounts:     "إنشاء كود",
+    packages: "إضافة باقة",
+    discounts: "إنشاء كود",
     subscriptions: "طلبات الاشتراك",
   };
 
   const handleHeaderBtn = () => {
-    if (activeTab === "packages")      setShowAddPackage(true);
-    if (activeTab === "discounts")     setShowAddDiscount(true);
-    if (activeTab === "subscriptions") navigate("/admin/subscriptions/requests");
+    if (activeTab === "packages") setShowAddPackage(true);
+    if (activeTab === "discounts") setShowAddDiscount(true);
+    if (activeTab === "subscriptions")
+      navigate("/admin/subscriptions/requests");
   };
 
   return (
     <AdminLayout>
-      <div dir="rtl" className="w-full max-w-full p-3 sm:p-4 md:p-6 font-['IBM_Plex_Sans_Arabic'] overflow-x-hidden">
-
+      <div
+        dir="rtl"
+        className="w-full max-w-full p-3 sm:p-4 md:p-6 font-['IBM_Plex_Sans_Arabic'] overflow-x-hidden"
+      >
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-5 sm:mb-6 gap-3">
           <div className="text-right min-w-0">
             <h2 className="font-['IBM_Plex_Sans_Arabic'] font-semibold text-[18px] sm:text-[20px] text-[#1F2937] truncate">
               إدارة الاشتراكات
             </h2>
-            <p className="text-[#575F69] text-[13px] sm:text-[14px] mt-0.5">الباقات ورموز الخصم والاشتراكات</p>
+            <p className="text-[#575F69] text-[13px] sm:text-[14px] mt-0.5">
+              الباقات ورموز الخصم والاشتراكات
+            </p>
           </div>
           <button
             onClick={handleHeaderBtn}
@@ -68,8 +73,18 @@ const SubscriptionsPage = () => {
 
         {/* Tab Content */}
         <div className="min-w-0">
-          {activeTab === "packages"      && <PackagesTab      showAdd={showAddPackage}  onCloseAdd={() => setShowAddPackage(false)} />}
-          {activeTab === "discounts"     && <DiscountCodesTab showAdd={showAddDiscount} onCloseAdd={() => setShowAddDiscount(false)} />}
+          {activeTab === "packages" && (
+            <PackagesTab
+              showAdd={showAddPackage}
+              onCloseAdd={() => setShowAddPackage(false)}
+            />
+          )}
+          {activeTab === "discounts" && (
+            <DiscountCodesTab
+              showAdd={showAddDiscount}
+              onCloseAdd={() => setShowAddDiscount(false)}
+            />
+          )}
           {activeTab === "subscriptions" && <SubscriptionsTab />}
         </div>
       </div>

@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Loader2 } from "lucide-react";
-import { getNotifications } from "../../../services/authService";
+import toast from "react-hot-toast";
+import { Bell, Loader2, Check } from "lucide-react";
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "../../../services/authService";
 
 const MAX_ITEMS = 4;
 
@@ -17,11 +22,9 @@ const KEY_TITLES = {
   SUBSCRIPTION_REJECTED: "تم رفض طلب الاشتراك",
   SUBSCRIPTION_PENDING: "طلب اشتراك جديد",
 };
+
 const titleOf = (n) =>
-  KEY_TITLES[n.key] ||
-  n.title ||
-  n.key?.replaceAll("_", " ") ||
-  "إشعار جديد";
+  KEY_TITLES[n.key] || n.title || n.key?.replaceAll("_", " ") || "إشعار جديد";
 
 const timeAgo = (dateStr) => {
   if (!dateStr) return "";
@@ -41,73 +44,87 @@ const NotificationsSection = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await getNotifications();
+      setNotifications(extractList(res.data));
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "تعذر تحميل الإشعارات");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setLoading(true);
-    getNotifications()
-      .then((res) => setNotifications(extractList(res.data)))
-      .catch((err) =>
-        setLoadError(err.response?.data?.message || "تعذر تحميل الإشعارات")
-      )
-      .finally(() => setLoading(false));
+    fetchNotifications();
   }, []);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await markNotificationRead(id);
+      setNotifications((prev) => prev.filter((n) => (n._id || n.id) !== id));
+      toast.success("تم تحديث الإشعار");
+    } catch (err) {
+      toast.error("حدث خطأ");
+    }
+  };
 
   const recent = notifications.slice(0, MAX_ITEMS);
 
   return (
     <div
-      className="bg-white border border-[#1F293726] rounded-2xl p-4 sm:p-6 w-full h-full font-['Tajawal'] flex flex-col"
+      className="bg-white border border-[#1F293726] rounded-2xl p-6 w-full h-full font-['Tajawal'] flex flex-col"
       dir="rtl"
     >
-      <div className="flex justify-between items-center mb-4 sm:mb-6">
-        <h3 className="text-base sm:text-[18px] font-medium text-[#1F2937]">الإشعارات الأخيرة</h3>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-[18px] font-medium text-[#1F2937]">
+          الإشعارات الأخيرة
+        </h3>
         <button
           onClick={() => navigate("/admin/notifications")}
-          className="text-sm sm:text-[16px] text-[#123C91] font-medium hover:underline shrink-0"
+          className="text-[16px] text-[#123C91] font-medium hover:underline"
         >
           عرض الكل
         </button>
       </div>
 
-      {loading && (
-        <div className="flex-1 flex items-center justify-center py-8">
-          <Loader2 size={20} className="animate-spin text-[#123C91]" />
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 size={24} className="animate-spin text-[#123C91]" />
         </div>
-      )}
-
-      {!loading && loadError && (
-        <p className="text-[13px] text-red-500 text-center py-8">{loadError}</p>
-      )}
-
-      {!loading && !loadError && (
-        <div className="flex-1 space-y-3 sm:space-y-4">
+      ) : loadError ? (
+        <p className="text-red-500 text-center py-8">{loadError}</p>
+      ) : (
+        <div className="flex-1 space-y-4">
           {recent.map((notif) => {
             const id = notif._id || notif.id;
             return (
               <div
                 key={id}
-                className="w-full min-h-18 flex items-center gap-3 p-3 sm:p-4 border border-[#1F29371A] rounded-lg relative overflow-hidden"
+                className="flex items-center gap-3 p-4 border border-[#1F29371A] rounded-lg relative hover:bg-[#F9FAFA] transition-all"
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#12C6B0]" />
-
-                <div className="p-2 bg-[#EAF4FF] rounded-lg text-[#12C6B0] shrink-0">
+                <div className="p-2 bg-[#EAF4FF] rounded-lg text-[#123C91] shrink-0">
                   <Bell size={20} />
                 </div>
-
-                <div className="text-right min-w-0">
-                  <p className="font-['IBM_Plex_Sans_Arabic'] font-normal mb-1.5 sm:mb-2 text-[13px] sm:text-[14px] leading-4 text-[#1F2937]">
-                    {titleOf(notif)}
-                  </p>
-                  <p className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[11px] sm:text-[12px] leading-4 text-[#8C9198] mt-1">
+                <div className="text-right flex-1">
+                  <p className="text-[14px] text-[#1F2937]">{titleOf(notif)}</p>
+                  <p className="text-[12px] text-[#8C9198]">
                     {timeAgo(notif.createdAt)}
                   </p>
                 </div>
+                <button
+                  onClick={() => handleMarkAsRead(id)}
+                  className="text-[#8C9198] hover:text-[#123C91] transition-colors"
+                >
+                  <Check size={18} />
+                </button>
               </div>
             );
           })}
-
           {recent.length === 0 && (
-            <p className="text-[13px] text-[#8C9198] text-center py-8">
-              لا توجد إشعارات حاليًا.
+            <p className="text-center text-[#8C9198] py-8">
+              لا توجد إشعارات جديدة.
             </p>
           )}
         </div>

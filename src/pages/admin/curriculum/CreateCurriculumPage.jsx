@@ -1,417 +1,203 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { Trash2, Plus, X, ChevronDown, Loader2 } from 'lucide-react';
-import AdminLayout from '../../../components/admin/layout/AdminLayout';
-import { createCurriculum, createStage, createGrade, getCountries } from '../../../services/authService';
-
-const LANG = 'ar';
-const pickName = (val) => {
-  if (!val) return '';
-  if (typeof val === 'string') return val;
-  return val[LANG] || val.ar || val.en || '';
-};
-const extractList = (resData) => {
-  if (!resData) return [];
-  const root = resData?.data || resData;
-  const raw = root?.data || root || [];
-  return Array.isArray(raw) ? raw : [];
-};
-const normalizeOption = (item) => ({
-  id: item._id || item.id,
-  label: pickName(item.name) || item.label || '',
-});
-
-/* ------------------------------------------------------------------ */
-/* Shared Field Components — styled identically to CreateGroupPages     */
-/* ------------------------------------------------------------------ */
-
-const InputField = ({ label, value, onChange, placeholder, error, textarea, dir }) => (
-  <div className="w-full">
-    <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1">
-      {label}
-    </label>
-    {textarea ? (
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={3}
-        className={`w-full px-4 py-3 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 transition-all placeholder:text-[#8C9198] text-right resize-none
-          ${error ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'}`}
-      />
-    ) : (
-      <input
-        type="text"
-        dir={dir}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 transition-all placeholder:text-[#8C9198] text-right
-          ${error ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'}`}
-      />
-    )}
-    {error && <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>}
-  </div>
-);
-
-/* ------------------------------------------------------------------ */
-/* Simple Dropdown — used here for the required "country" field         */
-/* ------------------------------------------------------------------ */
-
-const SelectField = ({ label, value, options, onChange, placeholder = 'اختر', loading, error }) => {
-  const [open, setOpen] = useState(false);
-  const selected = options.find((o) => o.id === value);
-  return (
-    <div className="w-full relative">
-      <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1">
-        {label}
-      </label>
-      <button
-        type="button"
-        onClick={() => !loading && setOpen((o) => !o)}
-        className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] flex items-center justify-between text-right transition-all
-          ${error ? 'border-red-400' : 'border-[#E5E5E5]'} ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-      >
-        <span className={selected ? 'text-[#1F2937]' : 'text-[#8C9198]'}>
-          {loading ? 'جاري التحميل...' : selected ? selected.label : placeholder}
-        </span>
-        {loading ? <Loader2 size={16} className="animate-spin text-[#8C9198]" /> : <ChevronDown size={16} className={`text-[#8C9198] transition-transform ${open ? 'rotate-180' : ''}`} />}
-      </button>
-      {open && !loading && (
-        <ul className="absolute z-20 top-full right-0 left-0 mt-1 max-h-56 overflow-y-auto bg-white border border-[#E5E5E5] rounded-lg shadow-lg">
-          {options.length === 0 && <li className="px-4 py-2.5 text-sm text-[#8C9198]">لا توجد بيانات</li>}
-          {options.map((opt) => (
-            <li key={opt.id} onClick={() => { onChange(opt.id); setOpen(false); }} className="px-4 py-2.5 text-sm cursor-pointer hover:bg-[#F2F4F7] text-[#1F2937]">
-              {opt.label}
-            </li>
-          ))}
-        </ul>
-      )}
-      {error && <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>}
-    </div>
-  );
-};
-
-/* ------------------------------------------------------------------ */
-/* Grade Tag Input — type a grade name + Enter/+ to add as a pill       */
-/* ------------------------------------------------------------------ */
-
-const GradeTagInput = ({ grades, onChange, error }) => {
-  const [draft, setDraft] = useState('');
-
-  const addGrade = () => {
-    const value = draft.trim();
-    if (!value) return;
-    if (grades.includes(value)) {
-      setDraft('');
-      return;
-    }
-    onChange([...grades, value]);
-    setDraft('');
-  };
-
-  const removeGrade = (g) => onChange(grades.filter((x) => x !== g));
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addGrade();
-    }
-  };
-
-  return (
-    <div className="w-full">
-      <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1">
-        الصفوف الدراسية
-      </label>
-
-      {grades.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2">
-          {grades.map((g) => (
-            <span
-              key={g}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F2F4F7] border border-[#E5E5E5] text-[#1F2937] font-['IBM_Plex_Sans_Arabic'] text-[13px]"
-            >
-              {g}
-              <button
-                type="button"
-                onClick={() => removeGrade(g)}
-                className="text-[#8C9198] hover:text-[#D92D20] cursor-pointer"
-                aria-label="حذف الصف"
-              >
-                <X size={13} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={addGrade}
-          className="shrink-0 w-12 h-12 flex items-center justify-center bg-[#123C91] text-white rounded-lg cursor-pointer hover:bg-[#0F3278] transition-colors"
-          aria-label="إضافة صف"
-        >
-          <Plus size={18} />
-        </button>
-        <input
-          type="text"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="مثال: الصف الأول"
-          className={`flex-1 h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 transition-all placeholder:text-[#8C9198] text-right
-            ${error ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'}`}
-        />
-      </div>
-      {error && <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>}
-    </div>
-  );
-};
-
-/* ------------------------------------------------------------------ */
-/* Stage Block — name + grade tags + delete                             */
-/* ------------------------------------------------------------------ */
-
-const StageBlock = ({ index, stage, onChange, onRemove, removable }) => {
-  return (
-    <div className="border border-[#E5E5E5] rounded-xl p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[14px] text-[#123C91]">
-          المرحلة {index + 1}
-        </span>
-        {removable && (
-          <button
-            type="button"
-            onClick={onRemove}
-            className="text-[#D92D20] cursor-pointer hover:opacity-80 p-1 -m-1"
-            aria-label="حذف المرحلة"
-          >
-            <Trash2 size={17} />
-          </button>
-        )}
-      </div>
-
-      <InputField
-        label="اسم المرحلة"
-        value={stage.name}
-        onChange={(v) => onChange({ ...stage, name: v })}
-        placeholder="مثال: المرحلة الإبتدائية"
-        error={stage.errors?.name}
-      />
-
-      <GradeTagInput
-        grades={stage.grades}
-        onChange={(grades) => onChange({ ...stage, grades })}
-        error={stage.errors?.grades}
-      />
-    </div>
-  );
-};
-
-/* ------------------------------------------------------------------ */
-/* Page                                                                  */
-/* ------------------------------------------------------------------ */
-
-const emptyStage = () => ({ id: crypto.randomUUID(), name: '', grades: [], errors: {} });
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { Plus, Save, Loader2 } from "lucide-react";
+import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import CurriculumForm from "../../../components/admin/curriculum/CurriculumForm";
+import StageAccordion from "../../../components/admin/curriculum/StageAccordion";
+// تأكد من استيراد الدوال دي من ملف الـ service بتاعك
+import {
+  createCurriculum,
+  createStage,
+  createGrade,
+  createSubject,
+} from "../../../services/authService";
 
 const CreateCurriculumPage = () => {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState({});
-  // الباك إند بيطلب الاسم بصيغة { ar, en } مش نص واحد، وبيطلب country إجباري
-  const [data, setData] = useState({ nameAr: '', nameEn: '', description: '', countryId: '' });
-  const [stages, setStages] = useState([emptyStage()]);
-
-  const [countryOptions, setCountryOptions] = useState([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-
-  useEffect(() => {
-    setLoadingCountries(true);
-    getCountries()
-      .then((res) => setCountryOptions(extractList(res.data).map(normalizeOption)))
-      .catch(() => toast.error('تعذر تحميل قائمة الدول'))
-      .finally(() => setLoadingCountries(false));
-  }, []);
-
-  const updateStage = (id, updated) => {
-    setStages((prev) => prev.map((s) => (s.id === id ? updated : s)));
-  };
-
-  const addStage = () => setStages((prev) => [...prev, emptyStage()]);
-
-  const removeStage = (id) => setStages((prev) => prev.filter((s) => s.id !== id));
-
-  const handleCancel = () => navigate('/admin/curriculum');
+  const [curriculum, setCurriculum] = useState({
+    name: { ar: "", en: "" },
+    description: "",
+    country: "",
+    stages: [],
+  });
 
   const validate = () => {
-    let valid = true;
-    const nextErrors = {};
+    if (!curriculum.name.ar.trim() || !curriculum.name.en.trim()) {
+      toast.error("يرجى إدخال اسم المنهج بالعربية والإنجليزية");
+      return false;
+    }
+    if (!curriculum.country) {
+      toast.error("يرجى اختيار الدولة");
+      return false;
+    }
+    if (curriculum.stages.length === 0) {
+      toast.error("يجب إضافة مرحلة دراسية واحدة على الأقل");
+      return false;
+    }
 
-    if (!data.nameAr.trim()) { nextErrors.nameAr = 'اسم المنهج بالعربية مطلوب'; valid = false; }
-    if (!data.nameEn.trim()) { nextErrors.nameEn = 'اسم المنهج بالإنجليزية مطلوب'; valid = false; }
-    if (!data.countryId) { nextErrors.countryId = 'الدولة مطلوبة'; valid = false; }
-    setErrors(nextErrors);
-
-    const nextStages = stages.map((s) => {
-      const stageErrors = {};
-      if (!s.name.trim()) stageErrors.name = 'اسم المرحلة مطلوب';
-      if (s.grades.length === 0) stageErrors.grades = 'أضف صفًا دراسيًا واحدًا على الأقل';
-      if (Object.keys(stageErrors).length) valid = false;
-      return { ...s, errors: stageErrors };
-    });
-    setStages(nextStages);
-
-    return valid;
-  };
-
-const handleSubmit = async () => {
-  if (!validate()) return;
-  if (saving) return;
-
-  setSaving(true);
-
-  try {
-    // 1) إنشاء المنهج
-    const curriculumRes = await createCurriculum({
-      name: { ar: data.nameAr.trim(), en: data.nameEn.trim() },
-      country: data.countryId,
-    });
-    const curriculum = curriculumRes.data.data || curriculumRes.data;
-    const curriculumId = curriculum._id || curriculum.id;
-
-    // 2) لكل مرحلة، إنشاء الـ stage مربوط بالمنهج
-    for (const stage of stages) {
-      const stageRes = await createStage({
-        curriculum: curriculumId,
-        name: { ar: stage.name, en: stage.name },
-      });
-      const createdStage = stageRes.data.data || stageRes.data;
-      const stageId = createdStage._id || createdStage.id;
-
-      // 3) لكل صف داخل المرحلة، إنشاء الـ grade مربوط بالمرحلة
+    for (const stage of curriculum.stages) {
+      // تعديل هنا: التأكد من العربي والإنجليزي
+      if (!stage.name.ar.trim() || !stage.name.en.trim()) {
+        toast.error("جميع المراحل يجب أن تحتوي على اسم بالعربي والإنجليزي");
+        return false;
+      }
+      if (stage.grades.length === 0) {
+        toast.error(
+          `مرحلة "${stage.name.ar}" يجب أن تحتوي على صف دراسي واحد على الأقل`,
+        );
+        return false;
+      }
       for (const grade of stage.grades) {
-        await createGrade({
-          stage: stageId,
-          name: { ar: grade, en: grade },
-        });
+        // تعديل هنا: التأكد من العربي والإنجليزي
+        if (!grade.name.ar.trim() || !grade.name.en.trim()) {
+          toast.error("جميع الصفوف يجب أن تحتوي على اسم بالعربي والإنجليزي");
+          return false;
+        }
+        if (grade.subjects.length === 0) {
+          toast.error(
+            `صف "${grade.name.ar}" يجب أن يحتوي على مادة واحدة على الأقل`,
+          );
+          return false;
+        }
+        for (const subject of grade.subjects) {
+          if (!subject.name.ar.trim() || !subject.name.en.trim()) {
+            toast.error("جميع المواد يجب أن تحتوي على اسم بالعربي والإنجليزي");
+            return false;
+          }
+        }
       }
     }
+    return true;
+  };
 
-    toast.success('تم إضافة المنهج بنجاح');
-    navigate('/admin/curriculum');
-  } catch (err) {
-    const status = err.response?.status;
-    const code = err.response?.data?.message;
-    if (status === 409 || code === 'DUPLICATE_FIELD' || code?.toLowerCase?.().includes('duplicate')) {
-      toast.error('يوجد منهج بنفس الاسم لهذه الدولة بالفعل');
-    } else {
-      toast.error(code || 'حدث خطأ أثناء إضافة المنهج');
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    if (saving) return;
+
+    setSaving(true);
+    try {
+      const curriculumRes = await createCurriculum({
+        name: { ar: curriculum.name.ar, en: curriculum.name.en },
+        country: curriculum.country,
+      });
+      const curriculumId = curriculumRes.data.data.id;
+
+      for (const stage of curriculum.stages) {
+        const stageRes = await createStage({
+          curriculum: curriculumId,
+          name: { ar: stage.name.ar, en: stage.name.en },
+        });
+        const stageId = stageRes.data.data.id;
+
+        for (const grade of stage.grades) {
+          const gradeRes = await createGrade({
+            curriculum: curriculumId,
+            stage: stageId,
+            name: { ar: grade.name.ar, en: grade.name.en },
+          });
+          const gradeId = gradeRes.data.data.id;
+
+          if (grade.subjects) {
+            for (const subject of grade.subjects) {
+              await createSubject({
+                curriculum: curriculumId,
+                stage: stageId,
+                grade: gradeId,
+                name: { ar: subject.name.ar, en: subject.name.en },
+              });
+            }
+          }
+        }
+      }
+      toast.success("تم بناء المنهج بالكامل بنجاح");
+      navigate("/admin/curriculum");
+    } catch (err) {
+      toast.error("حدث خطأ أثناء الحفظ");
+      console.error(err);
+    } finally {
+      setSaving(false);
     }
-  } finally {
-    setSaving(false);
-  }
-};
+  };
+
+  const addStage = () => {
+    setCurriculum((prev) => ({
+      ...prev,
+      stages: [
+        ...prev.stages,
+        { id: crypto.randomUUID(), name: { ar: "", en: "" }, grades: [] },
+      ],
+    }));
+  };
+
+  const updateStage = (stageId, updatedStage) => {
+    setCurriculum((prev) => ({
+      ...prev,
+      stages: prev.stages.map((s) => (s.id === stageId ? updatedStage : s)),
+    }));
+  };
+
+  const removeStage = (stageId) => {
+    setCurriculum((prev) => ({
+      ...prev,
+      stages: prev.stages.filter((s) => s.id !== stageId),
+    }));
+  };
 
   return (
     <AdminLayout>
-      <div dir="rtl" className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right mx-auto space-y-5">
-        <div>
-          <h2 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[18px] sm:text-[20px] text-[#1F2937] mb-1">
-            إضافة منهج جديد
-          </h2>
-          <p className="font-['IBM_Plex_Sans_Arabic'] text-[#575F69] text-[14px] sm:text-[16px]">
-            أدخل بيانات المنهج والمراحل الدراسية التابعة له.
-          </p>
-        </div>
-
-        <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5 space-y-4">
-          <p className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[14px] text-[#1F2937]">بيانات المنهج</p>
-
-          <InputField
-            label="اسم المنهج (عربي)"
-            value={data.nameAr}
-            onChange={(v) => setData((p) => ({ ...p, nameAr: v }))}
-            placeholder="مثال: المنهج المصري"
-            error={errors.nameAr}
-          />
-
-          <InputField
-            label="اسم المنهج (إنجليزي)"
-            dir="ltr"
-            value={data.nameEn}
-            onChange={(v) => setData((p) => ({ ...p, nameEn: v }))}
-            placeholder="e.g. Egypt Curriculum"
-            error={errors.nameEn}
-          />
-
-          <SelectField
-            label="الدولة"
-            value={data.countryId}
-            options={countryOptions}
-            loading={loadingCountries}
-            onChange={(id) => setData((p) => ({ ...p, countryId: id }))}
-            placeholder="اختر الدولة"
-            error={errors.countryId}
-          />
-
-          <InputField
-            label="وصف المنهج (اختياري)"
-            value={data.description}
-            onChange={(v) => setData((p) => ({ ...p, description: v }))}
-            placeholder="نبذة مختصرة عن أهداف المنهج وطبيعته..."
-            textarea
-          />
-        </div>
-
-        <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5 space-y-4">
+      <div dir="rtl" className="max-w-4xl mx-auto p-4 space-y-6 pb-20">
+        <div className="flex justify-between items-center">
           <div>
-            <p className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[14px] text-[#1F2937]">المراحل الدراسية</p>
-            <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] text-[#8C9198] mt-1">
-              هذا القسم لسه بيتحفظ محليًا فقط، لإن API إضافة المراحل لكل منهج لسه مش متوفر — تقدر تضيفه بعدين أول ما يتوفر.
+            <h2 className="font-['Tajawal'] font-bold text-[24px] text-[#1F2937]">
+              إنشاء منهج جديد
+            </h2>
+            <p className="text-[#8C9198] text-[15px]">
+              بناء هيكل المنهج والمراحل والصفوف الدراسية
             </p>
           </div>
-
-          <div className="space-y-4">
-            {stages.map((stage, idx) => (
-              <StageBlock
-                key={stage.id}
-                index={idx}
-                stage={stage}
-                onChange={(updated) => updateStage(stage.id, updated)}
-                onRemove={() => removeStage(stage.id)}
-                removable={stages.length > 1}
-              />
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={addStage}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-[#C7CCD1] rounded-xl text-[#575F69] font-['IBM_Plex_Sans_Arabic'] text-[14px] cursor-pointer hover:bg-[#F9FAFA] transition-colors"
-          >
-            <Plus size={16} />
-            إضافة مرحلة دراسية جديدة
-          </button>
-        </div>
-
-        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px] disabled:opacity-60 flex items-center justify-center gap-2"
+            className="flex items-center gap-2 bg-[#123C91] text-white px-6 py-2.5 rounded-lg font-['Tajawal'] hover:bg-[#0F3278] transition-all disabled:opacity-70"
           >
-            {saving && <Loader2 size={16} className="animate-spin" />}
-            {saving ? 'جارٍ الإضافة...' : 'إضافة المنهج'}
+            {saving ? (
+              <Loader2 className="animate-spin" size={18} />
+            ) : (
+              <Save size={18} />
+            )}
+            {saving ? "جاري الحفظ..." : "حفظ المنهج"}
           </button>
-          <button
-            onClick={handleCancel}
-            className="flex-1 py-3 px-6 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium cursor-pointer text-[14px] sm:text-[16px]"
-          >
-            إلغاء
-          </button>
+        </div>
+
+        <CurriculumForm
+          data={curriculum}
+          onChange={(field, value) =>
+            setCurriculum((prev) => ({ ...prev, [field]: value }))
+          }
+        />
+
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-['Tajawal'] font-bold text-[18px] text-[#1F2937]">
+              المراحل الدراسية
+            </h3>
+            <button
+              onClick={addStage}
+              className="flex items-center gap-1.5 text-[#123C91] font-['Tajawal'] text-[14px] hover:underline"
+            >
+              <Plus size={16} /> إضافة مرحلة
+            </button>
+          </div>
+          {curriculum.stages.map((stage) => (
+            <StageAccordion
+              key={stage.id}
+              stage={stage}
+              onUpdate={(updated) => updateStage(stage.id, updated)}
+              onRemove={() => removeStage(stage.id)}
+            />
+          ))}
         </div>
       </div>
     </AdminLayout>

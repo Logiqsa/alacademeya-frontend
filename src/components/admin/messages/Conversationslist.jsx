@@ -1,10 +1,10 @@
 import { Plus, Search } from "lucide-react";
 
 const filters = [
-  { key: "all",      label: "الكل" },
+  { key: "all", label: "الكل" },
   { key: "teachers", label: "المعلمون" },
   { key: "students", label: "الطلاب" },
-  { key: "parents",  label: "أولياء الأمور" },
+  { key: "parents", label: "أولياء الأمور" },
 ];
 
 export default function ConversationsLists({
@@ -22,17 +22,18 @@ export default function ConversationsLists({
     const matchesSearch =
       c.name.includes(searchQuery) ||
       (c.teacherName ?? "").includes(searchQuery) ||
-      (c.parentName  ?? "").includes(searchQuery) ||
-      (c.role        ?? "").includes(searchQuery);
+      (c.parentName ?? "").includes(searchQuery) ||
+      (c.role ?? "").includes(searchQuery);
     return matchesFilter && matchesSearch;
   });
 
   return (
     <div className="flex w-full flex-col h-full" dir="rtl">
-
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3">
-        <h2 className="text-base font-bold text-slate-800 font-['IBM_Plex_Sans_Arabic']">المحادثات</h2>
+        <h2 className="text-base font-bold text-slate-800 font-['IBM_Plex_Sans_Arabic']">
+          المحادثات
+        </h2>
         {mode === "chat" && (
           <button
             type="button"
@@ -46,12 +47,19 @@ export default function ConversationsLists({
       {/* Search */}
       <div className="px-4 pb-3">
         <div className="relative">
-          <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={mode === "chat" ? "ابحث عن معلم او مجموعة..." : "ابحث عن معلم او طالب..."}
+            placeholder={
+              mode === "chat"
+                ? "ابحث عن معلم او مجموعة..."
+                : "ابحث عن معلم او طالب..."
+            }
             className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-9 pl-3 text-sm text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic']"
           />
         </div>
@@ -65,9 +73,11 @@ export default function ConversationsLists({
             type="button"
             onClick={() => onFilterChange(f.key)}
             className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors font-['IBM_Plex_Sans_Arabic']
-              ${activeFilter === f.key
-                ? "bg-[#123C91] text-white"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+              ${
+                activeFilter === f.key
+                  ? "bg-[#123C91] text-white"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
           >
             {f.label}
           </button>
@@ -87,9 +97,11 @@ export default function ConversationsLists({
               type="button"
               onClick={() => onSelect(c.id)}
               className={`w-full rounded-xl border p-3 text-right shadow-sm transition-colors font-['IBM_Plex_Sans_Arabic']
-                ${c.id === activeId
-                  ? "border-blue-200 bg-blue-50"
-                  : "border-gray-100 bg-white hover:bg-gray-50"}`}
+                ${
+                  c.id === activeId
+                    ? "border-blue-200 bg-blue-50"
+                    : "border-gray-100 bg-white hover:bg-gray-50"
+                }`}
             >
               {/* Top row */}
               <div className="flex items-center justify-between">
@@ -98,7 +110,9 @@ export default function ConversationsLists({
                     {c.avatarInitial}
                   </span>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-slate-800">{c.name}</p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {c.name}
+                    </p>
                     {mode === "monitor" && (
                       <p className="text-[11px] text-gray-400">
                         معلم ←&nbsp;ولي أمر
@@ -113,7 +127,9 @@ export default function ConversationsLists({
 
               {/* Time + unread */}
               <div className="mt-1 flex items-center justify-end gap-2">
-                <span className="text-xs text-gray-400">{c.lastMessageTime}</span>
+                <span className="text-xs text-gray-400">
+                  {c.lastMessageTime}
+                </span>
                 {c.unreadCount > 0 && (
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#123C91] text-[11px] font-semibold text-white">
                     {c.unreadCount}
