@@ -291,3 +291,6 @@ export const getSessionAttendance = (sessionId) =>
 
 export const getClassroomSchedule = (classroomId) =>
   API.get(`/classrooms/${classroomId}/schedule`);
+
+export const getMySubscriptions = () =>
+  API.get('/subscriptions/my');
