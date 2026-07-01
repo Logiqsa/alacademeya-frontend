@@ -1,13 +1,5 @@
 import axios from 'axios';
 
-// const API = axios.create({
-//   baseURL: '/api',
-// });
-
-// const ROOT_API = axios.create({
-//   baseURL: '/api',
-// });
-
 const API = axios.create({
   baseURL: 'https://api.alacademeya.com/api',
 });
@@ -35,15 +27,12 @@ export const resendOtp = (email) =>
 export const verifyAccount = (data) =>
   API.post('/auth/verifyAccount', data);
 
-// Student profile
 export const completeStudentProfile = (payload) =>
   API.post('/auth/completeStudentProfile', payload);
 
-// Teacher profile
 export const completeTeacherProfile = (payload) =>
   API.patch('/auth/completeTeacherProfile', payload);
 
-// ─── Lookups ──────────────────────────────────────────────────────────────────
 export const saveStudentInterests = (payload) =>
   API.post('/auth/student/interests', payload);
 
@@ -59,258 +48,120 @@ export const getCountries = () =>
 // ──────────────────────────────────────────────────────────────────────────────
 // Curriculums
 // ──────────────────────────────────────────────────────────────────────────────
-
-export const getCurriculums = () =>
-  API.get('/curriculums/');
-
-export const getCurriculum = (id) =>
-  API.get(`/curriculums/${id}`);
-
-export const createCurriculum = (payload) =>
-  API.post('/curriculums/', payload);
-
-export const updateCurriculum = (id, payload) =>
-  API.patch(`/curriculums/${id}`, payload);
-
-export const deleteCurriculum = (id) =>
-  API.delete(`/curriculums/${id}`);
+export const getCurriculums = () => API.get('/curriculums/');
+export const getCurriculum = (id) => API.get(`/curriculums/${id}`);
+export const createCurriculum = (payload) => API.post('/curriculums/', payload);
+export const updateCurriculum = (id, payload) => API.patch(`/curriculums/${id}`, payload);
+export const deleteCurriculum = (id) => API.delete(`/curriculums/${id}`);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Stages
 // ──────────────────────────────────────────────────────────────────────────────
-
-export const getCurriculumStages = (curriculumId) =>
-  API.get(`/stages/curriculum/${curriculumId}`);
-
-export const getStage = (stageId) =>
-  API.get(`/stages/${stageId}`);
-
-export const createStage = (payload) =>
-  API.post('/stages', payload);
-
-export const updateStage = (stageId, payload) =>
-  API.patch(`/stages/${stageId}`, payload);
-
-export const deleteStage = (stageId) =>
-  API.delete(`/stages/${stageId}`);
+export const getCurriculumStages = (curriculumId) => API.get(`/stages/curriculum/${curriculumId}`);
+export const getStage = (stageId) => API.get(`/stages/${stageId}`);
+export const createStage = (payload) => API.post('/stages', payload);
+export const updateStage = (stageId, payload) => API.patch(`/stages/${stageId}`, payload);
+export const deleteStage = (stageId) => API.delete(`/stages/${stageId}`);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Grades
 // ──────────────────────────────────────────────────────────────────────────────
-
-export const getStageGrades = (stageId) =>
-  API.get('/grades', {
-    params: {
-      stage: stageId,
-    },
-  });
-
-export const getAllGrades = (params) =>
-  API.get('/grades', { params });
-
-export const getGrade = (gradeId) =>
-  API.get(`/grades/${gradeId}`);
-
-export const createGrade = (payload) =>
-  API.post('/grades', payload);
-
-export const updateGrade = (gradeId, payload) =>
-  API.patch(`/grades/${gradeId}`, payload);
-
-export const deleteGrade = (gradeId) =>
-  API.delete(`/grades/${gradeId}`);
+export const getStageGrades = (stageId) => API.get('/grades', { params: { stage: stageId } });
+export const getAllGrades = (params) => API.get('/grades', { params });
+export const getGrade = (gradeId) => API.get(`/grades/${gradeId}`);
+export const createGrade = (payload) => API.post('/grades', payload);
+export const updateGrade = (gradeId, payload) => API.patch(`/grades/${gradeId}`, payload);
+export const deleteGrade = (gradeId) => API.delete(`/grades/${gradeId}`);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Subjects
 // ──────────────────────────────────────────────────────────────────────────────
-
-export const getSubjects = (params) =>
-  API.get('/subjects', { params });
-
-export const getAllSubjects = (params) =>
-  API.get('/subjects', { params });
+export const getSubjects = (params) => API.get('/subjects', { params });
+export const getAllSubjects = (params) => API.get('/subjects', { params });
+export const getSubject = (id) => API.get(`/subjects/${id}`);
+export const createSubject = (payload) => API.post('/subjects', payload);
+export const updateSubject = (id, payload) => API.patch(`/subjects/${id}`, payload);
+export const deleteSubject = (id) => API.delete(`/subjects/${id}`);
 
 // ─── Parent / Students ────────────────────────────────────────────────────────
-
-export const removeStudent = (studentId) =>
-  API.delete(`/parents/students/${studentId}`);
-
-export const addStudent = (payload) =>
-  API.post('/parents/students', payload);
-
-export const getMyStudents = () =>
-  API.get('/parents/students');
-
-export const getStudentsStatistics = () =>
-  API.get('/parents/students/statistics');
-
-export const updateStudent = (studentId, payload) =>
-  API.patch(`/parents/students/${studentId}`, payload);
+export const removeStudent = (studentId) => API.delete(`/parents/students/${studentId}`);
+export const addStudent = (payload) => API.post('/parents/students', payload);
+export const getMyStudents = () => API.get('/parents/students');
+export const getStudentsStatistics = () => API.get('/parents/students/statistics');
+export const updateStudent = (studentId, payload) => API.patch(`/parents/students/${studentId}`, payload);
 
 // ─── User Profile ─────────────────────────────────────────────────────────────
+export const getMyProfile = () => API.get('/users/me');
+export const updateMyProfile = (payload) => API.patch('/users/me', payload);
 
-export const getMyProfile = () =>
-  API.get('/users/me');
-
-export const updateMyProfile = (payload) =>
-  API.patch('/users/me', payload);
-
-// ─── Subscriptions ────────────────────────────────────────────────────────────
-
-export const createSubscription = (payload) =>
-  API.post('/subscriptions', payload);
-
-export const getAllSubscriptions = (params) =>
-  API.get('/subscriptions/', { params });
-
-export const getSubscription = (id) =>
-  API.get(`/subscriptions/${id}`);
-
+// ──────────────────────────────────────────────────────────────────────────────
+// Subscriptions
+// ──────────────────────────────────────────────────────────────────────────────
+export const createSubscription = (payload) => API.post('/subscriptions', payload);
+export const getAllSubscriptions = (params) => API.get('/subscriptions/', { params });
+export const getSubscription = (id) => API.get(`/subscriptions/${id}`);
 export const getStudentSubscriptionOptions = (studentId) =>
   API.get(`/subscriptions/students/${studentId}/subscription-options`);
-
 export const getPendingSubscriptionRequests = () =>
   API.get('/subscriptions/students/pending');
+export const getMyStudentsSubscriptions = () => API.get('/parents/students/subscriptions');
+export const getMySubscriptions = () => API.get('/subscriptions/my');
 
-export const getMyStudentsSubscriptions = () =>
-  API.get('/parents/students/subscriptions');
+// ──────────────────────────────────────────────────────────────────────────────
+// Discounts  (NEW)
+// ──────────────────────────────────────────────────────────────────────────────
+// Response item shape (confirmed from Postman):
+// { name, code, type: "percentage" | "fixed", value, usedCount, isActive, createdAt, updatedAt, id }
+export const getAllDiscounts = (params) => API.get('/discounts/', { params });
+export const getDiscount = (id) => API.get(`/discounts/${id}`);
+export const createDiscount = (payload) => API.post('/discounts/', payload);
+export const updateDiscount = (id, payload) => API.patch(`/discounts/${id}`, payload);
+export const deleteDiscount = (id) => API.delete(`/discounts/${id}`);
+// body shape TBD — assumed { code } or { code, subjectId } for cart-style validation
+export const validateDiscount = (payload) => API.post('/discounts/validate', payload);
 
 // ─── Notifications ────────────────────────────────────────────────────────────
-
-export const getNotifications = () =>
-  API.get('/notifications');
-
-export const markNotificationRead = (id) =>
-  API.patch(`/notifications/${id}/read`);
-
-export const markAllNotificationsRead = () =>
-  API.patch('/notifications/read-all');
-
+export const getNotifications = () => API.get('/notifications');
+export const markNotificationRead = (id) => API.patch(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => API.patch('/notifications/read-all');
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Users (Admin)
 // ──────────────────────────────────────────────────────────────────────────────
-
-export const getUsers = (params) =>
-  API.get('/users/', { params });
-
-export const getUser = (id) =>
-  API.get(`/users/${id}`);
-
-export const updateUser = (id, payload) =>
-  API.patch(`/users/${id}`, payload);
-
-export const deleteUser = (id) =>
-  API.delete(`/users/${id}`);
-
+export const getUsers = (params) => API.get('/users/', { params });
+export const getUser = (id) => API.get(`/users/${id}`);
+export const updateUser = (id, payload) => API.patch(`/users/${id}`, payload);
+export const deleteUser = (id) => API.delete(`/users/${id}`);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Classrooms (Groups)
 // ──────────────────────────────────────────────────────────────────────────────
-
-export const getClassrooms = (params) =>
-  API.get('/classrooms/', { params });
-
-export const getMyClassrooms = (params) =>
-  API.get('/classrooms/my', { params });
-
-export const getClassroom = (id) =>
-  API.get(`/classrooms/${id}`);
-
-export const createClassroom = (payload) =>
-  API.post('/classrooms/', payload);
-
-export const updateClassroom = (id, payload) =>
-  API.patch(`/classrooms/${id}`, payload);
-
-export const deleteClassroom = (id) =>
-  API.delete(`/classrooms/${id}`);
-
+export const getClassrooms = (params) => API.get('/classrooms/', { params });
+export const getMyClassrooms = (params) => API.get('/classrooms/my', { params });
+export const getClassroom = (id) => API.get(`/classrooms/${id}`);
+export const createClassroom = (payload) => API.post('/classrooms/', payload);
+export const updateClassroom = (id, payload) => API.patch(`/classrooms/${id}`, payload);
+export const deleteClassroom = (id) => API.delete(`/classrooms/${id}`);
 export const getAvailableClassrooms = (params) =>
   // params: { teacher, subject, type }
   API.get('/classrooms/available', { params });
-
 export const getClassroomSessions = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/sessions/`, { params });
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Classroom Students
-// ──────────────────────────────────────────────────────────────────────────────
-
-// GET /classrooms/:id/students/
-// Response shape (Student entity - نفس الشكل المؤكد من /students):
-// {
-//   success, results,
-//   data: [
-//     {
-//       user: { fullName, username, email?, phone?, role, country, registrationStatus, isActive, id } | null,
-//       parent: string (ID فقط، مفيش اسم متاح من هنا),
-//       studentType, curriculum,
-//       stage: { name: { ar, en }, id },
-//       grade: { name: { ar, en }, id },
-//       studyLanguage, birthDate, preferredSubjects, averageScore,
-//       status: "active" | "removed" | "pending-contact" | "pending-approval",
-//       totalStudySessions, totalStudyHours,
-//       createdAt, updatedAt,
-//       id
-//     }
-//   ]
-// }
 export const getClassroomStudents = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/students/`, { params });
+export const getClassroomSchedule = (classroomId) => API.get(`/classrooms/${classroomId}/schedule`);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Students (Global / Admin)
 // ──────────────────────────────────────────────────────────────────────────────
-
-// GET /students — نفس شكل الـ Student entity أعلاه، بدون التقييد بمجموعة معينة
-export const getAllStudents = (params) =>
-  API.get('/students', { params });
-
-export const getStudent = (studentId) =>
-  API.get(`/students/${studentId}`);
+export const getAllStudents = (params) => API.get('/students', { params });
+export const getStudent = (studentId) => API.get(`/students/${studentId}`);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Sessions — Attendance
 // ──────────────────────────────────────────────────────────────────────────────
-
-// GET /sessions/:sessionId/attendance
-// Response shape:
-// {
-//   success, data: [
-//     {
-//       session: string,
-//       student: { user: { fullName, username, ... }, stage, grade, ... , id },
-//       status: "present" | "absent" | "late" | ...,
-//       notes, createdAt, updatedAt, updatedBy, id
-//     }
-//   ]
-// }
-export const getSessionAttendance = (sessionId) =>
-  API.get(`/sessions/${sessionId}/attendance`);
-
-export const getClassroomSchedule = (classroomId) =>
-  API.get(`/classrooms/${classroomId}/schedule`);
-
-export const getMySubscriptions = () =>
-  API.get('/subscriptions/my');
-
-
+export const getSessionAttendance = (sessionId) => API.get(`/sessions/${sessionId}/attendance`);
 export const createClassroomSession = (formData) =>
   API.post('/sessions/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-
-
-
-  export const getSubject = (id) =>
-  API.get(`/subjects/${id}`);
-
-export const createSubject = (payload) =>
-  API.post('/subjects', payload);
-
-export const updateSubject = (id, payload) =>
-  API.patch(`/subjects/${id}`, payload);
-
-export const deleteSubject = (id) =>
-  API.delete(`/subjects/${id}`);

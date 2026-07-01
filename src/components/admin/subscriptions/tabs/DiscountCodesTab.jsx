@@ -1,26 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   MoreVertical, X, ChevronDown, ChevronRight, ChevronLeft,
-  Percent, Banknote, Copy, Check, Plus, TicketPercent,
+  Percent, Banknote, Copy, Check, Plus, TicketPercent, Loader2,
 } from "lucide-react";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_CODES = Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  code: "jisiof45f",
-  discount: i % 2 === 0 ? "20%" : "150 جنيه",
-  type: i % 2 === 0 ? "نسبة مئوية" : "مبلغ ثابت",
-  used: i === 3 ? 100 : 70,
-  limit: 100,
-  status: i === 3 ? "منتهي" : i === 5 ? "موقوف" : "نشط",
-}));
+import { getAllDiscounts, createDiscount, updateDiscount, deleteDiscount } from "../../../../services/authService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 6;
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
+// isActive=true -> نشط | isActive=false -> موقوف
+// (لا يوجد حقل انتهاء/حد أقصى في الـ response الحالي، فحالة "منتهي" اتشالت)
 const STATUS_STYLES = {
   نشط: { dot: "bg-[#15A862]", text: "text-[#15A862]", bg: "bg-[#15A862]/10" },
-  منتهي: { dot: "bg-[#E8821C]", text: "text-[#E8821C]", bg: "bg-[#E8821C]/10" },
   موقوف: { dot: "bg-[#E0394C]", text: "text-[#E0394C]", bg: "bg-[#E0394C]/10" },
 };
 
@@ -35,27 +26,20 @@ const StatusBadge = ({ status }) => {
 };
 
 const TypeIcon = ({ type }) => (
-  <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg shrink-0 ${type === "نسبة مئوية" ? "bg-[#123C91]/10 text-[#123C91]" : "bg-[#0E7C66]/10 text-[#0E7C66]"}`}>
-    {type === "نسبة مئوية" ? <Percent size={13} strokeWidth={2.4} /> : <Banknote size={13} strokeWidth={2.4} />}
+  <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg shrink-0 ${type === "percentage" ? "bg-[#123C91]/10 text-[#123C91]" : "bg-[#0E7C66]/10 text-[#0E7C66]"}`}>
+    {type === "percentage" ? <Percent size={13} strokeWidth={2.4} /> : <Banknote size={13} strokeWidth={2.4} />}
   </span>
 );
 
-// ─── Usage progress ───────────────────────────────────────────────────────────
-const UsageBar = ({ used, limit }) => {
-  const pct = Math.min(100, Math.round((used / limit) * 100));
-  const full = pct >= 100;
-  return (
-    <div className="flex items-center gap-2 min-w-[110px]">
-      <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${full ? "bg-[#E0394C]" : "bg-[#123C91]"}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="text-[12px] tabular-nums text-[#575F69] shrink-0" dir="ltr">{used}/{limit}</span>
-    </div>
-  );
-};
+const typeLabel = (type) => (type === "percentage" ? "نسبة مئوية" : "مبلغ ثابت");
+const discountLabel = (d) => (d.type === "percentage" ? `${d.value}%` : `${d.value} جنيه`);
+
+// ─── Usage (no limit field in API, so just show raw usedCount) ────────────────
+const UsageCount = ({ usedCount }) => (
+  <span className="text-[13px] tabular-nums text-[#575F69]" dir="ltr">
+    استُخدم {usedCount ?? 0} مرة
+  </span>
+);
 
 // ─── Copyable code ────────────────────────────────────────────────────────────
 const CodeChip = ({ code }) => {
@@ -84,7 +68,7 @@ const CodeChip = ({ code }) => {
 };
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
-const RowActions = () => {
+const RowActions = ({ discount, onToggleActive, onDelete }) => {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative inline-block">
@@ -101,19 +85,18 @@ const RowActions = () => {
             dir="rtl"
             className="absolute right-0 z-30 mt-1 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
           >
-            {[
-              { label: "تعديل", cls: "text-[#374151]" },
-              { label: "إيقاف", cls: "text-[#E8821C]" },
-              { label: "حذف", cls: "text-[#E0394C]" },
-            ].map(({ label, cls }) => (
-              <li
-                key={label}
-                onClick={() => setOpen(false)}
-                className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right ${cls}`}
-              >
-                {label}
-              </li>
-            ))}
+            <li
+              onClick={() => { setOpen(false); onToggleActive(discount); }}
+              className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E8821C]"
+            >
+              {discount.isActive ? "إيقاف" : "تفعيل"}
+            </li>
+            <li
+              onClick={() => { setOpen(false); onDelete(discount); }}
+              className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E0394C]"
+            >
+              حذف
+            </li>
           </ul>
         </>
       )}
@@ -137,8 +120,45 @@ const selectCls =
   "w-full h-11 px-4 border border-[#E5E7EB] rounded-xl bg-[#F9FAFA] text-[13px] font-['IBM_Plex_Sans_Arabic'] focus:outline-none focus:ring-2 focus:ring-[#123C91]/30 focus:border-[#123C91] appearance-none text-right transition-colors";
 
 // ─── Add Code Modal ───────────────────────────────────────────────────────────
-const AddCodeModal = ({ open, onClose }) => {
+const AddCodeModal = ({ open, onClose, onCreated }) => {
+  const [form, setForm] = useState({ name: "", code: "", type: "", value: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setForm({ name: "", code: "", type: "", value: "" });
+      setError("");
+    }
+  }, [open]);
+
   if (!open) return null;
+
+  const handleChange = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const handleSubmit = async () => {
+    if (!form.code || !form.type || !form.value) {
+      setError("من فضلك أكمل الكود والنوع والقيمة");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      await createDiscount({
+        name: form.name || form.code,
+        code: form.code,
+        type: form.type,
+        value: Number(form.value),
+      });
+      onCreated();
+      onClose();
+    } catch (err) {
+      setError(err?.response?.data?.message || "حدث خطأ أثناء إنشاء الكود");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1220]/50 backdrop-blur-[2px] px-4 py-6"
@@ -166,33 +186,40 @@ const AddCodeModal = ({ open, onClose }) => {
         </div>
 
         <div className="p-5 sm:p-6 space-y-4">
+          <Field label="اسم الكود">
+            <input value={form.name} onChange={handleChange("name")} placeholder="مثال: خصم العيد" className={inputCls} />
+          </Field>
+
           <Field label="الكود">
-            <input placeholder="مثال: SAVE20" className={inputCls} dir="ltr" />
+            <input value={form.code} onChange={handleChange("code")} placeholder="مثال: SAVE20" className={inputCls} dir="ltr" />
           </Field>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="نوع الخصم">
               <div className="relative">
-                <select className={selectCls} defaultValue="">
+                <select value={form.type} onChange={handleChange("type")} className={selectCls}>
                   <option value="" disabled>اختر النوع</option>
-                  <option>نسبة مئوية</option>
-                  <option>مبلغ ثابت</option>
+                  <option value="percentage">نسبة مئوية</option>
+                  <option value="fixed">مبلغ ثابت</option>
                 </select>
                 <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
               </div>
             </Field>
             <Field label="قيمة الخصم">
-              <input placeholder="20" type="number" className={inputCls} />
+              <input value={form.value} onChange={handleChange("value")} placeholder="20" type="number" className={inputCls} />
             </Field>
           </div>
 
-          <Field label="الحد الأقصى للاستخدام">
-            <input placeholder="100" type="number" className={inputCls} />
-          </Field>
+          {error && <p className="text-[12px] text-[#E0394C] text-right">{error}</p>}
         </div>
 
         <div className="flex flex-col sm:flex-row-reverse gap-3 px-5 sm:px-6 pb-5 sm:pb-6">
-          <button className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] transition-colors shadow-sm shadow-[#123C91]/20">
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] disabled:opacity-60 transition-colors shadow-sm shadow-[#123C91]/20 flex items-center justify-center gap-2"
+          >
+            {submitting && <Loader2 size={15} className="animate-spin" />}
             إنشاء الكود
           </button>
           <button
@@ -243,29 +270,29 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
 );
 
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
-const CodeCard = ({ code }) => (
+const CodeCard = ({ code, onToggleActive, onDelete }) => (
   <div dir="rtl" className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
     <div className="flex items-center justify-between gap-2 mb-3.5">
       <CodeChip code={code.code} />
-      <StatusBadge status={code.status} />
+      <StatusBadge status={code.isActive ? "نشط" : "موقوف"} />
     </div>
 
     <div className="flex items-center justify-between gap-3 mb-3">
       <div className="flex items-center gap-2">
         <TypeIcon type={code.type} />
         <div>
-          <p className="text-[13px] font-semibold text-[#1F2937] leading-tight">{code.discount}</p>
-          <p className="text-[11px] text-[#9CA3AF] leading-tight mt-0.5">{code.type}</p>
+          <p className="text-[13px] font-semibold text-[#1F2937] leading-tight">{discountLabel(code)}</p>
+          <p className="text-[11px] text-[#9CA3AF] leading-tight mt-0.5">{typeLabel(code.type)}</p>
         </div>
       </div>
       <div className="text-left">
         <p className="text-[11px] text-[#9CA3AF] mb-1">الاستخدامات</p>
-        <UsageBar used={code.used} limit={code.limit} />
+        <UsageCount usedCount={code.usedCount} />
       </div>
     </div>
 
     <div className="flex justify-end pt-2.5 border-t border-gray-100">
-      <RowActions />
+      <RowActions discount={code} onToggleActive={onToggleActive} onDelete={onDelete} />
     </div>
   </div>
 );
@@ -273,8 +300,48 @@ const CodeCard = ({ code }) => (
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
   const [page, setPage] = useState(1);
-  const totalPages = Math.ceil(MOCK_CODES.length / PAGE_SIZE);
-  const paged = MOCK_CODES.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const [codes, setCodes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchDiscounts = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getAllDiscounts();
+      setCodes(res.data?.data ?? []);
+    } catch (err) {
+      setError(err?.response?.data?.message || "تعذر تحميل أكواد الخصم");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchDiscounts(); }, [fetchDiscounts]);
+
+  const handleToggleActive = async (discount) => {
+    // optimistic update
+    setCodes((prev) => prev.map((c) => (c.id === discount.id ? { ...c, isActive: !c.isActive } : c)));
+    try {
+      await updateDiscount(discount.id, { isActive: !discount.isActive });
+    } catch {
+      // rollback on failure
+      setCodes((prev) => prev.map((c) => (c.id === discount.id ? { ...c, isActive: discount.isActive } : c)));
+    }
+  };
+
+  const handleDelete = async (discount) => {
+    const prev = codes;
+    setCodes((c) => c.filter((x) => x.id !== discount.id));
+    try {
+      await deleteDiscount(discount.id);
+    } catch {
+      setCodes(prev); // rollback
+    }
+  };
+
+  const totalPages = Math.max(1, Math.ceil(codes.length / PAGE_SIZE));
+  const paged = codes.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="w-full max-w-full" dir="rtl">
@@ -295,54 +362,74 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
         )}
       </div>
 
-      {/* Desktop / tablet table */}
-      <div className="hidden sm:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right" style={{ minWidth: 680 }}>
-            <thead className="bg-[#F9FAFA] border-b border-gray-100">
-              <tr>
-                {["الكود", "الخصم", "الاستخدامات", "الحالة", ""].map((h, i) => (
-                  <th key={i} className="px-5 py-3 text-[12px] font-medium text-[#9CA3AF] whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {paged.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50/60 transition-colors">
-                  <td className="px-5 py-3">
-                    <CodeChip code={c.code} />
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <TypeIcon type={c.type} />
-                      <div>
-                        <p className="text-[13px] font-semibold text-[#1F2937] leading-tight">{c.discount}</p>
-                        <p className="text-[11px] text-[#9CA3AF] leading-tight mt-0.5">{c.type}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3"><UsageBar used={c.used} limit={c.limit} /></td>
-                  <td className="px-5 py-3"><StatusBadge status={c.status} /></td>
-                  <td className="px-5 py-3 text-left"><RowActions /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-[#9CA3AF] gap-2">
+          <Loader2 size={18} className="animate-spin" />
+          <span className="text-[13px]">جاري التحميل...</span>
         </div>
-      </div>
+      ) : error ? (
+        <div className="bg-white border border-gray-200 rounded-2xl py-14 px-4 text-center">
+          <p className="text-[14px] text-[#E0394C] mb-3">{error}</p>
+          <button onClick={fetchDiscounts} className="text-[13px] text-[#123C91] font-medium hover:underline">إعادة المحاولة</button>
+        </div>
+      ) : codes.length === 0 ? (
+        <div className="bg-white border border-gray-200 rounded-2xl py-14 px-4 text-center">
+          <p className="text-[14px] text-[#9CA3AF]">لا توجد أكواد خصم حالياً</p>
+        </div>
+      ) : (
+        <>
+          {/* Desktop / tablet table */}
+          <div className="hidden sm:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right" style={{ minWidth: 680 }}>
+                <thead className="bg-[#F9FAFA] border-b border-gray-100">
+                  <tr>
+                    {["الكود", "الخصم", "الاستخدامات", "الحالة", ""].map((h, i) => (
+                      <th key={i} className="px-5 py-3 text-[12px] font-medium text-[#9CA3AF] whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paged.map((c) => (
+                    <tr key={c.id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="px-5 py-3">
+                        <CodeChip code={c.code} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <TypeIcon type={c.type} />
+                          <div>
+                            <p className="text-[13px] font-semibold text-[#1F2937] leading-tight">{discountLabel(c)}</p>
+                            <p className="text-[11px] text-[#9CA3AF] leading-tight mt-0.5">{typeLabel(c.type)}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3"><UsageCount usedCount={c.usedCount} /></td>
+                      <td className="px-5 py-3"><StatusBadge status={c.isActive ? "نشط" : "موقوف"} /></td>
+                      <td className="px-5 py-3 text-left">
+                        <RowActions discount={c} onToggleActive={handleToggleActive} onDelete={handleDelete} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-      {/* Mobile cards */}
-      <div className="sm:hidden space-y-3">
-        {paged.map((c) => (
-          <CodeCard key={c.id} code={c} />
-        ))}
-      </div>
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-3">
+            {paged.map((c) => (
+              <CodeCard key={c.id} code={c} onToggleActive={handleToggleActive} onDelete={handleDelete} />
+            ))}
+          </div>
 
-      <Pagination page={page} total={MOCK_CODES.length} totalPages={totalPages} onChange={setPage} />
+          <Pagination page={page} total={codes.length} totalPages={totalPages} onChange={setPage} />
+        </>
+      )}
 
-      <AddCodeModal open={showAdd} onClose={onCloseAdd} />
+      <AddCodeModal open={showAdd} onClose={onCloseAdd} onCreated={fetchDiscounts} />
     </div>
   );
 };

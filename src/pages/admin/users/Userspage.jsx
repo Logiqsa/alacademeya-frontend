@@ -63,10 +63,10 @@ const UsersPage = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // استبعد أي مستخدم متعمله soft-delete من كل الحسابات والعرض
-  const activeUsers = users.filter((u) => !u.isDeleted);
+  // استبعد أي مستخدم متعمله soft-delete من الجدول والإحصائيات
+  const visibleUsers = users.filter((u) => !u.isDeleted);
 
-  const filtered = activeUsers.filter(
+  const filtered = visibleUsers.filter(
     (u) =>
       (u.name?.includes(search) || u.email?.includes(search)) &&
       (filterRole === "جميع المستخدمين" || u.role === filterRole) &&
@@ -83,15 +83,16 @@ const UsersPage = () => {
   const paginatedUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const stats = {
-    admins: activeUsers.filter((u) => u.role === "ولي أمر").length,
-    teachers: activeUsers.filter((u) => u.role === "معلم").length,
-    students: activeUsers.filter((u) => u.role === "طالب").length,
-    total: activeUsers.length,
+    admins: visibleUsers.filter((u) => u.role === "ولي أمر").length,
+    teachers: visibleUsers.filter((u) => u.role === "معلم").length,
+    students: visibleUsers.filter((u) => u.role === "طالب").length,
+    total: visibleUsers.length,
   };
 
   const handleView = (id) => navigate(`/admin/users/${id}`);
   const handleEdit = (id) => navigate(`/admin/users/${id}/edit`);
 
+  // تفعيل / إيقاف حساب (لليوزر النشط أو الموقوف)
   const handleToggleStatus = async (user) => {
     const willActivate = user.status === "موقوف" || user.status === "معلق";
     try {
@@ -99,7 +100,7 @@ const UsersPage = () => {
       setUsers((prev) =>
         prev.map((u) =>
           u.id === user.id
-            ? { ...u, isActive: willActivate, status: willActivate ? "نشط" : "موقوف" }
+            ? { ...u, isActive: willActivate, status: statusOf({ ...u, isActive: willActivate }) }
             : u
         )
       );
@@ -109,10 +110,32 @@ const UsersPage = () => {
     }
   };
 
+  // قبول طلب تسجيل (يوزر معلّق) - لازم نغيّر registrationStatus مش بس isActive
+  const handleApprove = async (user) => {
+    try {
+      await updateUser(user.id, { registrationStatus: "approved", isActive: true });
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id
+            ? {
+                ...u,
+                registrationStatus: "approved",
+                isActive: true,
+                status: statusOf({ ...u, registrationStatus: "approved", isActive: true }),
+              }
+            : u
+        )
+      );
+      toast.success("تم قبول الطلب وتفعيل الحساب");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "تعذر قبول الطلب");
+    }
+  };
+
+  // حذف (soft delete من السيرفر) - بيتشال من الجدول فورًا
   const handleDelete = async (id) => {
     try {
       await deleteUserApi(id);
-      // شيل المستخدم فورًا من القائمة (الجدول والـ stats بتتحدث تلقائيًا لإنهم بيقروا من نفس الـ state)
       setUsers((prev) => prev.filter((u) => u.id !== id));
       toast.success("تم حذف المستخدم");
     } catch (err) {
@@ -170,6 +193,7 @@ const UsersPage = () => {
               users={paginatedUsers}
               onView={handleView}
               onEdit={handleEdit}
+              onApprove={handleApprove}
               onToggleStatus={handleToggleStatus}
               onDelete={handleDelete}
             />

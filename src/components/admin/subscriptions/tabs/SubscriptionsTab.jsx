@@ -1,27 +1,20 @@
-import { useState } from "react";
-import { MoreVertical, ChevronRight, ChevronLeft } from "lucide-react";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_SUBS = Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  student: "محمد أحمد",
-  package: i % 3 === 0 ? "باقة المادة الواحدة" : i % 3 === 1 ? "باقة شاملة" : "باقة المادة الواحدة",
-  discount: i % 2 === 0 ? "--" : "20%",
-  status: i === 3 ? "منتهي" : i === 4 ? "موقوف" : "نشط",
-}));
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { MoreVertical, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
+import { getAllSubscriptions } from "../../../../services/authService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 6;
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
   const map = {
-    نشط:   "bg-[#00A63E26] text-[#00A63E]",
-    منتهي: "bg-[#FF8A0026] text-[#FF8A00]",
-    موقوف: "bg-red-100 text-red-500",
+    active:    "bg-[#00A63E26] text-[#00A63E]",
+    expired:   "bg-[#FF8A0026] text-[#FF8A00]",
+    suspended: "bg-red-100 text-red-500",
   };
+  const label = { active: "نشط", expired: "منتهي", suspended: "موقوف" }[status] ?? status;
   return (
     <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${map[status] ?? "bg-gray-100 text-gray-500"}`}>
-      {status}
+      {label}
     </span>
   );
 };
@@ -35,20 +28,22 @@ const RowActions = ({ align = "left" }) => {
         <MoreVertical size={17} />
       </button>
       {open && (
-        <ul
-          className={`absolute ${align === "left" ? "left-0" : "right-0"} z-30 mt-1 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden`}
-          onClick={() => setOpen(false)}
-        >
-          {[
-            { label: "عرض التفاصيل", cls: "text-[#374151]" },
-            { label: "إيقاف",         cls: "text-orange-500" },
-            { label: "حذف",           cls: "text-red-600" },
-          ].map(({ label, cls }) => (
-            <li key={label} className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] ${cls}`}>
-              {label}
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+          <ul
+            className={`absolute ${align === "left" ? "left-0" : "right-0"} z-30 mt-1 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden`}
+          >
+            {[
+              { label: "عرض التفاصيل", cls: "text-[#374151]" },
+              { label: "إيقاف",         cls: "text-orange-500" },
+              { label: "حذف",           cls: "text-red-600" },
+            ].map(({ label, cls }) => (
+              <li key={label} onClick={() => setOpen(false)} className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] ${cls}`}>
+                {label}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );
@@ -82,6 +77,10 @@ const SubCard = ({ s }) => (
       <RowActions align="left" />
     </div>
     <div className="flex items-center justify-between text-[13px]">
+      <span className="text-[#9CA3AF]">المادة</span>
+      <span className="text-[#575F69]">{s.subject}</span>
+    </div>
+    <div className="flex items-center justify-between text-[13px]">
       <span className="text-[#9CA3AF]">الباقة</span>
       <span className="text-[#575F69]">{s.package}</span>
     </div>
@@ -96,48 +95,119 @@ const SubCard = ({ s }) => (
   </div>
 );
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+// API بترجع "subscription" واحد فيه array "items" (مادة لكل item ممكن يكون بمعلم/باقة مختلفين).
+// بنفرد كل item كصف مستقل في الجدول عشان يطابق تصميم الـ UI الحالي.
+const flattenSubscriptions = (subscriptions) => {
+  const rows = [];
+  for (const sub of subscriptions) {
+    const studentName = sub.student?.user?.fullName ?? "--";
+    for (const item of sub.items ?? []) {
+      rows.push({
+        rowId: item._id ?? `${sub.id}-${item.subscription}`,
+        subscriptionId: sub.id,
+        student: studentName,
+        subject: item.subject?.name?.ar ?? item.subject?.name?.en ?? "--",
+        package: item.package?.name ?? "--",
+        discount: item.discount ? `${item.discount}%` : "--",
+        status: item.status ?? sub.status,
+      });
+    }
+  }
+  return rows;
+};
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const SubscriptionsTab = () => {
   const [page, setPage] = useState(1);
-  const totalPages = Math.ceil(MOCK_SUBS.length / PAGE_SIZE);
-  const paged = MOCK_SUBS.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchSubscriptions = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getAllSubscriptions();
+      setSubscriptions(res.data?.data ?? []);
+    } catch (err) {
+      setError(err?.response?.data?.message || "تعذر تحميل الاشتراكات");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchSubscriptions(); }, [fetchSubscriptions]);
+
+  const rows = useMemo(() => flattenSubscriptions(subscriptions), [subscriptions]);
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const paged = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-[#9CA3AF] gap-2">
+        <Loader2 size={18} className="animate-spin" />
+        <span className="text-[13px]">جاري التحميل...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-2xl py-14 px-4 text-center">
+        <p className="text-[14px] text-[#E0394C] mb-3">{error}</p>
+        <button onClick={fetchSubscriptions} className="text-[13px] text-[#123C91] font-medium hover:underline">إعادة المحاولة</button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-full">
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden" dir="rtl">
-        {/* Mobile: stacked cards */}
-        <div className="md:hidden divide-y divide-gray-100">
-          {paged.map((s) => (
-            <SubCard key={s.id} s={s} />
-          ))}
-        </div>
-
-        {/* Desktop/tablet: table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-right" style={{ minWidth: 600 }}>
-            <thead className="bg-[#F9FAFA] border-b border-gray-100">
-              <tr>
-                {["الطالب", "الباقة", "الخصم", "الحالة", "الإجراءات"].map((h) => (
-                  <th key={h} className="px-5 py-3.5 text-[13px] font-medium text-[#575F69] whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+        {rows.length === 0 ? (
+          <div className="py-14 px-4 text-center">
+            <p className="text-[14px] text-[#9CA3AF]">لا توجد اشتراكات حالياً</p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile: stacked cards */}
+            <div className="md:hidden divide-y divide-gray-100">
               {paged.map((s) => (
-                <tr key={s.id} className="hover:bg-gray-50/70 transition-colors">
-                  <td className="px-5 py-3.5 font-['Tajawal'] font-semibold text-[15px] text-[#1F2937] whitespace-nowrap">{s.student}</td>
-                  <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">{s.package}</td>
-                  <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">{s.discount}</td>
-                  <td className="px-5 py-3.5"><StatusBadge status={s.status} /></td>
-                  <td className="px-5 py-3.5"><RowActions align="left" /></td>
-                </tr>
+                <SubCard key={s.rowId} s={s} />
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+
+            {/* Desktop/tablet: table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-right" style={{ minWidth: 680 }}>
+                <thead className="bg-[#F9FAFA] border-b border-gray-100">
+                  <tr>
+                    {["الطالب", "المادة", "الباقة", "الخصم", "الحالة", "الإجراءات"].map((h) => (
+                      <th key={h} className="px-5 py-3.5 text-[13px] font-medium text-[#575F69] whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paged.map((s) => (
+                    <tr key={s.rowId} className="hover:bg-gray-50/70 transition-colors">
+                      <td className="px-5 py-3.5 font-['Tajawal'] font-semibold text-[15px] text-[#1F2937] whitespace-nowrap">{s.student}</td>
+                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">{s.subject}</td>
+                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">{s.package}</td>
+                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">{s.discount}</td>
+                      <td className="px-5 py-3.5"><StatusBadge status={s.status} /></td>
+                      <td className="px-5 py-3.5"><RowActions align="left" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
-      <Pagination page={page} total={MOCK_SUBS.length} totalPages={totalPages} onChange={setPage} />
+      {rows.length > 0 && (
+        <Pagination page={page} total={rows.length} totalPages={totalPages} onChange={setPage} />
+      )}
     </div>
   );
 };

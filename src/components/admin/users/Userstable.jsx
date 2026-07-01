@@ -175,12 +175,16 @@ const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete }) => {
 
   const items = [
     { key: "view", label: "عرض", Icon: Eye, onClick: () => onView?.(user) },
-    { key: "approve", label: "قبول الطلب", Icon: CheckCircle2, onClick: () => onApprove?.(user), tone: "text-[#123C91]" },
-    isSuspended || isPending
-      ? { key: "activate", label: "تفعيل", Icon: CheckCircle2, onClick: () => onToggleStatus?.(user), tone: "text-green-600" }
-      : { key: "suspend", label: "رفض", Icon: Ban, onClick: () => onToggleStatus?.(user), tone: "text-orange-500" },
-    { key: "delete", label: "حذف", Icon: Trash2, onClick: () => onDelete?.(user), tone: "text-red-600" },
   ];
+
+  if (isPending) {
+    items.push({ key: "approve", label: "قبول الطلب", Icon: CheckCircle2, onClick: () => onApprove?.(user), tone: "text-[#123C91]" });
+  } else if (isSuspended) {
+    items.push({ key: "activate", label: "تفعيل", Icon: CheckCircle2, onClick: () => onToggleStatus?.(user), tone: "text-green-600" });
+  } else {
+    items.push({ key: "suspend", label: "إيقاف", Icon: Ban, onClick: () => onToggleStatus?.(user), tone: "text-orange-500" });
+  }
+  items.push({ key: "delete", label: "حذف", Icon: Trash2, onClick: () => onDelete?.(user), tone: "text-red-600" });
 
   return (
     <div ref={ref} className="relative inline-block">
@@ -237,7 +241,7 @@ const MobileCard = ({ u, onView, onApprove, onToggleStatus, onDelete }) => (
 );
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-const UsersTable = ({ users = [], onView, onEdit, onToggleStatus, onDelete }) => {
+const UsersTable = ({ users = [], onView, onEdit, onApprove, onToggleStatus, onDelete }) => {
   const [detailsUser, setDetailsUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
   const [approveUser, setApproveUser] = useState(null);
@@ -329,7 +333,7 @@ const UsersTable = ({ users = [], onView, onEdit, onToggleStatus, onDelete }) =>
       <ConfirmDialog
         open={!!approveUser}
         onClose={() => setApproveUser(null)}
-        onConfirm={() => { onToggleStatus?.(approveUser); setApproveUser(null); }}
+        onConfirm={() => { onApprove?.(approveUser); setApproveUser(null); }}
         title="الموافقة على الطلب"
         message="هل تريد الموافقة على طلب تسجيل هذا المستخدم وتفعيل حسابه؟"
         confirmLabel="موافقة"
@@ -349,16 +353,16 @@ const UsersTable = ({ users = [], onView, onEdit, onToggleStatus, onDelete }) =>
         iconColor="bg-blue-100 text-blue-500"
       />
 
-      {/* 4. حظر المستخدم */}
+      {/* 4. إيقاف المستخدم */}
       <ConfirmDialog
         open={!!suspendUser}
         onClose={() => setSuspendUser(null)}
         onConfirm={() => { onToggleStatus?.(suspendUser); setSuspendUser(null); }}
-        title="رفض المستخدم"
-        message="هل تريد رفض هذا المستخدم وإيقاف حسابه؟"
-        confirmLabel="رفض"
-        confirmClass="bg-red-500 hover:bg-red-600"
-        iconColor="bg-red-100 text-red-500"
+        title="إيقاف المستخدم"
+        message="هل تريد إيقاف حساب هذا المستخدم؟"
+        confirmLabel="إيقاف"
+        confirmClass="bg-orange-500 hover:bg-orange-600"
+        iconColor="bg-orange-100 text-orange-500"
       />
 
       {/* 5. حذف المستخدم */}
