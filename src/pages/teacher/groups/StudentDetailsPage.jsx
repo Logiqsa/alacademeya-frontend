@@ -5,11 +5,22 @@ import StudentStatsCards from "../../../components/teacher/groups/students/Stude
 import StudentLessonFilters from "../../../components/teacher/groups/students/StudentLessonFilters";
 import StudentLessonsTable from "../../../components/teacher/groups/students/StudentLessonsTable";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-import { getClassroomStudents, getClassroomSessions } from "../../../services/authService";
+import {
+  getClassroomStudents,
+  getClassroomSessions,
+  getSessionAttendance,
+} from "../../../services/authService";
 
 const PAGE_SIZE = 5;
 
 const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
+
+// حالة حضور الطالب في الحصة → التسمية المعروضة في الجدول
+const ATTENDANCE_STATUS_LABELS = {
+  present: "حاضر",
+  absent: "غائب",
+  late: "متأخر",
+};
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const StudentDetailsPage = () => {
@@ -59,28 +70,54 @@ const StudentDetailsPage = () => {
       });
 
       // الحصص: من GET /classrooms/:groupId/sessions/
-      // ⚠️ TODO: شكل الـ response بتاع الـ endpoint ده لسه مش مؤكد عندي،
-      // وغير مؤكد لو فيه حضور/درجات لكل طالب على حدة جوّه كل session أو لأ.
       const sessionsRes = await getClassroomSessions(groupId);
       const rawSessions = sessionsRes.data?.data || [];
 
-      const mappedLessons = rawSessions.map((session, idx) => ({
-        id: session.id || session._id || idx,
-        title: session.title || resolveName(session.name) || "--",
-        date: session.date || session.startTime
-          ? new Date(session.date || session.startTime).toLocaleDateString("ar-EG", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          : "--",
-        // ⚠️ غير متوفرة في الـ response الحالي — TODO لحد ما يبقى عندنا endpoint لحضور/درجات الطالب لكل حصة
-        attendance: "--",
-        homeworkStatus: "--",
-        grade: "--",
-        gradeStatus: "--",
-        examGrade: "--",
-      }));
+      // ─── حضور الطالب ده تحديدًا في كل حصة — من GET /sessions/:id/attendance ───
+      // بنجيب سجل الحضور لكل حصة، وبندور جوّاه على سجل الطالب الحالي بالـ id بتاعه
+      const attendanceResults = await Promise.allSettled(
+        rawSessions.map((session) => getSessionAttendance(session.id))
+      );
+
+      const mappedLessons = rawSessions.map((session, idx) => {
+        let attendanceLabel = "--";
+
+        const attResult = attendanceResults[idx];
+        if (attResult.status === "fulfilled") {
+          const records = attResult.value.data?.data || [];
+          // sub-document الطالب فيه id مختلف عن studentId (اللي هو غالبًا user id)
+          // فبنقارن على المستويين: student.id و student.user.id
+          const myRecord = records.find(
+            (r) => r.student?.id === entry.id || r.student?.user?.id === studentId
+          );
+          if (myRecord) {
+            attendanceLabel = ATTENDANCE_STATUS_LABELS[myRecord.status] || myRecord.status || "--";
+          }
+        } else {
+          console.error(
+            `getSessionAttendance failed for session ${session.id}:`,
+            attResult.reason
+          );
+        }
+
+        return {
+          id: session.id || session._id || idx,
+          title: session.title || resolveName(session.name) || "--",
+          date: session.scheduledDate
+            ? new Date(session.scheduledDate).toLocaleDateString("ar-EG", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "--",
+          attendance: attendanceLabel,
+          // ⚠️ الواجب/الدرجة/الاختبار لسه مفيش endpoint ليهم — بيفضلوا "--" لحد ما يتضافوا
+          homeworkStatus: "--",
+          grade: "--",
+          gradeStatus: "--",
+          examGrade: "--",
+        };
+      });
 
       setLessons(mappedLessons);
     } catch (err) {
@@ -101,6 +138,10 @@ const StudentDetailsPage = () => {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedLessons = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // إحصائيات الحضور/الغياب الحقيقية — محسوبة من نتيجة كل الحصص بعد الربط بالـ attendance
+  const attendanceCount = lessons.filter((l) => l.attendance === "حاضر").length;
+  const absenceCount = lessons.filter((l) => l.attendance === "غائب").length;
 
   if (loading) {
     return (
@@ -137,14 +178,14 @@ const StudentDetailsPage = () => {
         </div>
 
         {/* Stats */}
-        {/* ⚠️ TODO: attendanceCount/absenceCount/homeworkDone/homeworkTotal لسه مش متوفرين في أي endpoint.
-            totalLessons بقى حقيقي (عدد الحصص الراجعة من sessions)، averageScore حقيقي كمان. */}
+        {/* ⚠️ TODO: homeworkDone/homeworkTotal لسه مش متوفرين في أي endpoint.
+            totalLessons و attendanceCount و absenceCount بقوا حقيقيين دلوقتي. */}
         <div className="mb-6">
           <StudentStatsCards
             student={{
               totalLessons: lessons.length,
-              attendanceCount: "--",
-              absenceCount: "--",
+              attendanceCount,
+              absenceCount,
               homeworkDone: "--",
               homeworkTotal: "--",
             }}
