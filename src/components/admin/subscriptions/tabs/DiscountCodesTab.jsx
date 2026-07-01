@@ -1,24 +1,24 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   MoreVertical, X, ChevronDown, ChevronRight, ChevronLeft,
   Percent, Banknote, Copy, Check, Plus, TicketPercent, Loader2,
+  AlertTriangle, CheckCircle2, XCircle, PauseCircle, PlayCircle, Trash2,
 } from "lucide-react";
 import { getAllDiscounts, createDiscount, updateDiscount, deleteDiscount } from "../../../../services/authService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 8;
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
-// isActive=true -> نشط | isActive=false -> موقوف
-// (لا يوجد حقل انتهاء/حد أقصى في الـ response الحالي، فحالة "منتهي" اتشالت)
 const STATUS_STYLES = {
-  نشط: { dot: "bg-[#15A862]", text: "text-[#15A862]", bg: "bg-[#15A862]/10" },
-  موقوف: { dot: "bg-[#E0394C]", text: "text-[#E0394C]", bg: "bg-[#E0394C]/10" },
+  نشط: { dot: "bg-[#15A862]", text: "text-[#15A862]", bg: "bg-[#15A862]/10", ring: "ring-[#15A862]/20" },
+  موقوف: { dot: "bg-[#E0394C]", text: "text-[#E0394C]", bg: "bg-[#E0394C]/10", ring: "ring-[#E0394C]/20" },
 };
 
 const StatusBadge = ({ status }) => {
-  const s = STATUS_STYLES[status] ?? { dot: "bg-gray-400", text: "text-gray-500", bg: "bg-gray-100" };
+  const s = STATUS_STYLES[status] ?? { dot: "bg-gray-400", text: "text-gray-500", bg: "bg-gray-100", ring: "ring-gray-200" };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${s.bg} ${s.text}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ring-1 ${s.bg} ${s.text} ${s.ring}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
       {status}
     </span>
@@ -26,15 +26,14 @@ const StatusBadge = ({ status }) => {
 };
 
 const TypeIcon = ({ type }) => (
-  <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg shrink-0 ${type === "percentage" ? "bg-[#123C91]/10 text-[#123C91]" : "bg-[#0E7C66]/10 text-[#0E7C66]"}`}>
-    {type === "percentage" ? <Percent size={13} strokeWidth={2.4} /> : <Banknote size={13} strokeWidth={2.4} />}
+  <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${type === "percentage" ? "bg-[#123C91]/10 text-[#123C91]" : "bg-[#0E7C66]/10 text-[#0E7C66]"}`}>
+    {type === "percentage" ? <Percent size={14} strokeWidth={2.4} /> : <Banknote size={14} strokeWidth={2.4} />}
   </span>
 );
 
 const typeLabel = (type) => (type === "percentage" ? "نسبة مئوية" : "مبلغ ثابت");
 const discountLabel = (d) => (d.type === "percentage" ? `${d.value}%` : `${d.value} جنيه`);
 
-// ─── Usage (no limit field in API, so just show raw usedCount) ────────────────
 const UsageCount = ({ usedCount }) => (
   <span className="text-[13px] tabular-nums text-[#575F69]" dir="ltr">
     استُخدم {usedCount ?? 0} مرة
@@ -46,7 +45,7 @@ const CodeChip = ({ code }) => {
   const [copied, setCopied] = useState(false);
   const handleCopy = (e) => {
     e.stopPropagation();
-    navigator.clipboard?.writeText(code).catch(() => { });
+    navigator.clipboard?.writeText(code).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 1400);
   };
@@ -67,40 +66,150 @@ const CodeChip = ({ code }) => {
   );
 };
 
-// ─── Row Actions ──────────────────────────────────────────────────────────────
-const RowActions = ({ discount, onToggleActive, onDelete }) => {
-  const [open, setOpen] = useState(false);
+// ─── Toast ────────────────────────────────────────────────────────────────────
+const Toast = ({ toast, onDismiss }) => {
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(onDismiss, 3200);
+    return () => clearTimeout(t);
+  }, [toast, onDismiss]);
+
+  if (!toast) return null;
+  const isError = toast.type === "error";
   return (
-    <div className="relative inline-block">
-      <button
-        onClick={() => setOpen((p) => !p)}
-        className="p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors"
-      >
-        <MoreVertical size={17} />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-          <ul
-            dir="rtl"
-            className="absolute right-0 z-30 mt-1 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
-          >
-            <li
-              onClick={() => { setOpen(false); onToggleActive(discount); }}
-              className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E8821C]"
-            >
-              {discount.isActive ? "إيقاف" : "تفعيل"}
-            </li>
-            <li
-              onClick={() => { setOpen(false); onDelete(discount); }}
-              className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E0394C]"
-            >
-              حذف
-            </li>
-          </ul>
-        </>
-      )}
+    <div
+      dir="rtl"
+      className={`fixed z-[100] bottom-5 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-[13px] font-medium max-w-[92vw] sm:max-w-sm
+        ${isError ? "bg-white border-[#E0394C]/30 text-[#B4283A]" : "bg-white border-[#15A862]/30 text-[#0E7C51]"}`}
+    >
+      {isError ? <XCircle size={17} className="shrink-0" /> : <CheckCircle2 size={17} className="shrink-0" />}
+      <span className="leading-snug">{toast.message}</span>
     </div>
+  );
+};
+
+// ─── Confirm Dialog (used for delete) ─────────────────────────────────────────
+const ConfirmDialog = ({ open, title, description, confirmLabel, danger, loading, onConfirm, onCancel }) => {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0B1220]/50 backdrop-blur-[2px] px-4"
+      onClick={(e) => { if (e.target === e.currentTarget && !loading) onCancel(); }}
+    >
+      <div dir="rtl" className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center">
+        <div className={`mx-auto mb-4 w-12 h-12 rounded-full flex items-center justify-center ${danger ? "bg-[#E0394C]/10 text-[#E0394C]" : "bg-[#123C91]/10 text-[#123C91]"}`}>
+          <AlertTriangle size={22} />
+        </div>
+        <h3 className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937] mb-1.5">{title}</h3>
+        <p className="text-[13px] text-[#6B7280] leading-relaxed mb-6">{description}</p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            className="flex-1 py-2.5 border border-[#E5E7EB] rounded-xl text-[#374151] font-medium text-[13px] hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            إلغاء
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className={`flex-1 py-2.5 rounded-xl text-white font-medium text-[13px] transition-colors flex items-center justify-center gap-2 disabled:opacity-70
+              ${danger ? "bg-[#E0394C] hover:bg-[#c62e3f]" : "bg-[#123C91] hover:bg-[#0f3280]"}`}
+          >
+            {loading && <Loader2 size={14} className="animate-spin" />}
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Row Actions ──────────────────────────────────────────────────────────────
+// The menu is rendered through a portal into document.body and positioned with
+// `position: fixed`, computed from the trigger button's bounding rect. This is
+// what stops it from being clipped or dragged around when the table (or the
+// mobile card list) scrolls horizontally/vertically — an absolutely-positioned
+// menu nested inside an `overflow-x-auto` container gets cut off at the
+// container's edge and visually "jumps" as you scroll; a portal sidesteps that
+// entirely since it lives outside the scrolling ancestor.
+const RowActions = ({ discount, busy, onToggleActive, onDeleteRequest }) => {
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const computeCoords = useCallback(() => {
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setCoords({
+      top: rect.bottom + 6,
+      right: Math.max(8, window.innerWidth - rect.right),
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (open) computeCoords();
+  }, [open, computeCoords]);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target) &&
+        btnRef.current && !btnRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    const reposition = () => computeCoords();
+    document.addEventListener("mousedown", close);
+    // capture=true so this also fires for scrolls inside the table's
+    // overflow-x-auto container, not just window-level scrolls
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, computeCoords]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={() => setOpen((p) => !p)}
+        disabled={busy}
+        className="p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors disabled:opacity-40"
+      >
+        {busy ? <Loader2 size={17} className="animate-spin" /> : <MoreVertical size={17} />}
+      </button>
+      {open && createPortal(
+        <ul
+          ref={menuRef}
+          dir="rtl"
+          style={{ position: "fixed", top: coords.top, right: coords.right }}
+          className="z-[70] w-40 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
+        >
+          <li
+            onClick={() => { setOpen(false); onToggleActive(discount); }}
+            className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E8821C] flex items-center gap-2 justify-end"
+          >
+            {discount.isActive ? "إيقاف" : "تفعيل"}
+            {discount.isActive ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
+          </li>
+          <li
+            onClick={() => { setOpen(false); onDeleteRequest(discount); }}
+            className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E0394C] flex items-center gap-2 justify-end"
+          >
+            حذف
+            <Trash2 size={14} />
+          </li>
+        </ul>,
+        document.body
+      )}
+    </>
   );
 };
 
@@ -270,7 +379,7 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
 );
 
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
-const CodeCard = ({ code, onToggleActive, onDelete }) => (
+const CodeCard = ({ code, busy, onToggleActive, onDeleteRequest }) => (
   <div dir="rtl" className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
     <div className="flex items-center justify-between gap-2 mb-3.5">
       <CodeChip code={code.code} />
@@ -292,7 +401,7 @@ const CodeCard = ({ code, onToggleActive, onDelete }) => (
     </div>
 
     <div className="flex justify-end pt-2.5 border-t border-gray-100">
-      <RowActions discount={code} onToggleActive={onToggleActive} onDelete={onDelete} />
+      <RowActions discount={code} busy={busy} onToggleActive={onToggleActive} onDeleteRequest={onDeleteRequest} />
     </div>
   </div>
 );
@@ -303,6 +412,14 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
   const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // id -> "toggle" | "delete" while a row action is in flight
+  const [busyId, setBusyId] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [confirmTarget, setConfirmTarget] = useState(null); // discount pending delete confirmation
+  const [deleting, setDeleting] = useState(false);
+
+  const showToast = (type, message) => setToast({ type, message });
 
   const fetchDiscounts = useCallback(async () => {
     setLoading(true);
@@ -319,24 +436,55 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
 
   useEffect(() => { fetchDiscounts(); }, [fetchDiscounts]);
 
+  // ── Toggle active / paused ──────────────────────────────────────────────
   const handleToggleActive = async (discount) => {
+    if (busyId) return;
+    setBusyId(discount.id);
+    const nextActive = !discount.isActive;
+
     // optimistic update
-    setCodes((prev) => prev.map((c) => (c.id === discount.id ? { ...c, isActive: !c.isActive } : c)));
+    setCodes((prev) => prev.map((c) => (c.id === discount.id ? { ...c, isActive: nextActive } : c)));
+
     try {
-      await updateDiscount(discount.id, { isActive: !discount.isActive });
-    } catch {
+      await updateDiscount(discount.id, { isActive: nextActive });
+      showToast("success", nextActive ? `تم تفعيل الكود "${discount.code}"` : `تم إيقاف الكود "${discount.code}"`);
+    } catch (err) {
       // rollback on failure
       setCodes((prev) => prev.map((c) => (c.id === discount.id ? { ...c, isActive: discount.isActive } : c)));
+      showToast("error", err?.response?.data?.message || "تعذر تحديث حالة الكود، حاول مرة أخرى");
+    } finally {
+      setBusyId(null);
     }
   };
 
-  const handleDelete = async (discount) => {
-    const prev = codes;
+  // ── Delete (with confirmation) ──────────────────────────────────────────
+  const handleDeleteRequest = (discount) => setConfirmTarget(discount);
+
+  const handleDeleteConfirm = async () => {
+    if (!confirmTarget) return;
+    const discount = confirmTarget;
+    setDeleting(true);
+    setBusyId(discount.id);
+
+    const prevCodes = codes;
     setCodes((c) => c.filter((x) => x.id !== discount.id));
+
     try {
       await deleteDiscount(discount.id);
-    } catch {
-      setCodes(prev); // rollback
+      showToast("success", `تم حذف الكود "${discount.code}"`);
+      setConfirmTarget(null);
+      // adjust page if last item on page was removed
+      setPage((p) => {
+        const remaining = prevCodes.length - 1;
+        const maxPage = Math.max(1, Math.ceil(remaining / PAGE_SIZE));
+        return Math.min(p, maxPage);
+      });
+    } catch (err) {
+      setCodes(prevCodes); // rollback
+      showToast("error", err?.response?.data?.message || "تعذر حذف الكود، حاول مرة أخرى");
+    } finally {
+      setDeleting(false);
+      setBusyId(null);
     }
   };
 
@@ -381,11 +529,11 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
           {/* Desktop / tablet table */}
           <div className="hidden sm:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-right" style={{ minWidth: 680 }}>
+              <table className="w-full text-right" style={{ minWidth: 720 }}>
                 <thead className="bg-[#F9FAFA] border-b border-gray-100">
                   <tr>
                     {["الكود", "الخصم", "الاستخدامات", "الحالة", ""].map((h, i) => (
-                      <th key={i} className="px-5 py-3 text-[12px] font-medium text-[#9CA3AF] whitespace-nowrap">
+                      <th key={i} className="px-5 py-3.5 text-[12px] font-semibold text-[#8C9198] whitespace-nowrap tracking-wide">
                         {h}
                       </th>
                     ))}
@@ -393,11 +541,11 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {paged.map((c) => (
-                    <tr key={c.id} className="hover:bg-gray-50/60 transition-colors">
-                      <td className="px-5 py-3">
+                    <tr key={c.id} className={`transition-colors ${busyId === c.id ? "bg-[#F9FAFA]" : "hover:bg-gray-50/60"}`}>
+                      <td className="px-5 py-3.5">
                         <CodeChip code={c.code} />
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
                           <TypeIcon type={c.type} />
                           <div>
@@ -406,10 +554,15 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3"><UsageCount usedCount={c.usedCount} /></td>
-                      <td className="px-5 py-3"><StatusBadge status={c.isActive ? "نشط" : "موقوف"} /></td>
-                      <td className="px-5 py-3 text-left">
-                        <RowActions discount={c} onToggleActive={handleToggleActive} onDelete={handleDelete} />
+                      <td className="px-5 py-3.5"><UsageCount usedCount={c.usedCount} /></td>
+                      <td className="px-5 py-3.5"><StatusBadge status={c.isActive ? "نشط" : "موقوف"} /></td>
+                      <td className="px-5 py-3.5 text-right">
+                        <RowActions
+                          discount={c}
+                          busy={busyId === c.id}
+                          onToggleActive={handleToggleActive}
+                          onDeleteRequest={handleDeleteRequest}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -421,7 +574,13 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
           {/* Mobile cards */}
           <div className="sm:hidden space-y-3">
             {paged.map((c) => (
-              <CodeCard key={c.id} code={c} onToggleActive={handleToggleActive} onDelete={handleDelete} />
+              <CodeCard
+                key={c.id}
+                code={c}
+                busy={busyId === c.id}
+                onToggleActive={handleToggleActive}
+                onDeleteRequest={handleDeleteRequest}
+              />
             ))}
           </div>
 
@@ -430,6 +589,19 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
       )}
 
       <AddCodeModal open={showAdd} onClose={onCloseAdd} onCreated={fetchDiscounts} />
+
+      <ConfirmDialog
+        open={!!confirmTarget}
+        title="حذف كود الخصم"
+        description={confirmTarget ? `هل أنت متأكد من حذف الكود "${confirmTarget.code}"؟ لا يمكن التراجع عن هذا الإجراء.` : ""}
+        confirmLabel="حذف نهائي"
+        danger
+        loading={deleting}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => !deleting && setConfirmTarget(null)}
+      />
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   );
 };
