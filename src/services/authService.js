@@ -300,3 +300,17 @@ export const createClassroomSession = (formData) =>
   API.post('/sessions/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+
+
+
+  export const getSubject = (id) =>
+  API.get(`/subjects/${id}`);
+
+export const createSubject = (payload) =>
+  API.post('/subjects', payload);
+
+export const updateSubject = (id, payload) =>
+  API.patch(`/subjects/${id}`, payload);
+
+export const deleteSubject = (id) =>
+  API.delete(`/subjects/${id}`);
