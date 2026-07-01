@@ -48,12 +48,24 @@ const timeAgo = (dateValue) => {
 };
 
 // بيوحّد شكل الإشعار مهما كان اسم الحقل جاي من الباك إند (title/message/body)
-const normalizeNotification = (n) => ({
-  id: n.id ?? n._id,
-  title: n.title ?? n.message ?? n.body ?? n.content ?? "إشعار جديد",
-  time: timeAgo(n.createdAt ?? n.date ?? n.timestamp),
-  read: n.read ?? n.isRead ?? false,
-});
+const normalizeNotification = (n) => {
+  // Extract the raw title field
+  const rawTitle = n.title ?? n.message ?? n.body ?? n.content ?? "إشعار جديد";
+
+  // Check if it's an object and has translation keys
+  let displayTitle = rawTitle;
+  if (typeof rawTitle === 'object' && rawTitle !== null) {
+    // Priority: 'ar' (since your UI is RTL), then 'en'
+    displayTitle = rawTitle.ar || rawTitle.en || "إشعار جديد";
+  }
+
+  return {
+    id: n.id ?? n._id,
+    title: displayTitle, // Now this is guaranteed to be a string
+    time: timeAgo(n.createdAt ?? n.date ?? n.timestamp),
+    read: n.read ?? n.isRead ?? false,
+  };
+};
 
 /* ------------------------------------------------------------------ */
 /* Component                                                            */

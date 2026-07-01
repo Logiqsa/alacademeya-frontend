@@ -1,36 +1,100 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 
 import AssignmentStatsBar from "../../../components/teacher/assignments/AssignmentStatsBar";
 import AssignmentFilters from "../../../components/teacher/assignments/AssignmentFilters";
 import AssignmentsTable from "../../../components/teacher/assignments/AssignmentsTable";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_ASSIGNMENTS = [
-  { id: 1, title: "حل المعادلات", group: "الرياضيات A", lesson: "المعادلات التربيعية", dueDate: "2026 يونيو 21", submitted: 24, totalStudents: 28, status: "نشط", correctionStatus: "قيد التصحيح" },
-  { id: 2, title: "مسائل تطبيقية", group: "الرياضيات A", lesson: "الهندسة", dueDate: "2026 يونيو 21", submitted: 28, totalStudents: 28, status: "منتهي", correctionStatus: "تم التصحيح" },
-  { id: 3, title: "حل المعادلات", group: "الرياضيات C", lesson: "الجبر", dueDate: "2026 يونيو 21", submitted: 28, totalStudents: 28, status: "منتهي", correctionStatus: "لم يبدأ التصحيح" },
-  { id: 4, title: "مراجعة شاملة", group: "الرياضيات A", lesson: "--", dueDate: "2026 يونيو 21", submitted: 24, totalStudents: 28, status: "منتهي", correctionStatus: "قيد التصحيح" },
-  { id: 5, title: "حل المعادلات", group: "الرياضيات B", lesson: "المعادلات التربيعية", dueDate: "2026 يونيو 21", submitted: 24, totalStudents: 28, status: "نشط", correctionStatus: "لم يبدأ التصحيح" },
-  { id: 6, title: "مسائل تطبيقية", group: "الرياضيات C", lesson: "المعادلات التربيعية_2", dueDate: "2026 يونيو 21", submitted: 20, totalStudents: 28, status: "منتهي", correctionStatus: "تم التصحيح" },
-];
+import {
+  getMyClassrooms,
+  getAssignmentsByClassroom,
+  getClassroomSessions,
+} from "../../../services/authService"; // عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 6;
 
+const mapStatus = (status) => (status === "active" ? "نشط" : "منتهي");
+
+const formatDate = (iso) =>
+  iso
+    ? new Date(iso).toLocaleDateString("ar-EG", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "-";
+
 const AssignmentsPage = () => {
   const navigate = useNavigate();
+
+  const [assignments, setAssignments] = useState([]);
+  const [groupNames, setGroupNames] = useState([]); // لأسماء المجموعات في فلتر الـ dropdown
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
+
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState("جميع المجموعات");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
-  const filtered = MOCK_ASSIGNMENTS.filter(
+  // بيجيب كل مجموعات المعلّم، وبعدين واجبات وحصص كل مجموعة، وبيدمجهم في قايمة واحدة.
+  // ملاحظة: submitted / totalStudents / correctionStatus لسه مش راجعين من الـ API
+  // (محتاجين endpoint تسليمات لكل واجب)، فسايبهم بقيم افتراضية حاليًا.
+  const fetchAllAssignments = useCallback(async () => {
+    try {
+      setLoading(true);
+      setErrorMsg("");
+
+      const classroomsRes = await getMyClassrooms();
+      const classrooms = classroomsRes.data?.data || [];
+      setGroupNames(classrooms.map((c) => c.name));
+
+      const perClassroom = await Promise.all(
+        classrooms.map(async (classroom) => {
+          const [assignmentsRes, sessionsRes] = await Promise.all([
+            getAssignmentsByClassroom(classroom.id),
+            getClassroomSessions(classroom.id).catch(() => ({ data: { data: [] } })),
+          ]);
+
+          const sessionsById = {};
+          (sessionsRes.data?.data || []).forEach((s) => {
+            sessionsById[s.id] = s.title;
+          });
+
+          return (assignmentsRes.data?.data || []).map((a) => ({
+            id: a.id,
+            title: a.title,
+            group: classroom.name,
+            lesson: sessionsById[a.session] || "-",
+            dueDate: formatDate(a.dueDate),
+            submitted: a.submittedCount ?? 0, // TODO: يحتاج endpoint التسليمات
+            totalStudents: a.totalStudents ?? classroom.studentsCount ?? 0,
+            status: mapStatus(a.status),
+            correctionStatus: a.correctionStatus ?? "لم يبدأ التصحيح", // TODO
+          }));
+        })
+      );
+
+      setAssignments(perClassroom.flat());
+    } catch (err) {
+      setErrorMsg(
+        err?.response?.data?.message || "حدث خطأ أثناء تحميل الواجبات"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAllAssignments();
+  }, [fetchAllAssignments]);
+
+  const filtered = assignments.filter(
     (a) =>
       a.title.includes(search) &&
-      (filterGroup === "جميع المجموعات" || a.group === filterGroup.replace("مجموعة ", "")) &&
+      (filterGroup === "جميع المجموعات" || a.group === filterGroup) &&
       (filterStatus === "جميع الحالات" || a.status === filterStatus)
   );
 
@@ -38,10 +102,10 @@ const AssignmentsPage = () => {
   const paginatedAssignments = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const stats = {
-    pendingCorrection: MOCK_ASSIGNMENTS.filter((a) => a.correctionStatus === "قيد التصحيح").length,
-    corrected: MOCK_ASSIGNMENTS.filter((a) => a.correctionStatus === "تم التصحيح").length,
-    active: MOCK_ASSIGNMENTS.filter((a) => a.status === "نشط").length,
-    total: MOCK_ASSIGNMENTS.length,
+    pendingCorrection: assignments.filter((a) => a.correctionStatus === "قيد التصحيح").length,
+    corrected: assignments.filter((a) => a.correctionStatus === "تم التصحيح").length,
+    active: assignments.filter((a) => a.status === "نشط").length,
+    total: assignments.length,
   };
 
   return (
@@ -64,6 +128,12 @@ const AssignmentsPage = () => {
           </button>
         </div>
 
+        {errorMsg && (
+          <div className="mb-4 bg-[#FFE9E9] text-[#D32F2F] text-sm rounded-lg px-4 py-3">
+            {errorMsg}
+          </div>
+        )}
+
         {/* Stats */}
         <div className="mb-6">
           <AssignmentStatsBar {...stats} />
@@ -82,6 +152,7 @@ const AssignmentsPage = () => {
               setFilterGroup(v);
               setPage(1);
             }}
+            groupOptions={["جميع المجموعات", ...groupNames]}
             filterStatus={filterStatus}
             onFilterStatusChange={(v) => {
               setFilterStatus(v);
@@ -92,10 +163,17 @@ const AssignmentsPage = () => {
 
         {/* Table */}
         <div className="mt-4">
-          <AssignmentsTable
-            assignments={paginatedAssignments}
-            onView={(id) => navigate(`/teacher/assignments/${id}`)}
-          />
+          {loading ? (
+            <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 flex items-center justify-center gap-2 text-[#575F69]">
+              <Loader2 size={18} className="animate-spin" />
+              جارٍ تحميل الواجبات...
+            </div>
+          ) : (
+            <AssignmentsTable
+              assignments={paginatedAssignments}
+              onView={(id) => navigate(`/teacher/assignments/${id}`)}
+            />
+          )}
         </div>
 
         {/* Pagination */}

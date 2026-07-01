@@ -1,43 +1,86 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import AssignmentDetailsStatsCards from "../../../components/teacher/assignments/AssignmentDetailsStatsCards";
 import AssignmentDetailsFilters from "../../../components/teacher/assignments/AssignmentDetailsFilters";
 import StudentSubmissionsTable from "../../../components/teacher/assignments/StudentSubmissionsTable";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_ASSIGNMENT = {
-  id: 1,
-  title: "حل المعادلات",
-  subtitle: "إدارة ومتابعة واجبات الطلاب وتصحيحها.",
-  stats: {
-    pendingCorrection: 2,
-    corrected: 22,
-    totalSubmissions: 24,
-  },
-  students: [
-    { id: 1, name: "ريم سعد", initial: "ر", submitted: true, submittedCount: "18/20", correctionStatus: "تم التصحيح" },
-    { id: 2, name: "محمد احمد", initial: "م", submitted: true, submittedCount: "15/20", correctionStatus: "تم التصحيح" },
-    { id: 3, name: "عبدالحميد محمد", initial: "ع", submitted: true, submittedCount: "—", correctionStatus: "قيد التصحيح" },
-    { id: 4, name: "صلاح علي", initial: "ص", submitted: true, submittedCount: "—", correctionStatus: "قيد التصحيح" },
-    { id: 5, name: "شهد عادل", initial: "ش", submitted: true, submittedCount: "—", correctionStatus: "قيد التصحيح" },
-    { id: 6, name: "سمير السيد", initial: "س", submitted: false },
-    { id: 7, name: "ملك محمد", initial: "م", submitted: false },
-  ],
-};
+import { getAssignment } from "../../../services/authService"; // عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 5;
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// TODO: GET /assignments/:id بيرجع بيانات الواجب نفسه بس مش بيرجع تسليمات
+// الطلاب ولا إحصائيات التصحيح. لما يتوفر endpoint زي
+// GET /assignments/:id/submissions حط استدعاؤه هنا واستبدل students/stats.
+const mapAssignmentDetails = (a) => ({
+  id: a.id,
+  title: a.title,
+  subtitle: a.description || "إدارة ومتابعة واجبات الطلاب وتصحيحها.",
+  dueDate: a.dueDate,
+  totalScore: a.totalScore,
+  attachments: a.attachments || [],
+  stats: {
+    pendingCorrection: 0, // TODO: من endpoint التسليمات
+    corrected: 0, // TODO: من endpoint التسليمات
+    totalSubmissions: 0, // TODO: من endpoint التسليمات
+  },
+  students: [], // TODO: من endpoint التسليمات
+});
+
 const AssignmentDetailsPage = () => {
   const { assignmentId } = useParams();
+
+  const [assignment, setAssignment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
+
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الطلاب");
   const [page, setPage] = useState(1);
 
-  // In production, fetch the assignment by `assignmentId` here.
-  const assignment = MOCK_ASSIGNMENT;
+  const fetchAssignment = useCallback(async () => {
+    if (!assignmentId) return;
+    try {
+      setLoading(true);
+      setErrorMsg("");
+      const res = await getAssignment(assignmentId);
+      setAssignment(mapAssignmentDetails(res.data?.data));
+    } catch (err) {
+      setErrorMsg(
+        err?.response?.data?.message || "حدث خطأ أثناء تحميل بيانات الواجب"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [assignmentId]);
+
+  useEffect(() => {
+    fetchAssignment();
+  }, [fetchAssignment]);
+
+  if (loading) {
+    return (
+      <TeacherLayout>
+        <div className="w-full p-2 flex items-center justify-center gap-2 text-[#575F69] py-16">
+          <Loader2 size={18} className="animate-spin" />
+          جارٍ تحميل بيانات الواجب...
+        </div>
+      </TeacherLayout>
+    );
+  }
+
+  if (errorMsg || !assignment) {
+    return (
+      <TeacherLayout>
+        <div className="w-full p-2" dir="rtl">
+          <div className="bg-[#FFE9E9] text-[#D32F2F] text-sm rounded-lg px-4 py-3">
+            {errorMsg || "لم يتم العثور على الواجب"}
+          </div>
+        </div>
+      </TeacherLayout>
+    );
+  }
 
   const filtered = assignment.students.filter((s) => {
     const matchesSearch = s.name.includes(search);
@@ -85,8 +128,8 @@ const AssignmentDetailsPage = () => {
         <div className="mt-4">
           <StudentSubmissionsTable
             students={paginatedStudents}
-            onAction={(student) =>
-              console.log("correct/edit submission for", student.id, "in assignment", assignmentId)
+            onAction={(payload) =>
+              console.log("correct/edit submission", payload, "in assignment", assignmentId)
             }
           />
         </div>

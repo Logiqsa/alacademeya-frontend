@@ -12,8 +12,8 @@ const Welcome = ({ hasChildren = false }) => {
 
   const { user } = useContext(AuthContext);
 
-  const firstName = user?.fullName?.trim()?.split(" ")[0] || "";
- 
+const nameToUse = user?.fullName?.ar || user?.fullName?.en || "";
+  const firstName = nameToUse.trim().split(" ")[0] || ""; 
 
   return (
     <div className="flex flex-col gap-6 w-full">

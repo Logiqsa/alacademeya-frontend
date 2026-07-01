@@ -1,20 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Upload, Settings2, FileText, Calendar, Clock } from "lucide-react";
+import { X, Upload, Settings2, FileText, Calendar, Clock, Loader2 } from "lucide-react";
 import TeacherLayout from "../layout/TeacherLayout";
-
-// ─── Demo data ────────────────────────────────────────────────────────────────
-const GROUPS = [
-  { id: "g1", name: "الرياضيات A" },
-  { id: "g2", name: "الرياضيات B" },
-  { id: "g3", name: "الفيزياء C" },
-];
-
-const LESSONS = [
-  { id: "l1", title: "المعادلات التربيعية" },
-  { id: "l2", title: "التفاضل والتكامل" },
-  { id: "l3", title: "المصفوفات" },
-];
+import { getMyClassrooms, getClassroomSessions, createAssignment } from "../../../services/authService"; // عدّل المسار حسب مكان api.js عندك
 
 // ─── Reusable primitives ──────────────────────────────────────────────────────
 const SectionHeader = ({ icon: Icon, title }) => (
@@ -100,7 +88,33 @@ const AddAssignmentPage = ({ onSubmit }) => {
     files: [],
   });
 
+  const [groups, setGroups] = useState([]);
+  const [lessons, setLessons] = useState([]);
+  const [loadingLessons, setLoadingLessons] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
+
+  // جلب مجموعات (فصول) المعلّم عند فتح الصفحة
+  useEffect(() => {
+    getMyClassrooms()
+      .then((res) => setGroups(res.data?.data || []))
+      .catch(() => setErrorMsg("تعذّر تحميل قائمة المجموعات"));
+  }, []);
+
+  // جلب حصص المجموعة المختارة كل ما groupId يتغيّر
+  useEffect(() => {
+    if (!form.groupId) {
+      setLessons([]);
+      return;
+    }
+    setLoadingLessons(true);
+    getClassroomSessions(form.groupId)
+      .then((res) => setLessons(res.data?.data || []))
+      .catch(() => setLessons([]))
+      .finally(() => setLoadingLessons(false));
+  }, [form.groupId]);
 
   const handleFiles = (e) => {
     const picked = Array.from(e.target.files);
@@ -113,14 +127,43 @@ const AddAssignmentPage = ({ onSubmit }) => {
     set("files", [...form.files, ...dropped]);
   };
 
-  const handleSubmit = () => {
-    if (!form.title || !form.groupId || !form.deadline) return;
-    onSubmit?.(form);
-    navigate(-1);
+  const handleSubmit = async () => {
+    setErrorMsg("");
+
+    if (!form.title || !form.groupId || !form.deadline) {
+      setErrorMsg("من فضلك أكمل عنوان الواجب، المجموعة، وتاريخ التسليم");
+      return;
+    }
+
+    // دمج التاريخ والوقت في ISO string زي ما الـ API بيتوقع (dueDate)
+    const time = form.deadlineTime || "23:59";
+    const dueDateISO = new Date(`${form.deadline}T${time}`).toISOString();
+
+    const formData = new FormData();
+    formData.append("classroom", form.groupId);
+    if (form.lessonId) formData.append("session", form.lessonId);
+    formData.append("title", form.title);
+    if (form.description) formData.append("description", form.description);
+    formData.append("dueDate", dueDateISO);
+    formData.append("totalScore", form.totalGrade);
+    form.files.forEach((file) => formData.append("attachments", file));
+
+    try {
+      setSubmitting(true);
+      const res = await createAssignment(formData);
+      onSubmit?.(res.data?.data);
+      navigate(-1);
+    } catch (err) {
+      setErrorMsg(
+        err?.response?.data?.message || "حدث خطأ أثناء إضافة الواجب، حاول مرة أخرى"
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const groupOptions = GROUPS.map((g) => ({ value: g.id, label: g.name }));
-  const lessonOptions = LESSONS.map((l) => ({ value: l.id, label: l.title }));
+  const groupOptions = groups.map((g) => ({ value: g.id, label: g.name }));
+  const lessonOptions = lessons.map((l) => ({ value: l.id, label: l.title }));
 
   return (
     <TeacherLayout>
@@ -137,6 +180,12 @@ const AddAssignmentPage = ({ onSubmit }) => {
           >
             إضافة واجب
           </h1>
+
+          {errorMsg && (
+            <div className="mb-4 bg-[#FFE9E9] text-[#D32F2F] text-sm rounded-lg px-4 py-3">
+              {errorMsg}
+            </div>
+          )}
 
           {/* ── Two-column body ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -239,7 +288,7 @@ const AddAssignmentPage = ({ onSubmit }) => {
                       value={form.groupId}
                       onChange={(v) => set("groupId", v)}
                       options={groupOptions}
-                      placeholder="جميع المجموعات"
+                      placeholder="اختر المجموعة"
                     />
                   </div>
                   <div>
@@ -248,8 +297,14 @@ const AddAssignmentPage = ({ onSubmit }) => {
                       value={form.lessonId}
                       onChange={(v) => set("lessonId", v)}
                       options={lessonOptions}
-                      placeholder="اختر المجموعة أولاً"
-                      disabled={!form.groupId}
+                      placeholder={
+                        !form.groupId
+                          ? "اختر المجموعة أولاً"
+                          : loadingLessons
+                          ? "جارٍ التحميل..."
+                          : "اختر الحصة"
+                      }
+                      disabled={!form.groupId || loadingLessons}
                     />
                   </div>
                   <div>
@@ -333,12 +388,15 @@ const AddAssignmentPage = ({ onSubmit }) => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 mt-2">
             <button
               onClick={handleSubmit}
-              className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1"
+              disabled={submitting}
+              className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1 disabled:opacity-60"
             >
-              إضافة الواجب
+              {submitting && <Loader2 size={16} className="animate-spin" />}
+              {submitting ? "جارٍ الإضافة..." : "إضافة الواجب"}
             </button>
             <button
               onClick={() => navigate(-1)}
+              disabled={submitting}
               className="w-full sm:w-auto sm:px-16 lg:px-40 h-12 sm:h-12.5 text-[#575F69] bg-white border border-[#E5E5E5] font-semibold rounded-lg order-2 sm:order-2"
             >
               إلغاء

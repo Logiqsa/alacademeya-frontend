@@ -1,7 +1,28 @@
-import React, { useState, useRef, useEffect } from "react";
-import { MoreVertical, Eye, Ban, CheckCircle2, Trash2, User, X, Info } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  MoreVertical,
+  Eye,
+  Ban,
+  CheckCircle2,
+  Trash2,
+  User,
+  X,
+  Info,
+} from "lucide-react";
+import { createPortal } from "react-dom";
+const getCurrentMonth = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
 
-// ─── Badge ────────────────────────────────────────────────────────────────────
+  return `${year}-${month}`;
+};
+
+const formatMonthlyHours = (minutes = 0) => {
+  const hours = minutes / 60;
+  return `${hours.toFixed(1).replace(".0", "")} ساعة`;
+};
+
 const Badge = ({ label, type }) => {
   const map = {
     green: "bg-[#00A63E26] text-[#00A63E]",
@@ -10,8 +31,13 @@ const Badge = ({ label, type }) => {
     red: "bg-red-100 text-red-600",
     gray: "bg-gray-100 text-[#8C9198]",
   };
+
   return (
-    <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${map[type] ?? map.gray}`}>
+    <span
+      className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+        map[type] ?? map.gray
+      }`}
+    >
       {label}
     </span>
   );
@@ -31,32 +57,43 @@ const roleBadge = (role) => {
   return <Badge label={role} type="gray" />;
 };
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
 const Avatar = ({ name, avatarUrl, size = 8 }) => (
-  <div className={`w-${size} h-${size} rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0`}>
-    {avatarUrl
-      ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
-      : <User size={size === 8 ? 15 : 22} className="text-gray-400" />}
+  <div
+    className={`w-${size} h-${size} rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0`}
+  >
+    {avatarUrl ? (
+      <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+    ) : (
+      <User size={size === 8 ? 15 : 22} className="text-gray-400" />
+    )}
   </div>
 );
 
 const UserCell = ({ name, avatarUrl }) => (
   <div className="flex items-center gap-2.5">
     <Avatar name={name} avatarUrl={avatarUrl} size={8} />
-    <span className="text-sm font-medium text-[#1A1A1A] font-['Tajawal']">{name}</span>
+    <span className="text-sm font-medium text-[#1A1A1A] font-['Tajawal']">
+      {name}
+    </span>
   </div>
 );
 
-// ─── Detail Row ───────────────────────────────────────────────────────────────
 const DetailRow = ({ label, value }) => (
-  <div className="bg-[#F9FAFA] rounded-xl px-4 py-3 flex items-center justify-between">
+  <div className="bg-[#F9FAFA] rounded-xl px-4 py-3 flex items-center justify-between gap-2">
     <span className="text-[12px] text-[#8C9198]">{label}</span>
-    <span className="text-[14px] font-medium text-[#1F2937] font-['Tajawal']">{value ?? "--"}</span>
+    <span className="text-[14px] font-medium text-[#1F2937] font-['Tajawal']">
+      {value ?? "--"}
+    </span>
   </div>
 );
 
-// ─── User Details Modal ───────────────────────────────────────────────────────
-const UserDetailsModal = ({ open, onClose, user }) => {
+const UserDetailsModal = ({
+  open,
+  onClose,
+  user,
+  reportLoading,
+  reportError,
+}) => {
   if (!open || !user) return null;
 
   const isTeacher = user.role === "معلم";
@@ -66,39 +103,69 @@ const UserDetailsModal = ({ open, onClose, user }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
-      <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl" dir="rtl">
-        {/* Header */}
+      <div
+        className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl max-h-[90vh] overflow-y-auto"
+        dir="rtl"
+      >
         <div className="flex items-center justify-between mb-4">
-          <span className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937]">تفاصيل المستخدم</span>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#6B7280] transition-colors">
+          <span className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937]">
+            تفاصيل المستخدم
+          </span>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#6B7280] transition-colors"
+            aria-label="إغلاق"
+          >
             <X size={15} />
           </button>
         </div>
 
-        {/* Profile */}
         <div className="flex flex-col items-center gap-2 mb-5">
           <Avatar name={user.name} avatarUrl={user.avatarUrl} size={16} />
-          <p className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937]">{user.name}</p>
-          <p className="text-[13px] text-[#8C9198]" dir="ltr">{user.email}</p>
+
+          <p className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937]">
+            {user.name}
+          </p>
+
+          <p className="text-[13px] text-[#8C9198]" dir="ltr">
+            {user.email}
+          </p>
+
           <div className="flex items-center gap-2 mt-1">
             {statusBadge(user.status)}
             {roleBadge(user.role)}
           </div>
         </div>
 
-        {/* Fields */}
         <div className="grid grid-cols-2 gap-2 mb-2">
           <DetailRow label="تاريخ الانضمام" value={user.joinDate} />
-          <DetailRow label="رقم الهاتف" value={user.phone ?? "+20 111 987 6543"} />
+
+          <DetailRow
+            label="رقم الهاتف"
+            value={user.phone ?? "+20 111 987 6543"}
+          />
         </div>
 
         {(isStudent || isTeacher) && (
           <div className="grid grid-cols-2 gap-2 mb-2">
             <DetailRow label="المرحلة" value={user.stage ?? "ثانوية"} />
-            {isStudent && <DetailRow label="الباقة" value={user.package ?? "باقة لمادة واحدة"} />}
-            {isTeacher && <DetailRow label="المادة" value={user.subject ?? "الرياضيات"} />}
+
+            {isStudent && (
+              <DetailRow
+                label="الباقة"
+                value={user.package ?? "باقة لمادة واحدة"}
+              />
+            )}
+
+            {isTeacher && (
+              <DetailRow label="المادة" value={user.subject ?? "الرياضيات"} />
+            )}
           </div>
         )}
 
@@ -109,15 +176,51 @@ const UserDetailsModal = ({ open, onClose, user }) => {
         )}
 
         {isTeacher && (
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <DetailRow label="سنوات الخبرة" value={user.experience ?? "8 سنوات"} />
-            <DetailRow label="المنهج" value={user.curriculum ?? "المنهج المصري"} />
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <DetailRow
+                label="سنوات الخبرة"
+                value={user.experience ?? "8 سنوات"}
+              />
+
+              <DetailRow
+                label="المنهج"
+                value={user.curriculum ?? "المنهج المصري"}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <DetailRow
+                label="الساعات الشهرية"
+                value={
+                  reportLoading
+                    ? "جاري التحميل..."
+                    : (user.monthlyTeachingHours ?? "--")
+                }
+              />
+
+              <DetailRow
+                label="الجلسات المكتملة"
+                value={
+                  reportLoading
+                    ? "..."
+                    : (user.monthlyCompletedSessions ?? "--")
+                }
+              />
+            </div>
+
+            {reportError && (
+              <p className="mt-2 text-[12px] text-red-500 text-center">
+                {reportError}
+              </p>
+            )}
+          </>
         )}
 
         {isParent && (
           <div className="grid grid-cols-2 gap-2 mb-2">
             <DetailRow label="اسم الابن" value={user.childName ?? "علي محمد"} />
+
             <DetailRow label="عدد الأبناء" value={user.childrenCount ?? "1"} />
           </div>
         )}
@@ -126,30 +229,56 @@ const UserDetailsModal = ({ open, onClose, user }) => {
   );
 };
 
-// ─── Confirm Dialog ───────────────────────────────────────────────────────────
-const ConfirmDialog = ({ open, onClose, onConfirm, title, message, confirmLabel, confirmClass, iconColor }) => {
+const ConfirmDialog = ({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmLabel,
+  confirmClass,
+  iconColor,
+}) => {
   if (!open) return null;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
-      <div className="bg-white w-full max-w-xs rounded-2xl p-6 shadow-xl text-center" dir="rtl">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${iconColor}`}>
+      <div
+        className="bg-white w-full max-w-xs rounded-2xl p-6 shadow-xl text-center"
+        dir="rtl"
+      >
+        <div
+          className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${iconColor}`}
+        >
           <Info size={22} />
         </div>
-        <h3 className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937] mb-2">{title}</h3>
-        <p className="text-[13px] text-[#6B7280] mb-6 font-['IBM_Plex_Sans_Arabic']">{message}</p>
+
+        <h3 className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937] mb-2">
+          {title}
+        </h3>
+
+        <p className="text-[13px] text-[#6B7280] mb-6 font-['IBM_Plex_Sans_Arabic']">
+          {message}
+        </p>
+
         <div className="flex gap-3">
           <button
+            type="button"
             onClick={onConfirm}
-            className={`flex-1 py-2.5 rounded-xl text-white font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] transition-opacity hover:opacity-90 ${confirmClass}`}
+            className={`flex-1 py-2.5 rounded-xl text-white font-medium text-[14px] transition-opacity hover:opacity-90 ${confirmClass}`}
           >
             {confirmLabel}
           </button>
+
           <button
+            type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 border border-[#E5E5E5] rounded-xl text-[#374151] font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:border-gray-400 transition-colors"
+            className="flex-1 py-2.5 border border-[#E5E5E5] rounded-xl text-[#374151] font-medium text-[14px] hover:border-gray-400"
           >
             إلغاء
           </button>
@@ -159,98 +288,325 @@ const ConfirmDialog = ({ open, onClose, onConfirm, title, message, confirmLabel,
   );
 };
 
-// ─── Actions Dropdown ─────────────────────────────────────────────────────────
 const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete }) => {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [position, setPosition] = useState({
+    top: 0,
+    left: 0,
+  });
 
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const wrapperRef = useRef(null);
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
 
   const isSuspended = user.status === "موقوف";
   const isPending = user.status === "معلق";
 
   const items = [
-    { key: "view", label: "عرض", Icon: Eye, onClick: () => onView?.(user) },
+    {
+      key: "view",
+      label: "عرض",
+      Icon: Eye,
+      onClick: () => onView?.(user),
+    },
   ];
 
   if (isPending) {
-    items.push({ key: "approve", label: "قبول الطلب", Icon: CheckCircle2, onClick: () => onApprove?.(user), tone: "text-[#123C91]" });
+    items.push({
+      key: "approve",
+      label: "قبول الطلب",
+      Icon: CheckCircle2,
+      onClick: () => onApprove?.(user),
+      tone: "text-[#123C91]",
+    });
   } else if (isSuspended) {
-    items.push({ key: "activate", label: "تفعيل", Icon: CheckCircle2, onClick: () => onToggleStatus?.(user), tone: "text-green-600" });
+    items.push({
+      key: "activate",
+      label: "تفعيل",
+      Icon: CheckCircle2,
+      onClick: () => onToggleStatus?.(user),
+      tone: "text-green-600",
+    });
   } else {
-    items.push({ key: "suspend", label: "إيقاف", Icon: Ban, onClick: () => onToggleStatus?.(user), tone: "text-orange-500" });
+    items.push({
+      key: "suspend",
+      label: "إيقاف",
+      Icon: Ban,
+      onClick: () => onToggleStatus?.(user),
+      tone: "text-orange-500",
+    });
   }
-  items.push({ key: "delete", label: "حذف", Icon: Trash2, onClick: () => onDelete?.(user), tone: "text-red-600" });
+
+  items.push({
+    key: "delete",
+    label: "حذف",
+    Icon: Trash2,
+    onClick: () => onDelete?.(user),
+    tone: "text-red-600",
+  });
+
+  const handleToggleMenu = () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+
+    const rect = buttonRef.current?.getBoundingClientRect();
+
+    if (!rect) return;
+
+    const menuWidth = 144;
+    const menuHeight = items.length * 42 + 8;
+    const screenPadding = 8;
+    const gap = 4;
+
+    const availableBelow = window.innerHeight - rect.bottom;
+    const shouldOpenAbove =
+      availableBelow < menuHeight && rect.top > menuHeight;
+
+    const top = shouldOpenAbove
+      ? Math.max(screenPadding, rect.top - menuHeight - gap)
+      : Math.min(
+          rect.bottom + gap,
+          window.innerHeight - menuHeight - screenPadding,
+        );
+
+    const left = Math.min(
+      Math.max(screenPadding, rect.right - menuWidth),
+      window.innerWidth - menuWidth - screenPadding,
+    );
+
+    setPosition({ top, left });
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      const clickedWrapper = wrapperRef.current?.contains(event.target);
+
+      const clickedMenu = menuRef.current?.contains(event.target);
+
+      if (!clickedWrapper && !clickedMenu) {
+        setOpen(false);
+      }
+    };
+
+    const closeMenu = () => setOpen(false);
+
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+    };
+  }, []);
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <div ref={wrapperRef} className="relative inline-block">
       <button
-        onClick={() => setOpen((o) => !o)}
+        ref={buttonRef}
+        type="button"
+        onClick={handleToggleMenu}
         className="p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors"
         aria-label="إجراءات المستخدم"
+        aria-expanded={open}
       >
         <MoreVertical size={18} />
       </button>
-      {open && (
-        <ul className="absolute z-30 mt-1 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden" style={{ left: 0 }}>
-          {items.map((item) => {
-            const Icon = item.Icon;
-            return (
-              <li
-                key={item.key}
-                onClick={() => { item.onClick(); setOpen(false); }}
-                className={`flex items-center gap-2 px-3.5 py-2.5 text-sm cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] ${item.tone ?? "text-[#575F69]"}`}
-              >
-                <Icon size={15} />
-                {item.label}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+
+      {open &&
+        createPortal(
+          <ul
+            ref={menuRef}
+            className="fixed z-[100] w-36 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+            style={{
+              top: position.top,
+              left: position.left,
+            }}
+          >
+            {items.map((item) => {
+              const Icon = item.Icon;
+
+              return (
+                <li key={item.key}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      item.onClick();
+                      setOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-sm text-right hover:bg-gray-50 ${
+                      item.tone ?? "text-[#575F69]"
+                    }`}
+                  >
+                    <Icon size={15} />
+                    <span>{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>,
+          document.body,
+        )}
     </div>
   );
 };
 
-// ─── Mobile Card ──────────────────────────────────────────────────────────────
 const MobileCard = ({ u, onView, onApprove, onToggleStatus, onDelete }) => (
-  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 font-['IBM_Plex_Sans_Arabic']" dir="rtl">
+  <div
+    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4"
+    dir="rtl"
+  >
     <div className="flex items-center justify-between mb-3">
       <UserCell name={u.name} avatarUrl={u.avatarUrl} />
-      <ActionsMenu user={u} onView={onView} onApprove={onApprove} onToggleStatus={onToggleStatus} onDelete={onDelete} />
+
+      <ActionsMenu
+        user={u}
+        onView={onView}
+        onApprove={onApprove}
+        onToggleStatus={onToggleStatus}
+        onDelete={onDelete}
+      />
     </div>
+
     <div className="flex items-center gap-2 mb-3">
       {roleBadge(u.role)}
       {statusBadge(u.status)}
     </div>
+
     <div className="divide-y divide-gray-50">
       <div className="flex items-center justify-between py-2">
         <span className="text-xs text-[#8C9198]">البريد الإلكتروني</span>
-        <span className="text-[13px] text-[#575F69] truncate max-w-[55%] text-left" dir="ltr">{u.email}</span>
+
+        <span
+          className="text-[13px] text-[#575F69] truncate max-w-[55%]"
+          dir="ltr"
+        >
+          {u.email}
+        </span>
       </div>
+
       <div className="flex items-center justify-between py-2">
         <span className="text-xs text-[#8C9198]">تاريخ الانضمام</span>
+
         <span className="text-[13px] text-[#575F69]">{u.joinDate}</span>
       </div>
     </div>
   </div>
 );
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-const UsersTable = ({ users = [], onView, onEdit, onApprove, onToggleStatus, onDelete }) => {
+const UsersTable = ({ users = [], onApprove, onToggleStatus, onDelete }) => {
   const [detailsUser, setDetailsUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
   const [approveUser, setApproveUser] = useState(null);
   const [suspendUser, setSuspendUser] = useState(null);
   const [activateUser, setActivateUser] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState("");
 
-  const handleView = (user) => setDetailsUser(user);
+  const handleView = async (user) => {
+    setDetailsUser(user);
+    setReportError("");
+
+    if (user.role !== "معلم") {
+      return;
+    }
+
+    setReportLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("برجاء تسجيل الدخول مرة أخرى");
+      }
+
+      // الحصول على Teacher Profile باستخدام User ID
+      const teacherResponse = await fetch(
+        `https://api.alacademeya.com/api/teachers?user=${user.id}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const teacherResult = await teacherResponse.json();
+
+      if (!teacherResponse.ok || !teacherResult.success) {
+        throw new Error(teacherResult.message || "تعذر تحميل بيانات المعلم");
+      }
+
+      const teacherProfile = Array.isArray(teacherResult.data)
+        ? teacherResult.data[0]
+        : teacherResult.data;
+
+      if (!teacherProfile) {
+        throw new Error("ملف المعلم غير موجود");
+      }
+
+      const teacherId = teacherProfile.id ?? teacherProfile._id;
+
+      if (!teacherId) {
+        throw new Error("معرف المعلم غير موجود");
+      }
+
+      const month = getCurrentMonth();
+
+      // الحصول على التقرير الشهري
+      const reportResponse = await fetch(
+        `https://api.alacademeya.com/api/teachers/${teacherId}/monthly-report?month=${month}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const reportResult = await reportResponse.json();
+
+      if (!reportResponse.ok || !reportResult.success) {
+        throw new Error(reportResult.message || "تعذر تحميل التقرير الشهري");
+      }
+
+      const totalMinutes =
+        reportResult.data?.summary?.totalTeachingMinutes ?? 0;
+
+      const completedSessions =
+        reportResult.data?.summary?.completedSessions ?? 0;
+
+      setDetailsUser((currentUser) => {
+        if (!currentUser || currentUser.id !== user.id) {
+          return currentUser;
+        }
+
+        return {
+          ...currentUser,
+          teacherId,
+          monthlyTeachingHours: formatMonthlyHours(totalMinutes),
+          monthlyCompletedSessions: completedSessions,
+          monthlyReportMonth: reportResult.data.month,
+        };
+      });
+    } catch (error) {
+      setReportError(error.message || "حدث خطأ أثناء تحميل التقرير الشهري");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const handleApprove = (user) => setApproveUser(user);
   const handleDelete = (user) => setDeleteUser(user);
+
   const handleToggleStatus = (user) => {
     if (user.status === "موقوف" || user.status === "معلق") {
       setActivateUser(user);
@@ -261,7 +617,10 @@ const UsersTable = ({ users = [], onView, onEdit, onApprove, onToggleStatus, onD
 
   if (users.length === 0) {
     return (
-      <div dir="rtl" className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69] font-['IBM_Plex_Sans_Arabic']">
+      <div
+        dir="rtl"
+        className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]"
+      >
         لا يوجد مستخدمون متاحون
       </div>
     );
@@ -269,30 +628,58 @@ const UsersTable = ({ users = [], onView, onEdit, onApprove, onToggleStatus, onD
 
   return (
     <>
-      <div dir="rtl" className="w-full font-['IBM_Plex_Sans_Arabic']">
-
-        {/* Desktop */}
+      <div dir="rtl" className="w-full">
         <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-right" style={{ minWidth: "700px" }}>
               <thead className="bg-[#F9FAFA] border-b border-gray-100">
                 <tr>
-                  {["المستخدم", "النوع", "البريد الإلكتروني", "الحالة", "تاريخ الانضمام", "الإجراءات"].map((h) => (
-                    <th key={h} className="px-5 py-3.5 text-[13px] font-medium text-[#575F69] whitespace-nowrap">{h}</th>
+                  {[
+                    "المستخدم",
+                    "النوع",
+                    "البريد الإلكتروني",
+                    "الحالة",
+                    "تاريخ الانضمام",
+                    "الإجراءات",
+                  ].map((heading) => (
+                    <th
+                      key={heading}
+                      className="px-5 py-3.5 text-[13px] font-medium text-[#575F69] whitespace-nowrap"
+                    >
+                      {heading}
+                    </th>
                   ))}
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-gray-100">
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50/70 transition-colors">
-                    <td className="px-5 py-3.5"><UserCell name={u.name} avatarUrl={u.avatarUrl} /></td>
-                    <td className="px-5 py-3.5">{roleBadge(u.role)}</td>
-                    <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap" dir="ltr" style={{ textAlign: "right" }}>{u.email}</td>
-                    <td className="px-5 py-3.5">{statusBadge(u.status)}</td>
-                    <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">{u.joinDate}</td>
+                {users.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="hover:bg-gray-50/70 transition-colors"
+                  >
+                    <td className="px-5 py-3.5">
+                      <UserCell name={user.name} avatarUrl={user.avatarUrl} />
+                    </td>
+
+                    <td className="px-5 py-3.5">{roleBadge(user.role)}</td>
+
+                    <td
+                      className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap"
+                      dir="ltr"
+                    >
+                      {user.email}
+                    </td>
+
+                    <td className="px-5 py-3.5">{statusBadge(user.status)}</td>
+
+                    <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
+                      {user.joinDate}
+                    </td>
+
                     <td className="px-5 py-3.5">
                       <ActionsMenu
-                        user={u}
+                        user={user}
                         onView={handleView}
                         onApprove={handleApprove}
                         onToggleStatus={handleToggleStatus}
@@ -306,11 +693,11 @@ const UsersTable = ({ users = [], onView, onEdit, onApprove, onToggleStatus, onD
           </div>
         </div>
 
-        {/* Mobile */}
         <div className="md:hidden space-y-3">
-          {users.map((u) => (
+          {users.map((user) => (
             <MobileCard
-              key={u.id} u={u}
+              key={user.id}
+              u={user}
               onView={handleView}
               onApprove={handleApprove}
               onToggleStatus={handleToggleStatus}
@@ -320,20 +707,24 @@ const UsersTable = ({ users = [], onView, onEdit, onApprove, onToggleStatus, onD
         </div>
       </div>
 
-      {/* ── Modals ── */}
-
-      {/* 1. تفاصيل المستخدم */}
       <UserDetailsModal
-        open={!!detailsUser}
-        onClose={() => setDetailsUser(null)}
+        open={Boolean(detailsUser)}
+        onClose={() => {
+          setDetailsUser(null);
+          setReportError("");
+        }}
         user={detailsUser}
+        reportLoading={reportLoading}
+        reportError={reportError}
       />
 
-      {/* 2. قبول الطلب */}
       <ConfirmDialog
-        open={!!approveUser}
+        open={Boolean(approveUser)}
         onClose={() => setApproveUser(null)}
-        onConfirm={() => { onApprove?.(approveUser); setApproveUser(null); }}
+        onConfirm={() => {
+          onApprove?.(approveUser);
+          setApproveUser(null);
+        }}
         title="الموافقة على الطلب"
         message="هل تريد الموافقة على طلب تسجيل هذا المستخدم وتفعيل حسابه؟"
         confirmLabel="موافقة"
@@ -341,11 +732,13 @@ const UsersTable = ({ users = [], onView, onEdit, onApprove, onToggleStatus, onD
         iconColor="bg-blue-100 text-blue-500"
       />
 
-      {/* 3. تفعيل الحساب */}
       <ConfirmDialog
-        open={!!activateUser}
+        open={Boolean(activateUser)}
         onClose={() => setActivateUser(null)}
-        onConfirm={() => { onToggleStatus?.(activateUser); setActivateUser(null); }}
+        onConfirm={() => {
+          onToggleStatus?.(activateUser);
+          setActivateUser(null);
+        }}
         title="تفعيل الحساب"
         message="هل تريد تفعيل حساب هذا المستخدم؟"
         confirmLabel="تفعيل"
@@ -353,11 +746,13 @@ const UsersTable = ({ users = [], onView, onEdit, onApprove, onToggleStatus, onD
         iconColor="bg-blue-100 text-blue-500"
       />
 
-      {/* 4. إيقاف المستخدم */}
       <ConfirmDialog
-        open={!!suspendUser}
+        open={Boolean(suspendUser)}
         onClose={() => setSuspendUser(null)}
-        onConfirm={() => { onToggleStatus?.(suspendUser); setSuspendUser(null); }}
+        onConfirm={() => {
+          onToggleStatus?.(suspendUser);
+          setSuspendUser(null);
+        }}
         title="إيقاف المستخدم"
         message="هل تريد إيقاف حساب هذا المستخدم؟"
         confirmLabel="إيقاف"
@@ -365,11 +760,13 @@ const UsersTable = ({ users = [], onView, onEdit, onApprove, onToggleStatus, onD
         iconColor="bg-orange-100 text-orange-500"
       />
 
-      {/* 5. حذف المستخدم */}
       <ConfirmDialog
-        open={!!deleteUser}
+        open={Boolean(deleteUser)}
         onClose={() => setDeleteUser(null)}
-        onConfirm={() => { onDelete?.(deleteUser.id); setDeleteUser(null); }}
+        onConfirm={() => {
+          onDelete?.(deleteUser.id);
+          setDeleteUser(null);
+        }}
         title="حذف المستخدم"
         message="هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع."
         confirmLabel="حذف"

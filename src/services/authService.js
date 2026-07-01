@@ -198,3 +198,25 @@ export const getPackage = (id) => API.get(`/packages/${id}`);
 export const createPackage = (payload) => API.post('/packages', payload);
 export const updatePackage = (id, payload) => API.patch(`/packages/${id}`, payload);
 export const deletePackage = (id) => API.delete(`/packages/${id}`);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Assignments (NEW)
+// ──────────────────────────────────────────────────────────────────────────────
+// GET /assignments/classroom/:classroomId → { success, results, data: [...] }
+export const getAssignmentsByClassroom = (classroomId, params) =>
+  API.get(`/assignments/classroom/${classroomId}`, { params });
+
+// GET /assignments/:assignmentId → { success, data: {...} }
+export const getAssignment = (assignmentId) => API.get(`/assignments/${assignmentId}`);
+
+// POST /assignments/ — expects multipart/form-data (attachments field for files)
+// build the FormData in the caller, same pattern as createClassroomSession
+export const createAssignment = (formData) =>
+  API.post('/assignments/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+export const updateAssignment = (assignmentId, payload) =>
+  API.patch(`/assignments/${assignmentId}`, payload);
+
+export const deleteAssignment = (assignmentId) => API.delete(`/assignments/${assignmentId}`);
