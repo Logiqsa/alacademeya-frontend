@@ -165,3 +165,9 @@ export const createClassroomSession = (formData) =>
   API.post('/sessions/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+
+export const getAllPackages = (params) => API.get('/packages', { params });
+export const getPackage = (id) => API.get(`/packages/${id}`);
+export const createPackage = (payload) => API.post('/packages', payload);
+export const updatePackage = (id, payload) => API.patch(`/packages/${id}`, payload);
+export const deletePackage = (id) => API.delete(`/packages/${id}`);
