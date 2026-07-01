@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { Pencil, Eye, EyeOff, ChevronDown, User, Camera, Loader2 } from 'lucide-react';
+import { Pencil, Eye, EyeOff, ChevronDown, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -64,6 +64,9 @@ const normalizeOption = (item) => ({
   id: item.id || item._id || item.value || item.code,
   label: pickName(item.name) || item.title || item.label || '',
 });
+
+// أول حرف من الاسم عشان نعرضه بدل صورة البروفايل
+const getInitial = (fullName) => (fullName || '').trim().charAt(0) || '؟';
 
 const LANGUAGE_OPTIONS = [
   { id: 'ar', label: 'العربية' },
@@ -495,9 +498,6 @@ const StudentAccountSettings = () => {
   const [student, setStudent] = useState(ctxUser || null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const fileInputRef = useRef(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(null);
 
   // قائمة الدول محمّلة على مستوى الصفحة عشان نعرض اسم الدولة في وضع العرض برضه (مش وضع التعديل بس)
   const [countryOptions, setCountryOptions] = useState([]);
@@ -511,7 +511,6 @@ const StudentAccountSettings = () => {
       const studentData = extractStudent(res.data);
       if (studentData) {
         setStudent(studentData);
-        setAvatarUrl(studentData.avatarUrl || null);
         localStorage.setItem('user', JSON.stringify(studentData));
         updateUser?.(studentData);
       }
@@ -547,17 +546,6 @@ const StudentAccountSettings = () => {
     navigate('/login', { replace: true });
   };
 
-  const handleAvatarClick = () => fileInputRef.current?.click();
-  const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingAvatar(true);
-    const reader = new FileReader();
-    reader.onload = () => { setAvatarUrl(reader.result); setUploadingAvatar(false); };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
   if (loading) {
     return <div className="flex items-center justify-center py-20" dir="rtl"><Loader2 size={28} className="animate-spin text-(--primary)" /></div>;
   }
@@ -574,14 +562,9 @@ const StudentAccountSettings = () => {
 
       <div className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) overflow-hidden">
         <div className="p-6 flex items-center gap-4">
-          <div className="relative w-16 h-16 shrink-0">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-(--bg-light) flex items-center justify-center">
-              {avatarUrl ? <img src={avatarUrl} alt={student.fullName} className="w-full h-full object-cover" /> : <User size={28} className="text-(--primary)" />}
-            </div>
-            <button type="button" onClick={handleAvatarClick} disabled={uploadingAvatar} className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full bg-(--primary) text-white flex items-center justify-center border-2 border-white disabled:opacity-60" aria-label="تغيير الصورة">
-              {uploadingAvatar ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
-            </button>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+          {/* أفاتار بأول حرف من الاسم بدل صورة قابلة للرفع */}
+          <div className="w-16 h-16 shrink-0 rounded-full bg-(--primary) text-white flex items-center justify-center text-xl font-bold">
+            {getInitial(student.fullName)}
           </div>
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-(--text-dark) truncate">{student.fullName}</h2>
