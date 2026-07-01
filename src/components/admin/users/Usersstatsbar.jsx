@@ -1,8 +1,8 @@
 import { Users, GraduationCap, UserCog, Layers } from "lucide-react";
 
-const UsersStatsBar = ({ admins = 3, teachers = 6, students = 12, total = 21 }) => {
+const UsersStatsBar = ({ parents = 0, teachers = 0, students = 0, total = 0 }) => {
   const stats = [
-    { label: "أولياء الأمور", value: admins, color: "text-orange-500", bg: "bg-orange-50", icon: UserCog },
+    { label: "أولياء الأمور", value: parents, color: "text-orange-500", bg: "bg-orange-50", icon: UserCog },
     { label: "إجمالي المعلمين", value: teachers, color: "text-teal-600", bg: "bg-teal-50", icon: Users },
     { label: "إجمالي الطلاب", value: students, color: "text-green-600", bg: "bg-green-50", icon: GraduationCap },
     { label: "إجمالي المستخدمين", value: total, color: "text-[#123C91]", bg: "bg-[#EAF4FF]", icon: Layers },
