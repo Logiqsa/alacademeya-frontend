@@ -288,3 +288,6 @@ export const getStudent = (studentId) =>
 // }
 export const getSessionAttendance = (sessionId) =>
   API.get(`/sessions/${sessionId}/attendance`);
+
+export const getClassroomSchedule = (classroomId) =>
+  API.get(`/classrooms/${classroomId}/schedule`);

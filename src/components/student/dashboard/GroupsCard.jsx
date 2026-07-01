@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Clock, GraduationCap } from "lucide-react";
+import { Clock, GraduationCap, Loader2 } from "lucide-react";
+import { getMyClassrooms, getClassroomSessions } from "../../../services/authService"; // عدّل المسار حسب مكان الملف عندك
 
 const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, done, total, remaining, onClick }) => {
   const isGroup = statusType === "group";
@@ -73,33 +74,105 @@ const GroupCard = ({ groupId, name, teacher, status, statusType, nextLesson, don
   );
 };
 
-const GroupsCard = ({
-  groups = [
-    {
-      groupId: "g1",
-      name: "مجموعة الفيزياء A",
-      teacher: "علياء محمد",
-      status: "مجموعة",
-      statusType: "group",
-      nextLesson: "الحصة القادمة غداً",
-      done: 3,
-      total: 8,
-      remaining: 5,
-    },
-    {
-      groupId: "g2",
-      name: "مجموعة الرياضيات A",
-      teacher: "عادل منصور",
-      status: "خاصة",
-      statusType: "private",
-      nextLesson: "الحصة القادمة غداً",
-      done: 6,
-      total: 8,
-      remaining: 2,
-    },
-  ],
-}) => {
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const getLocalizedName = (val) => {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  return val.ar ?? val.en ?? "";
+};
+
+const getTeacherName = (classroom) =>
+  classroom.teacher?.user?.fullName ??
+  classroom.teacher?.fullName ??
+  classroom.teacherName ??
+  "";
+
+const formatNextLesson = (sessions = []) => {
+  const now = new Date();
+  const upcoming = sessions
+    .filter((s) => s.startTime && new Date(s.startTime) >= now)
+    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+  if (upcoming.length === 0) return "لا توجد حصص قادمة";
+
+  const next = new Date(upcoming[0].startTime);
+  const diffDays = Math.round((next.setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000);
+
+  const time = new Date(upcoming[0].startTime).toLocaleTimeString("ar-EG", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  if (diffDays === 0) return `الحصة القادمة اليوم ${time}`;
+  if (diffDays === 1) return `الحصة القادمة غداً ${time}`;
+  return `الحصة القادمة بعد ${diffDays} أيام`;
+};
+
+const buildGroupCardData = (classroom, sessions = []) => {
+  const total = classroom.totalSessions ?? sessions.length ?? 0;
+  const done = sessions.filter((s) => s.status === "completed" || s.status === "done").length;
+  const remaining = Math.max(total - done, 0);
+  const type = classroom.type ?? classroom.classroomType ?? "group"; // "group" | "private"
+
+  return {
+    groupId: classroom.id ?? classroom._id,
+    name: getLocalizedName(classroom.name) || classroom.subject?.name?.ar || "بدون اسم",
+    teacher: getTeacherName(classroom),
+    status: type === "group" ? "مجموعة" : "خاصة",
+    statusType: type,
+    nextLesson: formatNextLesson(sessions),
+    done,
+    total,
+    remaining,
+  };
+};
+
+// ─── Main component ──────────────────────────────────────────────────────────
+
+const GroupsCard = () => {
   const navigate = useNavigate();
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchGroups = async () => {
+      try {
+        setLoading(true);
+        const { data } = await getMyClassrooms();
+        const classrooms = data?.data ?? data ?? [];
+
+        // لكل مجموعة، هات الحصص عشان نحسب done/total/remaining والحصة الجاية
+        const withSessions = await Promise.all(
+          classrooms.map(async (classroom) => {
+            const id = classroom.id ?? classroom._id;
+            try {
+              const sessionsRes = await getClassroomSessions(id);
+              const sessions = sessionsRes.data?.data ?? sessionsRes.data ?? [];
+              return buildGroupCardData(classroom, sessions);
+            } catch {
+              // لو فشل جلب الحصص لمجموعة معينة، اعرضها من غير بيانات الحصص
+              return buildGroupCardData(classroom, []);
+            }
+          })
+        );
+
+        if (isMounted) setGroups(withSessions);
+      } catch (err) {
+        if (isMounted) setError(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchGroups();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div dir="rtl" className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-4 sm:p-5 h-full">
@@ -118,15 +191,36 @@ const GroupsCard = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
-        {groups.map((g, i) => (
-          <GroupCard
-            key={g.groupId ?? i}
-            {...g}
-            onClick={() => navigate(`/student/groups/${g.groupId}/lessons`)}
-          />
-        ))}
-      </div>
+      {loading && (
+        <div className="flex items-center justify-center py-8 text-[#9CA3AF] gap-2">
+          <Loader2 size={18} className="animate-spin" />
+          <span className="text-[13px]">جاري التحميل...</span>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="text-center py-8 text-[#E54848] text-[13px]">
+          حدث خطأ أثناء تحميل المجموعات
+        </div>
+      )}
+
+      {!loading && !error && groups.length === 0 && (
+        <div className="text-center py-8 text-[#9CA3AF] text-[13px]">
+          لا توجد مجموعات مشترك بها حالياً
+        </div>
+      )}
+
+      {!loading && !error && groups.length > 0 && (
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
+          {groups.map((g) => (
+            <GroupCard
+              key={g.groupId}
+              {...g}
+              onClick={() => navigate(`/student/groups/${g.groupId}/lessons`)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

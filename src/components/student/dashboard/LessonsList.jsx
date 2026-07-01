@@ -86,33 +86,26 @@ const LessonCard = ({ title, location, duration, time, status, actionLabel }) =>
   );
 };
 
-const LessonsList = ({ lessons }) => {
-  const defaultLessons = [
-    {
-      title: "مجموعة الفيزياء A",
-      location: "اللحث الكهرومغناطيسي",
-      duration: "60",
-      time: "12:00 ص",
-      status: "live",
-      actionLabel: "انضم الآن",
-    },
-    {
-      title: "مجموعة الرياضيات A",
-      location: "المثلثات",
-      duration: "45",
-      time: "10:00 ص",
-      status: "ended",
-      actionLabel: "التسجيل",
-    },
-  ];
-
-  const data = lessons && lessons.length ? lessons : defaultLessons;
+// ⚠️ تم حذف الـ defaultLessons (الداتا الوهمية الثابتة).
+// الكومبوننت دلوقتي بيعرض بس اللي بييجي فعليًا في prop الـ lessons من الصفحة الأب.
+const LessonsList = ({ lessons = [] }) => {
+  if (lessons.length === 0) {
+    return (
+      <div
+        dir="rtl"
+        className="w-full bg-white border border-[#E5E5E5] rounded-2xl py-10 text-center text-sm text-[#8C9198]"
+        style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
+      >
+        لا توجد حصص اليوم
+      </div>
+    );
+  }
 
   return (
     <div className="w-full" dir="rtl">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {data.map((lesson, index) => (
-          <LessonCard key={index} {...lesson} />
+        {lessons.map((lesson, index) => (
+          <LessonCard key={lesson.id ?? index} {...lesson} />
         ))}
       </div>
     </div>

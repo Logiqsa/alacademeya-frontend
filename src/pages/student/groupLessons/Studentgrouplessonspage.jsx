@@ -1,24 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import LessonStatsBar from "../../../components/student/groupLesson/Lessonstatsbar";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 import LessonsTable from "../../../components/student/groupLesson/Lessonstable";
 import Paginationn from "../../../components/teacher/groups/lessons/Paginationn";
-
-
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_LESSONS = [
-  { id: 1, title: "المصفوفات_2", date: "السبت 21 يونيو 2026", time: "06:00 PM", duration: 45, status: "قادمة" },
-  { id: 2, title: "المصفوفات_1", date: "غداً 18 يونيو 2026", time: "08:30 PM", duration: 40, status: "قادمة" },
-  { id: 3, title: "التبادليل والتوافيق", date: "اليوم 17 يونيو 2026", time: "06:00 PM", duration: 60, status: "مباشر الآن" },
-  { id: 4, title: "المتتاليات", date: "السبت 24 مايو 2026", time: "05:30 PM", duration: 50, status: "ملغية" },
-  { id: 5, title: "العدد الأولى", date: "السبت 24 مايو 2026", time: "11:00 AM", duration: 40, status: "منتهية" },
-  { id: 6, title: "القيل الحسابي", date: "السبت 24 مايو 2026", time: "06:00 PM", duration: 60, status: "منتهية" },
-];
+import { getClassroom, getClassroomSessions } from "../../../services/authService";
 
 const ITEMS_PER_PAGE = 5;
+
+// status enum زي ما راجعة فعلاً من الـ API
+const STATUS_LABELS = {
+  scheduled: "قادمة",
+  upcoming: "قادمة",
+  live: "مباشر الآن",
+  completed: "منتهية",
+  cancelled: "ملغية",
+};
+
+const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const StudentGroupLessonsPage = () => {
@@ -30,12 +30,85 @@ const StudentGroupLessonsPage = () => {
   const [filterTime, setFilterTime] = useState("جميع الاوقات");
   const [page, setPage] = useState(1);
 
-  const filtered = MOCK_LESSONS.filter(
+  const [groupName, setGroupName] = useState("");
+  const [lessons, setLessons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    // بنستخدم allSettled عشان لو endpoint الـ classroom فشل، الصفحة تفضل تعرض الحصص عادي
+    const [classroomResult, sessionsResult] = await Promise.allSettled([
+      getClassroom(groupId),
+      getClassroomSessions(groupId),
+    ]);
+
+    if (classroomResult.status === "fulfilled") {
+      setGroupName(resolveName(classroomResult.value.data?.data?.name) || "مجموعة");
+    } else {
+      console.error("getClassroom failed:", classroomResult.reason);
+      setGroupName("مجموعة");
+    }
+
+    if (sessionsResult.status === "rejected") {
+      console.error("getClassroomSessions failed:", sessionsResult.reason);
+      setError("حدث خطأ أثناء تحميل الحصص");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const rawSessions = sessionsResult.value.data?.data || [];
+
+      const mapped = rawSessions.map((s) => ({
+        id: s.id,
+        title: s.title || "حصة",
+        date: s.scheduledDate
+          ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : "--",
+        time: s.scheduledDate
+          ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "--",
+        duration: typeof s.duration === "number" ? s.duration : "--",
+        status: STATUS_LABELS[s.status] || s.status || "--",
+      }));
+
+      setLessons(mapped);
+    } catch (err) {
+      console.error(err);
+      setError("حدث خطأ أثناء تحميل الحصص");
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const filtered = lessons.filter(
     (l) => l.title.includes(search) && (filterStatus === "جميع الحالات" || l.status === filterStatus)
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginatedLessons = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const stats = {
+    total: lessons.length,
+    upcoming: lessons.filter((l) => l.status === "قادمة").length,
+    completed: lessons.filter((l) => l.status === "منتهية").length,
+    cancelled: lessons.filter((l) => l.status === "ملغية").length,
+  };
 
   return (
     <StudentLayout>
@@ -43,7 +116,7 @@ const StudentGroupLessonsPage = () => {
         {/* Header */}
         <div className="mb-4">
           <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
-            مجموعة الرياضيات A
+            {groupName || "مجموعة"}
           </h3>
           <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
             تابع كل حصصك: الجدول، الواجبات، والتسجيلات في مكان واحد.
@@ -52,7 +125,12 @@ const StudentGroupLessonsPage = () => {
 
         {/* Stats */}
         <div className="mb-6">
-          <LessonStatsBar />
+          <LessonStatsBar
+            total={stats.total}
+            upcoming={stats.upcoming}
+            completed={stats.completed}
+            cancelled={stats.cancelled}
+          />
         </div>
 
         {/* Filters */}
@@ -75,10 +153,20 @@ const StudentGroupLessonsPage = () => {
 
         {/* Table */}
         <div className="mt-4">
-          <LessonsTable
-            lessons={paginatedLessons}
-            onView={(id) => navigate(`/student/groups/${groupId}/lessons/${id}`)}
-          />
+          {loading ? (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
+              جاري التحميل...
+            </div>
+          ) : error ? (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-red-500">
+              {error}
+            </div>
+          ) : (
+            <LessonsTable
+              lessons={paginatedLessons}
+              onView={(id) => navigate(`/student/groups/${groupId}/lessons/${id}`)}
+            />
+          )}
         </div>
 
         {/* Pagination */}
