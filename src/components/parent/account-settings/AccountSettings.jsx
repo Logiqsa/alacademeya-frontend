@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback, useContext, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useContext } from 'react';
 import { useNavigate } from "react-router-dom";
 import toast from 'react-hot-toast';
 
-import { User, Camera, Loader2 } from 'lucide-react';
+import { User, Loader2 } from 'lucide-react';
 import {
     getMyProfile,
     getMyStudents,
@@ -42,13 +42,12 @@ function normalizeCurriculums(raw) {
     }));
 }
 
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
+// Letter-avatar helper — used instead of a profile photo everywhere in
+// this page. Falls back to "؟" when there's no usable name yet.
+function getInitial(name) {
+    if (!name || typeof name !== 'string') return '؟';
+    const trimmed = name.trim();
+    return trimmed ? trimmed[0].toUpperCase() : '؟';
 }
 
 /* ── Tab button ── */
@@ -86,17 +85,18 @@ const TabButton = ({ label, isActive, onClick }) => (
  *     { id, name: { ar, en } } object. There is no country/countryCode
  *     field on a student at all — the API simply doesn't send one, so we
  *     don't fabricate a display value for it.
+ *   - There is no avatar endpoint/field returned by the API at all, so
+ *     this page never tries to render or upload a photo — every header
+ *     uses a letter avatar derived from fullName instead.
  */
 const AccountSettings = () => {
     const { logout } = useContext(AuthContext);
-    const fileInputRef = useRef(null);
 
     const [parent, setParent] = useState(null);
     const [students, setStudents] = useState([]);
     const [activeTab, setActiveTab] = useState('parent');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     const [countries, setCountries] = useState([]);
     const [loadingCountries, setLoadingCountries] = useState(true);
@@ -133,7 +133,6 @@ const AccountSettings = () => {
                 phone: userNode.phone || outerData.phone || savedProfile.phone || null,
                 countryCode: userNode.countryCode || outerData.countryCode || savedProfile.countryCode || null,
                 countryName: userNode.countryName || outerData.countryName || savedProfile.countryName || null,
-                avatarUrl: userNode.avatarUrl || outerData.avatarUrl || null,
                 id: outerData.id || userNode.id,
             });
 
@@ -191,25 +190,6 @@ const AccountSettings = () => {
     const handleSaveStudentAcademic = async (payload) => { await updateStudent(activeStudent.id, payload); await afterSave(false); };
     const handleSaveStudentSecurity = async (payload) => { await updateStudent(activeStudent.id, payload); await afterSave(true); };
 
-    /* ── avatar ── */
-    const handleAvatarClick = () => fileInputRef.current?.click();
-    const handleAvatarChange = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setUploadingAvatar(true);
-        try {
-            const base64 = await fileToBase64(file);
-            await updateMyProfile({ avatarUrl: base64 });
-            toast.success('تم تحديث الصورة بنجاح');
-            loadData();
-        } catch (err) {
-            toast.error(err?.response?.data?.message || 'حدث خطأ أثناء رفع الصورة');
-        } finally {
-            setUploadingAvatar(false);
-            e.target.value = '';
-        }
-    };
-
     const activeStudent = activeTab !== 'parent' ? students.find((s) => s.id === activeTab) : null;
 
     /* ═══════════════════════════════════════════════════════════════ */
@@ -227,26 +207,16 @@ const AccountSettings = () => {
             {/* ── Header card ── */}
             <div className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) overflow-hidden">
 
-                {/* Avatar + name */}
+                {/* Letter avatar + name */}
                 <div className="p-6 flex items-center gap-4 ">
-                    <div className="relative w-16 h-16 shrink-0">
-                        <div className="w-16 h-16 rounded-full overflow-hidden bg-(--bg-light) flex items-center justify-center">
-                            {parent?.avatarUrl ? (
-                                <img src={parent.avatarUrl} alt={parent?.fullName} className="w-full h-full object-cover" />
-                            ) : (
-                                <User size={28} className="text-(--primary)" />
-                            )}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleAvatarClick}
-                            disabled={uploadingAvatar}
-                            className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full bg-(--primary) text-white flex items-center justify-center border-2 border-white disabled:opacity-60"
-                            aria-label="تغيير الصورة"
-                        >
-                            {uploadingAvatar ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
-                        </button>
-                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-(--primary) flex items-center justify-center shrink-0">
+                        {loading ? (
+                            <User size={24} className="text-white" />
+                        ) : (
+                            <span className="text-white text-xl font-bold select-none">
+                                {getInitial(parent?.fullName)}
+                            </span>
+                        )}
                     </div>
 
                     <div className="min-w-0">

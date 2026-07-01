@@ -396,27 +396,31 @@ export const ParentProfileCard = ({ parent, countries = [], loadingCountries, on
 
 /* ================================================================== */
 /* StudentPersonalCard                                                 */
-/* The student record's `user` sub-object only carries { fullName, id } */
-/* from the real API — username/phone are NOT nested under `user`, so   */
-/* they're read straight off the student record itself. The API doesn't */
-/* currently send country/countryCode on a student either, but the      */
-/* field stays visible here (showing "—" when unset) since the parent   */
-/* expects to see and edit it in this card regardless.                  */
+/* Confirmed against the real GET /parents/students payload: EVERY     */
+/* per-account field (username, email, country as a bare id) lives      */
+/* under `student.user`, never on the student record itself. Only      */
+/* `birthDate` sits at the top level of the student record. There is   */
+/* no `phone` field anywhere in the payload yet (falls back to '—'      */
+/* until the API adds one). `user.country` is a bare id that has to be  */
+/* matched against the fetched `countries` list to get a display name.  */
 /* ================================================================== */
 export const StudentPersonalCard = ({ student, countries = [], loadingCountries, onSave }) => {
   const u = student?.user || {};
 
   const resolveCountryId = () => {
     if (!countries.length) return '';
-    const byId = countries.find((c) => c.id === student?.country);
+    // country lives on user.country as a bare id in the real API —
+    // student.country / student.countryCode never actually exist.
+    const countryId = idOf(u.country) || idOf(student?.country);
+    const byId = countries.find((c) => c.id === countryId);
     if (byId) return byId.id;
-    const byCode = countries.find((c) => c.code === student?.countryCode);
+    const byCode = countries.find((c) => c.code === (u.countryCode || student?.countryCode));
     return byCode?.id || '';
   };
 
   const buildForm = () => ({
     fullName: u.fullName || student?.fullName || '',
-    username: student?.username || '',
+    username: u.username || student?.username || '',
     birthDate: toInputDate(student?.birthDate),
     countryId: resolveCountryId(),
   });
@@ -434,10 +438,10 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
   const selectedCountry = countries.find((c) => c.id === form.countryId);
   const countryDisplay = (() => {
     const current = countries.find((c) => c.id === resolveCountryId());
-    return current?.name || student?.countryCode || '—';
+    return current?.name || u.countryCode || student?.countryCode || '—';
   })();
 
-  const { code: phoneCode, rest: phoneRest } = splitPhone(student?.phone, selectedCountry?.phoneCode);
+  const { code: phoneCode, rest: phoneRest } = splitPhone(u.phone || student?.phone, selectedCountry?.phoneCode);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -450,7 +454,7 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
         payload.country = selectedCountry.id;
         payload.countryCode = selectedCountry.code;
       }
-      const changedSensitive = form.username !== (student?.username || '');
+      const changedSensitive = form.username !== (u.username || student?.username || '');
       await onSave(payload, changedSensitive);
       setEditing(false);
     } catch (err) {
@@ -472,10 +476,10 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
       {!editing ? (
         <ViewGrid>
           <ViewField label="الاسم الكامل" value={u.fullName || student?.fullName} />
-          <ViewField label="اسم المستخدم" value={student?.username} />
+          <ViewField label="اسم المستخدم" value={u.username || student?.username} />
           <ViewField label="تاريخ الميلاد" value={formatDate(student?.birthDate)} />
           <ViewField label="الدولة" value={countryDisplay} />
-          <ViewField label="رقم الهاتف" value={student?.phone} />
+          <ViewField label="رقم الهاتف" value={u.phone || student?.phone} />
         </ViewGrid>
       ) : (
         <EditBox>
@@ -508,14 +512,15 @@ export const StudentPersonalCard = ({ student, countries = [], loadingCountries,
 
 /* ================================================================== */
 /* StudentAcademicCard                                                 */
-/* In the real API: `student.curriculum` and `student.stage` are bare   */
-/* ID strings (need matching against fetched lists), while             */
-/* `student.grade` already arrives as a populated { id, name } object.  */
-/* This card fetches the stage list for the student's *current*         */
-/* curriculum and the grade list for the student's *current* stage on   */
-/* mount — independent of whatever the user later picks while editing — */
-/* so the read-only view can always resolve a real label instead of a   */
-/* dash, even before edit mode is opened.                               */
+/* In the real API: `student.curriculum` is a bare ID string (or null   */
+/* when never set), `student.stage` and `student.grade` already arrive  */
+/* as populated { id, name: { ar, en } } objects. This card fetches the */
+/* stage list for the student's *current* curriculum and the grade list */
+/* for the student's *current* stage on mount — independent of whatever */
+/* the user later picks while editing — so the read-only view can       */
+/* always resolve a real label instead of a dash, even before edit mode */
+/* is opened. When curriculum is null (not yet assigned), the field     */
+/* correctly shows "—" rather than being a bug to chase.                */
 /* ================================================================== */
 export const StudentAcademicCard = ({ student, curriculums = [], loadingCurriculums, onSave }) => {
   const [editing, setEditing] = useState(false);
@@ -637,10 +642,9 @@ export const StudentAcademicCard = ({ student, curriculums = [], loadingCurricul
     }
   };
 
-  // `grade` already comes populated from the API, so it resolves on its
-  // own. `curriculum` and `stage` are bare ids — resolve against the lists
-  // fetched specifically for this student's saved values (viewStages),
-  // and against the curriculums prop passed down from the page.
+  // `stage` and `grade` already come populated from the API, so they
+  // resolve on their own. `curriculum` is a bare id (or null) — resolve
+  // against the curriculums prop passed down from the page.
   const curriculumDisplay = resolveDisplay(student?.curriculum, curriculums);
   const stageDisplay = resolveDisplay(student?.stage, viewStages);
   const gradeDisplay = resolveDisplay(student?.grade, viewGrades);

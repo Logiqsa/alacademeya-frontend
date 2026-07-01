@@ -3,6 +3,7 @@ import { User, Loader2 } from 'lucide-react';
 import {
   getMyProfile,
   getMyStudents,
+  getCountries,
   getCurriculums,
   getCurriculumStages,
   getStageGrades,
@@ -22,6 +23,13 @@ function langLabel(code) {
 function formatDate(iso) {
   if (!iso) return '—';
   try { return new Date(iso).toLocaleDateString('ar-EG'); } catch { return iso; }
+}
+// Letter-avatar helper — used instead of a profile photo. The API doesn't
+// return an avatar field at all, so this is the only avatar this page shows.
+function getInitial(name) {
+  if (!name || typeof name !== 'string') return '؟';
+  const trimmed = name.trim();
+  return trimmed ? trimmed[0].toUpperCase() : '؟';
 }
 
 /* ─── DataRow ─── */
@@ -100,6 +108,19 @@ const AccountView = () => {
   const [gradeMap, setGradeMap]           = useState({});
   const [lookupLoading, setLookupLoading] = useState(false);
 
+  // Countries — needed to turn a student's `user.country` id into a
+  // display name (students carry no countryName/countryCode of their own).
+  const [countries, setCountries] = useState([]);
+  useEffect(() => {
+    getCountries()
+      .then((res) => {
+        const raw = res?.data?.data ?? res?.data ?? [];
+        const list = (Array.isArray(raw) ? raw : []).map((c) => ({ id: c.id, name: c.name || 'Unknown' }));
+        setCountries(list);
+      })
+      .catch(() => setCountries([]));
+  }, []);
+
   /* ── load ── */
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -134,7 +155,6 @@ const AccountView = () => {
         phone:       userNode.phone       || profileData.phone       || savedProfile.phone       || null,
         countryCode: userNode.countryCode || profileData.countryCode || savedProfile.countryCode || null,
         countryName: userNode.countryName || profileData.countryName || savedProfile.countryName || null,
-        avatarUrl:   userNode.avatarUrl   || profileData.avatarUrl   || null,
         id:          profileData.id       || userNode.id,
       });
 
@@ -241,10 +261,14 @@ const AccountView = () => {
       {/* ── Header card ── */}
       <div className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) overflow-hidden">
         <div className="p-6 flex items-center gap-4 border-b border-(--border-light)">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-(--bg-light) flex items-center justify-center shrink-0">
-            {parent?.avatarUrl
-              ? <img src={parent.avatarUrl} alt={parent?.fullName} className="w-full h-full object-cover" />
-              : <User size={28} className="text-(--primary)" />}
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-(--primary) flex items-center justify-center shrink-0">
+            {loading ? (
+              <User size={24} className="text-white" />
+            ) : (
+              <span className="text-white text-xl font-bold select-none">
+                {getInitial(parent?.fullName)}
+              </span>
+            )}
           </div>
           <div className="min-w-0">
             {loading
@@ -337,7 +361,10 @@ const AccountView = () => {
               <DataRow label="البريد الإلكتروني" value={orDash(u.email    || s.email)} />
               <DataRow label="رقم الهاتف"        value={orDash(u.phone    || s.phone)} />
               <DataRow label="تاريخ الميلاد"     value={formatDate(s.birthDate)} />
-              <DataRow label="الدولة"             value={orDash(s.countryCode || u.countryCode)} />
+              <DataRow
+                label="الدولة"
+                value={orDash(countries.find((c) => c.id === (u.country || s.country))?.name || u.countryCode || s.countryCode)}
+              />
             </SectionCard>
 
             {/* Academic */}
