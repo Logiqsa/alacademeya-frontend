@@ -29,6 +29,7 @@ export default function ForgotPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
@@ -38,7 +39,10 @@ export default function ForgotPassword() {
     if (timer <= 0) return;
     const interval = setInterval(() => {
       setTimer((prev) => {
-        if (prev <= 1) { clearInterval(interval); return 0; }
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
@@ -85,84 +89,58 @@ export default function ForgotPassword() {
       otpRefs.current[index - 1]?.focus();
     }
     if (e.key === "ArrowLeft" && index > 0) otpRefs.current[index - 1]?.focus();
-    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) otpRefs.current[index + 1]?.focus();
+    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1)
+      otpRefs.current[index + 1]?.focus();
   };
 
   const handleOtpPaste = (e) => {
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
     if (!pasted) return;
     const newOtp = [...otp];
-    pasted.split("").forEach((char, i) => { newOtp[i] = char; });
+    pasted.split("").forEach((char, i) => {
+      newOtp[i] = char;
+    });
     setOtp(newOtp);
     otpRefs.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
     e.preventDefault();
   };
 
-const handleResetPassword = async () => {
-  const code = otp.join("").trim();
-
-  if (code.length !== OTP_LENGTH) {
-    toast.error("يرجى إدخال رمز التحقق كاملاً");
-    return;
-  }
-
-  if (!validatePassword()) return;
-
-  setResetLoading(true);
-
-  try {
-    // 1- Verify Reset Code
-    const verifyRes = await verifyPasswordResetCode(code);
-    console.log("Verify Response:", verifyRes.data);
-
-    // 2- Reset Password
-    const resetRes = await resetPassword({
-      email,
-      newPassword: password,
-    });
-
-    console.log("Reset Response:", resetRes.data);
-
-    toast.success("تم تغيير كلمة المرور بنجاح");
-
-    setShowResetModal(false);
-    navigate("/login");
-  } catch (err) {
-    console.error("Status:", err.response?.status);
-    console.error("Error:", err.response?.data);
-
-    toast.error(
-      err.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور"
-    );
-  } finally {
-    setResetLoading(false);
-  }
-};
-  // ---- Screen 1 of the modal: OTP only ----
-  // مفيش endpoint اسمه verifyPasswordResetCode شغال على السيرفر (404)،
-  // فمينفعش نتحقق من الكود لوحده هنا. اللي بيحصل: نتأكد إن المستخدم
-  // كتب 6 أرقام، ونروح لشاشة الباسورد. التحقق الحقيقي من الكود بيحصل
-  // مرة واحدة بس مع الباسورد الجديدة في resetPassword.
-  const handleOtpNext = () => {
+  // ---- Screen 1 of the modal: verify OTP with the server, then move on ----
+  // /auth/verifyResetCode شغال فعلاً على السيرفر (اتأكد من Postman)،
+  // فبنتحقق من الكود هنا فعليًا قبل ما نسمح للمستخدم يدخل الباسورد الجديدة.
+  const handleOtpNext = async () => {
     const code = otp.join("").trim();
     if (code.length !== OTP_LENGTH) {
       toast.error("يرجى إدخال رمز التحقق كاملاً");
       return;
     }
-    setModalStep("password");
+
+    setVerifyLoading(true);
+    try {
+      const verifyRes = await verifyPasswordResetCode(code);
+      console.log("Verify Response:", verifyRes.data);
+      toast.success("تم التحقق من الكود بنجاح");
+      setModalStep("password");
+    } catch (err) {
+      console.error("Verify Code Error:", err.response?.data);
+      toast.error(err.response?.data?.message || "رمز التحقق غير صحيح");
+    } finally {
+      setVerifyLoading(false);
+    }
   };
 
-  // ---- Modal submit: OTP + new password in one shot ----
-  // مفيش endpoint اسمه verifyPasswordResetCode على السيرفر (404)، فمفيش
-  // خطوة تحقق منفصلة. الكود بيتبعت مع الباسورد الجديدة مرة واحدة على
-  // resetPassword، والسيرفر هو اللي بيتحقق من الكود ويغير الباسورد سوا.
   const validatePassword = () => {
     if (password.length < 8) {
       toast.error("كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل");
       return false;
     }
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) {
-      toast.error("كلمة المرور يجب أن تحتوي على حروف كبيرة وصغيرة ورقم ورمز خاص");
+      toast.error(
+        "كلمة المرور يجب أن تحتوي على حروف كبيرة وصغيرة ورقم ورمز خاص"
+      );
       return false;
     }
     if (password !== passwordConfirm) {
@@ -172,6 +150,49 @@ const handleResetPassword = async () => {
     return true;
   };
 
+  // ---- Final step: reset password only (code already verified in handleOtpNext) ----
+  const handleResetPassword = async () => {
+    if (!validatePassword()) return;
+
+    setResetLoading(true);
+    try {
+      const resetRes = await resetPassword({
+        email,
+        newPassword: password,
+      });
+
+      console.log("Reset Response:", resetRes.data);
+
+      toast.success("تم تغيير كلمة المرور بنجاح");
+      setShowResetModal(false);
+      navigate("/login");
+    } catch (err) {
+      console.error("Status:", err.response?.status);
+      console.error("Error:", err.response?.data);
+
+      toast.error(
+        err.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور"
+      );
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  // ---- Resend the OTP code ----
+  const handleResend = async () => {
+    setResendLoading(true);
+    try {
+      await forgotPassword(email);
+      toast.success("تم إعادة إرسال الكود");
+      setOtp(new Array(OTP_LENGTH).fill(""));
+      setTimer(TIMER_START);
+    } catch (err) {
+      console.error("Resend Error:", err.response?.data);
+      toast.error(err.response?.data?.message || "حدث خطأ أثناء إعادة الإرسال");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const inputClass =
     "w-full h-12 p-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91] text-[14px] text-[#1F2937] placeholder:text-[#9CA3AF] transition-colors";
@@ -180,7 +201,9 @@ const handleResetPassword = async () => {
     <AuthLayout>
       <div className="relative w-full max-w-175 mx-auto p-6">
         <img src={logo} alt="logo" className="w-44 h-8 mb-4 cursor-pointer" />
-        <h2 className="text-[24px] font-bold mb-4 text-[#1F2937]">استعادة كلمة المرور</h2>
+        <h2 className="text-[24px] font-bold mb-4 text-[#1F2937]">
+          استعادة كلمة المرور
+        </h2>
 
         <form className="space-y-4" onSubmit={handleSendEmail}>
           <div>
@@ -207,7 +230,9 @@ const handleResetPassword = async () => {
           </button>
 
           <div className="flex items-center justify-center gap-1 pt-2">
-            <span className="text-[14px] text-[#1F2937]">تذكرت كلمة المرور؟</span>
+            <span className="text-[14px] text-[#1F2937]">
+              تذكرت كلمة المرور؟
+            </span>
             <Link
               to="/login"
               className="text-[14px] font-medium text-[#123C91] border-b border-[#123C91]"
@@ -217,7 +242,7 @@ const handleResetPassword = async () => {
           </div>
         </form>
 
-        {/* Reset Modal — OTP + new password together, same visual language as RegisterForm's OTP modal */}
+        {/* Reset Modal — OTP first (verified with server), then new password */}
         {showResetModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div
@@ -238,7 +263,11 @@ const handleResetPassword = async () => {
                     {email}
                   </p>
 
-                  <div dir="ltr" className="flex justify-center gap-2 mb-4" onPaste={handleOtpPaste}>
+                  <div
+                    dir="ltr"
+                    className="flex justify-center gap-2 mb-4"
+                    onPaste={handleOtpPaste}
+                  >
                     {otp.map((data, i) => (
                       <input
                         key={i}
@@ -282,9 +311,10 @@ const handleResetPassword = async () => {
                     <button
                       type="button"
                       onClick={handleOtpNext}
-                      className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white transition-opacity"
+                      disabled={verifyLoading}
+                      className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white transition-opacity disabled:opacity-70"
                     >
-                      التالي
+                      {verifyLoading ? "جاري التحقق..." : "التالي"}
                     </button>
                   </div>
                 </>
@@ -337,10 +367,16 @@ const handleResetPassword = async () => {
                         />
                         <button
                           type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
                           className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
                         >
-                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {showConfirmPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
                         </button>
                       </div>
                     </div>
