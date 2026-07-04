@@ -184,7 +184,7 @@ const StudentSubjectsPages = () => {
                 </div>
 
                 <label className="block text-[13px] font-medium text-[#1F2937] mb-2">
-                    المواد المفضلة
+                    المواد التي ترغب في الالتحاق بها
                 </label>
 
                 {loadingSubjects ? (
