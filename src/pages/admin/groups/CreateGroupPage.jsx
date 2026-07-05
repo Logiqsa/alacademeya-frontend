@@ -177,24 +177,24 @@ useEffect(() => {
 
           const isTeacher = role === "teacher";
 
-          // const isDeleted =
-          //   u.isDeleted === true ||
-          //   u.deleted === true;
+          const isDeleted =
+            u.isDeleted === true ||
+            u.deleted === true;
 
           const isActive =
             u.isActive === true ||
             u.active === true ||
-            u.status === "active";
+            u.registrationStatus === "active";
 
-          const isApproved =
-            (u.registrationStatus || "").toLowerCase() === "approved";
+          const isVerified =
+            u.isVerified === true;
 
-          // اعرض أي Teacher يكون Active أو Approved
-          return isTeacher && !isDeleted && (isActive || isApproved);
+          return isTeacher && !isDeleted && isActive && isVerified;
         })
         .map((u) => ({
           ...u,
           id: u.id || u._id,
+          fullName: u.fullName || u.user?.fullName || "معلم بدون اسم",
         }));
 
       console.log("Filtered Teachers:", teachersOnly);
