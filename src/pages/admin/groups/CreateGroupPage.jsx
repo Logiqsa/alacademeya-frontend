@@ -171,7 +171,7 @@ useEffect(() => {
 
       const teachersOnly = list
         .filter((u) => {
-          const role = (u.role || u.rawRole || "")
+          const role = (u.role || "")
             .toString()
             .toLowerCase();
 
@@ -181,20 +181,21 @@ useEffect(() => {
             u.isDeleted === true ||
             u.deleted === true;
 
-          const isActive =
-            u.isActive === true ||
-            u.active === true ||
-            u.registrationStatus === "active";
+          const isActiveUser =
+            u.registrationStatus === "active" &&
+            u.isActive !== false &&
+            u.isDeleted !== true;
 
-          const isVerified =
-            u.isVerified === true;
-
-          return isTeacher && !isDeleted && isActive && isVerified;
+          return isTeacher && !isDeleted && isActiveUser;
         })
         .map((u) => ({
           ...u,
           id: u.id || u._id,
-          fullName: u.fullName || u.user?.fullName || "معلم بدون اسم",
+          fullName:
+            u.fullName ||
+            u.name ||
+            u.user?.fullName ||
+            "معلم بدون اسم",
         }));
 
       console.log("Filtered Teachers:", teachersOnly);
