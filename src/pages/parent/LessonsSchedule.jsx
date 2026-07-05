@@ -12,7 +12,7 @@ import {
 import { getMyClassrooms, getMyStudents } from "../../services/APIService"; // ⚠️ عدّل المسار حسب مكان السيرفس عندك
 import ParentLayout from "../../components/parent/layout/ParentLayout";
 // import ScheduleFilters from "../../components/parent/schedule/ScheduleFilters";
-// import CalendarStrip from "../../components/parent/schedule/CalendarStrip";
+import CalendarStrip from "../../components/parent/schedule/CalendarStrip";
 import LessonsList from "../../components/parent/schedule/LessonCard";
 import StatsCards from "../../components/parent/schedule/StatsCards";
 
@@ -156,40 +156,7 @@ const LessonsSchedule = () => {
           <ScheduleFilters />
         </div> */}
 
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-8 pb-4">
-            <button
-              onClick={goToPreviousWeek}
-              className="flex items-center gap-1 text-[#1F293780] font-normal"
-              style={{
-                fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                fontSize: "16px",
-                lineHeight: "24px",
-              }}
-            >
-              <ChevronRight size={20} /> الأسبوع السابق
-            </button>
-
-            <h3
-              className="font-medium text-base leading-6 text-right text-[#1F2937] px-4 py-2 rounded-lg"
-              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-            >
-              {formatArabicMonthYear(weekStart)}
-            </h3>
-
-            <button
-              onClick={goToNextWeek}
-              className="flex items-center gap-1 text-[#1F293780] font-normal"
-              style={{
-                fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                fontSize: "16px",
-                lineHeight: "24px",
-              }}
-            >
-              الأسبوع التالي <ChevronLeft size={20} />
-            </button>
-          </div>
-        </div>
+      
 
         <div>
           <CalendarStrip
