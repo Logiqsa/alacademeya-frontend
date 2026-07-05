@@ -5,14 +5,28 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 
 import {
   getStudent,
-  getUsers,
+  getAvailableTeachers,
   getAvailableClassrooms,
   getAllPackages,
   getAllDiscounts,
   createSubscription,
 } from "../../../services/APIService";
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+const idOf = (obj) => {
+  if (!obj) return "";
+  if (typeof obj === "string") return obj;
+  return obj.id || obj._id || "";
+};
+
+const extractList = (resData) => {
+  if (!resData) return [];
+
+  const root = resData?.data || resData;
+  const raw = root?.data || root || [];
+
+  return Array.isArray(raw) ? raw : [];
+};
+
 const nameOf = (obj) =>
   obj?.name?.ar || obj?.name?.en || obj?.fullName || obj?.user?.fullName || "—";
 
@@ -71,22 +85,23 @@ const SubjectAccordion = ({
   isOpen,
   onToggle,
   data,
-  teachers,
   discounts,
   onTeacherChange,
   onFieldChange,
 }) => {
-  const teacherOptions = teachers.map((t) => ({
-    value: t.id,
-    label: nameOf(t),
+  const teacherOptions = (data.teachers || []).map((t) => ({
+    value: t.id || t._id,
+    label: t.fullName || t.user?.fullName || nameOf(t),
   }));
+
   const classroomOptions = (data.classrooms || []).map((c) => ({
-    value: c.id,
-    label: c.name || nameOf(c),
+    value: c.id || c._id,
+    label: typeof c.name === "string" ? c.name : nameOf(c),
   }));
+
   const packageOptions = (data.packages || []).map((p) => ({
-    value: p.id,
-    label: p.name || nameOf(p),
+    value: p.id || p._id,
+    label: typeof p.name === "string" ? p.name : nameOf(p),
   }));
   const discountOptions = [
     { value: "", label: "بدون خصم" },
@@ -127,10 +142,17 @@ const SubjectAccordion = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 mb-2">
             <SelectField
               label="المعلم"
-              placeholder="اختر المعلم"
+              placeholder={
+                data.loadingTeachers
+                  ? "جاري تحميل المعلمين..."
+                  : teacherOptions.length
+                    ? "اختر المعلم"
+                    : "لا يوجد معلمون متاحون لهذه المادة"
+              }
               value={data.teacherId}
               onChange={(v) => onTeacherChange(subject.id, v)}
               options={teacherOptions}
+              loading={data.loadingTeachers}
             />
             <SelectField
               label="المجموعة"
@@ -246,15 +268,16 @@ const ActivateSubscriptionPage = () => {
 
   const subjects = useMemo(
     () =>
-      (request?.preferredSubjects || []).map((s) => ({
-        id: s.id,
-        name: nameOf(s) || "مادة",
-      })),
+      (request?.preferredSubjects || [])
+        .map((s) => ({
+          id: idOf(s),
+          name: nameOf(s) || "مادة",
+        }))
+        .filter((s) => s.id),
     [request],
   );
 
   // ─── معلمين وخصومات: قائمة عامة بنجيبها مرة واحدة ───────────────────────────
-  const [teachers, setTeachers] = useState([]);
   const [discounts, setDiscounts] = useState([]);
   const [metaLoading, setMetaLoading] = useState(true);
   const [metaError, setMetaError] = useState("");
@@ -263,25 +286,21 @@ const ActivateSubscriptionPage = () => {
     const fetchMeta = async () => {
       setMetaLoading(true);
       setMetaError("");
+
       try {
-        const [teachersRes, discountsRes] = await Promise.all([
-          getUsers({ role: "teacher" }),
-          getAllDiscounts({ isActive: true }),
-        ]);
-        setTeachers(teachersRes.data.data || []);
-        setDiscounts(discountsRes.data.data || []);
+        const discountsRes = await getAllDiscounts({ isActive: true });
+        setDiscounts(extractList(discountsRes.data));
       } catch (err) {
         setMetaError(
-          err?.response?.data?.message ||
-            "تعذر تحميل بيانات المعلمين أو الخصومات",
+          err?.response?.data?.message || "تعذر تحميل بيانات الخصومات",
         );
       } finally {
         setMetaLoading(false);
       }
     };
+
     fetchMeta();
   }, []);
-
   // ─── بيانات كل مادة (معلم / مجموعة / باقة / خصم / زيادة) ────────────────────
   const [subjectData, setSubjectData] = useState({});
   const [openSubject, setOpenSubject] = useState("");
@@ -298,10 +317,17 @@ const ActivateSubscriptionPage = () => {
             packageId: "",
             discountId: "",
             increase: "",
+
+            teachers: [],
             classrooms: [],
             packages: [],
+
+            loadingTeachers: false,
             loadingClassrooms: false,
             loadingPackages: false,
+
+            teachersLoaded: false,
+            packagesLoaded: false,
           };
         }
       });
@@ -317,6 +343,80 @@ const ActivateSubscriptionPage = () => {
     }));
   };
 
+  const loadAvailableTeachers = async (subjectId) => {
+    const curriculum = idOf(request?.curriculum);
+    const stage = idOf(request?.stage);
+    const grade = idOf(request?.grade);
+
+    if (!curriculum || !stage || !grade || !subjectId) return;
+
+    patchSubject(subjectId, {
+      loadingTeachers: true,
+      teachers: [],
+      teachersLoaded: false,
+    });
+
+    try {
+      const res = await getAvailableTeachers({
+        curriculum,
+        stage,
+        grade,
+        subject: subjectId,
+      });
+
+      const list = extractList(res.data);
+
+      const normalizedTeachers = list
+        .map((teacher) => ({
+          id: teacher.teacherId || teacher.id || teacher._id,
+          userId: teacher.userId || teacher.user?._id,
+          fullName:
+            teacher.fullName || teacher.user?.fullName || "معلم بدون اسم",
+          username: teacher.username || teacher.user?.username,
+          rating: teacher.rating,
+          totalReviews: teacher.totalReviews,
+        }))
+        .filter((teacher) => teacher.id);
+
+      patchSubject(subjectId, {
+        teachers: normalizedTeachers,
+        loadingTeachers: false,
+        teachersLoaded: true,
+      });
+    } catch (err) {
+      console.error("فشل تحميل المعلمين المتاحين:", err);
+      patchSubject(subjectId, {
+        teachers: [],
+        loadingTeachers: false,
+        teachersLoaded: true,
+      });
+    }
+  };
+
+  const loadPackages = async (subjectId) => {
+    patchSubject(subjectId, {
+      loadingPackages: true,
+      packagesLoaded: false,
+    });
+
+    try {
+      const res = await getAllPackages({ subject: subjectId });
+
+      patchSubject(subjectId, {
+        packages: extractList(res.data),
+        loadingPackages: false,
+        packagesLoaded: true,
+      });
+    } catch (err) {
+      console.error("فشل تحميل الباقات:", err);
+      patchSubject(subjectId, {
+        packages: [],
+        loadingPackages: false,
+        packagesLoaded: true,
+      });
+    }
+  };
+
   const handleFieldChange = (subjectId, patch) =>
     patchSubject(subjectId, patch);
 
@@ -327,17 +427,23 @@ const ActivateSubscriptionPage = () => {
       classrooms: [],
       loadingClassrooms: true,
     });
+
     try {
       const res = await getAvailableClassrooms({
         teacher: teacherId,
         subject: subjectId,
       });
+
       patchSubject(subjectId, {
-        classrooms: res.data.data || [],
+        classrooms: extractList(res.data),
         loadingClassrooms: false,
       });
-    } catch {
-      patchSubject(subjectId, { classrooms: [], loadingClassrooms: false });
+    } catch (err) {
+      console.error("فشل تحميل المجموعات:", err);
+      patchSubject(subjectId, {
+        classrooms: [],
+        loadingClassrooms: false,
+      });
     }
   };
 
@@ -345,26 +451,35 @@ const ActivateSubscriptionPage = () => {
     const next = openSubject === subjectId ? "" : subjectId;
     setOpenSubject(next);
 
+    if (!next) return;
+
     const current = subjectData[subjectId];
-    if (
-      next &&
-      current &&
-      !current.packages.length &&
-      !current.loadingPackages
-    ) {
-      patchSubject(subjectId, { loadingPackages: true });
-      try {
-        const res = await getAllPackages({ subject: subjectId });
-        patchSubject(subjectId, {
-          packages: res.data.data || [],
-          loadingPackages: false,
-        });
-      } catch {
-        patchSubject(subjectId, { packages: [], loadingPackages: false });
-      }
+
+    if (!current) return;
+
+    if (!current.teachersLoaded && !current.loadingTeachers) {
+      loadAvailableTeachers(subjectId);
+    }
+
+    if (!current.packagesLoaded && !current.loadingPackages) {
+      loadPackages(subjectId);
     }
   };
+  useEffect(() => {
+    if (!openSubject) return;
 
+    const current = subjectData[openSubject];
+
+    if (!current) return;
+
+    if (!current.teachersLoaded && !current.loadingTeachers) {
+      loadAvailableTeachers(openSubject);
+    }
+
+    if (!current.packagesLoaded && !current.loadingPackages) {
+      loadPackages(openSubject);
+    }
+  }, [openSubject, subjectData]);
   // ─── تفعيل الاشتراك ───────────────────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -496,7 +611,6 @@ const ActivateSubscriptionPage = () => {
                   isOpen={openSubject === subject.id}
                   onToggle={() => handleToggleSubject(subject.id)}
                   data={subjectData[subject.id] || {}}
-                  teachers={teachers}
                   discounts={discounts}
                   onTeacherChange={handleTeacherChange}
                   onFieldChange={handleFieldChange}
