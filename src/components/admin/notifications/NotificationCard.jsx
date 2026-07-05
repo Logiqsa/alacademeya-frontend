@@ -1,10 +1,23 @@
 import React from "react";
+
 import {
   Eye,
   EyeOff,
   GraduationCap,
   Settings,
 } from "lucide-react";
+
+const getLocalizedText = (value, lang = "ar") => {
+  if (!value) return "";
+
+  if (typeof value === "string") return value;
+
+  if (typeof value === "object") {
+    return value[lang] || value.ar || value.en || "";
+  }
+
+  return String(value);
+};
 
 const NotificationCard = ({
   title,
@@ -16,9 +29,10 @@ const NotificationCard = ({
 }) => {
   const isAcademic = type === "academic";
 
-  const Icon = isAcademic
-    ? GraduationCap
-    : Settings;
+  const Icon = isAcademic ? GraduationCap : Settings;
+
+  const safeTitle = getLocalizedText(title, "ar");
+  const safeDescription = getLocalizedText(description, "ar");
 
   return (
     <div
@@ -58,11 +72,11 @@ const NotificationCard = ({
 
         <div className="flex-1 min-w-0">
           <h3 className="text-[15px] sm:text-[16px] font-medium text-[#1F2937]">
-            {title}
+            {safeTitle}
           </h3>
 
           <p className="mt-2 text-[13px] sm:text-[14px] leading-6 text-[#1F2937BF]">
-            {description}
+            {safeDescription}
           </p>
 
           <span className="block mt-2 text-[12px] text-[#1F2937BF]">
