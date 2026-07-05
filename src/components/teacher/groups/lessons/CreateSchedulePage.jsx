@@ -2,9 +2,8 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Clock } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
-
-// عدّل المسار حسب مكان دالة إنشاء الجدول الفعلية عندك في authService
-// import { createClassroomSchedule } from "../../../services/authService";
+import { createOrUpdateClassroomSchedule } from "../../../../services/authService";
+// عدّل المسار أعلاه حسب مكان authService عندك فعليًا لو مختلف
 
 const DAYS = [
   { key: "saturday", label: "السبت" },
@@ -44,14 +43,16 @@ const CreateSchedulePage = () => {
     setError(null);
     setLoading(true);
     try {
-      // مثال للاستخدام لما يتحدد endpoint الفعلي:
-      // await createClassroomSchedule(groupId, { days: selectedDays, time });
+      await createOrUpdateClassroomSchedule(groupId, {
+        days: selectedDays,
+        time,
+      });
       navigate(`/teacher/groups/${groupId}/lessons`, {
         state: { showSuccessToast: true },
       });
     } catch (err) {
-      console.error("createClassroomSchedule failed:", err);
-      setError("حدث خطأ أثناء إنشاء الجدول");
+      console.error("createOrUpdateClassroomSchedule failed:", err.response?.data || err);
+      setError(err.response?.data?.message || "حدث خطأ أثناء إنشاء الجدول");
     } finally {
       setLoading(false);
     }
