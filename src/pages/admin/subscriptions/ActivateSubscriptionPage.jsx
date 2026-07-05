@@ -63,7 +63,7 @@ const SelectField = ({
         className="w-full h-11 px-3.5 appearance-none bg-[#F9FAFA] border border-[#E5E7EB] rounded-lg text-[13px] text-[#1F2937] outline-none cursor-pointer focus:border-[#123C91] focus:ring-2 focus:ring-[#123C91]/20 transition-colors text-right disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="" disabled>
-          {loading ? "جاري التحميل..." : placeholder}
+          {placeholder}
         </option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -85,7 +85,9 @@ const SubjectAccordion = ({
   isOpen,
   onToggle,
   data,
+  packages,
   discounts,
+  packagesLoading,
   onTeacherChange,
   onFieldChange,
 }) => {
@@ -99,22 +101,24 @@ const SubjectAccordion = ({
     label: typeof c.name === "string" ? c.name : nameOf(c),
   }));
 
-  const packageOptions = (data.packages || []).map((p) => ({
+  const packageOptions = (packages || []).map((p) => ({
     value: p.id || p._id,
     label: typeof p.name === "string" ? p.name : nameOf(p),
   }));
   const discountOptions = [
     { value: "", label: "بدون خصم" },
     ...discounts.map((d) => ({
-      value: d.id,
+      value: d.id || d._id,
       label: `${d.code} — ${d.type === "percentage" ? `${d.value}%` : `${d.value} جنيه`}`,
     })),
   ];
 
-  const selectedPackage = (data.packages || []).find(
-    (p) => p.id === data.packageId,
+  const selectedPackage = (packages || []).find(
+    (p) => (p.id || p._id) === data.packageId,
   );
-  const selectedDiscount = discounts.find((d) => d.id === data.discountId);
+  const selectedDiscount = discounts.find(
+    (d) => (d.id || d._id) === data.discountId,
+  );
   const basePrice = selectedPackage?.price ?? 0;
   const finalPrice = computeFinalPrice(
     basePrice,
@@ -167,11 +171,13 @@ const SubjectAccordion = ({
             />
             <SelectField
               label="الباقة"
-              placeholder="اختر الباقة"
+              placeholder={
+                packagesLoading ? "جاري تحميل الباقات..." : "اختر الباقة"
+              }
               value={data.packageId}
               onChange={(v) => onFieldChange(subject.id, { packageId: v })}
               options={packageOptions}
-              loading={data.loadingPackages}
+              loading={packagesLoading}
             />
             <SelectField
               label="الخصم"
@@ -279,6 +285,7 @@ const ActivateSubscriptionPage = () => {
 
   // ─── معلمين وخصومات: قائمة عامة بنجيبها مرة واحدة ───────────────────────────
   const [discounts, setDiscounts] = useState([]);
+  const [packages, setPackages] = useState([]);
   const [metaLoading, setMetaLoading] = useState(true);
   const [metaError, setMetaError] = useState("");
 
@@ -288,11 +295,17 @@ const ActivateSubscriptionPage = () => {
       setMetaError("");
 
       try {
-        const discountsRes = await getAllDiscounts({ isActive: true });
+        const [discountsRes, packagesRes] = await Promise.all([
+          getAllDiscounts({ isActive: true }),
+          getAllPackages(),
+        ]);
+
         setDiscounts(extractList(discountsRes.data));
+        setPackages(extractList(packagesRes.data));
       } catch (err) {
         setMetaError(
-          err?.response?.data?.message || "تعذر تحميل بيانات الخصومات",
+          err?.response?.data?.message ||
+            "تعذر تحميل بيانات الخصومات أو الباقات",
         );
       } finally {
         setMetaLoading(false);
@@ -307,6 +320,7 @@ const ActivateSubscriptionPage = () => {
 
   useEffect(() => {
     if (!subjects.length) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSubjectData((prev) => {
       const next = { ...prev };
       subjects.forEach((s) => {
@@ -320,14 +334,10 @@ const ActivateSubscriptionPage = () => {
 
             teachers: [],
             classrooms: [],
-            packages: [],
-
             loadingTeachers: false,
             loadingClassrooms: false,
-            loadingPackages: false,
 
             teachersLoaded: false,
-            packagesLoaded: false,
           };
         }
       });
@@ -393,30 +403,6 @@ const ActivateSubscriptionPage = () => {
     }
   };
 
-  const loadPackages = async (subjectId) => {
-    patchSubject(subjectId, {
-      loadingPackages: true,
-      packagesLoaded: false,
-    });
-
-    try {
-      const res = await getAllPackages({ subject: subjectId });
-
-      patchSubject(subjectId, {
-        packages: extractList(res.data),
-        loadingPackages: false,
-        packagesLoaded: true,
-      });
-    } catch (err) {
-      console.error("فشل تحميل الباقات:", err);
-      patchSubject(subjectId, {
-        packages: [],
-        loadingPackages: false,
-        packagesLoaded: true,
-      });
-    }
-  };
-
   const handleFieldChange = (subjectId, patch) =>
     patchSubject(subjectId, patch);
 
@@ -461,9 +447,6 @@ const ActivateSubscriptionPage = () => {
       loadAvailableTeachers(subjectId);
     }
 
-    if (!current.packagesLoaded && !current.loadingPackages) {
-      loadPackages(subjectId);
-    }
   };
   useEffect(() => {
     if (!openSubject) return;
@@ -473,12 +456,12 @@ const ActivateSubscriptionPage = () => {
     if (!current) return;
 
     if (!current.teachersLoaded && !current.loadingTeachers) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadAvailableTeachers(openSubject);
     }
 
-    if (!current.packagesLoaded && !current.loadingPackages) {
-      loadPackages(openSubject);
-    }
+    // loadAvailableTeachers intentionally reads the latest request and subject state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSubject, subjectData]);
   // ─── تفعيل الاشتراك ───────────────────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false);
@@ -489,13 +472,14 @@ const ActivateSubscriptionPage = () => {
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const handleActivate = async () => {
-    const incomplete = subjects.some((s) => {
-      const d = subjectData[s.id];
-      return !d?.teacherId || !d?.classroomId || !d?.packageId;
+    const selectedSubjects = subjects.filter((s) => {
+      const data = subjectData[s.id];
+      return data?.teacherId && data?.classroomId && data?.packageId;
     });
-    if (incomplete) {
+
+    if (!selectedSubjects.length) {
       setSubmitError(
-        "من فضلك اختر المعلم والمجموعة والباقة لكل مادة قبل التفعيل",
+        "من فضلك اختر المعلم والمجموعة والباقة لمادة واحدة على الأقل قبل التفعيل",
       );
       return;
     }
@@ -503,19 +487,47 @@ const ActivateSubscriptionPage = () => {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const items = subjects.map((s) => {
+      const studentId =
+        idOf(request?.student) ||
+        idOf(request?.studentId) ||
+        request?._id ||
+        request?.id ||
+        id;
+
+      const items = selectedSubjects.map((s) => {
         const d = subjectData[s.id];
+        const selectedClassroom = (d.classrooms || []).find(
+          (classroom) => idOf(classroom) === d.classroomId,
+        );
+        const selectedPackage = packages.find(
+          (packageItem) => idOf(packageItem) === d.packageId,
+        );
+        const selectedDiscount = discounts.find(
+          (discount) => idOf(discount) === d.discountId,
+        );
+        const price = Number(selectedPackage?.price) || 0;
+        const discountAmount = selectedDiscount
+          ? selectedDiscount.type === "percentage"
+            ? (price * (Number(selectedDiscount.value) || 0)) / 100
+            : Number(selectedDiscount.value) || 0
+          : 0;
+
         return {
-          subjectId: s.id,
-          teacherId: d.teacherId,
-          classroomId: d.classroomId,
-          packageId: d.packageId,
-          discountId: d.discountId || undefined,
-          increase: Number(d.increase) || 0,
+          subject: s.id,
+          teacher: d.teacherId,
+          classroom: d.classroomId,
+          package: d.packageId,
+          type: ["private", "group"].includes(selectedClassroom?.type)
+            ? selectedClassroom.type
+            : "group",
+          discount: Math.min(price, Math.max(0, discountAmount)),
         };
       });
 
-      await createSubscription({ studentId: request.id, items });
+      await createSubscription({
+        student: studentId,
+        items,
+      });
 
       setShowToast(true);
       clearTimeout(toastTimer.current);
@@ -611,7 +623,9 @@ const ActivateSubscriptionPage = () => {
                   isOpen={openSubject === subject.id}
                   onToggle={() => handleToggleSubject(subject.id)}
                   data={subjectData[subject.id] || {}}
+                  packages={packages}
                   discounts={discounts}
+                  packagesLoading={metaLoading}
                   onTeacherChange={handleTeacherChange}
                   onFieldChange={handleFieldChange}
                 />
