@@ -11,7 +11,7 @@ import {
   getAssignmentSubmissions,
   getClassroomStudents,
   gradeSubmission, // TODO: عدّل الاستدعاء في handleAction لما تأكدلي شكل الـ endpoint
-} from "../../../services/authService"; // عدّل المسار حسب مكان api.js عندك
+} from "../../../services/APIService"; // عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 5;
 
@@ -47,7 +47,9 @@ const buildAssignmentDetails = (assignmentRaw, submissionsRaw, rosterRaw) => {
       ...base,
       submitted: true,
       submissionId: sub.id,
-      submittedCount: graded ? `${sub.score}/${assignmentRaw.totalScore}` : undefined,
+      submittedCount: graded
+        ? `${sub.score}/${assignmentRaw.totalScore}`
+        : undefined,
       correctionStatus: graded ? "تم التصحيح" : "قيد التصحيح",
       fileName: sub.attachments?.[0]?.originalName,
       fileSize: formatBytes(sub.attachments?.[0]?.size) ?? undefined,
@@ -61,7 +63,8 @@ const buildAssignmentDetails = (assignmentRaw, submissionsRaw, rosterRaw) => {
   return {
     id: assignmentRaw.id,
     title: assignmentRaw.title,
-    subtitle: assignmentRaw.description || "إدارة ومتابعة واجبات الطلاب وتصحيحها.",
+    subtitle:
+      assignmentRaw.description || "إدارة ومتابعة واجبات الطلاب وتصحيحها.",
     stats: { pendingCorrection, corrected, totalSubmissions },
     students,
   };
@@ -86,7 +89,8 @@ const AssignmentDetailsPage = () => {
 
       const assignmentRes = await getAssignment(assignmentId);
       const assignmentRaw = assignmentRes.data?.data;
-      const classroomId = assignmentRaw.classroom?.id ?? assignmentRaw.classroom;
+      const classroomId =
+        assignmentRaw.classroom?.id ?? assignmentRaw.classroom;
 
       const [submissionsRes, rosterRes] = await Promise.all([
         getAssignmentSubmissions(assignmentId),
@@ -97,12 +101,12 @@ const AssignmentDetailsPage = () => {
         buildAssignmentDetails(
           assignmentRaw,
           submissionsRes.data?.data || [],
-          rosterRes.data?.data || []
-        )
+          rosterRes.data?.data || [],
+        ),
       );
     } catch (err) {
       setErrorMsg(
-        err?.response?.data?.message || "حدث خطأ أثناء تحميل بيانات الواجب"
+        err?.response?.data?.message || "حدث خطأ أثناء تحميل بيانات الواجب",
       );
     } finally {
       setLoading(false);
@@ -121,9 +125,7 @@ const AssignmentDetailsPage = () => {
         await gradeSubmission(student.submissionId, { score: Number(grade) });
         fetchAssignment(); // إعادة تحميل عشان نعرض الدرجة والحالة الجديدة
       } catch (err) {
-        setErrorMsg(
-          err?.response?.data?.message || "حدث خطأ أثناء حفظ الدرجة"
-        );
+        setErrorMsg(err?.response?.data?.message || "حدث خطأ أثناء حفظ الدرجة");
       }
     }
   };
@@ -161,15 +163,25 @@ const AssignmentDetailsPage = () => {
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginatedStudents = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paginatedStudents = filtered.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   return (
     <TeacherLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         {/* Assignment header */}
         <div className="mb-6">
-          <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-1">{assignment.title}</h3>
-          <p className="text-[16px] font-normal leading-6 text-[#575F69]">{assignment.subtitle}</p>
+          <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-1">
+            {assignment.title}
+          </h3>
+          <p className="text-[16px] font-normal leading-6 text-[#575F69]">
+            {assignment.subtitle}
+          </p>
         </div>
 
         {/* Stats */}

@@ -7,9 +7,14 @@ import LessonAssignments from "../../../components/student/groupLesson/Lessonass
 import LessonQuizzes from "../../../components/student/groupLesson/Lessonquizzes";
 import LessonRecordings from "../../../components/student/groupLesson/Lessonrecordings";
 import LessonFiles from "../../../components/student/groupLesson/Lessonfiles";
-import { getMyClassrooms, getClassroomSessions, getSessionAttendance } from "../../../services/authService";
+import {
+  getMyClassrooms,
+  getClassroomSessions,
+  getSessionAttendance,
+} from "../../../services/APIService";
 
-const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "--";
 
 const STATUS_LABELS = {
   upcoming: "قادمة",
@@ -56,7 +61,9 @@ const PageHeader = ({ lesson }) => (
     <div className="flex items-center gap-3 min-w-0">
       <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3">{lesson.title}</h1>
+          <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3">
+            {lesson.title}
+          </h1>
           <StatusBadge status={lesson.status} />
         </div>
         <p className="text-[16px] font-normal leading-6 text-[#575F69]">
@@ -97,7 +104,8 @@ const StudentLessonDetailsPage = () => {
       let classroomData = {};
       if (classroomsResult.status === "fulfilled") {
         const classrooms = classroomsResult.value.data?.data ?? [];
-        classroomData = classrooms.find((c) => (c.id ?? c._id) === groupId) ?? {};
+        classroomData =
+          classrooms.find((c) => (c.id ?? c._id) === groupId) ?? {};
       } else {
         console.error("getMyClassrooms failed:", classroomsResult.reason);
       }
@@ -141,7 +149,10 @@ const StudentLessonDetailsPage = () => {
           month: "long",
           day: "numeric",
         }),
-        time: startDate.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+        time: startDate.toLocaleTimeString("ar-EG", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         duration: `${session.duration || 45} دقيقة`,
         status: STATUS_LABELS[status] || status,
         totalStudents: totalRecords || classroomData.students?.length || 0,
@@ -171,18 +182,27 @@ const StudentLessonDetailsPage = () => {
   if (error || !lesson) {
     return (
       <StudentLayout>
-        <div className="text-center py-16 text-red-500">{error || "لم يتم العثور على الحصة"}</div>
+        <div className="text-center py-16 text-red-500">
+          {error || "لم يتم العثور على الحصة"}
+        </div>
       </StudentLayout>
     );
   }
 
   return (
     <StudentLayout>
-      <div className="w-full p-1 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="w-full p-1 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         <div className="mx-auto space-y-5">
           <PageHeader lesson={lesson} />
 
-          <LessonStats totalStudents={lesson.totalStudents} attendance={lesson.attendance} absence={lesson.absence} />
+          <LessonStats
+            totalStudents={lesson.totalStudents}
+            attendance={lesson.attendance}
+            absence={lesson.absence}
+          />
 
           <LiveLessonLink
             lessonUrl={lesson.lessonUrl}

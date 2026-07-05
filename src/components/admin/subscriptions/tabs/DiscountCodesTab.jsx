@@ -1,24 +1,67 @@
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import { createPortal } from "react-dom";
 import {
-  MoreVertical, X, ChevronDown, ChevronRight, ChevronLeft,
-  Percent, Banknote, Copy, Check, Plus, TicketPercent, Loader2,
-  AlertTriangle, CheckCircle2, XCircle, PauseCircle, PlayCircle, Trash2,
+  MoreVertical,
+  X,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  Percent,
+  Banknote,
+  Copy,
+  Check,
+  Plus,
+  TicketPercent,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  PauseCircle,
+  PlayCircle,
+  Trash2,
 } from "lucide-react";
-import { getAllDiscounts, createDiscount, updateDiscount, deleteDiscount } from "../../../../services/authService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
+import {
+  getAllDiscounts,
+  createDiscount,
+  updateDiscount,
+  deleteDiscount,
+} from "../../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 8;
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 const STATUS_STYLES = {
-  نشط: { dot: "bg-[#15A862]", text: "text-[#15A862]", bg: "bg-[#15A862]/10", ring: "ring-[#15A862]/20" },
-  موقوف: { dot: "bg-[#E0394C]", text: "text-[#E0394C]", bg: "bg-[#E0394C]/10", ring: "ring-[#E0394C]/20" },
+  نشط: {
+    dot: "bg-[#15A862]",
+    text: "text-[#15A862]",
+    bg: "bg-[#15A862]/10",
+    ring: "ring-[#15A862]/20",
+  },
+  موقوف: {
+    dot: "bg-[#E0394C]",
+    text: "text-[#E0394C]",
+    bg: "bg-[#E0394C]/10",
+    ring: "ring-[#E0394C]/20",
+  },
 };
 
 const StatusBadge = ({ status }) => {
-  const s = STATUS_STYLES[status] ?? { dot: "bg-gray-400", text: "text-gray-500", bg: "bg-gray-100", ring: "ring-gray-200" };
+  const s = STATUS_STYLES[status] ?? {
+    dot: "bg-gray-400",
+    text: "text-gray-500",
+    bg: "bg-gray-100",
+    ring: "ring-gray-200",
+  };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ring-1 ${s.bg} ${s.text} ${s.ring}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ring-1 ${s.bg} ${s.text} ${s.ring}`}
+    >
       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
       {status}
     </span>
@@ -26,13 +69,21 @@ const StatusBadge = ({ status }) => {
 };
 
 const TypeIcon = ({ type }) => (
-  <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${type === "percentage" ? "bg-[#123C91]/10 text-[#123C91]" : "bg-[#0E7C66]/10 text-[#0E7C66]"}`}>
-    {type === "percentage" ? <Percent size={14} strokeWidth={2.4} /> : <Banknote size={14} strokeWidth={2.4} />}
+  <span
+    className={`inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${type === "percentage" ? "bg-[#123C91]/10 text-[#123C91]" : "bg-[#0E7C66]/10 text-[#0E7C66]"}`}
+  >
+    {type === "percentage" ? (
+      <Percent size={14} strokeWidth={2.4} />
+    ) : (
+      <Banknote size={14} strokeWidth={2.4} />
+    )}
   </span>
 );
 
-const typeLabel = (type) => (type === "percentage" ? "نسبة مئوية" : "مبلغ ثابت");
-const discountLabel = (d) => (d.type === "percentage" ? `${d.value}%` : `${d.value} جنيه`);
+const typeLabel = (type) =>
+  type === "percentage" ? "نسبة مئوية" : "مبلغ ثابت";
+const discountLabel = (d) =>
+  d.type === "percentage" ? `${d.value}%` : `${d.value} جنيه`;
 
 const UsageCount = ({ usedCount }) => (
   <span className="text-[13px] tabular-nums text-[#575F69]" dir="ltr">
@@ -56,11 +107,16 @@ const CodeChip = ({ code }) => {
       className="group inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg border border-dashed border-gray-300 bg-[#F9FAFA] hover:border-[#123C91]/40 hover:bg-[#123C91]/5 transition-colors"
       title="نسخ الكود"
     >
-      <span className="font-mono font-semibold text-[13px] text-[#1F2937]">{code}</span>
+      <span className="font-mono font-semibold text-[13px] text-[#1F2937]">
+        {code}
+      </span>
       {copied ? (
         <Check size={13} className="text-[#15A862]" />
       ) : (
-        <Copy size={13} className="text-[#9CA3AF] group-hover:text-[#123C91] transition-colors" />
+        <Copy
+          size={13}
+          className="text-[#9CA3AF] group-hover:text-[#123C91] transition-colors"
+        />
       )}
     </button>
   );
@@ -82,26 +138,50 @@ const Toast = ({ toast, onDismiss }) => {
       className={`fixed z-[100] bottom-5 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-[13px] font-medium max-w-[92vw] sm:max-w-sm
         ${isError ? "bg-white border-[#E0394C]/30 text-[#B4283A]" : "bg-white border-[#15A862]/30 text-[#0E7C51]"}`}
     >
-      {isError ? <XCircle size={17} className="shrink-0" /> : <CheckCircle2 size={17} className="shrink-0" />}
+      {isError ? (
+        <XCircle size={17} className="shrink-0" />
+      ) : (
+        <CheckCircle2 size={17} className="shrink-0" />
+      )}
       <span className="leading-snug">{toast.message}</span>
     </div>
   );
 };
 
 // ─── Confirm Dialog (used for delete) ─────────────────────────────────────────
-const ConfirmDialog = ({ open, title, description, confirmLabel, danger, loading, onConfirm, onCancel }) => {
+const ConfirmDialog = ({
+  open,
+  title,
+  description,
+  confirmLabel,
+  danger,
+  loading,
+  onConfirm,
+  onCancel,
+}) => {
   if (!open) return null;
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0B1220]/50 backdrop-blur-[2px] px-4"
-      onClick={(e) => { if (e.target === e.currentTarget && !loading) onCancel(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) onCancel();
+      }}
     >
-      <div dir="rtl" className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center">
-        <div className={`mx-auto mb-4 w-12 h-12 rounded-full flex items-center justify-center ${danger ? "bg-[#E0394C]/10 text-[#E0394C]" : "bg-[#123C91]/10 text-[#123C91]"}`}>
+      <div
+        dir="rtl"
+        className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center"
+      >
+        <div
+          className={`mx-auto mb-4 w-12 h-12 rounded-full flex items-center justify-center ${danger ? "bg-[#E0394C]/10 text-[#E0394C]" : "bg-[#123C91]/10 text-[#123C91]"}`}
+        >
           <AlertTriangle size={22} />
         </div>
-        <h3 className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937] mb-1.5">{title}</h3>
-        <p className="text-[13px] text-[#6B7280] leading-relaxed mb-6">{description}</p>
+        <h3 className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937] mb-1.5">
+          {title}
+        </h3>
+        <p className="text-[13px] text-[#6B7280] leading-relaxed mb-6">
+          {description}
+        </p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
@@ -156,8 +236,10 @@ const RowActions = ({ discount, busy, onToggleActive, onDeleteRequest }) => {
     if (!open) return;
     const close = (e) => {
       if (
-        menuRef.current && !menuRef.current.contains(e.target) &&
-        btnRef.current && !btnRef.current.contains(e.target)
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target)
       ) {
         setOpen(false);
       }
@@ -183,32 +265,47 @@ const RowActions = ({ discount, busy, onToggleActive, onDeleteRequest }) => {
         disabled={busy}
         className="p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors disabled:opacity-40"
       >
-        {busy ? <Loader2 size={17} className="animate-spin" /> : <MoreVertical size={17} />}
+        {busy ? (
+          <Loader2 size={17} className="animate-spin" />
+        ) : (
+          <MoreVertical size={17} />
+        )}
       </button>
-      {open && createPortal(
-        <ul
-          ref={menuRef}
-          dir="rtl"
-          style={{ position: "fixed", top: coords.top, right: coords.right }}
-          className="z-[70] w-40 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
-        >
-          <li
-            onClick={() => { setOpen(false); onToggleActive(discount); }}
-            className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E8821C] flex items-center gap-2 justify-end"
+      {open &&
+        createPortal(
+          <ul
+            ref={menuRef}
+            dir="rtl"
+            style={{ position: "fixed", top: coords.top, right: coords.right }}
+            className="z-[70] w-40 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
           >
-            {discount.isActive ? "إيقاف" : "تفعيل"}
-            {discount.isActive ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
-          </li>
-          <li
-            onClick={() => { setOpen(false); onDeleteRequest(discount); }}
-            className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E0394C] flex items-center gap-2 justify-end"
-          >
-            حذف
-            <Trash2 size={14} />
-          </li>
-        </ul>,
-        document.body
-      )}
+            <li
+              onClick={() => {
+                setOpen(false);
+                onToggleActive(discount);
+              }}
+              className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E8821C] flex items-center gap-2 justify-end"
+            >
+              {discount.isActive ? "إيقاف" : "تفعيل"}
+              {discount.isActive ? (
+                <PauseCircle size={14} />
+              ) : (
+                <PlayCircle size={14} />
+              )}
+            </li>
+            <li
+              onClick={() => {
+                setOpen(false);
+                onDeleteRequest(discount);
+              }}
+              className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E0394C] flex items-center gap-2 justify-end"
+            >
+              حذف
+              <Trash2 size={14} />
+            </li>
+          </ul>,
+          document.body,
+        )}
     </>
   );
 };
@@ -243,7 +340,8 @@ const AddCodeModal = ({ open, onClose, onCreated }) => {
 
   if (!open) return null;
 
-  const handleChange = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const handleChange = (key) => (e) =>
+    setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const handleSubmit = async () => {
     if (!form.code || !form.type || !form.value) {
@@ -271,7 +369,9 @@ const AddCodeModal = ({ open, onClose, onCreated }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1220]/50 backdrop-blur-[2px] px-4 py-6"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         dir="rtl"
@@ -296,30 +396,58 @@ const AddCodeModal = ({ open, onClose, onCreated }) => {
 
         <div className="p-5 sm:p-6 space-y-4">
           <Field label="اسم الكود">
-            <input value={form.name} onChange={handleChange("name")} placeholder="مثال: خصم العيد" className={inputCls} />
+            <input
+              value={form.name}
+              onChange={handleChange("name")}
+              placeholder="مثال: خصم العيد"
+              className={inputCls}
+            />
           </Field>
 
           <Field label="الكود">
-            <input value={form.code} onChange={handleChange("code")} placeholder="مثال: SAVE20" className={inputCls} dir="ltr" />
+            <input
+              value={form.code}
+              onChange={handleChange("code")}
+              placeholder="مثال: SAVE20"
+              className={inputCls}
+              dir="ltr"
+            />
           </Field>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="نوع الخصم">
               <div className="relative">
-                <select value={form.type} onChange={handleChange("type")} className={selectCls}>
-                  <option value="" disabled>اختر النوع</option>
+                <select
+                  value={form.type}
+                  onChange={handleChange("type")}
+                  className={selectCls}
+                >
+                  <option value="" disabled>
+                    اختر النوع
+                  </option>
                   <option value="percentage">نسبة مئوية</option>
                   <option value="fixed">مبلغ ثابت</option>
                 </select>
-                <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
+                <ChevronDown
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]"
+                />
               </div>
             </Field>
             <Field label="قيمة الخصم">
-              <input value={form.value} onChange={handleChange("value")} placeholder="20" type="number" className={inputCls} />
+              <input
+                value={form.value}
+                onChange={handleChange("value")}
+                placeholder="20"
+                type="number"
+                className={inputCls}
+              />
             </Field>
           </div>
 
-          {error && <p className="text-[12px] text-[#E0394C] text-right">{error}</p>}
+          {error && (
+            <p className="text-[12px] text-[#E0394C] text-right">{error}</p>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row-reverse gap-3 px-5 sm:px-6 pb-5 sm:pb-6">
@@ -345,9 +473,16 @@ const AddCodeModal = ({ open, onClose, onCreated }) => {
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 const Pagination = ({ page, total, totalPages, onChange }) => (
-  <div dir="rtl" className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1">
+  <div
+    dir="rtl"
+    className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1"
+  >
     <span className="text-[13px] text-[#8C9198] text-center sm:text-right">
-      عرض <span className="font-medium text-[#575F69]">{Math.min(PAGE_SIZE, total - (page - 1) * PAGE_SIZE)}</span> من أصل <span className="font-medium text-[#575F69]">{total}</span> كود خصم
+      عرض{" "}
+      <span className="font-medium text-[#575F69]">
+        {Math.min(PAGE_SIZE, total - (page - 1) * PAGE_SIZE)}
+      </span>{" "}
+      من أصل <span className="font-medium text-[#575F69]">{total}</span> كود خصم
     </span>
     <div className="flex items-center flex-wrap justify-center gap-1">
       <button
@@ -361,8 +496,11 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
         <button
           key={p}
           onClick={() => onChange(p)}
-          className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-medium transition-colors shrink-0 ${p === page ? "bg-[#123C91] text-white shadow-sm shadow-[#123C91]/25" : "border border-gray-200 text-[#575F69] hover:bg-gray-50"
-            }`}
+          className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-medium transition-colors shrink-0 ${
+            p === page
+              ? "bg-[#123C91] text-white shadow-sm shadow-[#123C91]/25"
+              : "border border-gray-200 text-[#575F69] hover:bg-gray-50"
+          }`}
         >
           {p}
         </button>
@@ -380,7 +518,10 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
 
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
 const CodeCard = ({ code, busy, onToggleActive, onDeleteRequest }) => (
-  <div dir="rtl" className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+  <div
+    dir="rtl"
+    className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm"
+  >
     <div className="flex items-center justify-between gap-2 mb-3.5">
       <CodeChip code={code.code} />
       <StatusBadge status={code.isActive ? "نشط" : "موقوف"} />
@@ -390,8 +531,12 @@ const CodeCard = ({ code, busy, onToggleActive, onDeleteRequest }) => (
       <div className="flex items-center gap-2">
         <TypeIcon type={code.type} />
         <div>
-          <p className="text-[13px] font-semibold text-[#1F2937] leading-tight">{discountLabel(code)}</p>
-          <p className="text-[11px] text-[#9CA3AF] leading-tight mt-0.5">{typeLabel(code.type)}</p>
+          <p className="text-[13px] font-semibold text-[#1F2937] leading-tight">
+            {discountLabel(code)}
+          </p>
+          <p className="text-[11px] text-[#9CA3AF] leading-tight mt-0.5">
+            {typeLabel(code.type)}
+          </p>
         </div>
       </div>
       <div className="text-left">
@@ -401,7 +546,12 @@ const CodeCard = ({ code, busy, onToggleActive, onDeleteRequest }) => (
     </div>
 
     <div className="flex justify-end pt-2.5 border-t border-gray-100">
-      <RowActions discount={code} busy={busy} onToggleActive={onToggleActive} onDeleteRequest={onDeleteRequest} />
+      <RowActions
+        discount={code}
+        busy={busy}
+        onToggleActive={onToggleActive}
+        onDeleteRequest={onDeleteRequest}
+      />
     </div>
   </div>
 );
@@ -434,7 +584,9 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
     }
   }, []);
 
-  useEffect(() => { fetchDiscounts(); }, [fetchDiscounts]);
+  useEffect(() => {
+    fetchDiscounts();
+  }, [fetchDiscounts]);
 
   // ── Toggle active / paused ──────────────────────────────────────────────
   const handleToggleActive = async (discount) => {
@@ -443,15 +595,31 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
     const nextActive = !discount.isActive;
 
     // optimistic update
-    setCodes((prev) => prev.map((c) => (c.id === discount.id ? { ...c, isActive: nextActive } : c)));
+    setCodes((prev) =>
+      prev.map((c) =>
+        c.id === discount.id ? { ...c, isActive: nextActive } : c,
+      ),
+    );
 
     try {
       await updateDiscount(discount.id, { isActive: nextActive });
-      showToast("success", nextActive ? `تم تفعيل الكود "${discount.code}"` : `تم إيقاف الكود "${discount.code}"`);
+      showToast(
+        "success",
+        nextActive
+          ? `تم تفعيل الكود "${discount.code}"`
+          : `تم إيقاف الكود "${discount.code}"`,
+      );
     } catch (err) {
       // rollback on failure
-      setCodes((prev) => prev.map((c) => (c.id === discount.id ? { ...c, isActive: discount.isActive } : c)));
-      showToast("error", err?.response?.data?.message || "تعذر تحديث حالة الكود، حاول مرة أخرى");
+      setCodes((prev) =>
+        prev.map((c) =>
+          c.id === discount.id ? { ...c, isActive: discount.isActive } : c,
+        ),
+      );
+      showToast(
+        "error",
+        err?.response?.data?.message || "تعذر تحديث حالة الكود، حاول مرة أخرى",
+      );
     } finally {
       setBusyId(null);
     }
@@ -481,7 +649,10 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
       });
     } catch (err) {
       setCodes(prevCodes); // rollback
-      showToast("error", err?.response?.data?.message || "تعذر حذف الكود، حاول مرة أخرى");
+      showToast(
+        "error",
+        err?.response?.data?.message || "تعذر حذف الكود، حاول مرة أخرى",
+      );
     } finally {
       setDeleting(false);
       setBusyId(null);
@@ -496,8 +667,12 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="font-['Tajawal'] font-semibold text-[16px] sm:text-[18px] text-[#1F2937]">أكواد الخصم</h2>
-          <p className="text-[12px] sm:text-[13px] text-[#9CA3AF] mt-0.5">إدارة ومتابعة أكواد الخصم النشطة</p>
+          <h2 className="font-['Tajawal'] font-semibold text-[16px] sm:text-[18px] text-[#1F2937]">
+            أكواد الخصم
+          </h2>
+          <p className="text-[12px] sm:text-[13px] text-[#9CA3AF] mt-0.5">
+            إدارة ومتابعة أكواد الخصم النشطة
+          </p>
         </div>
         {onOpenAdd && (
           <button
@@ -518,7 +693,12 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
       ) : error ? (
         <div className="bg-white border border-gray-200 rounded-2xl py-14 px-4 text-center">
           <p className="text-[14px] text-[#E0394C] mb-3">{error}</p>
-          <button onClick={fetchDiscounts} className="text-[13px] text-[#123C91] font-medium hover:underline">إعادة المحاولة</button>
+          <button
+            onClick={fetchDiscounts}
+            className="text-[13px] text-[#123C91] font-medium hover:underline"
+          >
+            إعادة المحاولة
+          </button>
         </div>
       ) : codes.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-2xl py-14 px-4 text-center">
@@ -532,16 +712,24 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
               <table className="w-full text-right" style={{ minWidth: 720 }}>
                 <thead className="bg-[#F9FAFA] border-b border-gray-100">
                   <tr>
-                    {["الكود", "الخصم", "الاستخدامات", "الحالة", ""].map((h, i) => (
-                      <th key={i} className="px-5 py-3.5 text-[12px] font-semibold text-[#8C9198] whitespace-nowrap tracking-wide">
-                        {h}
-                      </th>
-                    ))}
+                    {["الكود", "الخصم", "الاستخدامات", "الحالة", ""].map(
+                      (h, i) => (
+                        <th
+                          key={i}
+                          className="px-5 py-3.5 text-[12px] font-semibold text-[#8C9198] whitespace-nowrap tracking-wide"
+                        >
+                          {h}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {paged.map((c) => (
-                    <tr key={c.id} className={`transition-colors ${busyId === c.id ? "bg-[#F9FAFA]" : "hover:bg-gray-50/60"}`}>
+                    <tr
+                      key={c.id}
+                      className={`transition-colors ${busyId === c.id ? "bg-[#F9FAFA]" : "hover:bg-gray-50/60"}`}
+                    >
                       <td className="px-5 py-3.5">
                         <CodeChip code={c.code} />
                       </td>
@@ -549,13 +737,21 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
                         <div className="flex items-center gap-2.5">
                           <TypeIcon type={c.type} />
                           <div>
-                            <p className="text-[13px] font-semibold text-[#1F2937] leading-tight">{discountLabel(c)}</p>
-                            <p className="text-[11px] text-[#9CA3AF] leading-tight mt-0.5">{typeLabel(c.type)}</p>
+                            <p className="text-[13px] font-semibold text-[#1F2937] leading-tight">
+                              {discountLabel(c)}
+                            </p>
+                            <p className="text-[11px] text-[#9CA3AF] leading-tight mt-0.5">
+                              {typeLabel(c.type)}
+                            </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5"><UsageCount usedCount={c.usedCount} /></td>
-                      <td className="px-5 py-3.5"><StatusBadge status={c.isActive ? "نشط" : "موقوف"} /></td>
+                      <td className="px-5 py-3.5">
+                        <UsageCount usedCount={c.usedCount} />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <StatusBadge status={c.isActive ? "نشط" : "موقوف"} />
+                      </td>
                       <td className="px-5 py-3.5 text-right">
                         <RowActions
                           discount={c}
@@ -584,16 +780,29 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
             ))}
           </div>
 
-          <Pagination page={page} total={codes.length} totalPages={totalPages} onChange={setPage} />
+          <Pagination
+            page={page}
+            total={codes.length}
+            totalPages={totalPages}
+            onChange={setPage}
+          />
         </>
       )}
 
-      <AddCodeModal open={showAdd} onClose={onCloseAdd} onCreated={fetchDiscounts} />
+      <AddCodeModal
+        open={showAdd}
+        onClose={onCloseAdd}
+        onCreated={fetchDiscounts}
+      />
 
       <ConfirmDialog
         open={!!confirmTarget}
         title="حذف كود الخصم"
-        description={confirmTarget ? `هل أنت متأكد من حذف الكود "${confirmTarget.code}"؟ لا يمكن التراجع عن هذا الإجراء.` : ""}
+        description={
+          confirmTarget
+            ? `هل أنت متأكد من حذف الكود "${confirmTarget.code}"؟ لا يمكن التراجع عن هذا الإجراء.`
+            : ""
+        }
         confirmLabel="حذف نهائي"
         danger
         loading={deleting}

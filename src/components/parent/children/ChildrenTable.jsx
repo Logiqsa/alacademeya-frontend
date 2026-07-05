@@ -1,36 +1,50 @@
-import { useState } from 'react';
-import { Eye, Trash2, AlertTriangle, X } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { removeStudent } from '../../../services/authService';
+import { useState } from "react";
+import { Eye, Trash2, AlertTriangle, X } from "lucide-react";
+import toast from "react-hot-toast";
+import { removeStudent } from "../../../services/APIService";
 
-const getInitial = (name) => (name?.trim()?.[0] || "؟");
+const getInitial = (name) => name?.trim()?.[0] || "؟";
 
 const STATUS_LABELS = {
-  "active": { text: "نشط", className: "bg-[#00A63E1A] text-[#00A63E]" },
-  "pending-contact": { text: "قيد المراجعة", className: "bg-[#FEF3C7] text-[#B45309]" },
-  "removed": { text: "محذوف", className: "bg-[#FFEBEE] text-[#D32F2F]" },
+  active: { text: "نشط", className: "bg-[#00A63E1A] text-[#00A63E]" },
+  "pending-contact": {
+    text: "قيد المراجعة",
+    className: "bg-[#FEF3C7] text-[#B45309]",
+  },
+  removed: { text: "محذوف", className: "bg-[#FFEBEE] text-[#D32F2F]" },
 };
 
 const STUDY_TYPE_LABELS = {
-  "school": "مدرسي",
+  school: "مدرسي",
 };
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+  return new Date(dateStr).toLocaleDateString("ar-EG", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 
 const DetailRow = ({ label, value }) => (
   <div className="flex items-center justify-between py-3 border-b border-[#F3F4F6] last:border-b-0">
     <span className="text-[13px] sm:text-[14px] text-[#575F69]">{label}</span>
-    <span className="text-[13px] sm:text-[14px] font-medium text-[#1F2937]">{value}</span>
+    <span className="text-[13px] sm:text-[14px] font-medium text-[#1F2937]">
+      {value}
+    </span>
   </div>
 );
 
 const StatusBadge = ({ status }) => {
-  const info = STATUS_LABELS[status] || { text: status || "—", className: "bg-[#F3F4F6] text-[#575F69]" };
+  const info = STATUS_LABELS[status] || {
+    text: status || "—",
+    className: "bg-[#F3F4F6] text-[#575F69]",
+  };
   return (
-    <span className={`px-3 py-1 rounded-full text-[12px] font-medium inline-block whitespace-nowrap ${info.className}`}>
+    <span
+      className={`px-3 py-1 rounded-full text-[12px] font-medium inline-block whitespace-nowrap ${info.className}`}
+    >
       {info.text}
     </span>
   );
@@ -82,7 +96,10 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
 
   if (children.length === 0) {
     return (
-      <div className="w-full bg-white border border-[#E5E5E5] rounded-lg p-10 text-center text-[#575F69]" dir="rtl">
+      <div
+        className="w-full bg-white border border-[#E5E5E5] rounded-lg p-10 text-center text-[#575F69]"
+        dir="rtl"
+      >
         لا يوجد أبناء حالياً
       </div>
     );
@@ -91,12 +108,26 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
   return (
     <>
       {/* جدول — للشاشات المتوسطة وأكبر */}
-      <div className="hidden md:block w-full bg-white border border-[#E5E5E5] rounded-lg overflow-x-auto shadow-sm" dir="rtl">
+      <div
+        className="hidden md:block w-full bg-white border border-[#E5E5E5] rounded-lg overflow-x-auto shadow-sm"
+        dir="rtl"
+      >
         <table className="w-full min-w-180 text-right border-collapse">
           <thead className="bg-[#F9FAFA] border-b border-[#E5E5E5]">
             <tr>
-              {['الابن', 'نسبة الحضور', 'الأداء العام', 'الدروس النشطة', 'الدروس المكتملة', 'الحالة', 'الإجراءات'].map((h) => (
-                <th key={h} className="px-6 py-4 text-[#575F69] font-medium text-[14px] whitespace-nowrap">
+              {[
+                "الابن",
+                "نسبة الحضور",
+                "الأداء العام",
+                "الدروس النشطة",
+                "الدروس المكتملة",
+                "الحالة",
+                "الإجراءات",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-6 py-4 text-[#575F69] font-medium text-[14px] whitespace-nowrap"
+                >
                   {h}
                 </th>
               ))}
@@ -105,24 +136,34 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
           <tbody>
             {children.map((child) => {
               const name = child.user?.fullName || "بدون اسم";
-              const gradeName = child.grade?.name?.ar || child.grade?.name?.en || "—";
+              const gradeName =
+                child.grade?.name?.ar || child.grade?.name?.en || "—";
               const performance = child.averageScore ?? 0;
 
               return (
-                <tr key={child.id} className="border-b border-[#F3F4F6] hover:bg-[#F9FAFA] transition-colors">
+                <tr
+                  key={child.id}
+                  className="border-b border-[#F3F4F6] hover:bg-[#F9FAFA] transition-colors"
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-[#123C91] text-white flex items-center justify-center font-bold text-lg shrink-0">
                         {getInitial(name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-['Tajawal'] font-medium text-[#1F2937] text-[16px] truncate">{name}</p>
-                        <p className="text-[12px] text-[#6B7280] truncate">{gradeName}</p>
+                        <p className="font-['Tajawal'] font-medium text-[#1F2937] text-[16px] truncate">
+                          {name}
+                        </p>
+                        <p className="text-[12px] text-[#6B7280] truncate">
+                          {gradeName}
+                        </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 text-[#575F69] text-[16px]">--</td>
-                  <td className="px-6 text-[#575F69] text-[16px]">{performance}%</td>
+                  <td className="px-6 text-[#575F69] text-[16px]">
+                    {performance}%
+                  </td>
                   <td className="px-6 text-[#575F69] text-[16px]">--</td>
                   <td className="px-6 text-[#575F69] text-[16px]">--</td>
                   <td className="px-6">
@@ -145,19 +186,27 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
       <div className="md:hidden flex flex-col gap-3" dir="rtl">
         {children.map((child) => {
           const name = child.user?.fullName || "بدون اسم";
-          const gradeName = child.grade?.name?.ar || child.grade?.name?.en || "—";
+          const gradeName =
+            child.grade?.name?.ar || child.grade?.name?.en || "—";
           const performance = child.averageScore ?? 0;
 
           return (
-            <div key={child.id} className="bg-white border border-[#E5E5E5] rounded-xl p-4 shadow-sm">
+            <div
+              key={child.id}
+              className="bg-white border border-[#E5E5E5] rounded-xl p-4 shadow-sm"
+            >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-11 h-11 rounded-full bg-[#123C91] text-white flex items-center justify-center font-bold text-lg shrink-0">
                     {getInitial(name)}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-['Tajawal'] font-medium text-[#1F2937] text-[16px] truncate">{name}</p>
-                    <p className="text-[12px] text-[#6B7280] truncate">{gradeName}</p>
+                    <p className="font-['Tajawal'] font-medium text-[#1F2937] text-[16px] truncate">
+                      {name}
+                    </p>
+                    <p className="text-[12px] text-[#6B7280] truncate">
+                      {gradeName}
+                    </p>
                   </div>
                 </div>
                 <RowActions
@@ -168,7 +217,9 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
 
               <div className="flex items-center justify-between mb-2">
                 <StatusBadge status={child.status} />
-                <span className="text-[13px] text-[#575F69]">الأداء: {performance}%</span>
+                <span className="text-[13px] text-[#575F69]">
+                  الأداء: {performance}%
+                </span>
               </div>
 
               <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-[#F3F4F6]">
@@ -192,7 +243,10 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
 
       {/* مودال عرض بيانات الابن */}
       {viewTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" dir="rtl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          dir="rtl"
+        >
           <div className="bg-white rounded-2xl shadow-[0px_20px_60px_0px_#1F29371F] w-full max-w-130 max-h-[90vh] overflow-y-auto p-6 sm:p-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-['Tajawal'] font-medium text-[18px] sm:text-[20px] text-[#1F2937]">
@@ -216,7 +270,9 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
                   {viewTarget.user?.fullName || "بدون اسم"}
                 </p>
                 <p className="text-[13px] text-[#575F69] truncate">
-                  {viewTarget.grade?.name?.ar || viewTarget.grade?.name?.en || "—"}
+                  {viewTarget.grade?.name?.ar ||
+                    viewTarget.grade?.name?.en ||
+                    "—"}
                 </p>
               </div>
             </div>
@@ -224,19 +280,42 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
             <div className="bg-[#F9FAFA] rounded-xl px-4">
               <DetailRow
                 label="نوع الدراسة"
-                value={STUDY_TYPE_LABELS[viewTarget.studentType] || viewTarget.studentType || "—"}
+                value={
+                  STUDY_TYPE_LABELS[viewTarget.studentType] ||
+                  viewTarget.studentType ||
+                  "—"
+                }
               />
               <DetailRow
                 label="لغة الدراسة"
-                value={viewTarget.studyLanguage === "ar" ? "العربية" : viewTarget.studyLanguage === "en" ? "الإنجليزية" : "—"}
+                value={
+                  viewTarget.studyLanguage === "ar"
+                    ? "العربية"
+                    : viewTarget.studyLanguage === "en"
+                      ? "الإنجليزية"
+                      : "—"
+                }
               />
-              <DetailRow label="المعدل العام" value={`${viewTarget.averageScore ?? 0}%`} />
-              <DetailRow label="ساعات الدراسة" value={viewTarget.totalStudyHours ?? 0} />
+              <DetailRow
+                label="المعدل العام"
+                value={`${viewTarget.averageScore ?? 0}%`}
+              />
+              <DetailRow
+                label="ساعات الدراسة"
+                value={viewTarget.totalStudyHours ?? 0}
+              />
               <DetailRow
                 label="الحالة"
-                value={STATUS_LABELS[viewTarget.status]?.text || viewTarget.status || "—"}
+                value={
+                  STATUS_LABELS[viewTarget.status]?.text ||
+                  viewTarget.status ||
+                  "—"
+                }
               />
-              <DetailRow label="تاريخ الإضافة" value={formatDate(viewTarget.createdAt)} />
+              <DetailRow
+                label="تاريخ الإضافة"
+                value={formatDate(viewTarget.createdAt)}
+              />
             </div>
 
             <button
@@ -251,7 +330,10 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
 
       {/* مودال تأكيد الحذف */}
       {confirmTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" dir="rtl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          dir="rtl"
+        >
           <div className="bg-white rounded-2xl shadow-[0px_20px_60px_0px_#1F29371F] w-full max-w-105 p-6 sm:p-8 flex flex-col items-center text-center">
             <div className="w-14 h-14 rounded-full bg-[#FFEBEE] flex items-center justify-center mb-4">
               <AlertTriangle size={28} className="text-[#D32F2F]" />
@@ -261,7 +343,11 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
               حذف الابن
             </h3>
             <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#575F69] mb-6">
-              هل أنت متأكد من حذف <span className="font-semibold text-[#1F2937]">{confirmTarget.name}</span>؟
+              هل أنت متأكد من حذف{" "}
+              <span className="font-semibold text-[#1F2937]">
+                {confirmTarget.name}
+              </span>
+              ؟
               <br />
               لا يمكن التراجع عن هذا الإجراء.
             </p>

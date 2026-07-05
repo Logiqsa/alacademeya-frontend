@@ -2,12 +2,19 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import CalendarStrip from "./CalendarStrip";
 import LessonsList from "./LessonsList";
-import { getMyClassrooms, getClassroomSessions } from "../../../services/authService";
-import { buildWeekDates, formatArabicMonthYear } from "../../../utils/scheduleWeek";
+import {
+  getMyClassrooms,
+  getClassroomSessions,
+} from "../../../services/APIService";
+import {
+  buildWeekDates,
+  formatArabicMonthYear,
+} from "../../../utils/scheduleWeek";
 
 const DEFAULT_DURATION_MIN = 45;
 
-const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "مجموعة");
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "مجموعة";
 
 // بيحسب الحالة اعتمادًا على status الحقيقي من الباك إند، وعلى التوقيت لو لسه "scheduled"
 const computeStatus = (session) => {
@@ -17,7 +24,9 @@ const computeStatus = (session) => {
   const start = new Date(session.scheduledDate || session.startAt);
   const end = session.endAt
     ? new Date(session.endAt)
-    : new Date(start.getTime() + (session.duration || DEFAULT_DURATION_MIN) * 60000);
+    : new Date(
+        start.getTime() + (session.duration || DEFAULT_DURATION_MIN) * 60000,
+      );
   const now = new Date();
 
   if (now < start) return "upcoming";
@@ -37,7 +46,10 @@ const ScheduleSection = () => {
     return d;
   }, [weekOffset]);
 
-  const weekDates = useMemo(() => buildWeekDates(referenceDate), [referenceDate]);
+  const weekDates = useMemo(
+    () => buildWeekDates(referenceDate),
+    [referenceDate],
+  );
 
   useEffect(() => {
     const todayKey = new Date().toDateString();
@@ -66,11 +78,11 @@ const ScheduleSection = () => {
               console.error(
                 `getClassroomSessions FAILED for ${id}:`,
                 err.response?.status,
-                err.response?.data
+                err.response?.data,
               );
               return { classroom, sessions: [] };
             }
-          })
+          }),
         );
 
         if (!cancelled) setClassroomSessions(results);
@@ -107,13 +119,25 @@ const ScheduleSection = () => {
             id: s.id ?? s._id,
             title: s.title || resolveName(classroom.name),
             location: classroom.subject?.name?.ar || "حصة أونلاين",
-            time: start.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+            time: start.toLocaleTimeString("ar-EG", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
             duration: s.duration || DEFAULT_DURATION_MIN,
             status,
-            actionLabel: status === "ended" ? "التفاصيل" : status === "live" ? "انضم الآن" : "قادمة",
+            actionLabel:
+              status === "ended"
+                ? "التفاصيل"
+                : status === "live"
+                  ? "انضم الآن"
+                  : "قادمة",
             onAction: () => {
               if (status === "live" && classroom.meetingLink) {
-                window.open(classroom.meetingLink, "_blank", "noopener,noreferrer");
+                window.open(
+                  classroom.meetingLink,
+                  "_blank",
+                  "noopener,noreferrer",
+                );
               }
             },
           });
@@ -171,7 +195,11 @@ const ScheduleSection = () => {
         </button>
       </div>
 
-      <CalendarStrip weekDates={weekDates} selectedIndex={selectedIndex} onSelectDay={setSelectedIndex} />
+      <CalendarStrip
+        weekDates={weekDates}
+        selectedIndex={selectedIndex}
+        onSelectDay={setSelectedIndex}
+      />
 
       <div className="mt-5">
         <h4

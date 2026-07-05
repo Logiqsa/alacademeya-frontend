@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthLayout from "../../components/auth/AuthLayout";
-import { verifyAccount, resendOtp } from "../../services/authService";
+import { verifyAccount, resendOtp } from "../../services/APIService";
 import { AuthContext } from "../../context/AuthContext";
 
 const OTP_LENGTH = 6;
@@ -51,16 +51,22 @@ const OtpPage = () => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1].focus();
     }
-    if (e.key === "ArrowLeft" && index > 0) inputRefs.current[index - 1].focus();
+    if (e.key === "ArrowLeft" && index > 0)
+      inputRefs.current[index - 1].focus();
     if (e.key === "ArrowRight" && index < OTP_LENGTH - 1)
       inputRefs.current[index + 1].focus();
   };
 
   const handlePaste = (e) => {
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
     if (!pasted) return;
     const newOtp = [...otp];
-    pasted.split("").forEach((char, i) => { newOtp[i] = char; });
+    pasted.split("").forEach((char, i) => {
+      newOtp[i] = char;
+    });
     setOtp(newOtp);
     inputRefs.current[Math.min(pasted.length, OTP_LENGTH - 1)].focus();
     e.preventDefault();
@@ -90,37 +96,42 @@ const OtpPage = () => {
       toast.success("تم تفعيل الحساب بنجاح!");
       navigate(NEXT_ROUTE[role] || "/login", { state: { email, role } });
     } catch (err) {
-      toast.error(err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى");
+      toast.error(
+        err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-const handleResend = async () => {
-  try {
-    await resendOtp(email);
-    setTimer(TIMER_START);
-    setOtp(new Array(OTP_LENGTH).fill(""));
-    inputRefs.current[0].focus();
-    toast.success("تم إرسال كود جديد!");
-  } catch (err) {
-    const status = err.response?.status;
-    const msg = err.response?.data?.message || "";
-
-    if (status === 429 || msg.includes("PLEASE_WAIT")) {
-      toast.error("يرجى الانتظار قبل طلب كود جديد");
+  const handleResend = async () => {
+    try {
+      await resendOtp(email);
       setTimer(TIMER_START);
-    } else if (status === 503) {
-      toast.error("السيرفر مشغول حالياً، حاول بعد قليل");
-    } else {
-      toast.error("فشل إعادة الإرسال، حاول لاحقاً");
+      setOtp(new Array(OTP_LENGTH).fill(""));
+      inputRefs.current[0].focus();
+      toast.success("تم إرسال كود جديد!");
+    } catch (err) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || "";
+
+      if (status === 429 || msg.includes("PLEASE_WAIT")) {
+        toast.error("يرجى الانتظار قبل طلب كود جديد");
+        setTimer(TIMER_START);
+      } else if (status === 503) {
+        toast.error("السيرفر مشغول حالياً، حاول بعد قليل");
+      } else {
+        toast.error("فشل إعادة الإرسال، حاول لاحقاً");
+      }
     }
-  }
-};
+  };
 
   return (
     <AuthLayout>
-      <div className="w-full max-w-md mx-auto p-8 flex flex-col items-center" dir="rtl">
+      <div
+        className="w-full max-w-md mx-auto p-8 flex flex-col items-center"
+        dir="rtl"
+      >
         <div className="w-16 h-16 rounded-full bg-[#EEF2FF] flex items-center justify-center mb-5">
           <Mail size={28} className="text-[#123C91]" />
         </div>
@@ -156,7 +167,9 @@ const handleResend = async () => {
 
         <div className="mb-6 text-center">
           {timer > 0 ? (
-            <p className="text-[15px] font-bold text-[#123C91]">{timer} ثانية</p>
+            <p className="text-[15px] font-bold text-[#123C91]">
+              {timer} ثانية
+            </p>
           ) : (
             <button
               onClick={handleResend}

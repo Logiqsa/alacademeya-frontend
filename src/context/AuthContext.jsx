@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from "react";
-import { login as loginApi } from "../services/authService";
+import { login as loginApi } from "../services/APIService";
 
 export const AuthContext = createContext();
 

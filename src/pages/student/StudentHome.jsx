@@ -5,7 +5,10 @@ import SubscriptionsCard from "../../components/student/dashboard/SubscriptionsC
 import GroupsCard from "../../components/student/dashboard/GroupsCard";
 import ScheduleSection from "../../components/student/dashboard/ScheduleSection";
 import StudentLayout from "../../components/student/layout/StudentLayout";
-import { getMyClassrooms, getClassroomSessions } from "../../services/authService";
+import {
+  getMyClassrooms,
+  getClassroomSessions,
+} from "../../services/APIService";
 import { AuthContext } from "../../context/AuthContext"; // عدّل المسار لو مختلف عندك
 
 const StudentHome = () => {
@@ -15,7 +18,7 @@ const StudentHome = () => {
   const [stats, setStats] = useState({
     upcomingLessons: 0,
     activeGroups: 0,
-    // ⚠️ مفيش endpoint حاليًا للاختبارات/الواجبات بتاعة الطالب في authService.js
+    // ⚠️ مفيش endpoint حاليًا للاختبارات/الواجبات بتاعة الطالب في APIService.js
     activeExams: null,
     activeAssignments: null,
   });
@@ -33,7 +36,7 @@ const StudentHome = () => {
         if (cancelled) return;
 
         const sessionsResults = await Promise.allSettled(
-          classrooms.map((c) => getClassroomSessions(c.id))
+          classrooms.map((c) => getClassroomSessions(c.id)),
         );
 
         let upcomingCount = 0;
@@ -41,7 +44,7 @@ const StudentHome = () => {
           if (result.status !== "fulfilled") {
             console.error(
               `getClassroomSessions failed for classroom ${classrooms[idx]?.id}:`,
-              result.reason
+              result.reason,
             );
             return;
           }
@@ -75,7 +78,10 @@ const StudentHome = () => {
 
   return (
     <StudentLayout>
-      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 max-w-7xl mx-auto" dir="rtl">
+      <div
+        className="space-y-4 sm:space-y-6 p-2 sm:p-4 max-w-7xl mx-auto"
+        dir="rtl"
+      >
         <WelcomeHeader studentName={firstName} />
 
         {/* ⚠️ TODO: activeExams / activeAssignments لسه مفيش endpoint ليهم بتاعة الطالب */}

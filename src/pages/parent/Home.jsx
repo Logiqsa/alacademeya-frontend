@@ -4,7 +4,10 @@ import WelcomeSection from "../../components/parent/dashboard/WelcomeSection";
 import StatsCards from "../../components/parent/dashboard/StatsCards";
 import ChildrenOverviewSection from "../../components/parent/dashboard/ChildrenOverviewSection";
 import NotificationsSection from "../../components/parent/dashboard/NotificationsSection";
-import { getMyStudents, getStudentsStatistics } from "../../services/authService";
+import {
+  getMyStudents,
+  getStudentsStatistics,
+} from "../../services/APIService";
 
 const Home = () => {
   const [students, setStudents] = useState([]);
@@ -32,10 +35,15 @@ const Home = () => {
   if (loading) {
     return (
       <ParentLayout>
-        <div className="flex items-center justify-center min-h-[60vh]" dir="rtl">
+        <div
+          className="flex items-center justify-center min-h-[60vh]"
+          dir="rtl"
+        >
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-[#123C91] border-t-transparent rounded-full animate-spin" />
-            <p className="text-[#6B7280] text-sm font-['IBM_Plex_Sans_Arabic']">جاري التحميل...</p>
+            <p className="text-[#6B7280] text-sm font-['IBM_Plex_Sans_Arabic']">
+              جاري التحميل...
+            </p>
           </div>
         </div>
       </ParentLayout>
@@ -44,8 +52,10 @@ const Home = () => {
 
   return (
     <ParentLayout>
-      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 max-w-7xl mx-auto" dir="rtl">
-
+      <div
+        className="space-y-4 sm:space-y-6 p-2 sm:p-4 max-w-7xl mx-auto"
+        dir="rtl"
+      >
         {/* Welcome */}
         <WelcomeSection hasChildren={students.length > 0} />
 
@@ -61,7 +71,6 @@ const Home = () => {
             <ChildrenOverviewSection children={students} />
           </div>
         </div>
-
       </div>
     </ParentLayout>
   );

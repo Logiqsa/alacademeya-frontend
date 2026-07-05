@@ -9,11 +9,12 @@ import {
   getClassroomStudents,
   getClassroomSessions,
   getSessionAttendance,
-} from "../../../services/authService";
+} from "../../../services/APIService";
 
 const PAGE_SIZE = 5;
 
-const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "--";
 
 // حالة حضور الطالب في الحصة → التسمية المعروضة في الجدول
 const ATTENDANCE_STATUS_LABELS = {
@@ -44,7 +45,7 @@ const StudentDetailsPage = () => {
       const studentsRes = await getClassroomStudents(groupId);
       const rawStudents = studentsRes.data?.data || [];
       const entry = rawStudents.find(
-        (s) => s.id === studentId || s.user?.id === studentId
+        (s) => s.id === studentId || s.user?.id === studentId,
       );
 
       if (!entry) {
@@ -57,7 +58,10 @@ const StudentDetailsPage = () => {
       setStudent({
         id: entry.id,
         name: entry.user?.fullName || "—",
-        level: resolveName(entry.grade?.name) || resolveName(entry.stage?.name) || "--",
+        level:
+          resolveName(entry.grade?.name) ||
+          resolveName(entry.stage?.name) ||
+          "--",
         joinDate: entry.createdAt
           ? new Date(entry.createdAt).toLocaleDateString("ar-EG", {
               year: "numeric",
@@ -76,7 +80,7 @@ const StudentDetailsPage = () => {
       // ─── حضور الطالب ده تحديدًا في كل حصة — من GET /sessions/:id/attendance ───
       // بنجيب سجل الحضور لكل حصة، وبندور جوّاه على سجل الطالب الحالي بالـ id بتاعه
       const attendanceResults = await Promise.allSettled(
-        rawSessions.map((session) => getSessionAttendance(session.id))
+        rawSessions.map((session) => getSessionAttendance(session.id)),
       );
 
       const mappedLessons = rawSessions.map((session, idx) => {
@@ -88,15 +92,19 @@ const StudentDetailsPage = () => {
           // sub-document الطالب فيه id مختلف عن studentId (اللي هو غالبًا user id)
           // فبنقارن على المستويين: student.id و student.user.id
           const myRecord = records.find(
-            (r) => r.student?.id === entry.id || r.student?.user?.id === studentId
+            (r) =>
+              r.student?.id === entry.id || r.student?.user?.id === studentId,
           );
           if (myRecord) {
-            attendanceLabel = ATTENDANCE_STATUS_LABELS[myRecord.status] || myRecord.status || "--";
+            attendanceLabel =
+              ATTENDANCE_STATUS_LABELS[myRecord.status] ||
+              myRecord.status ||
+              "--";
           }
         } else {
           console.error(
             `getSessionAttendance failed for session ${session.id}:`,
-            attResult.reason
+            attResult.reason,
           );
         }
 
@@ -133,11 +141,16 @@ const StudentDetailsPage = () => {
   }, [fetchData]);
 
   const filtered = lessons.filter(
-    (l) => l.title.includes(search) && (filterStatus === "جميع الحالات" || l.attendance === filterStatus)
+    (l) =>
+      l.title.includes(search) &&
+      (filterStatus === "جميع الحالات" || l.attendance === filterStatus),
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginatedLessons = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paginatedLessons = filtered.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   // إحصائيات الحضور/الغياب الحقيقية — محسوبة من نتيجة كل الحصص بعد الربط بالـ attendance
   const attendanceCount = lessons.filter((l) => l.attendance === "حاضر").length;
@@ -146,7 +159,10 @@ const StudentDetailsPage = () => {
   if (loading) {
     return (
       <TeacherLayout>
-        <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+        <div
+          className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+          dir="rtl"
+        >
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
             جاري التحميل...
           </div>
@@ -158,7 +174,10 @@ const StudentDetailsPage = () => {
   if (error || !student) {
     return (
       <TeacherLayout>
-        <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+        <div
+          className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+          dir="rtl"
+        >
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-red-500">
             {error || "حدث خطأ أثناء تحميل بيانات الطالب"}
           </div>
@@ -169,12 +188,18 @@ const StudentDetailsPage = () => {
 
   return (
     <TeacherLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
-
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         {/* Student header */}
         <div className="mb-6">
-          <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-1">{student.name}</h3>
-          <p className="text-[16px] font-normal leading-6 text-[#575F69]">{student.level}</p>
+          <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-1">
+            {student.name}
+          </h3>
+          <p className="text-[16px] font-normal leading-6 text-[#575F69]">
+            {student.level}
+          </p>
         </div>
 
         {/* Stats */}

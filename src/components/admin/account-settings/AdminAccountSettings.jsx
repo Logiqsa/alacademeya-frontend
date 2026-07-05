@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
-import { Pencil, Eye, EyeOff, ChevronDown, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
-import { getMyProfile, updateMyProfile } from '../../../services/authService';
-import { AuthContext } from '../../../context/AuthContext'; // عدّل المسار حسب مشروعك
+import React, { useState, useRef, useEffect, useContext } from "react";
+import { Pencil, Eye, EyeOff, ChevronDown, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { getMyProfile, updateMyProfile } from "../../../services/APIService";
+import { AuthContext } from "../../../context/AuthContext"; // عدّل المسار حسب مشروعك
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -13,7 +13,11 @@ import { AuthContext } from '../../../context/AuthContext'; // عدّل المس
 // الدالة دي بتدوّر على الـ user جوه أي شكل شائع برضه احتياطًا
 const extractUser = (resData) => {
   if (!resData) return null;
-  if (resData.data && typeof resData.data === 'object' && !Array.isArray(resData.data)) {
+  if (
+    resData.data &&
+    typeof resData.data === "object" &&
+    !Array.isArray(resData.data)
+  ) {
     // لو فيه data.user أو data.data.user (أشكال تانية محتملة) خد الأعمق
     if (resData.data.user) return resData.data.user;
     if (resData.data.data?.user) return resData.data.data.user;
@@ -23,20 +27,36 @@ const extractUser = (resData) => {
 };
 
 const PASSWORD_RULES = [
-  { id: 'len', label: 'الحد الأدنى 8 أحرف', test: (p) => p.length >= 8 },
-  { id: 'upper', label: 'حرف كبير واحد على الأقل', test: (p) => /[A-Z]/.test(p) },
-  { id: 'lower', label: 'حرف صغير واحد على الأقل', test: (p) => /[a-z]/.test(p) },
-  { id: 'digit', label: 'رقم واحد على الأقل', test: (p) => /[0-9]/.test(p) },
-  { id: 'special', label: 'رمز خاص واحد على الأقل', test: (p) => /[^A-Za-z0-9\s]/.test(p) },
-  { id: 'nospace', label: 'لا يحتوي على مسافات', test: (p) => p.length > 0 && !/\s/.test(p) },
+  { id: "len", label: "الحد الأدنى 8 أحرف", test: (p) => p.length >= 8 },
+  {
+    id: "upper",
+    label: "حرف كبير واحد على الأقل",
+    test: (p) => /[A-Z]/.test(p),
+  },
+  {
+    id: "lower",
+    label: "حرف صغير واحد على الأقل",
+    test: (p) => /[a-z]/.test(p),
+  },
+  { id: "digit", label: "رقم واحد على الأقل", test: (p) => /[0-9]/.test(p) },
+  {
+    id: "special",
+    label: "رمز خاص واحد على الأقل",
+    test: (p) => /[^A-Za-z0-9\s]/.test(p),
+  },
+  {
+    id: "nospace",
+    label: "لا يحتوي على مسافات",
+    test: (p) => p.length > 0 && !/\s/.test(p),
+  },
 ];
 
 const COUNTRY_OPTIONS = [
-  { id: 'eg', label: 'مصر' },
-  { id: 'sa', label: 'السعودية' },
-  { id: 'ae', label: 'الإمارات' },
-  { id: 'kw', label: 'الكويت' },
-  { id: 'jo', label: 'الأردن' },
+  { id: "eg", label: "مصر" },
+  { id: "sa", label: "السعودية" },
+  { id: "ae", label: "الإمارات" },
+  { id: "kw", label: "الكويت" },
+  { id: "jo", label: "الأردن" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -58,11 +78,18 @@ const SectionHeader = ({ title, subtitle, editing, onEditClick }) => (
         </button>
       )}
     </div>
-    {subtitle && <p className="text-xs sm:text-sm text-(--text-light)">{subtitle}</p>}
+    {subtitle && (
+      <p className="text-xs sm:text-sm text-(--text-light)">{subtitle}</p>
+    )}
   </div>
 );
 
-const ActionRow = ({ saving, onCancel, confirmLabel = 'حفظ التعديلات', error }) => (
+const ActionRow = ({
+  saving,
+  onCancel,
+  confirmLabel = "حفظ التعديلات",
+  error,
+}) => (
   <>
     {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
     <div className="flex items-center gap-3 mt-5">
@@ -88,7 +115,9 @@ const ActionRow = ({ saving, onCancel, confirmLabel = 'حفظ التعديلات
 const ViewField = ({ label, value }) => (
   <div className="flex flex-col gap-1.5 min-w-0">
     <span className="text-[14px] mb-1 text-(--text-light)">{label}</span>
-    <span className="text-sm font-semibold text-(--text-dark) wrap-break-word">{value || '—'}</span>
+    <span className="text-sm font-semibold text-(--text-dark) wrap-break-word">
+      {value || "—"}
+    </span>
   </div>
 );
 
@@ -99,15 +128,17 @@ const ViewGrid = ({ children }) => (
 );
 
 const EditBox = ({ children }) => (
-  <div className="border border-x-4 border-[#123C9180] rounded-xl p-5 grid grid-cols-1 gap-5">{children}</div>
+  <div className="border border-x-4 border-[#123C9180] rounded-xl p-5 grid grid-cols-1 gap-5">
+    {children}
+  </div>
 );
 
-const TextInput = ({ label, value, onChange, type = 'text' }) => (
+const TextInput = ({ label, value, onChange, type = "text" }) => (
   <div>
     <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
     <input
       type={type}
-      value={value ?? ''}
+      value={value ?? ""}
       onChange={onChange}
       className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-[14px] text-(--text-dark) outline-none focus:border-(--primary) focus:ring-2 focus:ring-(--primary) focus:ring-opacity-20 transition-all"
     />
@@ -122,7 +153,7 @@ const LockedPhoneField = ({ label, value }) => (
       className="w-full h-11 rounded-lg border border-(--border-light) bg-(--bg-section) flex items-stretch overflow-hidden opacity-80 cursor-not-allowed"
     >
       <span className="flex-1 px-3 flex items-center text-sm text-(--text-light) truncate">
-        {value || '—'}
+        {value || "—"}
       </span>
     </div>
   </div>
@@ -132,10 +163,12 @@ const PasswordField = ({ label, value, onChange }) => {
   const [show, setShow] = useState(false);
   return (
     <div>
-      <label className="block text-[16px] text-(--text-light) mb-1.5">{label}</label>
+      <label className="block text-[16px] text-(--text-light) mb-1.5">
+        {label}
+      </label>
       <div className="relative">
         <input
-          type={show ? 'text' : 'password'}
+          type={show ? "text" : "password"}
           value={value}
           onChange={onChange}
           dir="ltr"
@@ -156,12 +189,19 @@ const PasswordField = ({ label, value, onChange }) => {
 
 const PasswordRulesList = ({ password }) => (
   <div>
-    <p className="text-xs text-(--text-light) mb-2">يجب أن تتضمن كلمة المرور:</p>
+    <p className="text-xs text-(--text-light) mb-2">
+      يجب أن تتضمن كلمة المرور:
+    </p>
     <ul className="text-xs space-y-1 list-disc pr-4">
       {PASSWORD_RULES.map((rule) => {
-        const met = rule.test(password || '');
+        const met = rule.test(password || "");
         return (
-          <li key={rule.id} className={met ? 'text-(--primary) font-medium' : 'text-(--text-light)'}>
+          <li
+            key={rule.id}
+            className={
+              met ? "text-(--primary) font-medium" : "text-(--text-light)"
+            }
+          >
             {rule.label}
           </li>
         );
@@ -170,7 +210,14 @@ const PasswordRulesList = ({ password }) => (
   </div>
 );
 
-const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', disabled }) => {
+const Dropdown = ({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "اختر",
+  disabled,
+}) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const selected = options.find((o) => o.id === value);
@@ -179,32 +226,44 @@ const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', d
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   return (
     <div ref={ref} className="relative">
-      <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
+      <label className="block text-xs text-(--text-light) mb-1.5">
+        {label}
+      </label>
       <button
         type="button"
         onClick={() => !disabled && setOpen((o) => !o)}
         disabled={disabled}
         className={`w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-sm text-right flex items-center justify-between transition-colors ${
-          disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-(--primary)'
+          disabled
+            ? "opacity-60 cursor-not-allowed"
+            : "cursor-pointer hover:border-(--primary)"
         }`}
       >
-        <span className={selected ? 'text-(--text-dark)' : 'text-(--text-light)'}>
+        <span
+          className={selected ? "text-(--text-dark)" : "text-(--text-light)"}
+        >
           {selected ? selected.label : placeholder}
         </span>
-        <ChevronDown size={16} className={`text-(--text-light) transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          size={16}
+          className={`text-(--text-light) transition-transform shrink-0 ${open ? "rotate-180" : ""}`}
+        />
       </button>
       {open && !disabled && (
         <ul className="absolute z-20 top-full right-0 left-0 mt-1 max-h-56 overflow-y-auto bg-(--white) border border-(--border-light) rounded-lg shadow-lg">
           {options.map((opt) => (
             <li
               key={opt.id}
-              onClick={() => { onChange(opt.id); setOpen(false); }}
+              onClick={() => {
+                onChange(opt.id);
+                setOpen(false);
+              }}
               className="px-3.5 py-2.5 text-sm cursor-pointer hover:bg-(--bg-section) text-(--text-dark)"
             >
               {opt.label}
@@ -222,25 +281,32 @@ const Dropdown = ({ label, value, options, onChange, placeholder = 'اختر', d
 
 const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
   const buildForm = () => ({
-    fullName: admin.fullName || '',
-    username: admin.username || '',
-    email: admin.email || '',
-    countryId: admin.countryId || 'eg',
+    fullName: admin.fullName || "",
+    username: admin.username || "",
+    email: admin.email || "",
+    countryId: admin.countryId || "eg",
   });
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [form, setForm] = useState(buildForm);
 
-  useEffect(() => { setForm(buildForm()); }, [admin]);
+  useEffect(() => {
+    setForm(buildForm());
+  }, [admin]);
 
-  const handleChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
-  const handleCancel = () => { setForm(buildForm()); setError(''); setEditing(false); };
+  const handleChange = (key) => (e) =>
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleCancel = () => {
+    setForm(buildForm());
+    setError("");
+    setEditing(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setSaving(true);
     try {
       const payload = {
@@ -250,30 +316,33 @@ const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
         country: form.countryId,
       };
 
-      const emailChanged = form.email.trim() !== (admin.email || '').trim();
+      const emailChanged = form.email.trim() !== (admin.email || "").trim();
 
       const res = await updateMyProfile(payload);
 
       if (emailChanged) {
         // الإيميل اتغيّر -> الـ token القديم بيبقى غير صالح منطقيًا، لازم يسجل دخول تاني
-        toast.success('تم تغيير البريد الإلكتروني، يرجى تسجيل الدخول مرة أخرى');
+        toast.success("تم تغيير البريد الإلكتروني، يرجى تسجيل الدخول مرة أخرى");
         onEmailChanged();
         return;
       }
 
       const updatedUser = extractUser(res.data) || payload;
-      toast.success('تم تعديل البيانات بنجاح');
+      toast.success("تم تعديل البيانات بنجاح");
       onUpdated(updatedUser);
       setEditing(false);
     } catch (err) {
-      setError(err.response?.data?.message || 'حدث خطأ أثناء تعديل البيانات');
+      setError(err.response?.data?.message || "حدث خطأ أثناء تعديل البيانات");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6"
+    >
       <SectionHeader
         title="البيانات الشخصية"
         subtitle="هذا القسم يحتوي على بياناتك الأساسية التي تُستخدم في جميع الخدمات الرسمية داخل المنصة."
@@ -291,9 +360,22 @@ const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
         </ViewGrid>
       ) : (
         <EditBox>
-          <TextInput label="الاسم بالكامل" value={form.fullName} onChange={handleChange('fullName')} />
-          <TextInput label="اسم المستخدم" value={form.username} onChange={handleChange('username')} />
-          <TextInput label="البريد الإلكتروني" value={form.email} onChange={handleChange('email')} type="email" />
+          <TextInput
+            label="الاسم بالكامل"
+            value={form.fullName}
+            onChange={handleChange("fullName")}
+          />
+          <TextInput
+            label="اسم المستخدم"
+            value={form.username}
+            onChange={handleChange("username")}
+          />
+          <TextInput
+            label="البريد الإلكتروني"
+            value={form.email}
+            onChange={handleChange("email")}
+            type="email"
+          />
           <Dropdown
             label="الدولة"
             value={form.countryId}
@@ -310,7 +392,12 @@ const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
           <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-4">
             تغيير البريد الإلكتروني سيتطلب تسجيل الدخول مرة أخرى.
           </p>
-          <ActionRow saving={saving} onCancel={handleCancel} error={error} confirmLabel="تعديل البيانات" />
+          <ActionRow
+            saving={saving}
+            onCancel={handleCancel}
+            error={error}
+            confirmLabel="تعديل البيانات"
+          />
         </>
       )}
     </form>
@@ -320,24 +407,38 @@ const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
 const SecurityCard = ({ lastPasswordChange, onPasswordChanged }) => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [form, setForm] = useState({ currentPassword: '', password: '', passwordConfirm: '' });
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({
+    currentPassword: "",
+    password: "",
+    passwordConfirm: "",
+  });
 
-  const handleChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleChange = (key) => (e) =>
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
   const handleCancel = () => {
-    setForm({ currentPassword: '', password: '', passwordConfirm: '' });
-    setError('');
+    setForm({ currentPassword: "", password: "", passwordConfirm: "" });
+    setError("");
     setEditing(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    if (!form.currentPassword) { setError('أدخل كلمة المرور الحالية'); return; }
-    if (!form.password) { setError('أدخل كلمة المرور الجديدة'); return; }
-    if (form.password !== form.passwordConfirm) { setError('كلمة المرور وتأكيدها غير متطابقين'); return; }
+    setError("");
+    if (!form.currentPassword) {
+      setError("أدخل كلمة المرور الحالية");
+      return;
+    }
+    if (!form.password) {
+      setError("أدخل كلمة المرور الجديدة");
+      return;
+    }
+    if (form.password !== form.passwordConfirm) {
+      setError("كلمة المرور وتأكيدها غير متطابقين");
+      return;
+    }
     if (!PASSWORD_RULES.every((r) => r.test(form.password))) {
-      setError('كلمة المرور الجديدة لا تستوفي جميع الشروط المطلوبة');
+      setError("كلمة المرور الجديدة لا تستوفي جميع الشروط المطلوبة");
       return;
     }
     setSaving(true);
@@ -347,18 +448,23 @@ const SecurityCard = ({ lastPasswordChange, onPasswordChanged }) => {
         password: form.password,
         passwordConfirm: form.passwordConfirm,
       });
-      toast.success('تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى');
+      toast.success("تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى");
       handleCancel();
       onPasswordChanged();
     } catch (err) {
-      setError(err.response?.data?.message || 'حدث خطأ أثناء تغيير كلمة المرور');
+      setError(
+        err.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور",
+      );
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6"
+    >
       <SectionHeader
         title="الأمان وكلمة المرور"
         subtitle="تغيير كلمة المرور وإعدادات الأمان"
@@ -369,19 +475,40 @@ const SecurityCard = ({ lastPasswordChange, onPasswordChanged }) => {
       {!editing ? (
         <div className="border border-x-4 border-[#123C9180] rounded-xl p-5">
           <p className="text-xs text-(--text-light) mb-1.5">كلمة المرور</p>
-          <p className="text-sm font-semibold text-(--text-dark) mb-1 tracking-widest">••••••••</p>
+          <p className="text-sm font-semibold text-(--text-dark) mb-1 tracking-widest">
+            ••••••••
+          </p>
           <p className="text-xs text-(--text-light)">{lastPasswordChange}</p>
         </div>
       ) : (
         <EditBox>
-          <PasswordField label="كلمة المرور الحالية" value={form.currentPassword} onChange={handleChange('currentPassword')} />
-          <PasswordField label="كلمة المرور الجديدة" value={form.password} onChange={handleChange('password')} />
+          <PasswordField
+            label="كلمة المرور الحالية"
+            value={form.currentPassword}
+            onChange={handleChange("currentPassword")}
+          />
+          <PasswordField
+            label="كلمة المرور الجديدة"
+            value={form.password}
+            onChange={handleChange("password")}
+          />
           <PasswordRulesList password={form.password} />
-          <PasswordField label="تأكيد كلمة المرور الجديدة" value={form.passwordConfirm} onChange={handleChange('passwordConfirm')} />
+          <PasswordField
+            label="تأكيد كلمة المرور الجديدة"
+            value={form.passwordConfirm}
+            onChange={handleChange("passwordConfirm")}
+          />
         </EditBox>
       )}
 
-      {editing && <ActionRow saving={saving} onCancel={handleCancel} error={error} confirmLabel="تغيير كلمة المرور" />}
+      {editing && (
+        <ActionRow
+          saving={saving}
+          onCancel={handleCancel}
+          error={error}
+          confirmLabel="تغيير كلمة المرور"
+        />
+      )}
     </form>
   );
 };
@@ -396,33 +523,35 @@ const AdminAccountSettings = () => {
 
   const [admin, setAdmin] = useState(ctxUser || null);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
+  const [loadError, setLoadError] = useState("");
 
   const fetchProfile = async () => {
     setLoading(true);
-    setLoadError('');
+    setLoadError("");
     try {
       const res = await getMyProfile();
       const userData = extractUser(res.data);
       if (userData) {
         setAdmin(userData);
         // نخزّن آخر نسخة من المستخدم محليًا
-        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem("user", JSON.stringify(userData));
         updateUser?.(userData);
       }
     } catch (err) {
-      setLoadError(err.response?.data?.message || 'تعذر تحميل بيانات الحساب');
+      setLoadError(err.response?.data?.message || "تعذر تحميل بيانات الحساب");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchProfile(); }, []);
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   const handleProfileUpdated = (updatedUser) => {
     setAdmin((prev) => {
       const next = { ...prev, ...updatedUser };
-      localStorage.setItem('user', JSON.stringify(next));
+      localStorage.setItem("user", JSON.stringify(next));
       updateUser?.(next);
       return next;
     });
@@ -431,7 +560,7 @@ const AdminAccountSettings = () => {
   // بيتنده لما الإيميل أو الباسورد يتغيروا: يعمل تسجيل خروج فعلي ويوديه لصفحة اللوجين
   const handleForceReLogin = () => {
     logout?.();
-    navigate('/login', { replace: true });
+    navigate("/login", { replace: true });
   };
 
   if (loading) {
@@ -445,19 +574,27 @@ const AdminAccountSettings = () => {
   if (loadError || !admin) {
     return (
       <div className="text-center py-20 text-red-500" dir="rtl">
-        {loadError || 'تعذر تحميل البيانات'}
+        {loadError || "تعذر تحميل البيانات"}
       </div>
     );
   }
 
-  const firstLetter = (admin.fullName || '').trim().charAt(0).toUpperCase() || '؟';
+  const firstLetter =
+    (admin.fullName || "").trim().charAt(0).toUpperCase() || "؟";
 
   return (
     <div className="space-y-5" dir="rtl">
       {/* Page title */}
-      <div className="max-w-7xl mx-auto p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
-        <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">إعدادات الحساب</h1>
-        <p className="text-[16px] font-normal leading-6 text-[#575F69]">إدارة معلومات حسابك وتفضيلاتك</p>
+      <div
+        className="max-w-7xl mx-auto p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
+        <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">
+          إعدادات الحساب
+        </h1>
+        <p className="text-[16px] font-normal leading-6 text-[#575F69]">
+          إدارة معلومات حسابك وتفضيلاتك
+        </p>
       </div>
 
       {/* Header card — avatar letter + name */}
@@ -468,8 +605,12 @@ const AdminAccountSettings = () => {
           </div>
 
           <div className="min-w-0">
-            <h2 className="text-lg font-bold text-(--text-dark) truncate">{admin.fullName}</h2>
-            <p className="text-sm text-(--text-light) truncate">{admin.email}</p>
+            <h2 className="text-lg font-bold text-(--text-dark) truncate">
+              {admin.fullName}
+            </h2>
+            <p className="text-sm text-(--text-light) truncate">
+              {admin.email}
+            </p>
           </div>
         </div>
       </div>
@@ -481,7 +622,7 @@ const AdminAccountSettings = () => {
         onEmailChanged={handleForceReLogin}
       />
       <SecurityCard
-        lastPasswordChange={admin.lastPasswordChange || 'آخر تحديث غير متاح'}
+        lastPasswordChange={admin.lastPasswordChange || "آخر تحديث غير متاح"}
         onPasswordChanged={handleForceReLogin}
       />
     </div>

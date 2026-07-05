@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Star, DollarSign, Clock3, Users } from "lucide-react";
-import { getMyClassrooms, getClassroomStudents } from "../../../services/authService";
+import {
+  getMyClassrooms,
+  getClassroomStudents,
+} from "../../../services/APIService";
 
 // ⚠️ ملحوظة مهمة: مفيش endpoints حاليًا لـ:
 //   - عدد ساعات التدريس الفعلية
@@ -28,7 +31,7 @@ const StatsTeacherCard = () => {
         // بنجيب طلاب كل مجموعة بالتوازي ونجمعهم (طالب ممكن يتكرر في أكتر من مجموعة،
         // لو محتاجين عدد فريد بس، لازم نجمع الـ ids في Set بدل ما نجمع الطول مباشرة)
         const studentsResults = await Promise.allSettled(
-          classrooms.map((c) => getClassroomStudents(c.id))
+          classrooms.map((c) => getClassroomStudents(c.id)),
         );
 
         const uniqueStudentIds = new Set();
@@ -41,7 +44,7 @@ const StatsTeacherCard = () => {
           } else {
             console.error(
               `getClassroomStudents failed for classroom ${classrooms[idx]?.id}:`,
-              result.reason
+              result.reason,
             );
           }
         });

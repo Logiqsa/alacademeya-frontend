@@ -6,7 +6,7 @@ import SupervisorsFilters from "../../../components/admin/supervisors/Supervisor
 import SupervisorsTable from "../../../components/admin/supervisors/SupervisorsTable";
 import AddSupervisorModal from "../../../components/admin/supervisors/AddSupervisorModal";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-import { getUsers } from "../../../services/authService"; 
+import { getUsers } from "../../../services/APIService";
 
 const PAGE_SIZE = 6;
 
@@ -55,9 +55,9 @@ const SupervisorsPage = () => {
       supervisors.filter(
         (s) =>
           (s.name?.includes(search) || s.email?.includes(search)) &&
-          (filterStatus === "جميع الحالات" || s.status === filterStatus)
+          (filterStatus === "جميع الحالات" || s.status === filterStatus),
       ),
-    [supervisors, search, filterStatus]
+    [supervisors, search, filterStatus],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -71,8 +71,10 @@ const SupervisorsPage = () => {
 
   return (
     <AdminLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
-
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div className="order-2 sm:order-1">
@@ -101,18 +103,28 @@ const SupervisorsPage = () => {
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full">
           <SupervisorsFilters
             search={search}
-            onSearchChange={(v) => { setSearch(v); setPage(1); }}
+            onSearchChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
             filterStatus={filterStatus}
-            onFilterStatusChange={(v) => { setFilterStatus(v); setPage(1); }}
+            onFilterStatusChange={(v) => {
+              setFilterStatus(v);
+              setPage(1);
+            }}
           />
         </div>
 
         {/* Table */}
         <div className="mt-4">
           {loading ? (
-            <div className="text-center py-12 text-[#9CA3AF] text-[14px]">جارٍ التحميل...</div>
+            <div className="text-center py-12 text-[#9CA3AF] text-[14px]">
+              جارٍ التحميل...
+            </div>
           ) : error ? (
-            <div className="text-center py-12 text-red-500 text-[14px]">{error}</div>
+            <div className="text-center py-12 text-red-500 text-[14px]">
+              {error}
+            </div>
           ) : (
             <SupervisorsTable supervisors={paginated} />
           )}

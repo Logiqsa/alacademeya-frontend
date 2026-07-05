@@ -11,7 +11,7 @@ import {
   createStage,
   createGrade,
   createSubject,
-} from "../../../services/authService";
+} from "../../../services/APIService";
 
 const CreateCurriculumPage = () => {
   const navigate = useNavigate();

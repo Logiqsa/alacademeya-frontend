@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Clock } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
-import { createOrUpdateClassroomSchedule } from "../../../../services/authService";
-// عدّل المسار أعلاه حسب مكان authService عندك فعليًا لو مختلف
+
+import { createOrUpdateClassroomSchedule } from "../../../../services/APIService";
 
 const DAYS = [
   { key: "saturday", label: "السبت" },
@@ -26,7 +26,7 @@ const CreateSchedulePage = () => {
 
   const toggleDay = (key) => {
     setSelectedDays((prev) =>
-      prev.includes(key) ? prev.filter((d) => d !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((d) => d !== key) : [...prev, key],
     );
   };
 
@@ -71,7 +71,9 @@ const CreateSchedulePage = () => {
         <div className="space-y-5 sm:space-y-6">
           {/* أيام الدراسة */}
           <div>
-            <p className="text-sm font-semibold text-[#1A1A1A] mb-3">أيام الدراسة</p>
+            <p className="text-sm font-semibold text-[#1A1A1A] mb-3">
+              أيام الدراسة
+            </p>
             <div className="space-y-3">
               {DAYS.map((day) => (
                 <label
@@ -92,7 +94,9 @@ const CreateSchedulePage = () => {
 
           {/* الوقت */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">الوقت</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              الوقت
+            </label>
             <div className="relative">
               <input
                 type="time"

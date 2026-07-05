@@ -10,7 +10,7 @@ import {
   getAllSubjects,
   getAllGrades,
   deleteClassroom,
-} from "../../../services/authService"; // عدّل المسار حسب مكان ملفك
+} from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const ITEMS_PER_PAGE = 6;
 
@@ -56,10 +56,10 @@ const GroupsPage = () => {
       const rawClassrooms = classroomsRes.data?.data || [];
 
       const subjectMap = Object.fromEntries(
-        subjects.map((s) => [s.id, resolveName(s.name)])
+        subjects.map((s) => [s.id, resolveName(s.name)]),
       );
       const gradeMap = Object.fromEntries(
-        grades.map((g) => [g.id, resolveName(g.name)])
+        grades.map((g) => [g.id, resolveName(g.name)]),
       );
 
       // لو الحقل جه كـ object كامل (populated من الباك إند) نجيب اسمه مباشرة
@@ -76,10 +76,10 @@ const GroupsPage = () => {
         const nextLessonText = c.nextSession?.date
           ? `الحصة القادمة: ${new Date(c.nextSession.date).toLocaleDateString("ar-EG")}`
           : c.status === "paused"
-          ? "هذه المجموعة غير نشطة حالياً"
-          : c.status === "pending"
-          ? "التسجيل مفتوح"
-          : "لا توجد حصص قادمة حالياً";
+            ? "هذه المجموعة غير نشطة حالياً"
+            : c.status === "pending"
+              ? "التسجيل مفتوح"
+              : "لا توجد حصص قادمة حالياً";
 
         return {
           id: c.id,
@@ -117,7 +117,10 @@ const GroupsPage = () => {
   }, [location, fetchGroups]);
 
   const totalPages = Math.max(1, Math.ceil(groups.length / ITEMS_PER_PAGE));
-  const paginatedGroups = groups.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedGroups = groups.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE,
+  );
 
   const handleDelete = async (id) => {
     try {
@@ -131,7 +134,10 @@ const GroupsPage = () => {
 
   return (
     <TeacherLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         {toast && (
           <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-4 sm:px-6 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-semibold text-center w-[90%] sm:w-auto">
             ✓ تم إنشاء مجموعتك بنجاح !
@@ -168,7 +174,9 @@ const GroupsPage = () => {
 
         {/* Groups grid */}
         {loading ? (
-          <div className="text-center py-10 text-[#575F69]">جارٍ التحميل...</div>
+          <div className="text-center py-10 text-[#575F69]">
+            جارٍ التحميل...
+          </div>
         ) : error ? (
           <div className="text-center py-10 text-red-500">{error}</div>
         ) : groups.length === 0 ? (
@@ -181,8 +189,12 @@ const GroupsPage = () => {
               <GroupCard
                 key={g.id}
                 group={g}
-                onViewLessons={(id) => navigate(`/teacher/groups/${id}/lessons`)}
-                onViewStudents={(id) => navigate(`/teacher/groups/${id}/students`)}
+                onViewLessons={(id) =>
+                  navigate(`/teacher/groups/${id}/lessons`)
+                }
+                onViewStudents={(id) =>
+                  navigate(`/teacher/groups/${id}/students`)
+                }
                 onEdit={(id) => navigate(`/teacher/groups/${id}/edit`)}
                 onDelete={handleDelete}
               />
@@ -192,7 +204,12 @@ const GroupsPage = () => {
 
         {/* Pagination */}
         {!loading && !error && groups.length > 0 && (
-          <Pagination page={page} totalItems={groups.length} itemsPerPage={ITEMS_PER_PAGE} onChange={setPage} />
+          <Pagination
+            page={page}
+            totalItems={groups.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onChange={setPage}
+          />
         )}
       </div>
     </TeacherLayout>

@@ -12,7 +12,7 @@ import {
   getClassroom,
   deleteClassroom,
   getSessionAttendance,
-} from "../../../services/authService"; // عدّل المسار حسب مكان ملفك
+} from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const ITEMS_PER_PAGE = 5;
 
@@ -25,7 +25,8 @@ const STATUS_LABELS = {
   cancelled: "ملغية",
 };
 
-const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "--";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const GroupLessonsPage = () => {
@@ -69,7 +70,9 @@ const GroupLessonsPage = () => {
     ]);
 
     if (classroomResult.status === "fulfilled") {
-      setGroupName(resolveName(classroomResult.value.data?.data?.name) || "مجموعة");
+      setGroupName(
+        resolveName(classroomResult.value.data?.data?.name) || "مجموعة",
+      );
     } else {
       console.error("getClassroom failed:", classroomResult.reason);
       setGroupName("مجموعة");
@@ -93,7 +96,7 @@ const GroupLessonsPage = () => {
       // ─── بنجيب سجل الحضور لكل حصة على حدة (GET /sessions/:id/attendance) ───
       // بنستخدم allSettled عشان لو حصة معينة فشلت، الباقي يفضل يشتغل عادي
       const attendanceResults = await Promise.allSettled(
-        rawSessions.map((s) => getSessionAttendance(s.id))
+        rawSessions.map((s) => getSessionAttendance(s.id)),
       );
 
       const mapped = rawSessions.map((s, index) => {
@@ -106,7 +109,10 @@ const GroupLessonsPage = () => {
           attendance = records.filter((r) => r.status === "present").length;
           absence = records.filter((r) => r.status === "absent").length;
         } else {
-          console.error(`getSessionAttendance failed for session ${s.id}:`, attResult.reason);
+          console.error(
+            `getSessionAttendance failed for session ${s.id}:`,
+            attResult.reason,
+          );
         }
 
         return {
@@ -114,20 +120,22 @@ const GroupLessonsPage = () => {
           title: s.title || "حصة",
           date: s.scheduledDate
             ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
             : "--",
           time: s.scheduledDate
             ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
+                hour: "2-digit",
+                minute: "2-digit",
+              })
             : "--",
           duration:
-            typeof s.duration === "number" ? `${s.duration} دقيقة` : s.duration ?? "--",
+            typeof s.duration === "number"
+              ? `${s.duration} دقيقة`
+              : (s.duration ?? "--"),
           attendance,
           absence,
           status: STATUS_LABELS[s.status] || s.status || "--",
@@ -148,11 +156,16 @@ const GroupLessonsPage = () => {
   }, [fetchData]);
 
   const filtered = lessons.filter(
-    (l) => l.title.includes(search) && (filterStatus === "جميع الحالات" || l.status === filterStatus)
+    (l) =>
+      l.title.includes(search) &&
+      (filterStatus === "جميع الحالات" || l.status === filterStatus),
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  const paginatedLessons = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedLessons = filtered.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE,
+  );
 
   const stats = {
     total: lessons.length,
@@ -163,12 +176,17 @@ const GroupLessonsPage = () => {
 
   // ⚠️ مفيش endpoint لحذف/تعديل حصة منفردة في api.js الحالي (مفيش deleteSession/updateSession)
   // فالأزرار دي مؤقتًا بتعمل log بس لحد ما الـ endpoints دي تتضاف
-  const handleEdit = (id) => console.log("TODO: updateSession endpoint not available yet —", id);
-  const handleDelete = (id) => console.log("TODO: deleteSession endpoint not available yet —", id);
+  const handleEdit = (id) =>
+    console.log("TODO: updateSession endpoint not available yet —", id);
+  const handleDelete = (id) =>
+    console.log("TODO: deleteSession endpoint not available yet —", id);
 
   return (
     <TeacherLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right relative" dir="rtl">
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right relative"
+        dir="rtl"
+      >
         {/* Toast نجاح */}
         {showToast && (
           <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#D6E4C3] shadow-lg rounded-xl px-4 py-3 min-w-[280px]">
@@ -192,12 +210,15 @@ const GroupLessonsPage = () => {
               {groupName || "مجموعة"}
             </h3>
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
-              إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في مكان واحد.
+              إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في
+              مكان واحد.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
             <button
-              onClick={() => navigate(`/teacher/groups/${groupId}/lessons/schedule/new`)}
+              onClick={() =>
+                navigate(`/teacher/groups/${groupId}/lessons/schedule/new`)
+              }
               className="w-full sm:w-40 h-12 rounded-lg bg-white border border-[#E5E5E5] text-[#1A1A1A] flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
             >
               إنشاء جدول
@@ -213,16 +234,27 @@ const GroupLessonsPage = () => {
 
         {/* Stats */}
         <div className="mb-6">
-          <LessonStatsBar total={stats.total} upcoming={stats.upcoming} completed={stats.completed} cancelled={stats.cancelled} />
+          <LessonStatsBar
+            total={stats.total}
+            upcoming={stats.upcoming}
+            completed={stats.completed}
+            cancelled={stats.cancelled}
+          />
         </div>
 
         {/* Filters */}
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <LessonFilters
             search={search}
-            onSearchChange={(v) => { setSearch(v); setPage(1); }}
+            onSearchChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
             filterStatus={filterStatus}
-            onFilterStatusChange={(v) => { setFilterStatus(v); setPage(1); }}
+            onFilterStatusChange={(v) => {
+              setFilterStatus(v);
+              setPage(1);
+            }}
             filterTime={filterTime}
             onFilterTimeChange={setFilterTime}
           />

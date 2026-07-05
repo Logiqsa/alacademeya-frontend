@@ -1,32 +1,33 @@
-import { useState, useEffect } from 'react';
-import StepsNavigation from '../../../components/parent/add-child/StepsNavigation';
-import PersonalInfoStep from '../../../components/parent/add-child/PersonalInfoStep';
-import AcademicInfoStep from '../../../components/parent/add-child/AcademicInfoStep';
-import AccountSetupStep from '../../../components/parent/add-child/AccountSetupStep';
-import ReviewStep from '../../../components/parent/add-child/ReviewStep';
-import SuccessStep from '../../../components/parent/add-child/SuccessStep';
-import RequestStatusPage from '../../../components/parent/add-child/RequestStatusPage';
-import ParentLayout from '../../../components/parent/layout/ParentLayout';
+import { useState, useEffect } from "react";
+import StepsNavigation from "../../../components/parent/add-child/StepsNavigation";
+import PersonalInfoStep from "../../../components/parent/add-child/PersonalInfoStep";
+import AcademicInfoStep from "../../../components/parent/add-child/AcademicInfoStep";
+import AccountSetupStep from "../../../components/parent/add-child/AccountSetupStep";
+import ReviewStep from "../../../components/parent/add-child/ReviewStep";
+import SuccessStep from "../../../components/parent/add-child/SuccessStep";
+import RequestStatusPage from "../../../components/parent/add-child/RequestStatusPage";
+import ParentLayout from "../../../components/parent/layout/ParentLayout";
 import {
   getCountries,
   getCurriculums,
   getCurriculumStages,
   getStageGrades,
   getAllSubjects,
-} from '../../../services/authService';
+} from "../../../services/APIService";
 
 const getName = (item) => {
-  if (!item) return '';
-  if (typeof item.name === 'string') return item.name;
-  if (typeof item.name === 'object') return item.name?.ar || item.name?.en || '';
-  return '';
+  if (!item) return "";
+  if (typeof item.name === "string") return item.name;
+  if (typeof item.name === "object")
+    return item.name?.ar || item.name?.en || "";
+  return "";
 };
 
 const stepTitles = {
-  1: 'المعلومات الشخصية',
-  2: 'المعلومات الأكاديمية',
-  3: 'بيانات دخول الطالب',
-  4: 'المراجعة والإنشاء',
+  1: "المعلومات الشخصية",
+  2: "المعلومات الأكاديمية",
+  3: "بيانات دخول الطالب",
+  4: "المراجعة والإنشاء",
 };
 
 const AddChildPage = () => {
@@ -35,18 +36,18 @@ const AddChildPage = () => {
   const [showStatus, setShowStatus] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
+    fullName: "",
+    email: "",
     birthDate: null,
     country: null, // ⬅️ الآن object: { id, code, name } بدل string id
-    curriculum: '',
-    stage: '',
-    grade: '',
-    language: '',
+    curriculum: "",
+    stage: "",
+    grade: "",
+    language: "",
     subjects: [],
-    username: '',
-    password: '',
-    passwordConfirm: '',
+    username: "",
+    password: "",
+    passwordConfirm: "",
   });
 
   const [countriesMap, setCountriesMap] = useState({});
@@ -64,9 +65,11 @@ const AddChildPage = () => {
     getCountries()
       .then((res) => {
         const list = res.data?.data || res.data || [];
-        setCountriesMap(Object.fromEntries(list.map((c) => [c.id, getName(c)])));
+        setCountriesMap(
+          Object.fromEntries(list.map((c) => [c.id, getName(c)])),
+        );
       })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -74,9 +77,11 @@ const AddChildPage = () => {
     getCurriculums(countryId)
       .then((res) => {
         const list = res.data?.data || res.data || [];
-        setCurriculumsMap(Object.fromEntries(list.map((c) => [c.id, getName(c)])));
+        setCurriculumsMap(
+          Object.fromEntries(list.map((c) => [c.id, getName(c)])),
+        );
       })
-      .catch(() => { });
+      .catch(() => {});
   }, [countryId]);
 
   useEffect(() => {
@@ -86,7 +91,7 @@ const AddChildPage = () => {
         const list = res.data?.data || res.data || [];
         setStagesMap(Object.fromEntries(list.map((s) => [s.id, getName(s)])));
       })
-      .catch(() => { });
+      .catch(() => {});
   }, [formData.curriculum]);
 
   useEffect(() => {
@@ -96,7 +101,7 @@ const AddChildPage = () => {
         const list = res.data?.data || res.data || [];
         setGradesMap(Object.fromEntries(list.map((g) => [g.id, getName(g)])));
       })
-      .catch(() => { });
+      .catch(() => {});
   }, [formData.stage]);
 
   useEffect(() => {
@@ -106,7 +111,7 @@ const AddChildPage = () => {
         const list = res.data?.data || res.data || [];
         setSubjectsMap(Object.fromEntries(list.map((s) => [s.id, getName(s)])));
       })
-      .catch(() => { });
+      .catch(() => {});
   }, [formData.grade]);
 
   if (showStatus)
@@ -130,7 +135,6 @@ const AddChildPage = () => {
   return (
     <ParentLayout>
       <div className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-4 sm:py-6 font-['IBM_Plex_Sans_Arabic']">
-
         {/* Header */}
         <div className="text-right mb-4 sm:mb-8">
           <h1 className="font-semibold text-[22px] sm:text-[26px] lg:text-[30px] text-[#123C91]">
@@ -154,7 +158,6 @@ const AddChildPage = () => {
       shadow-sm
     "
         >
-
           {currentStep === 1 && (
             <PersonalInfoStep
               data={formData}
@@ -195,11 +198,9 @@ const AddChildPage = () => {
             />
           )}
         </div>
-
       </div>
     </ParentLayout>
   );
-
 };
 
 export default AddChildPage;

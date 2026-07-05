@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Bell, BellRing, GraduationCap, Settings } from "lucide-react";
 import NotificationCard from "./NotificationCard";
@@ -6,7 +5,7 @@ import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
-} from "../../../services/authService";
+} from "../../../services/APIService";
 
 const tabs = [
   { key: "all", label: "الكل", icon: Bell },
@@ -44,7 +43,7 @@ const NotificationsSection = ({ onStatsUpdate }) => {
         await markNotificationRead(notification._id);
       }
       const updated = notifications.map((n) =>
-        n._id === notification._id ? { ...n, isRead: !n.isRead } : n
+        n._id === notification._id ? { ...n, isRead: !n.isRead } : n,
       );
       setNotifications(updated);
       onStatsUpdate?.(updated);
@@ -73,9 +72,14 @@ const NotificationsSection = ({ onStatsUpdate }) => {
   });
 
   return (
-    <div dir="rtl" className="w-full bg-white p-4 sm:p-6 rounded-2xl border border-[#E5E5E5]">
+    <div
+      dir="rtl"
+      className="w-full bg-white p-4 sm:p-6 rounded-2xl border border-[#E5E5E5]"
+    >
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-[16px] font-medium text-[#1F2937]">جميع الإشعارات</h2>
+        <h2 className="text-[16px] font-medium text-[#1F2937]">
+          جميع الإشعارات
+        </h2>
         {notifications.some((n) => !n.isRead) && (
           <button
             onClick={handleMarkAllRead}
@@ -127,7 +131,11 @@ const NotificationsSection = ({ onStatsUpdate }) => {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
-              type={n.type === "chat" || n.type === "subscription" ? "system" : "academic"}
+              type={
+                n.type === "chat" || n.type === "subscription"
+                  ? "system"
+                  : "academic"
+              }
               isRead={n.isRead}
               onToggleRead={() => handleToggleRead(n)}
             />

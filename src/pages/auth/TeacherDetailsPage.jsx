@@ -10,12 +10,21 @@ import {
   getCurriculumStages,
   getStageGrades,
   getAllSubjects,
-} from "../../services/authService";
+} from "../../services/APIService";
 
 // Single-select dropdown
-const SelectField = ({ label, name, value, onChange, options = [], placeholder, disabled }) => {
+const SelectField = ({
+  label,
+  name,
+  value,
+  onChange,
+  options = [],
+  placeholder,
+  disabled,
+}) => {
   const display = (o) => {
-    if (typeof o === "object" && o !== null) return o.name?.ar || o.name?.en || o.name || "";
+    if (typeof o === "object" && o !== null)
+      return o.name?.ar || o.name?.en || o.name || "";
     return o.name ?? o;
   };
 
@@ -30,52 +39,83 @@ const SelectField = ({ label, name, value, onChange, options = [], placeholder, 
           disabled={disabled}
           className="w-full h-12 px-4 appearance-none rounded-xl border border-[#1F293733] bg-[#F9FAFA] text-[14px] outline-none cursor-pointer focus:border-[#123C91] transition-colors disabled:opacity-50"
         >
-          <option value="" disabled>{disabled ? "جاري التحميل..." : placeholder}</option>
-          {Array.isArray(options) && options.map((o) => (
-            <option key={o.id ?? o} value={o.id ?? o}>{display(o)}</option>
-          ))}
+          <option value="" disabled>
+            {disabled ? "جاري التحميل..." : placeholder}
+          </option>
+          {Array.isArray(options) &&
+            options.map((o) => (
+              <option key={o.id ?? o} value={o.id ?? o}>
+                {display(o)}
+              </option>
+            ))}
         </select>
-        <ChevronDown size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+        <ChevronDown
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
+        />
       </div>
     </div>
   );
 };
 
 // Multi-select chips field
-const MultiSelectField = ({ label, options = [], selected, onChange, placeholder, disabled }) => {
+const MultiSelectField = ({
+  label,
+  options = [],
+  selected,
+  onChange,
+  placeholder,
+  disabled,
+}) => {
   const display = (o) => {
-    if (typeof o === "object" && o !== null) return o.name?.ar || o.name?.en || o.name || "";
+    if (typeof o === "object" && o !== null)
+      return o.name?.ar || o.name?.en || o.name || "";
     return o.name ?? o;
   };
 
   const toggle = (id) => {
-    onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+    onChange(
+      selected.includes(id)
+        ? selected.filter((s) => s !== id)
+        : [...selected, id],
+    );
   };
 
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[13px] font-medium text-[#1F2937]">{label}</label>
-      <div className={`min-h-12 px-3 py-2 rounded-xl border border-[#1F293733] bg-[#F9FAFA] flex flex-wrap gap-2 ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
-        {disabled && <span className="text-[14px] text-[#9CA3AF] self-center">جاري التحميل...</span>}
-        {!disabled && options.length === 0 && <span className="text-[14px] text-[#9CA3AF] self-center">{placeholder}</span>}
-        {!disabled && options.map((o) => {
-          const id = o.id ?? o;
-          const active = selected.includes(id);
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => toggle(id)}
-              className={`px-3 py-1 rounded-lg text-[13px] font-medium border transition-colors ${
-                active
-                  ? "bg-[#123C91] text-white border-[#123C91]"
-                  : "bg-white text-[#6B7280] border-[#1F293733] hover:border-[#123C91]"
-              }`}
-            >
-              {display(o)}
-            </button>
-          );
-        })}
+      <div
+        className={`min-h-12 px-3 py-2 rounded-xl border border-[#1F293733] bg-[#F9FAFA] flex flex-wrap gap-2 ${disabled ? "opacity-50 pointer-events-none" : ""}`}
+      >
+        {disabled && (
+          <span className="text-[14px] text-[#9CA3AF] self-center">
+            جاري التحميل...
+          </span>
+        )}
+        {!disabled && options.length === 0 && (
+          <span className="text-[14px] text-[#9CA3AF] self-center">
+            {placeholder}
+          </span>
+        )}
+        {!disabled &&
+          options.map((o) => {
+            const id = o.id ?? o;
+            const active = selected.includes(id);
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => toggle(id)}
+                className={`px-3 py-1 rounded-lg text-[13px] font-medium border transition-colors ${
+                  active
+                    ? "bg-[#123C91] text-white border-[#123C91]"
+                    : "bg-white text-[#6B7280] border-[#1F293733] hover:border-[#123C91]"
+                }`}
+              >
+                {display(o)}
+              </button>
+            );
+          })}
       </div>
     </div>
   );
@@ -86,19 +126,19 @@ const TeacherDetailsPage = () => {
   const navigate = useNavigate();
   const fileRef = useRef(null);
   const { user, setUser } = useContext(AuthContext);
-   console.log("token:", localStorage.getItem("token"));
+  console.log("token:", localStorage.getItem("token"));
   console.log("user:", localStorage.getItem("user"));
 
-  const [submitting, setSubmitting]             = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [loadingCurricula, setLoadingCurricula] = useState(true);
-  const [loadingStages, setLoadingStages]       = useState(false);
-  const [loadingGrades, setLoadingGrades]       = useState(false);
-  const [loadingSubjects, setLoadingSubjects]   = useState(false);
+  const [loadingStages, setLoadingStages] = useState(false);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   const [curricula, setCurricula] = useState([]);
-  const [stages, setStages]       = useState([]);
-  const [grades, setGrades]       = useState([]);
-  const [subjects, setSubjects]   = useState([]);
+  const [stages, setStages] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [subjects, setSubjects] = useState([]);
 
   const [form, setForm] = useState({
     curriculum: "",
@@ -109,7 +149,7 @@ const TeacherDetailsPage = () => {
   });
 
   const [fileName, setFileName] = useState("");
-  const [fileObj, setFileObj]   = useState(null);
+  const [fileObj, setFileObj] = useState(null);
 
   // Load curricula once
   useEffect(() => {
@@ -171,13 +211,13 @@ const TeacherDetailsPage = () => {
       form.grades.map((gradeId) =>
         getAllSubjects({ grade: gradeId })
           .then((res) => res.data?.data || res.data || [])
-          .catch(() => [])
-      )
+          .catch(() => []),
+      ),
     )
       .then((results) => {
         const merged = results.flat();
         const unique = merged.filter(
-          (item, idx, self) => self.findIndex((s) => s.id === item.id) === idx
+          (item, idx, self) => self.findIndex((s) => s.id === item.id) === idx,
         );
         setSubjects(unique);
       })
@@ -192,7 +232,12 @@ const TeacherDetailsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.curriculum || !form.stage || !form.grades.length || !form.subjects.length) {
+    if (
+      !form.curriculum ||
+      !form.stage ||
+      !form.grades.length ||
+      !form.subjects.length
+    ) {
       toast.error("يرجى إكمال جميع الحقول المطلوبة");
       return;
     }
@@ -202,7 +247,9 @@ const TeacherDetailsPage = () => {
       const payload = {
         language: "ar",
         curriculum: form.curriculum,
-        experienceYears: form.experienceYears ? Number(form.experienceYears) : undefined,
+        experienceYears: form.experienceYears
+          ? Number(form.experienceYears)
+          : undefined,
         grades: form.grades,
         subjects: form.subjects,
       };
@@ -246,7 +293,6 @@ const TeacherDetailsPage = () => {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
           {/* Curriculum */}
           <SelectField
             label="المنهج"
@@ -274,7 +320,9 @@ const TeacherDetailsPage = () => {
             label="الصفوف الدراسية"
             options={grades}
             selected={form.grades}
-            onChange={(val) => setForm((p) => ({ ...p, grades: val, subjects: [] }))}
+            onChange={(val) =>
+              setForm((p) => ({ ...p, grades: val, subjects: [] }))
+            }
             placeholder={form.stage ? "اختر الصفوف" : "اختر المرحلة أولاً"}
             disabled={!form.stage || loadingGrades}
           />
@@ -285,13 +333,17 @@ const TeacherDetailsPage = () => {
             options={subjects}
             selected={form.subjects}
             onChange={(val) => setForm((p) => ({ ...p, subjects: val }))}
-            placeholder={form.grades.length ? "اختر المواد" : "اختر الصفوف أولاً"}
+            placeholder={
+              form.grades.length ? "اختر المواد" : "اختر الصفوف أولاً"
+            }
             disabled={!form.grades.length || loadingSubjects}
           />
 
           {/* Experience years */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[13px] font-medium text-[#1F2937]">سنوات الخبرة</label>
+            <label className="text-[13px] font-medium text-[#1F2937]">
+              سنوات الخبرة
+            </label>
             <input
               type="number"
               name="experienceYears"
@@ -306,7 +358,8 @@ const TeacherDetailsPage = () => {
           {/* File upload */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[13px] font-medium text-[#1F2937]">
-              المستندات <span className="text-[#9CA3AF] font-normal">(اختياري)</span>
+              المستندات{" "}
+              <span className="text-[#9CA3AF] font-normal">(اختياري)</span>
             </label>
             <button
               type="button"
@@ -318,8 +371,16 @@ const TeacherDetailsPage = () => {
             </button>
             {fileName && (
               <div className="flex items-center justify-between bg-[#F0F4FF] rounded-lg px-3 py-2">
-                <span className="text-[13px] text-[#123C91] truncate max-w-[80%]">{fileName}</span>
-                <button type="button" onClick={() => { setFileName(""); setFileObj(null); }}>
+                <span className="text-[13px] text-[#123C91] truncate max-w-[80%]">
+                  {fileName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFileName("");
+                    setFileObj(null);
+                  }}
+                >
                   <X size={14} className="text-[#6B7280]" />
                 </button>
               </div>

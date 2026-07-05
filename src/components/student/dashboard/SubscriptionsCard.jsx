@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { getAllSubscriptions } from "../../../services/authService"; // عدّل المسار حسب مكانه عندك
+import { getAllSubscriptions } from "../../../services/APIService"; // عدّل المسار حسب مكانه عندك
 
-const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "");
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "";
 
 const buildGroupsFromItems = (items = []) =>
   items.map((item) => {
@@ -133,7 +134,10 @@ const SubscriptionsCard = () => {
           {/* Progress list */}
           <div className="flex flex-col gap-3.5 sm:gap-4">
             {groups.map((g) => {
-              const percent = g.total > 0 ? Math.min(100, Math.round((g.done / g.total) * 100)) : 0;
+              const percent =
+                g.total > 0
+                  ? Math.min(100, Math.round((g.done / g.total) * 100))
+                  : 0;
               return (
                 <div key={g.id}>
                   <div className="flex items-center justify-between mb-1.5 gap-2">
@@ -142,7 +146,9 @@ const SubscriptionsCard = () => {
                     </span>
                     <span
                       className="text-[#1F2937] text-[12.5px] sm:text-[13px] font-medium truncate"
-                      style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
+                      style={{
+                        fontFamily: "'IBM Plex Sans Arabic', sans-serif",
+                      }}
                     >
                       {g.name}
                     </span>

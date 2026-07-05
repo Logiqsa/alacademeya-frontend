@@ -10,7 +10,7 @@ import {
   FileText,
 } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
-import { createClassroomSession } from "../../../../services/authService"; // عدّل المسار حسب مكان ملفك
+import { createClassroomSession } from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const CreateLessonPage = () => {
   const navigate = useNavigate();
@@ -29,7 +29,8 @@ const CreateLessonPage = () => {
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleFilesSelected = (e) => {
     const newFiles = Array.from(e.target.files || []);
@@ -45,7 +46,8 @@ const CreateLessonPage = () => {
     if (!form.subject) return "من فضلك اختر عنوان الحصة";
     if (!form.date) return "من فضلك اختر تاريخ الحصة";
     if (!form.time) return "من فضلك اختر وقت الحصة";
-    if (!form.duration || Number(form.duration) <= 0) return "من فضلك أدخل مدة صحيحة";
+    if (!form.duration || Number(form.duration) <= 0)
+      return "من فضلك أدخل مدة صحيحة";
     return null;
   };
 
@@ -88,7 +90,11 @@ const CreateLessonPage = () => {
           "يوجد حصة أخرى مجدولة لهذه المجموعة في نفس الموعد، من فضلك اختر تاريخًا أو وقتًا مختلفًا",
       };
 
-      setError(KNOWN_ERRORS[code] || code || "حدث خطأ أثناء إنشاء الحصة، حاول مرة أخرى");
+      setError(
+        KNOWN_ERRORS[code] ||
+          code ||
+          "حدث خطأ أثناء إنشاء الحصة، حاول مرة أخرى",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -140,12 +146,18 @@ const CreateLessonPage = () => {
         dir="rtl"
       >
         <div className="pb-5 sm:pb-6 border-b border-gray-100">
-          <p className="text-sm font-semibold text-[#1A1A1A]">بيانات الحصة الأساسية</p>
+          <p className="text-sm font-semibold text-[#1A1A1A]">
+            بيانات الحصة الأساسية
+          </p>
         </div>
 
         <div className="space-y-5 sm:space-y-6 pt-5 sm:pt-6">
           {/* عنوان الحصة */}
-          <CustomSelect name="subject" label="عنوان الحصة" options={["رياضيات", "فيزياء"]} />
+          <CustomSelect
+            name="subject"
+            label="عنوان الحصة"
+            options={["رياضيات", "فيزياء"]}
+          />
 
           {/* التاريخ + الوقت */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -217,7 +229,9 @@ const CreateLessonPage = () => {
             <div className="flex items-start gap-2">
               <Paperclip className="text-[#1A1A1A] mt-0.5 shrink-0" size={18} />
               <div>
-                <p className="text-sm font-semibold text-[#1A1A1A]">مرفقات الحصة</p>
+                <p className="text-sm font-semibold text-[#1A1A1A]">
+                  مرفقات الحصة
+                </p>
                 <p className="text-xs text-[#8C9198] mt-1">
                   أضف الملفات أو المستندات التي يحتاجها الطلاب أثناء الحصة.
                 </p>
@@ -257,7 +271,9 @@ const CreateLessonPage = () => {
                 className="w-full border-2 border-dashed border-[#E5E5E5] rounded-lg py-6 flex flex-col items-center justify-center gap-2 text-[#8C9198] hover:border-[#123C91] hover:text-[#123C91] transition-colors"
               >
                 <Paperclip size={20} />
-                <span className="text-sm font-medium">اضغط لاختيار الملفات</span>
+                <span className="text-sm font-medium">
+                  اضغط لاختيار الملفات
+                </span>
               </button>
 
               {files.length > 0 && (
@@ -268,8 +284,13 @@ const CreateLessonPage = () => {
                       className="flex items-center justify-between gap-3 bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-3 py-2"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <FileText size={16} className="text-[#575F69] shrink-0" />
-                        <span className="text-sm text-[#1A1A1A] truncate">{file.name}</span>
+                        <FileText
+                          size={16}
+                          className="text-[#575F69] shrink-0"
+                        />
+                        <span className="text-sm text-[#1A1A1A] truncate">
+                          {file.name}
+                        </span>
                         <span className="text-xs text-[#8C9198] shrink-0">
                           {formatSize(file.size)}
                         </span>

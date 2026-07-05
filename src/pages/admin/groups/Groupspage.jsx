@@ -7,7 +7,13 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import GroupsFilters from "../../../components/admin/groups/Groupsfilters";
 import GroupTable from "../../../components/admin/groups/Groupstable";
 import GroupsStatsBar from "../../../components/admin/groups/Groupsstatsbar";
-import { getClassrooms, getAllSubjects, getAllGrades, getStage, getUser } from "../../../services/authService";// عدّل المسار حسب مكان ملفك
+import {
+  getClassrooms,
+  getAllSubjects,
+  getAllGrades,
+  getStage,
+  getUser,
+} from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const PAGE_SIZE = 6;
 
@@ -20,7 +26,13 @@ const STATUS_LABELS = {
   completed: "منتهية",
 };
 
-const SUBJECT_FILTER_OPTIONS = ["جميع المواد", "رياضيات", "علوم", "لغة عربية", "لغة إنجليزية"];
+const SUBJECT_FILTER_OPTIONS = [
+  "جميع المواد",
+  "رياضيات",
+  "علوم",
+  "لغة عربية",
+  "لغة إنجليزية",
+];
 
 const GroupsPage = () => {
   const navigate = useNavigate();
@@ -49,22 +61,28 @@ const GroupsPage = () => {
       const rawClassrooms = classroomsRes.data?.data || [];
 
       const subjectMap = Object.fromEntries(
-        subjects.map((s) => [s.id, s.name?.ar || s.name])
+        subjects.map((s) => [s.id, s.name?.ar || s.name]),
       );
       const gradeMap = Object.fromEntries(
-        grades.map((g) => [g.id, g.name?.ar || g.name])
+        grades.map((g) => [g.id, g.name?.ar || g.name]),
       );
 
       // مفيش endpoint بيرجع كل المراحل مرة واحدة (getCurriculumStages بياخد curriculum id)
       // فبنجيب اسم كل مرحلة فريدة (unique) موجودة في المجموعات عن طريق /stages/{id}
-      const uniqueStageIds = [...new Set(rawClassrooms.map((c) => c.stage).filter(Boolean))];
+      const uniqueStageIds = [
+        ...new Set(rawClassrooms.map((c) => c.stage).filter(Boolean)),
+      ];
 
       const stageEntries = await Promise.all(
-        uniqueStageIds.map((id) =>
-          getStage(id)
-            .then((res) => [id, res.data?.data?.name?.ar || res.data?.data?.name || id])
-            .catch(() => [id, id]) // لو فشل الريكوست، نرجع نعرض الـ id كـ fallback بدل ما نكسر الصفحة
-        )
+        uniqueStageIds.map(
+          (id) =>
+            getStage(id)
+              .then((res) => [
+                id,
+                res.data?.data?.name?.ar || res.data?.data?.name || id,
+              ])
+              .catch(() => [id, id]), // لو فشل الريكوست، نرجع نعرض الـ id كـ fallback بدل ما نكسر الصفحة
+        ),
       );
       const stageMap = Object.fromEntries(stageEntries);
 
@@ -73,17 +91,26 @@ const GroupsPage = () => {
       const uniqueTeacherIds = [
         ...new Set(
           rawClassrooms
-            .map((c) => (typeof c.teacher === "string" ? c.teacher : c.teacher?.id || c.teacher?._id))
-            .filter(Boolean)
+            .map((c) =>
+              typeof c.teacher === "string"
+                ? c.teacher
+                : c.teacher?.id || c.teacher?._id,
+            )
+            .filter(Boolean),
         ),
       ];
 
       const teacherEntries = await Promise.all(
         uniqueTeacherIds.map((id) =>
           getUser(id)
-            .then((res) => [id, res.data?.data?.fullName || res.data?.data?.user?.fullName || null])
-            .catch(() => [id, null])
-        )
+            .then((res) => [
+              id,
+              res.data?.data?.fullName ||
+                res.data?.data?.user?.fullName ||
+                null,
+            ])
+            .catch(() => [id, null]),
+        ),
       );
       const teacherMap = Object.fromEntries(teacherEntries);
 
@@ -95,7 +122,10 @@ const GroupsPage = () => {
       };
 
       const mapped = rawClassrooms.map((c) => {
-        const teacherId = typeof c.teacher === "string" ? c.teacher : c.teacher?.id || c.teacher?._id;
+        const teacherId =
+          typeof c.teacher === "string"
+            ? c.teacher
+            : c.teacher?.id || c.teacher?._id;
         return {
           id: c.id,
           name: resolveName(c.name),
@@ -135,13 +165,18 @@ const GroupsPage = () => {
 
   const filtered = groups.filter(
     (g) =>
-      (g.name?.includes(search) || (g.teacher ?? "").includes(search) || g.subject.includes(search)) &&
+      (g.name?.includes(search) ||
+        (g.teacher ?? "").includes(search) ||
+        g.subject.includes(search)) &&
       (filterSubject === "جميع المواد" || g.subject === filterSubject) &&
-      (filterStatus === "جميع الحالات" || g.status === filterStatus)
+      (filterStatus === "جميع الحالات" || g.status === filterStatus),
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginatedGroups = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paginatedGroups = filtered.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   const stats = {
     paused: groups.filter((g) => g.status === "متوقفة").length,
@@ -152,10 +187,15 @@ const GroupsPage = () => {
 
   return (
     <AdminLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div className="order-2 sm:order-1">
-            <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">إدارة المجموعات</h3>
+            <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
+              إدارة المجموعات
+            </h3>
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               مراقبة وإدارة المجموعات الدراسية على المنصة.
             </p>
@@ -176,17 +216,28 @@ const GroupsPage = () => {
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <GroupsFilters
             search={search}
-            onSearchChange={(v) => { setSearch(v); setPage(1); }}
+            onSearchChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
             filterSubject={filterSubject}
-            onFilterSubjectChange={(v) => { setFilterSubject(v); setPage(1); }}
+            onFilterSubjectChange={(v) => {
+              setFilterSubject(v);
+              setPage(1);
+            }}
             filterStatus={filterStatus}
-            onFilterStatusChange={(v) => { setFilterStatus(v); setPage(1); }}
+            onFilterStatusChange={(v) => {
+              setFilterStatus(v);
+              setPage(1);
+            }}
           />
         </div>
 
         <div className="mt-4">
           {loading ? (
-            <div className="text-center py-10 text-[#575F69]">جارٍ التحميل...</div>
+            <div className="text-center py-10 text-[#575F69]">
+              جارٍ التحميل...
+            </div>
           ) : error ? (
             <div className="text-center py-10 text-red-500">{error}</div>
           ) : (

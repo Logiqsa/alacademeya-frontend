@@ -5,7 +5,10 @@ import LessonStatsBar from "../../../components/student/groupLesson/Lessonstatsb
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 import LessonsTable from "../../../components/student/groupLesson/Lessonstable";
 import Paginationn from "../../../components/teacher/groups/lessons/Paginationn";
-import { getMyClassrooms, getClassroomSessions } from "../../../services/authService";
+import {
+  getMyClassrooms,
+  getClassroomSessions,
+} from "../../../services/APIService";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -16,7 +19,8 @@ const STATUS_LABELS = {
   cancelled: "ملغاة",
 };
 
-const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "--";
 
 // بيحسب حالة العرض اعتمادًا على status الحقيقي من الباك إند، وعلى التوقيت لو لسه "scheduled"
 const computeDisplayStatus = (session) => {
@@ -89,7 +93,10 @@ const StudentGroupLessonsPage = () => {
               month: "long",
               day: "numeric",
             }),
-            time: date.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+            time: date.toLocaleTimeString("ar-EG", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
             duration: s.duration || 45,
             status: STATUS_LABELS[status] || status,
             _sortDate: date,
@@ -111,11 +118,16 @@ const StudentGroupLessonsPage = () => {
   }, [fetchData]);
 
   const filtered = lessons.filter(
-    (l) => l.title.includes(search) && (filterStatus === "جميع الحالات" || l.status === filterStatus)
+    (l) =>
+      l.title.includes(search) &&
+      (filterStatus === "جميع الحالات" || l.status === filterStatus),
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  const paginatedLessons = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const paginatedLessons = filtered.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE,
+  );
 
   const stats = {
     total: lessons.length,
@@ -126,7 +138,10 @@ const StudentGroupLessonsPage = () => {
 
   return (
     <StudentLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         <div className="mb-4">
           <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
             {groupName || "مجموعة"}
@@ -174,7 +189,9 @@ const StudentGroupLessonsPage = () => {
           ) : (
             <LessonsTable
               lessons={paginatedLessons}
-              onView={(id) => navigate(`/student/groups/${groupId}/lessons/${id}`)}
+              onView={(id) =>
+                navigate(`/student/groups/${groupId}/lessons/${id}`)
+              }
             />
           )}
         </div>
