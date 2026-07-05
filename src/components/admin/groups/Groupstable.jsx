@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList } from "lucide-react";
 
@@ -104,16 +105,15 @@ const AssignSubstituteModal = ({ open, onClose, currentTeacher }) => (
   </Modal>
 );
 
-// ─── Dropdown ─────────────────────────────────────────────────────────────────
+// ─── Dropdown (Portal-based, escapes table overflow clipping) ─────────────────
+const MENU_WIDTH = 190;
+const MENU_GAP = 6;
+
 const ActionsDropdown = ({ group, onAction, onOpenAttendance }) => {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
 
   const items = [
     { key: "attendance", label: "سجل الحضور", Icon: ClipboardList, isNav: true },
@@ -121,6 +121,57 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance }) => {
     { key: "assign-teacher", label: "تعيين معلم", Icon: Users },
     { key: "assign-substitute", label: "تعيين معلم بديل", Icon: UserCheck },
   ];
+
+  const updatePosition = () => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const menuHeight = items.length * 42 + 16;
+
+    // حاذي القائمة مع حافة الزرار اليمنى، وارجع لليسار لو هتخرج بره الشاشة
+    let left = rect.right - MENU_WIDTH;
+    if (left < 8) left = 8;
+    if (left + MENU_WIDTH > window.innerWidth - 8) {
+      left = window.innerWidth - MENU_WIDTH - 8;
+    }
+
+    // افتح لتحت، ولو مفيش مساحة كفاية افتح لفوق بدل ما تتقص
+    let top = rect.bottom + MENU_GAP;
+    if (top + menuHeight > window.innerHeight - 8) {
+      top = rect.top - menuHeight - MENU_GAP;
+    }
+
+    setCoords({ top, left });
+  };
+
+  useLayoutEffect(() => {
+    if (open) updatePosition();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleOutside = (e) => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        menuRef.current && !menuRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    // اقفل القائمة لو المستخدم عمل scroll أو غيّر حجم الشاشة عشان متفضلش عايمة في مكان غلط
+    const handleReposition = () => setOpen(false);
+
+    document.addEventListener("mousedown", handleOutside);
+    window.addEventListener("scroll", handleReposition, true);
+    window.addEventListener("resize", handleReposition);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      window.removeEventListener("scroll", handleReposition, true);
+      window.removeEventListener("resize", handleReposition);
+    };
+  }, [open]);
 
   const handleClick = (item) => {
     setOpen(false);
@@ -132,32 +183,46 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance }) => {
   };
 
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
+        ref={btnRef}
         onClick={() => setOpen((p) => !p)}
         className="w-8 h-8 flex items-center justify-center rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-all"
         aria-label="خيارات"
       >
         <MoreVertical size={18} />
       </button>
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] bg-white border border-[#E5E7EB] rounded-xl shadow-lg min-w-[190px] z-40 overflow-hidden">
-          {items.map(({ key, label, Icon, isNav }, i) => (
-            <div key={key}>
-              {i > 0 && <div className="h-px bg-[#F3F4F6] mx-2" />}
-              <button
-                onClick={() => handleClick({ key, isNav })}
-                className={`w-full flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#F3F4F6] transition-colors font-['IBM_Plex_Sans_Arabic'] text-right
-                  ${isNav ? "text-[#123C91] font-medium" : "text-[#374151]"}`}
-              >
-                <Icon size={15} className={isNav ? "text-[#123C91]" : "text-[#6B7280]"} />
-                {label}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            dir="rtl"
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              width: MENU_WIDTH,
+            }}
+            className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-[1000] overflow-hidden"
+          >
+            {items.map(({ key, label, Icon, isNav }, i) => (
+              <div key={key}>
+                {i > 0 && <div className="h-px bg-[#F3F4F6] mx-2" />}
+                <button
+                  onClick={() => handleClick({ key, isNav })}
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#F3F4F6] transition-colors font-['IBM_Plex_Sans_Arabic'] text-right
+                    ${isNav ? "text-[#123C91] font-medium" : "text-[#374151]"}`}
+                >
+                  <Icon size={15} className={isNav ? "text-[#123C91]" : "text-[#6B7280]"} />
+                  {label}
+                </button>
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </>
   );
 };
 
