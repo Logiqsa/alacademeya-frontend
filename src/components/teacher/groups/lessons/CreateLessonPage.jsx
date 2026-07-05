@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Clock,
@@ -10,7 +10,10 @@ import {
   FileText,
 } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
-import { createClassroomSession } from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
+import {
+  createClassroomSession,
+  getClassroomSchedule,
+} from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const CreateLessonPage = () => {
   const navigate = useNavigate();
@@ -28,6 +31,53 @@ const CreateLessonPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+
+  // ─── جدول المجموعة ──────────────────────────────────────────────────────────
+  // null = لسه بيتحقق، true = فيه جدول، false = مفيش جدول لسه
+  const [scheduleExists, setScheduleExists] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const checkSchedule = async () => {
+      try {
+        const res = await getClassroomSchedule(groupId);
+
+        // بعض الـ APIs بترجع 200 مع رسالة خطأ جوه الـ body
+        // بدل ما ترمي error فعلي (4xx) — فبنتأكد من الشكلين مع بعض
+        const body = res.data;
+        const message = body?.message || body?.data?.message;
+
+        if (
+          message &&
+          typeof message === "string" &&
+          message.toLowerCase().includes("schedule not found")
+        ) {
+          if (mounted) setScheduleExists(false);
+          return;
+        }
+
+        const schedule = body?.data;
+        const hasSchedule = !!(schedule?.days?.length && schedule?.time);
+        if (mounted) setScheduleExists(hasSchedule);
+      } catch (err) {
+        // لو الـ endpoint رجّع 404 أو أي خطأ (4xx/5xx) يبقى معنى كده مفيش جدول لسه
+        const status = err?.response?.status;
+        const message = err?.response?.data?.message;
+        console.error(
+          "getClassroomSchedule failed:",
+          status,
+          message || err,
+        );
+        if (mounted) setScheduleExists(false);
+      }
+    };
+
+    checkSchedule();
+    return () => {
+      mounted = false;
+    };
+  }, [groupId]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -52,6 +102,11 @@ const CreateLessonPage = () => {
   };
 
   const handleSubmit = async () => {
+    if (scheduleExists !== true) {
+      setError("لازم تنشئ جدول لحصص المجموعة الأول قبل إضافة حصة جديدة");
+      return;
+    }
+
     const validationError = validate();
     if (validationError) {
       setError(validationError);
@@ -88,13 +143,23 @@ const CreateLessonPage = () => {
       const KNOWN_ERRORS = {
         SESSION_ALREADY_EXISTS:
           "يوجد حصة أخرى مجدولة لهذه المجموعة في نفس الموعد، من فضلك اختر تاريخًا أو وقتًا مختلفًا",
+        "Classroom schedule not found":
+          "لازم تنشئ جدول لحصص المجموعة الأول قبل إضافة حصة جديدة",
       };
 
-      setError(
-        KNOWN_ERRORS[code] ||
-          code ||
-          "حدث خطأ أثناء إنشاء الحصة، حاول مرة أخرى",
-      );
+      if (
+        typeof code === "string" &&
+        code.toLowerCase().includes("schedule not found")
+      ) {
+        setScheduleExists(false); // نظهر البانر تاني ونمنع submit إضافي
+        setError("لازم تنشئ جدول لحصص المجموعة الأول قبل إضافة حصة جديدة");
+      } else {
+        setError(
+          KNOWN_ERRORS[code] ||
+            code ||
+            "حدث خطأ أثناء إنشاء الحصة، حاول مرة أخرى",
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -141,6 +206,27 @@ const CreateLessonPage = () => {
         إنشاء حصة جديدة
       </h2>
 
+      {/* تنبيه: مفيش جدول للمجموعة لسه */}
+      {scheduleExists === false && (
+        <div
+          className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#FFF7E6] border border-[#F5C542] rounded-xl px-4 py-3"
+          dir="rtl"
+        >
+          <p className="text-sm text-[#7A5B00]">
+            لسه معملتش جدول لحصص المجموعة دي — لازم تنشئ جدول الأول قبل ما
+            تقدر تضيف حصة.
+          </p>
+          <button
+            onClick={() =>
+              navigate(`/teacher/groups/${groupId}/lessons/schedule/new`)
+            }
+            className="shrink-0 h-10 px-4 rounded-lg bg-[#123C91] text-white text-sm font-semibold"
+          >
+            إنشاء جدول
+          </button>
+        </div>
+      )}
+
       <div
         className="mx-auto p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm mt-6 sm:mt-8"
         dir="rtl"
@@ -151,7 +237,10 @@ const CreateLessonPage = () => {
           </p>
         </div>
 
-        <div className="space-y-5 sm:space-y-6 pt-5 sm:pt-6">
+        <fieldset
+          disabled={scheduleExists !== true}
+          className="space-y-5 sm:space-y-6 pt-5 sm:pt-6 disabled:opacity-60"
+        >
           {/* عنوان الحصة */}
           <CustomSelect
             name="subject"
@@ -221,7 +310,7 @@ const CreateLessonPage = () => {
               className={`${inputClass} h-auto py-3 resize-none`}
             />
           </div>
-        </div>
+        </fieldset>
 
         {/* مرفقات الحصة */}
         <div className="mt-6 pt-6 border-t border-gray-100">
@@ -242,8 +331,9 @@ const CreateLessonPage = () => {
               type="button"
               role="switch"
               aria-checked={attachmentsEnabled}
+              disabled={scheduleExists !== true}
               onClick={() => setAttachmentsEnabled((prev) => !prev)}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${
                 attachmentsEnabled ? "bg-[#123C91]" : "bg-gray-200"
               }`}
             >
@@ -316,7 +406,7 @@ const CreateLessonPage = () => {
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 mt-2">
           <button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || scheduleExists !== true}
             className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1 disabled:opacity-60"
           >
             {submitting ? "جاري الإنشاء..." : "إنشاء حصة"}

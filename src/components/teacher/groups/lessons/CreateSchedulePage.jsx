@@ -43,10 +43,12 @@ const CreateSchedulePage = () => {
     setError(null);
     setLoading(true);
     try {
-      await createOrUpdateClassroomSchedule(groupId, {
-        days: selectedDays,
-        time,
-      });
+      // ⚠️ افتراض بناءً على رسالة الخطأ "At least one schedule entry is required"
+      // يبدو إن الـ API محتاج entries[] بدل { days, time } الفلات
+      // لو ده مش شكل الـ body الصح، ابعتلي سكرين شوت من تاب الـ Body في بوستمان
+      const entries = selectedDays.map((day) => ({ day, time }));
+
+      await createOrUpdateClassroomSchedule(groupId, { entries });
       navigate(`/teacher/groups/${groupId}/lessons`, {
         state: { showSuccessToast: true },
       });

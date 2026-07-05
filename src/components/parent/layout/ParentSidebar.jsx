@@ -38,7 +38,7 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
       path: "/parent/messages",
     },
     {
-      title: "الإشتراك",
+      title: "الخطط التعليمية",
       icon: subscriptionIcon,
       path: "/parent/subscription",
     },

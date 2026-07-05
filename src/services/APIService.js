@@ -180,14 +180,16 @@ export const getClassroomSessions = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/sessions/`, { params });
 export const getClassroomStudents = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/students/`, { params });
-export const getClassroomSchedule = (classroomId) =>
-  API.get(`/classrooms/${classroomId}/schedule`);
 
-// TODO: تأكيد شكل الـ body بالظبط من Postman (Create / Update Classroom Schedule).
-// افتراض مؤقت بناءً على الـ payload اللي بيتبعت من صفحة CreateSchedulePage:
-// PUT /classrooms/:classroomId/schedule   body: { days: string[], time: "HH:mm" }
+// ─── Classroom Schedule ────────────────────────────────────────────────────────
+// ✅ اتأكد من الـ Postman collection: الـ route مش /classrooms/:id/schedule
+// الـ route الصح هو /schedule/:classroomId على طول (مش تحت /classrooms)
+// PUT {{BASE_URL}}/schedule/:classroomId  body: { days: string[], time: "HH:mm" }
+export const getClassroomSchedule = (classroomId) =>
+  API.get(`/schedule/${classroomId}`);
+
 export const createOrUpdateClassroomSchedule = (classroomId, payload) =>
-  API.put(`/classrooms/${classroomId}/schedule`, payload);
+  API.put(`/schedule/${classroomId}`, payload);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Students (Global / Admin)
