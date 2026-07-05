@@ -27,7 +27,7 @@ const goToDashboard = (user, navigate) => {
   // }
 
 
-    if (role === "teacher") {
+  if (role === "teacher") {
     const isApproved =
       user?.isActive === true ||
       user?.registrationStatus === "active" ||
