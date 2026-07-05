@@ -7,10 +7,11 @@ const StudentGuard = ({ children }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const registrationStatus = user.isActive === true || user.registrationStatus === "active";
+  const isApproved =
+    user.isActive === true && user.registrationStatus === "active";
 
-  if (!registrationStatus) return <Navigate to="/pending" replace />;
-  
+  if (!isApproved) return <Navigate to="/pending" replace />;
+
   return children;
 };
 
