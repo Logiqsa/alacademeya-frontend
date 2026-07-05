@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MoreVertical, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
+import { Eye, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { getAllSubscriptions } from "../../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 6;
@@ -23,41 +24,15 @@ const StatusBadge = ({ status }) => {
 };
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
-const RowActions = ({ align = "left" }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative inline-block">
-      <button
-        onClick={() => setOpen((p) => !p)}
-        className="p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors"
-      >
-        <MoreVertical size={17} />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-          <ul
-            className={`absolute ${align === "left" ? "left-0" : "right-0"} z-30 mt-1 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden`}
-          >
-            {[
-              { label: "عرض التفاصيل", cls: "text-[#374151]" },
-              { label: "إيقاف", cls: "text-orange-500" },
-              { label: "حذف", cls: "text-red-600" },
-            ].map(({ label, cls }) => (
-              <li
-                key={label}
-                onClick={() => setOpen(false)}
-                className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] ${cls}`}
-              >
-                {label}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  );
-};
+const RowActions = ({ onView }) => (
+  <button
+    onClick={onView}
+    className="p-2 rounded-lg text-[#575F69] hover:bg-[#EAF4FF] hover:text-[#123C91] transition-colors"
+    title="عرض التفاصيل"
+  >
+    <Eye size={17} />
+  </button>
+);
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 const Pagination = ({ page, total, totalPages, onChange }) => (
@@ -98,13 +73,13 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
 );
 
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
-const SubCard = ({ s }) => (
+const SubCard = ({ s, onView }) => (
   <div className="p-4 flex flex-col gap-2.5">
     <div className="flex items-start justify-between gap-2">
       <span className="font-['Tajawal'] font-semibold text-[15px] text-[#1F2937]">
         {s.student}
       </span>
-      <RowActions align="left" />
+      <RowActions onView={onView} />
     </div>
     <div className="flex items-center justify-between text-[13px]">
       <span className="text-[#9CA3AF]">المادة</span>
@@ -132,14 +107,14 @@ const flattenSubscriptions = (subscriptions) => {
   const rows = [];
   for (const sub of subscriptions) {
     const studentName = sub.student?.user?.fullName ?? "--";
-    for (const item of sub.items ?? []) {
+    for (const [index, item] of (sub.items ?? []).entries()) {
       rows.push({
-        rowId: item._id ?? `${sub.id}-${item.subscription}`,
-        subscriptionId: sub.id,
+        rowId: item.id ?? item._id ?? `${sub.id || sub._id}-${index}`,
+        subscriptionId: sub.id || sub._id,
         student: studentName,
         subject: item.subject?.name?.ar ?? item.subject?.name?.en ?? "--",
         package: item.package?.name ?? "--",
-        discount: item.discount ? `${item.discount}%` : "--",
+        discount: item.discount ? `${item.discount} جنيه` : "--",
         status: item.status ?? sub.status,
       });
     }
@@ -149,6 +124,7 @@ const flattenSubscriptions = (subscriptions) => {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const SubscriptionsTab = () => {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -168,6 +144,7 @@ const SubscriptionsTab = () => {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSubscriptions();
   }, [fetchSubscriptions]);
 
@@ -218,7 +195,13 @@ const SubscriptionsTab = () => {
             {/* Mobile: stacked cards */}
             <div className="md:hidden divide-y divide-gray-100">
               {paged.map((s) => (
-                <SubCard key={s.rowId} s={s} />
+                <SubCard
+                  key={s.rowId}
+                  s={s}
+                  onView={() =>
+                    navigate(`/admin/subscriptions/${s.subscriptionId}`)
+                  }
+                />
               ))}
             </div>
 
@@ -266,7 +249,13 @@ const SubscriptionsTab = () => {
                         <StatusBadge status={s.status} />
                       </td>
                       <td className="px-5 py-3.5">
-                        <RowActions align="left" />
+                        <RowActions
+                          onView={() =>
+                            navigate(
+                              `/admin/subscriptions/${s.subscriptionId}`,
+                            )
+                          }
+                        />
                       </td>
                     </tr>
                   ))}

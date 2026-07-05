@@ -63,8 +63,8 @@ import RecordingsPages from "./pages/admin/recordings/RecordingsPage";
 import AdminMessages from "./pages/admin/messages/Adminmessages";
 import SubscriptionsPage from "./pages/admin/subscriptions/SubscriptionsPage";
 import SubscriptionRequestsPage from "./pages/admin/subscriptions/SubscriptionRequestsPage";
-import RequestDetailsPage from "./pages/admin/subscriptions/RequestDetailsPage";
 import ActivateSubscriptionPage from "./pages/admin/subscriptions/ActivateSubscriptionPage";
+import SubscriptionDetailsPage from "./pages/admin/subscriptions/SubscriptionDetailsPage";
 import CreateCurriculumPage from "./pages/admin/curriculum/CreateCurriculumPage";
 import StudentAccountSettingsPage from "./pages/student/StudentAccountSettingsPage";
 import StudentNotifications from "./pages/student/Notifications";
@@ -170,6 +170,7 @@ function App() {
         <Route path="/admin/messages" element={user ? <AdminMessages /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscription" element={user ? <SubscriptionsPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscriptions/requests" element={user ? <SubscriptionRequestsPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/subscriptions/:id" element={user ? <SubscriptionDetailsPage /> : <Navigate to="/login" replace />} />
 
         {/* <Route path="/admin/subscriptions/requests/:id" element={user ? <RequestDetailsPage  /> : <Navigate to="/login" replace />} />     */}
         <Route path="/admin/subscriptions/requests/:id/activate" element={user ? <ActivateSubscriptionPage /> : <Navigate to="/login" replace />} />
