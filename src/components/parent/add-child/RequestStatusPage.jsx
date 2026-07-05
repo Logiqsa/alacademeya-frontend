@@ -1,14 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check, Hourglass, XCircle, RotateCcw } from 'lucide-react';
+import { getMyStudents } from '../../../services/APIService';
 
-// عدّل الدالة دي لو عندك endpoint حقيقي يرجع حالة آخر طلب طالب
-// المفروض السيرفر يرجع حاجة زي: { status: 'pending' | 'approved' | 'rejected', studentName, reason }
+// ⚠️ افتراضات عن شكل الـ response من GET /parents/students (لحد ما تتأكد من Postman):
+// كل عنصر في القايمة فيه: { id, fullName, status: 'pending' | 'approved' | 'rejected', rejectionReason, createdAt }
+// لو أسماء الحقول عندك مختلفة، عدّل الدالة دي بس.
+const mapStudentToStatus = (student) => ({
+  status: student?.status || student?.accountStatus || 'pending',
+  studentName: student?.fullName || student?.name || '',
+  reason: student?.rejectionReason || student?.reason || '',
+});
+
 const fetchLatestRequestStatus = async () => {
-  // TODO: استبدل ده بنداء فعلي، مثلاً:
-  // const res = await API.get('/parents/students/latest-request');
-  // return res.data;
-  return { status: 'pending', studentName: '', reason: '' };
+  const res = await getMyStudents();
+  const list = res.data?.data || res.data || [];
+
+  if (!list.length) return null;
+
+  // نختار آخر طالب متضاف (الأحدث) بناءً على تاريخ الإنشاء لو موجود، وإلا آخر عنصر في القايمة
+  const sorted = [...list].sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  return mapStudentToStatus(sorted[0]);
 };
+
+// كل قد إيه (بالمللي ثانية) نعيد السؤال عن الحالة طول ما الطلب لسه "معلق"
+const POLL_INTERVAL_MS = 15000;
 
 const STATUS_CONFIG = {
   pending: {
@@ -38,9 +58,10 @@ const RequestStatusPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusData, setStatusData] = useState(null);
+  const pollRef = useRef(null);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     setError('');
     try {
       const data = await fetchLatestRequestStatus();
@@ -48,13 +69,35 @@ const RequestStatusPage = () => {
     } catch (err) {
       setError('تعذر تحميل حالة الطلب، يرجى المحاولة مرة أخرى');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
+  // التحميل الأول
   useEffect(() => {
     load();
   }, []);
+
+  // Polling تلقائي: طول ما الحالة "pending"، نعيد السؤال كل فترة من غير ما نظهر لودينج
+  // كامل الصفحة، ونوقف تلقائيًا لو الحالة اتغيرت (قُبل/اتّرفض) أو الصفحة اتقفلت.
+  useEffect(() => {
+    if (statusData?.status !== 'pending') {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      return;
+    }
+
+    pollRef.current = setInterval(() => {
+      load({ silent: true });
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusData?.status]);
 
   if (loading) {
     return (
@@ -70,11 +113,26 @@ const RequestStatusPage = () => {
       <div dir="rtl" className="flex flex-col items-center justify-center py-16 text-center font-['IBM_Plex_Sans_Arabic']">
         <p className="text-red-500 text-[14px] mb-4">{error}</p>
         <button
-          onClick={load}
+          onClick={() => load()}
           className="flex items-center gap-2 px-6 py-2.5 bg-[#123C91] text-white rounded-xl text-[14px] font-medium cursor-pointer"
         >
           <RotateCcw size={16} />
           إعادة المحاولة
+        </button>
+      </div>
+    );
+  }
+
+  if (!statusData) {
+    return (
+      <div dir="rtl" className="flex flex-col items-center justify-center py-16 text-center font-['IBM_Plex_Sans_Arabic']">
+        <p className="text-[#575F69] text-[14px] mb-4">لا يوجد طلب مسجل حتى الآن</p>
+        <button
+          onClick={() => load()}
+          className="flex items-center gap-2 px-6 py-2.5 bg-[#123C91] text-white rounded-xl text-[14px] font-medium cursor-pointer"
+        >
+          <RotateCcw size={16} />
+          تحديث
         </button>
       </div>
     );
@@ -118,7 +176,7 @@ const RequestStatusPage = () => {
           <div className="w-6 h-6 flex items-center justify-center">
             <Hourglass
               size={20}
-              className={statusData?.status === 'pending' ? 'text-[#F59E0B]' : 'text-[#9CA3AF]'}
+              className={statusData?.status === 'pending' ? 'text-[#F59E0B] animate-pulse' : 'text-[#9CA3AF]'}
             />
           </div>
           <span className="text-[14px] text-[#1F2937]">
@@ -138,8 +196,14 @@ const RequestStatusPage = () => {
         </div>
       </div>
 
+      {statusData?.status === 'pending' && (
+        <p className="text-[12px] text-[#9CA3AF]">
+          الصفحة بتتحدث تلقائيًا كل شوية، مفيش داعي تعمل رفريش يدوي.
+        </p>
+      )}
+
       <button
-        onClick={load}
+        onClick={() => load()}
         className="flex items-center gap-2 bg-white border border-[#E5E5E5] text-[#123C91] py-2.5 px-8 rounded-xl font-medium mt-4 cursor-pointer"
       >
         <RotateCcw size={16} />

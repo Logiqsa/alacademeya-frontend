@@ -157,11 +157,6 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
   const validate = () => {
     const next = {};
     if (!data.fullName?.trim()) next.fullName = "الاسم الكامل مطلوب";
-    if (!data.email?.trim()) {
-      next.email = "البريد الإلكتروني مطلوب";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-      next.email = "صيغة البريد الإلكتروني غير صحيحة";
-    }
     if (!startDate) next.birthDate = "تاريخ الميلاد مطلوب";
     if (!data.country?.id) next.country = "الدولة مطلوبة";
     setErrors(next);
@@ -212,7 +207,7 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
         </div>
 
         {/* البريد الإلكتروني */}
-        <div className="sm:col-span-2">
+        {/* <div className="sm:col-span-2">
           <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1 w-fit">
             البريد الإلكتروني
           </label>
@@ -228,10 +223,10 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
               {errors.email}
             </p>
           )}
-        </div>
+        </div> */}
 
         {/* تاريخ الميلاد */}
-        <div>
+        <div className="sm:col-span-2">
           <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1 w-fit">
             تاريخ الميلاد
           </label>
@@ -267,20 +262,21 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
           )}
         </div>
 
-        {/* الدولة */}
-        <div>
-          <CountryDropdown
-            value={data.country?.id}
-            countries={countries}
-            loading={loadingCountries}
-            onChange={(country) => handleField("country", country)}
-          />
-          {errors.country && (
-            <p className="text-red-500 text-[12px] mt-1 text-right">
-              {errors.country}
-            </p>
-          )}
-        </div>
+      
+
+      </div>
+      <div>
+        <CountryDropdown
+          value={data.country?.id}
+          countries={countries}
+          loading={loadingCountries}
+          onChange={(country) => handleField("country", country)}
+        />
+        {errors.country && (
+          <p className="text-red-500 text-[12px] mt-1 text-right">
+            {errors.country}
+          </p>
+        )}
       </div>
 
       {/* الأزرار */}
