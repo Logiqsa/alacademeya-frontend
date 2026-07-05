@@ -86,17 +86,17 @@ const PendingPage = () => {
           ))}
         </div>
 
-        <button
+        {/* <button
           onClick={() => navigate("/login")}
           className="w-full h-14 rounded-xl bg-[#123C91] text-white font-medium text-[16px]"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           العودة لتسجيل الدخول
-        </button>
+        </button> */}
 
         <button
           onClick={() => navigate("/account-state")}
-          className="mt-3 text-[14px] text-[#123C91] underline"
+          className="w-full h-14 rounded-xl bg-[#123C91] text-white font-medium text-[16px]"
         >
           متابعة حالة الحساب
         </button>

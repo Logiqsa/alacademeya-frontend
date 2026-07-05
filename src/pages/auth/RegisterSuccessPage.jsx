@@ -81,12 +81,12 @@ const RegisterSuccessPage = () => {
                     عرض حالة الطلب
                 </button>
 
-                <button
+                {/* <button
                     onClick={() => navigate("/login")}
                     className="text-[14px] text-[#6B7280] hover:text-[#123C91] transition-colors"
                 >
                     العودة لتسجيل الدخول
-                </button>
+                </button> */}
             </div>
         </AuthLayout>
     );
