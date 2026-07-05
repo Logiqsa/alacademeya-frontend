@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, Clock, MessageCircle } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
-import { getAccountState } from "../../services/authService";
+import { getAccountState } from "../../services/APIService";
 
 const WHATSAPP_NUMBER = "201000000000"; // ← replace with real number
 
@@ -56,7 +56,10 @@ const AccountStatePage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F5F7FF] flex items-center justify-center p-4" dir="rtl">
+    <div
+      className="min-h-screen bg-[#F5F7FF] flex items-center justify-center p-4"
+      dir="rtl"
+    >
       {/* decorative blobs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-[#123C91]/6" />
@@ -64,7 +67,6 @@ const AccountStatePage = () => {
       </div>
 
       <div className="relative bg-white rounded-3xl shadow-[0_8px_40px_rgba(18,60,145,0.08)] w-full max-w-md p-10 flex flex-col items-center text-center">
-
         <img src={logo} alt="الأكاديمية" className="h-8 w-auto mb-8" />
 
         {/* pending clock icon */}
@@ -72,12 +74,15 @@ const AccountStatePage = () => {
           <Clock size={34} className="text-[#FF8A00]" strokeWidth={1.5} />
         </div>
 
-        <h2 className="text-[22px] font-bold text-[#1F2937] mb-2"
-            style={{ fontFamily: "Tajawal, sans-serif" }}>
+        <h2
+          className="text-[22px] font-bold text-[#1F2937] mb-2"
+          style={{ fontFamily: "Tajawal, sans-serif" }}
+        >
           طلبك قيد المراجعة
         </h2>
         <p className="text-[13px] text-[#6B7280] mb-8 leading-6">
-          شكراً لتقديم طلبك. يقوم فريقنا حالياً بمراجعة بياناتك والتحقق من المستندات المرفقة
+          شكراً لتقديم طلبك. يقوم فريقنا حالياً بمراجعة بياناتك والتحقق من
+          المستندات المرفقة
         </p>
 
         {/* steps */}
@@ -86,8 +91,12 @@ const AccountStatePage = () => {
             <div key={s.key} className="flex items-start gap-3">
               <StepIcon color={s.color} />
               <div className="flex flex-col gap-0.5">
-                <span className="text-[14px] font-semibold text-[#1F2937]">{s.label}</span>
-                <span className="text-[12px] text-[#9CA3AF] leading-5">{s.sub}</span>
+                <span className="text-[14px] font-semibold text-[#1F2937]">
+                  {s.label}
+                </span>
+                <span className="text-[12px] text-[#9CA3AF] leading-5">
+                  {s.sub}
+                </span>
               </div>
             </div>
           ))}
@@ -100,7 +109,9 @@ const AccountStatePage = () => {
               <Clock size={14} className="text-[#6B7280]" />
               <span>وقت المراجعة</span>
             </div>
-            <p className="text-[13px] font-semibold text-[#1F2937]">من 1-3 أيام عمل</p>
+            <p className="text-[13px] font-semibold text-[#1F2937]">
+              من 1-3 أيام عمل
+            </p>
           </div>
           <div className="bg-[#F9FAFA] rounded-2xl p-4 text-right flex flex-col gap-1">
             <div className="flex items-center gap-1.5 text-[#6B7280] text-[12px]">
@@ -131,7 +142,6 @@ const AccountStatePage = () => {
         >
           العودة لتسجيل الدخول
         </button>
-
       </div>
     </div>
   );

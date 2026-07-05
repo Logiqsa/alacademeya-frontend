@@ -1,17 +1,11 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import {
-  Bell,
-  BellRing,
-  GraduationCap,
-  Settings,
-  Loader2,
-} from "lucide-react";
+import { Bell, BellRing, GraduationCap, Settings, Loader2 } from "lucide-react";
 import NotificationCard from "./NotificationCard";
 import {
   markNotificationRead,
   markAllNotificationsRead,
-} from "../../../services/authService";
+} from "../../../services/APIService";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -32,10 +26,7 @@ const KEY_TITLES = {
   SUBSCRIPTION_PENDING: "طلب اشتراك جديد",
 };
 const titleOf = (n) =>
-  KEY_TITLES[n.key] ||
-  n.title ||
-  n.key?.replaceAll("_", " ") ||
-  "إشعار جديد";
+  KEY_TITLES[n.key] || n.title || n.key?.replaceAll("_", " ") || "إشعار جديد";
 
 const descOf = (n) => {
   if (n.description || n.desc) return n.description || n.desc;
@@ -92,16 +83,16 @@ const NotificationsSection = ({
       // السيرفر مفيهوش endpoint لإلغاء القراءة، فده تحديث محلي بس
       onChange?.(
         notifications.map((x) =>
-          (x._id || x.id) === id ? { ...x, isRead: false } : x
-        )
+          (x._id || x.id) === id ? { ...x, isRead: false } : x,
+        ),
       );
       return;
     }
 
     onChange?.(
       notifications.map((x) =>
-        (x._id || x.id) === id ? { ...x, isRead: true } : x
-      )
+        (x._id || x.id) === id ? { ...x, isRead: true } : x,
+      ),
     );
 
     try {

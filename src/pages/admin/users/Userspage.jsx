@@ -7,13 +7,22 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import UsersStatsBar from "../../../components/admin/users/Usersstatsbar";
 import UsersFilters from "../../../components/admin/users/Usersfilters";
 import UsersTable from "../../../components/admin/users/Userstable";
-import { getUsers, deleteUser as deleteUserApi, updateUser } from "../../../services/authService";
+import {
+  getUsers,
+  deleteUser as deleteUserApi,
+  updateUser,
+} from "../../../services/APIService";
 
 const PAGE_SIZE = 6;
 const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
 
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
-const ROLE_MAP = { student: "طالب", teacher: "معلم", parent: "ولي أمر", admin: "مشرف" };
+const ROLE_MAP = {
+  student: "طالب",
+  teacher: "معلم",
+  parent: "ولي أمر",
+  admin: "مشرف",
+};
 
 const statusOf = (u) => {
   if (u.isDeleted) return "محذوف";
@@ -36,7 +45,9 @@ const mapUser = (u) => ({
   isActive: !!u.isActive,
   registrationStatus: u.registrationStatus,
   status: statusOf(u),
-  joinDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-CA") : "—",
+  joinDate: u.createdAt
+    ? new Date(u.createdAt).toLocaleDateString("en-CA")
+    : "—",
 });
 
 // ─── يجيب كل اليوزرز من كل الصفحات (بيتعامل مع أي شكل pagination من السيرفر) ──
@@ -107,7 +118,7 @@ const UsersPage = () => {
     (u) =>
       (u.name?.includes(search) || u.email?.includes(search)) &&
       (filterRole === "جميع المستخدمين" || u.role === filterRole) &&
-      (filterStatus === "جميع الحالات" || u.status === filterStatus)
+      (filterStatus === "جميع الحالات" || u.status === filterStatus),
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -116,7 +127,10 @@ const UsersPage = () => {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
 
-  const paginatedUsers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paginatedUsers = filtered.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   // ⚠️ الأرقام دي بتحسب من كل اليوزرز اللي جم من السيرفر (visibleUsers) مش
   // من الصفحة المعروضة بس، وكل رول بياخد عدّاده الصح
@@ -138,9 +152,13 @@ const UsersPage = () => {
       setUsers((prev) =>
         prev.map((u) =>
           u.id === user.id
-            ? { ...u, isActive: willActivate, status: statusOf({ ...u, isActive: willActivate }) }
-            : u
-        )
+            ? {
+                ...u,
+                isActive: willActivate,
+                status: statusOf({ ...u, isActive: willActivate }),
+              }
+            : u,
+        ),
       );
       toast.success(willActivate ? "تم تفعيل الحساب" : "تم إيقاف الحساب");
     } catch (err) {
@@ -148,26 +166,38 @@ const UsersPage = () => {
     }
   };
 
-const handleApprove = async (user) => {
-  try {
-    await updateUser(user.id, { registrationStatus: "active", isActive: true });
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === user.id
-          ? { ...u, registrationStatus: "active", isActive: true, status: statusOf({ ...u, registrationStatus: "active", isActive: true }) }
-          : u
-      )
-    );
-    toast.success("تم قبول الطلب وتفعيل الحساب");
-  } catch (err) {
-    if (err.response?.status === 404) {
-      toast.error("هذا المستخدم لم يعد موجودًا، جاري تحديث القائمة");
-      fetchUsers(); // إعادة تحميل كامل بدل الحذف المحلي فقط
-    } else {
-      toast.error(err.response?.data?.message || "تعذر قبول الطلب");
+  const handleApprove = async (user) => {
+    try {
+      await updateUser(user.id, {
+        registrationStatus: "active",
+        isActive: true,
+      });
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id
+            ? {
+                ...u,
+                registrationStatus: "active",
+                isActive: true,
+                status: statusOf({
+                  ...u,
+                  registrationStatus: "active",
+                  isActive: true,
+                }),
+              }
+            : u,
+        ),
+      );
+      toast.success("تم قبول الطلب وتفعيل الحساب");
+    } catch (err) {
+      if (err.response?.status === 404) {
+        toast.error("هذا المستخدم لم يعد موجودًا، جاري تحديث القائمة");
+        fetchUsers(); // إعادة تحميل كامل بدل الحذف المحلي فقط
+      } else {
+        toast.error(err.response?.data?.message || "تعذر قبول الطلب");
+      }
     }
-  }
-};
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -181,7 +211,10 @@ const handleApprove = async (user) => {
 
   return (
     <AdminLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         {/* Header */}
         <div className="mb-4">
           <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
@@ -199,11 +232,20 @@ const handleApprove = async (user) => {
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <UsersFilters
             search={search}
-            onSearchChange={(v) => { setSearch(v); setPage(1); }}
+            onSearchChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
             filterRole={filterRole}
-            onFilterRoleChange={(v) => { setFilterRole(v); setPage(1); }}
+            onFilterRoleChange={(v) => {
+              setFilterRole(v);
+              setPage(1);
+            }}
             filterStatus={filterStatus}
-            onFilterStatusChange={(v) => { setFilterStatus(v); setPage(1); }}
+            onFilterStatusChange={(v) => {
+              setFilterStatus(v);
+              setPage(1);
+            }}
           />
         </div>
 

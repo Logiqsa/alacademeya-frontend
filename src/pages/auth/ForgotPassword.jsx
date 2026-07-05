@@ -8,7 +8,7 @@ import {
   forgotPassword,
   verifyPasswordResetCode,
   resetPassword,
-} from "../../services/authService";
+} from "../../services/APIService";
 const OTP_LENGTH = 6;
 const TIMER_START = 60;
 
@@ -139,7 +139,7 @@ export default function ForgotPassword() {
     }
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) {
       toast.error(
-        "كلمة المرور يجب أن تحتوي على حروف كبيرة وصغيرة ورقم ورمز خاص"
+        "كلمة المرور يجب أن تحتوي على حروف كبيرة وصغيرة ورقم ورمز خاص",
       );
       return false;
     }
@@ -171,7 +171,7 @@ export default function ForgotPassword() {
       console.error("Error:", err.response?.data);
 
       toast.error(
-        err.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور"
+        err.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور",
       );
     } finally {
       setResetLoading(false);
@@ -295,7 +295,9 @@ export default function ForgotPassword() {
                         disabled={resendLoading}
                         className="text-[#123C91] underline w-full disabled:opacity-60"
                       >
-                        {resendLoading ? "جاري إعادة الإرسال..." : "إعادة إرسال الكود"}
+                        {resendLoading
+                          ? "جاري إعادة الإرسال..."
+                          : "إعادة إرسال الكود"}
                       </button>
                     )}
                   </div>
@@ -346,7 +348,11 @@ export default function ForgotPassword() {
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
                         >
-                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {showPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
                         </button>
                       </div>
                     </div>

@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
-import { Trash2, Pencil, CheckCircle2, X, Loader2, AlertCircle } from "lucide-react";
-import { getAllPackages, createPackage, updatePackage, deletePackage } from "../../../../services/authService";
+import {
+  Trash2,
+  Pencil,
+  CheckCircle2,
+  X,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import {
+  getAllPackages,
+  createPackage,
+  updatePackage,
+  deletePackage,
+} from "../../../../services/APIService";
 
 // ─── Add/Edit Package Modal ───────────────────────────────────────────────────
 const PackageModal = ({ open, onClose, pkg, onSaved }) => {
@@ -47,7 +59,9 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
       }
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.message || "حدث خطأ أثناء الحفظ، حاول مرة أخرى");
+      setError(
+        err?.response?.data?.message || "حدث خطأ أثناء الحفظ، حاول مرة أخرى",
+      );
     } finally {
       setSaving(false);
     }
@@ -56,14 +70,22 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl" dir="rtl">
+      <div
+        className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl"
+        dir="rtl"
+      >
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-['Tajawal'] font-semibold text-[17px] text-[#1F2937]">
             {isEdit ? "تعديل الباقة" : "إضافة باقة جديدة"}
           </h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#6B7280]">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#6B7280]"
+          >
             <X size={15} />
           </button>
         </div>
@@ -115,7 +137,10 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
             {saving && <Loader2 size={15} className="animate-spin" />}
             {isEdit ? "حفظ التغييرات" : "إضافة الباقة"}
           </button>
-          <button onClick={onClose} className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium text-[14px] hover:border-[#123C91] transition-colors">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium text-[14px] hover:border-[#123C91] transition-colors"
+          >
             إلغاء
           </button>
         </div>
@@ -126,32 +151,48 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
 
 const Field = ({ label, children }) => (
   <div>
-    <label className="block font-['Tajawal'] font-medium text-[14px] text-[#1F2937] mb-1">{label}</label>
+    <label className="block font-['Tajawal'] font-medium text-[14px] text-[#1F2937] mb-1">
+      {label}
+    </label>
     {children}
   </div>
 );
-const inputCls = "w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] text-[13px] font-['IBM_Plex_Sans_Arabic'] focus:outline-none focus:ring-2 focus:ring-[#123C91] text-right";
+const inputCls =
+  "w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] text-[13px] font-['IBM_Plex_Sans_Arabic'] focus:outline-none focus:ring-2 focus:ring-[#123C91] text-right";
 
 // ─── Package Card ─────────────────────────────────────────────────────────────
 const PackageCard = ({ pkg, onEdit, onDelete }) => (
-  <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col gap-3" dir="rtl">
+  <div
+    className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col gap-3"
+    dir="rtl"
+  >
     {/* Top row */}
     <div className="flex items-start justify-between">
       <div className="items-center gap-2">
-        <h1 className="font-['Tajawal'] font-semibold mb-2 text-[17px] text-[#1F2937]">{pkg.name}</h1>
+        <h1 className="font-['Tajawal'] font-semibold mb-2 text-[17px] text-[#1F2937]">
+          {pkg.name}
+        </h1>
         <span
           className={`text-[12px] font-medium px-3 py-1 rounded-full ${
-            pkg.isActive ? "bg-[#00A63E26] text-[#00A63E]" : "bg-[#EF444426] text-[#EF4444]"
+            pkg.isActive
+              ? "bg-[#00A63E26] text-[#00A63E]"
+              : "bg-[#EF444426] text-[#EF4444]"
           }`}
         >
           {pkg.isActive ? "نشطة" : "غير نشطة"}
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={() => onDelete(pkg)} className="p-1.5 rounded-lg hover:bg-red-50 text-[#9CA3AF] hover:text-red-500 transition-colors">
+        <button
+          onClick={() => onDelete(pkg)}
+          className="p-1.5 rounded-lg hover:bg-red-50 text-[#9CA3AF] hover:text-red-500 transition-colors"
+        >
           <Trash2 size={15} />
         </button>
-        <button onClick={() => onEdit(pkg)} className="p-1.5 rounded-lg hover:bg-gray-100 text-[#9CA3AF] hover:text-[#374151] transition-colors">
+        <button
+          onClick={() => onEdit(pkg)}
+          className="p-1.5 rounded-lg hover:bg-gray-100 text-[#9CA3AF] hover:text-[#374151] transition-colors"
+        >
           <Pencil size={15} />
         </button>
       </div>
@@ -159,7 +200,9 @@ const PackageCard = ({ pkg, onEdit, onDelete }) => (
 
     {/* Price */}
     <div className="text-right">
-      <span className="font-['Tajawal'] font-bold text-[28px] text-[#123C91]">{pkg.price?.toLocaleString()} جنيه</span>
+      <span className="font-['Tajawal'] font-bold text-[28px] text-[#123C91]">
+        {pkg.price?.toLocaleString()} جنيه
+      </span>
       <span className="text-[#8C9198] text-[13px] mr-1">/ شهر</span>
     </div>
 
@@ -173,7 +216,9 @@ const PackageCard = ({ pkg, onEdit, onDelete }) => (
     <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-auto">
       <span className="text-[12px] text-[#8C9198]">آخر تحديث</span>
       <span className="text-[13px] font-medium text-[#123C91]">
-        {pkg.updatedAt ? new Date(pkg.updatedAt).toLocaleDateString("ar-EG") : "—"}
+        {pkg.updatedAt
+          ? new Date(pkg.updatedAt).toLocaleDateString("ar-EG")
+          : "—"}
       </span>
     </div>
   </div>
@@ -196,7 +241,9 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       const res = await getAllPackages();
       setPackages(res.data.data);
     } catch (err) {
-      setError(err?.response?.data?.message || "تعذر تحميل الباقات، حاول مرة أخرى");
+      setError(
+        err?.response?.data?.message || "تعذر تحميل الباقات، حاول مرة أخرى",
+      );
     } finally {
       setLoading(false);
     }
@@ -210,7 +257,9 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   const handleSaved = (saved) => {
     setPackages((prev) => {
       const exists = prev.some((p) => p.id === saved.id);
-      return exists ? prev.map((p) => (p.id === saved.id ? saved : p)) : [saved, ...prev];
+      return exists
+        ? prev.map((p) => (p.id === saved.id ? saved : p))
+        : [saved, ...prev];
     });
   };
 
@@ -222,7 +271,9 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       setPackages((prev) => prev.filter((p) => p.id !== deletePkg.id));
       setDeletePkg(null);
     } catch (err) {
-      setError(err?.response?.data?.message || "تعذر حذف الباقة، حاول مرة أخرى");
+      setError(
+        err?.response?.data?.message || "تعذر حذف الباقة، حاول مرة أخرى",
+      );
     } finally {
       setDeleting(false);
     }
@@ -230,7 +281,10 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-[#8C9198]" dir="rtl">
+      <div
+        className="flex items-center justify-center py-20 text-[#8C9198]"
+        dir="rtl"
+      >
         <Loader2 size={20} className="animate-spin ml-2" />
         <span className="text-[14px]">جاري تحميل الباقات...</span>
       </div>
@@ -240,7 +294,10 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   return (
     <>
       {error && (
-        <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-[13px]" dir="rtl">
+        <div
+          className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-[13px]"
+          dir="rtl"
+        >
           <AlertCircle size={15} />
           <span>{error}</span>
         </div>
@@ -253,7 +310,12 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {packages.map((pkg) => (
-            <PackageCard key={pkg.id} pkg={pkg} onEdit={setEditPkg} onDelete={setDeletePkg} />
+            <PackageCard
+              key={pkg.id}
+              pkg={pkg}
+              onEdit={setEditPkg}
+              onDelete={setDeletePkg}
+            />
           ))}
         </div>
       )}
@@ -262,17 +324,34 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       <PackageModal open={showAdd} onClose={onCloseAdd} onSaved={handleSaved} />
 
       {/* Edit Modal */}
-      <PackageModal open={!!editPkg} onClose={() => setEditPkg(null)} pkg={editPkg} onSaved={handleSaved} />
+      <PackageModal
+        open={!!editPkg}
+        onClose={() => setEditPkg(null)}
+        pkg={editPkg}
+        onSaved={handleSaved}
+      />
 
       {/* Delete Confirm */}
       {deletePkg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) setDeletePkg(null); }}>
-          <div className="bg-white w-full max-w-xs rounded-2xl p-6 shadow-xl text-center" dir="rtl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeletePkg(null);
+          }}
+        >
+          <div
+            className="bg-white w-full max-w-xs rounded-2xl p-6 shadow-xl text-center"
+            dir="rtl"
+          >
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
               <Trash2 size={20} className="text-red-500" />
             </div>
-            <h3 className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937] mb-2">حذف الباقة</h3>
-            <p className="text-[13px] text-[#6B7280] mb-6">هل أنت متأكد من حذف باقة "{deletePkg.name}"؟ لا يمكن التراجع.</p>
+            <h3 className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937] mb-2">
+              حذف الباقة
+            </h3>
+            <p className="text-[13px] text-[#6B7280] mb-6">
+              هل أنت متأكد من حذف باقة "{deletePkg.name}"؟ لا يمكن التراجع.
+            </p>
             <div className="flex gap-3">
               <button
                 onClick={handleConfirmDelete}

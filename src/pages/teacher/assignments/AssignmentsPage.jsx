@@ -11,7 +11,7 @@ import {
   getMyClassrooms,
   getAssignmentsByClassroom,
   getClassroomSessions,
-} from "../../../services/authService"; // عدّل المسار حسب مكان api.js عندك
+} from "../../../services/APIService"; // عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 6;
 
@@ -55,7 +55,9 @@ const AssignmentsPage = () => {
         classrooms.map(async (classroom) => {
           const [assignmentsRes, sessionsRes] = await Promise.all([
             getAssignmentsByClassroom(classroom.id),
-            getClassroomSessions(classroom.id).catch(() => ({ data: { data: [] } })),
+            getClassroomSessions(classroom.id).catch(() => ({
+              data: { data: [] },
+            })),
           ]);
 
           const sessionsById = {};
@@ -74,13 +76,13 @@ const AssignmentsPage = () => {
             status: mapStatus(a.status),
             correctionStatus: a.correctionStatus ?? "لم يبدأ التصحيح", // TODO
           }));
-        })
+        }),
       );
 
       setAssignments(perClassroom.flat());
     } catch (err) {
       setErrorMsg(
-        err?.response?.data?.message || "حدث خطأ أثناء تحميل الواجبات"
+        err?.response?.data?.message || "حدث خطأ أثناء تحميل الواجبات",
       );
     } finally {
       setLoading(false);
@@ -95,26 +97,37 @@ const AssignmentsPage = () => {
     (a) =>
       a.title.includes(search) &&
       (filterGroup === "جميع المجموعات" || a.group === filterGroup) &&
-      (filterStatus === "جميع الحالات" || a.status === filterStatus)
+      (filterStatus === "جميع الحالات" || a.status === filterStatus),
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginatedAssignments = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paginatedAssignments = filtered.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   const stats = {
-    pendingCorrection: assignments.filter((a) => a.correctionStatus === "قيد التصحيح").length,
-    corrected: assignments.filter((a) => a.correctionStatus === "تم التصحيح").length,
+    pendingCorrection: assignments.filter(
+      (a) => a.correctionStatus === "قيد التصحيح",
+    ).length,
+    corrected: assignments.filter((a) => a.correctionStatus === "تم التصحيح")
+      .length,
     active: assignments.filter((a) => a.status === "نشط").length,
     total: assignments.length,
   };
 
   return (
     <TeacherLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div className="order-2 sm:order-1">
-            <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">الواجبات</h3>
+            <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
+              الواجبات
+            </h3>
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة ومتابعة جميع الواجبات في جميع المجموعات.
             </p>

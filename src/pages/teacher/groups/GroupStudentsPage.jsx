@@ -5,11 +5,16 @@ import StudentStatsBar from "../../../components/teacher/groups/students/Student
 import StudentFilters from "../../../components/teacher/groups/students/StudentFilters";
 import StudentsTable from "../../../components/teacher/groups/students/StudentsTable";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-import { getClassroom, getClassroomStudents, getAllStudents } from "../../../services/authService";
+import {
+  getClassroom,
+  getClassroomStudents,
+  getAllStudents,
+} from "../../../services/APIService";
 
 const PAGE_SIZE = 6;
 
-const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "--";
 
 // الحقل الصح لحالة الطالب هو "status" مش "registrationStatus"
 // القيم المؤكدة من الـ API: "active" | "removed" | "pending-contact" | "pending-approval"
@@ -47,11 +52,12 @@ const GroupStudentsPage = () => {
     // ⚠️ GET /classrooms/:id/students/ بيرجع بيانات ناقصة (مفيش createdAt دايمًا، مفيش phone دايمًا).
     // بنجيب GET /students كمان ونعمل merge بالـ user.id لتعويض اللي ينقص.
     // ملحوظة: GET /users/ اتجرب وطلع مش متاح/مش بيترّد لحساب المعلم، فاتشال من هنا.
-    const [classroomResult, studentsResult, allStudentsResult] = await Promise.allSettled([
-      getClassroom(groupId),
-      getClassroomStudents(groupId),
-      getAllStudents(),
-    ]);
+    const [classroomResult, studentsResult, allStudentsResult] =
+      await Promise.allSettled([
+        getClassroom(groupId),
+        getClassroomStudents(groupId),
+        getAllStudents(),
+      ]);
 
     if (classroomResult.status === "fulfilled") {
       const classroom = classroomResult.value.data?.data || {};
@@ -72,7 +78,10 @@ const GroupStudentsPage = () => {
           if (s.user?.id) extraByUserId.set(s.user.id, s);
         });
       } else {
-        console.warn("Failed to load full students list:", allStudentsResult.reason);
+        console.warn(
+          "Failed to load full students list:",
+          allStudentsResult.reason,
+        );
       }
 
       const mapped = rawStudents.map((entry) => {
@@ -104,7 +113,8 @@ const GroupStudentsPage = () => {
           gradeName: resolveName(entry.grade?.name),
           username: user?.username || "--",
           averageScore: entry.averageScore ?? extra?.averageScore ?? "--",
-          totalStudySessions: entry.totalStudySessions ?? extra?.totalStudySessions ?? 0,
+          totalStudySessions:
+            entry.totalStudySessions ?? extra?.totalStudySessions ?? 0,
         };
       });
 
@@ -122,11 +132,16 @@ const GroupStudentsPage = () => {
   }, [fetchStudents]);
 
   const filtered = students.filter(
-    (s) => s.name.includes(search) && (filterStatus === "جميع الحالات" || s.status === filterStatus)
+    (s) =>
+      s.name.includes(search) &&
+      (filterStatus === "جميع الحالات" || s.status === filterStatus),
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginatedStudents = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paginatedStudents = filtered.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   const stats = {
     total: students.length,
@@ -136,25 +151,40 @@ const GroupStudentsPage = () => {
 
   return (
     <TeacherLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3">{groupName}</h3>
+            <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3">
+              {groupName}
+            </h3>
             <p className="text-[16px] font-normal leading-6 text-[#575F69]">
-              إدارة طلاب هذه المجموعة: متابعة الحضور، الدرجات، والبيانات الشخصية.
+              إدارة طلاب هذه المجموعة: متابعة الحضور، الدرجات، والبيانات
+              الشخصية.
             </p>
           </div>
         </div>
 
         {/* Stats */}
         <div className="mb-6">
-          <StudentStatsBar total={stats.total} active={stats.active} excluded={stats.excluded} />
+          <StudentStatsBar
+            total={stats.total}
+            active={stats.active}
+            excluded={stats.excluded}
+          />
         </div>
 
         {/* Filters */}
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
-          <StudentFilters search={search} onSearchChange={setSearch} filterStatus={filterStatus} onFilterStatusChange={setFilterStatus} />
+          <StudentFilters
+            search={search}
+            onSearchChange={setSearch}
+            filterStatus={filterStatus}
+            onFilterStatusChange={setFilterStatus}
+          />
         </div>
 
         {/* Table */}
@@ -168,7 +198,12 @@ const GroupStudentsPage = () => {
               {error}
             </div>
           ) : (
-            <StudentsTable students={paginatedStudents} onView={(id) => navigate(`/teacher/groups/${groupId}/students/${id}`)} />
+            <StudentsTable
+              students={paginatedStudents}
+              onView={(id) =>
+                navigate(`/teacher/groups/${groupId}/students/${id}`)
+              }
+            />
           )}
         </div>
 

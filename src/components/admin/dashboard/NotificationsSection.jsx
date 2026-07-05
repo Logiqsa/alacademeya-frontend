@@ -6,7 +6,7 @@ import { Bell, Loader2, Check } from "lucide-react";
 import {
   getNotifications,
   markNotificationRead,
-} from "../../../services/authService";
+} from "../../../services/APIService";
 
 const MAX_ITEMS = 4;
 
@@ -128,7 +128,7 @@ const NotificationsSection = () => {
         prev.filter((notification) => {
           const notificationId = notification._id || notification.id;
           return notificationId !== id;
-        })
+        }),
       );
 
       toast.success("تم تحديث الإشعار");

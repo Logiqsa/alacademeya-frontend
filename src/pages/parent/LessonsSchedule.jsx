@@ -1,7 +1,6 @@
 // pages/parent/LessonsSchedule.jsx
-import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-; // ✅ اتصلح المسار
+import React, { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react"; // ✅ اتصلح المسار
 import {
   WEEK_DAYS,
   getWeekStart,
@@ -9,16 +8,20 @@ import {
   formatArabicMonthYear,
   computeLessonStatus,
   buildFamilyLessonInstances,
-} from '../../utils/scheduleWeek'; // ⚠️ عدّل المسار حسب مكان الملف عندك
-import { getMyClassrooms, getMyStudents } from '../../services/authService'; // ⚠️ عدّل المسار حسب مكان السيرفس عندك
-import ParentLayout from '../../components/parent/layout/ParentLayout';
-import ScheduleFilters from '../../components/parent/schedule/ScheduleFilters';
-import CalendarStrip from '../../components/parent/schedule/CalendarStrip';
-import LessonsList from '../../components/parent/schedule/LessonCard';
-import StatsCards from '../../components/parent/schedule/StatsCards';
+} from "../../utils/scheduleWeek"; // ⚠️ عدّل المسار حسب مكان الملف عندك
+import { getMyClassrooms, getMyStudents } from "../../services/APIService"; // ⚠️ عدّل المسار حسب مكان السيرفس عندك
+import ParentLayout from "../../components/parent/layout/ParentLayout";
+import ScheduleFilters from "../../components/parent/schedule/ScheduleFilters";
+import CalendarStrip from "../../components/parent/schedule/CalendarStrip";
+import LessonsList from "../../components/parent/schedule/LessonCard";
+import StatsCards from "../../components/parent/schedule/StatsCards";
 
 const formatTime = (date) =>
-  date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
+  date.toLocaleTimeString("ar-EG", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 
 const todayKeyFromDate = (date) => {
   const idx = (date.getDay() - 6 + 7) % 7; // السبت = 0
@@ -30,10 +33,15 @@ const LessonsSchedule = () => {
   const [classrooms, setClassrooms] = useState([]);
   const [studentMap, setStudentMap] = useState({});
   const [loading, setLoading] = useState(true);
-  const [selectedDayKey, setSelectedDayKey] = useState(() => todayKeyFromDate(new Date()));
+  const [selectedDayKey, setSelectedDayKey] = useState(() =>
+    todayKeyFromDate(new Date()),
+  );
 
   const weekStart = useMemo(() => getWeekStart(referenceDate), [referenceDate]);
-  const weekDates = useMemo(() => buildWeekDates(referenceDate), [referenceDate]);
+  const weekDates = useMemo(
+    () => buildWeekDates(referenceDate),
+    [referenceDate],
+  );
 
   // ✅ تحميل الفصول والأبناء الحقيقيين
   useEffect(() => {
@@ -53,13 +61,13 @@ const LessonsSchedule = () => {
 
         const map = {};
         studentsData.forEach((s) => {
-          map[s.id] = s.fullName || s.user?.fullName || 'ابن/ابنة';
+          map[s.id] = s.fullName || s.user?.fullName || "ابن/ابنة";
         });
 
         setClassrooms(classroomsData);
         setStudentMap(map);
       } catch (err) {
-        console.error('فشل تحميل جدول الدروس:', err);
+        console.error("فشل تحميل جدول الدروس:", err);
         if (!cancelled) {
           setClassrooms([]);
           setStudentMap({});
@@ -70,13 +78,15 @@ const LessonsSchedule = () => {
     };
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ✅ بناء كل حصص الأسبوع الحالي من الفصول الحقيقية
   const allLessons = useMemo(
     () => buildFamilyLessonInstances(classrooms, studentMap, weekStart),
-    [classrooms, studentMap, weekStart]
+    [classrooms, studentMap, weekStart],
   );
 
   // ✅ حساب الحالة (مكتمل/جارٍ/قادم) والوقت المعروض لكل حصة
@@ -87,22 +97,29 @@ const LessonsSchedule = () => {
         status: computeLessonStatus(lesson.date, lesson.duration),
         time: formatTime(lesson.date),
       })),
-    [allLessons]
+    [allLessons],
   );
 
   // ✅ فلترة حصص اليوم المختار بس
   const selectedDayLessons = useMemo(
     () => lessonsWithStatus.filter((l) => l.day === selectedDayKey),
-    [lessonsWithStatus, selectedDayKey]
+    [lessonsWithStatus, selectedDayKey],
   );
 
   const selectedDayInfo = WEEK_DAYS.find((d) => d.key === selectedDayKey);
 
   // ✅ إحصائيات حقيقية للأسبوع بدل الأرقام الثابتة
   const stats = useMemo(() => {
-    const upcoming = lessonsWithStatus.filter((l) => l.status === 'upcoming').length;
-    const completed = lessonsWithStatus.filter((l) => l.status === 'completed').length;
-    const totalMinutes = lessonsWithStatus.reduce((sum, l) => sum + (l.duration || 0), 0);
+    const upcoming = lessonsWithStatus.filter(
+      (l) => l.status === "upcoming",
+    ).length;
+    const completed = lessonsWithStatus.filter(
+      (l) => l.status === "completed",
+    ).length;
+    const totalMinutes = lessonsWithStatus.reduce(
+      (sum, l) => sum + (l.duration || 0),
+      0,
+    );
     return { upcoming, completed, totalHours: Math.round(totalMinutes / 60) };
   }, [lessonsWithStatus]);
 
@@ -122,7 +139,10 @@ const LessonsSchedule = () => {
 
   return (
     <ParentLayout>
-      <div className="max-w-7xl mx-auto p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="max-w-7xl mx-auto p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">
           جدول دروس الأبناء
         </h1>
@@ -141,7 +161,11 @@ const LessonsSchedule = () => {
             <button
               onClick={goToPreviousWeek}
               className="flex items-center gap-1 text-[#1F293780] font-normal"
-              style={{ fontFamily: 'IBM Plex Sans Arabic, sans-serif', fontSize: '16px', lineHeight: '24px' }}
+              style={{
+                fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                fontSize: "16px",
+                lineHeight: "24px",
+              }}
             >
               <ChevronRight size={20} /> الأسبوع السابق
             </button>
@@ -156,7 +180,11 @@ const LessonsSchedule = () => {
             <button
               onClick={goToNextWeek}
               className="flex items-center gap-1 text-[#1F293780] font-normal"
-              style={{ fontFamily: 'IBM Plex Sans Arabic, sans-serif', fontSize: '16px', lineHeight: '24px' }}
+              style={{
+                fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                fontSize: "16px",
+                lineHeight: "24px",
+              }}
             >
               الأسبوع التالي <ChevronLeft size={20} />
             </button>
@@ -175,13 +203,21 @@ const LessonsSchedule = () => {
           <div className="flex justify-between items-center mb-4" dir="rtl">
             <h3
               className="text-[16px] leading-6 text-[#1F2937] text-right"
-              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif", fontWeight: 600, letterSpacing: '0px' }}
+              style={{
+                fontFamily: "'IBM Plex Sans Arabic', sans-serif",
+                fontWeight: 600,
+                letterSpacing: "0px",
+              }}
             >
-              دروس {selectedDayInfo?.name || ''}
+              دروس {selectedDayInfo?.name || ""}
             </h3>
             <span
               className="text-[16px] leading-6 text-[#8C9198] text-right"
-              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif", fontWeight: 400, letterSpacing: '0px' }}
+              style={{
+                fontFamily: "'IBM Plex Sans Arabic', sans-serif",
+                fontWeight: 400,
+                letterSpacing: "0px",
+              }}
             >
               {selectedDayLessons.length} درس
             </span>

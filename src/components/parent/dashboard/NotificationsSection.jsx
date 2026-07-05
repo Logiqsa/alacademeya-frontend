@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
-import { getNotifications } from "../../../services/authService";
+import { getNotifications } from "../../../services/APIService";
 
 const NotificationsSection = () => {
   const [notifications, setNotifications] = useState([]);
@@ -11,7 +11,7 @@ const NotificationsSection = () => {
       try {
         const res = await getNotifications();
         const data = res.data.data || [];
-      
+
         setNotifications(data.slice(0, 4));
       } catch (err) {
         console.error("فشل في تحميل الإشعارات:", err);

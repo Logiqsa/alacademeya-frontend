@@ -5,7 +5,7 @@ import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
-} from "../../../services/authService"; // ⚠️ عدّل المسار حسب مكان الملف عندك
+} from "../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان الملف عندك
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -15,11 +15,7 @@ import {
 const extractList = (resData) => {
   if (!resData) return [];
   const raw =
-    resData?.data?.data ||
-    resData?.data ||
-    resData?.results ||
-    resData ||
-    [];
+    resData?.data?.data || resData?.data || resData?.results || resData || [];
   return Array.isArray(raw) ? raw : [];
 };
 
@@ -54,7 +50,7 @@ const normalizeNotification = (n) => {
 
   // Check if it's an object and has translation keys
   let displayTitle = rawTitle;
-  if (typeof rawTitle === 'object' && rawTitle !== null) {
+  if (typeof rawTitle === "object" && rawTitle !== null) {
     // Priority: 'ar' (since your UI is RTL), then 'en'
     displayTitle = rawTitle.ar || rawTitle.en || "إشعار جديد";
   }
@@ -100,7 +96,7 @@ const NotificationsSection = () => {
     if (notif.read) return;
     // تحديث فوري في الواجهة (optimistic) ثم تأكيد من السيرفر
     setNotifications((prev) =>
-      prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
+      prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)),
     );
     try {
       await markNotificationRead(notif.id);
@@ -120,7 +116,9 @@ const NotificationsSection = () => {
       dir="rtl"
     >
       <div className="flex justify-between items-center mb-4 sm:mb-6">
-        <h3 className="text-base sm:text-[18px] font-medium text-[#1F2937]">الإشعارات الأخيرة</h3>
+        <h3 className="text-base sm:text-[18px] font-medium text-[#1F2937]">
+          الإشعارات الأخيرة
+        </h3>
         <button
           type="button"
           onClick={handleViewAll}
@@ -138,7 +136,9 @@ const NotificationsSection = () => {
         ) : error ? (
           <p className="text-center text-sm text-red-500 py-10">{error}</p>
         ) : notifications.length === 0 ? (
-          <p className="text-center text-sm text-[#8C9198] py-10">لا توجد إشعارات حالياً</p>
+          <p className="text-center text-sm text-[#8C9198] py-10">
+            لا توجد إشعارات حالياً
+          </p>
         ) : (
           notifications.map((notif) => (
             <button
@@ -160,7 +160,9 @@ const NotificationsSection = () => {
               <div className="text-right min-w-0 flex-1">
                 <p
                   className={`font-['IBM_Plex_Sans_Arabic'] mb-1.5 sm:mb-2 text-[13px] sm:text-[14px] leading-4 ${
-                    notif.read ? "font-normal text-[#575F69]" : "font-semibold text-[#1F2937]"
+                    notif.read
+                      ? "font-normal text-[#575F69]"
+                      : "font-semibold text-[#1F2937]"
                   }`}
                 >
                   {notif.title}

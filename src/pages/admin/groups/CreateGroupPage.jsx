@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Link as LinkIcon, Info } from 'lucide-react';
-import AdminLayout from '../../../components/admin/layout/AdminLayout';
-import React, { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+import { ChevronDown, Link as LinkIcon, Info } from "lucide-react";
+import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import React, { useState, useEffect } from "react";
 
 import {
   createClassroom,
@@ -9,8 +9,8 @@ import {
   getCurriculumStages,
   getStageGrades,
   getSubjects, // بنستخدم النسخة اللي بتاخد params عشان نفلتر المواد حسب الصف
-  getUsers, // هنستخدمها لجلب قائمة المعلمين role=teacher
-} from '../../../services/authService';
+  getAvailableTeachers,
+} from "../../../services/APIService";
 
 /* ------------------------------------------------------------------ */
 /* Static Data                                                          */
@@ -18,60 +18,89 @@ import {
 
 // نوع الخدمة: المجموعة خاصة (حصص فردية/مدفوعة لمجموعة صغيرة) أو عامة (مفتوحة لجميع الطلاب المسجلين بالمادة)
 const SERVICE_TYPE_OPTIONS = [
-    { id: 'private', name: 'خاص' },
-    { id: 'public', name: 'عام' },
+  { id: "private", name: "خاص" },
+  { id: "public", name: "عام" },
 ];
 
 /* ------------------------------------------------------------------ */
 /* Shared Field Components — styled identically to ExamBasicInfoStep    */
 /* ------------------------------------------------------------------ */
 
-const SelectField = ({ label, value, onChange, options, placeholder, disabled, error }) => (
-    <div className="relative w-full">
-        <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1">{label}</label>
-        <div className="relative">
-            <select
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                disabled={disabled}
-                className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 appearance-none transition-all
-          ${error ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'}
-          ${!value ? 'text-[#8C9198]' : 'text-[#1F2937]'}
-          ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-            >
-                <option value="">{placeholder}</option>
-                {options.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
-                <ChevronDown size={16} />
-            </div>
-        </div>
-        {error && <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>}
+const SelectField = ({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled,
+  error,
+}) => (
+  <div className="relative w-full">
+    <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1">
+      {label}
+    </label>
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 appearance-none transition-all
+          ${error ? "border-red-400 focus:ring-red-300" : "border-[#E5E5E5] focus:ring-[#123C91]"}
+          ${!value ? "text-[#8C9198]" : "text-[#1F2937]"}
+          ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.name}
+          </option>
+        ))}
+      </select>
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
+        <ChevronDown size={16} />
+      </div>
     </div>
+    {error && (
+      <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>
+    )}
+  </div>
 );
 
-const InputField = ({ label, value, onChange, placeholder, type = 'text', icon, error, min }) => (
-    <div className="w-full">
-        <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1">{label}</label>
-        <div className="relative">
-            <input
-                type={type}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder}
-                min={min}
-                className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 transition-all placeholder:text-[#8C9198] text-right
-          ${icon ? 'pl-10' : ''}
-          ${error ? 'border-red-400 focus:ring-red-300' : 'border-[#E5E5E5] focus:ring-[#123C91]'}`}
-            />
-            {icon && (
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none">
-                    {icon}
-                </div>
-            )}
+const InputField = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  icon,
+  error,
+  min,
+}) => (
+  <div className="w-full">
+    <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1">
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        min={min}
+        className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 transition-all placeholder:text-[#8C9198] text-right
+          ${icon ? "pl-10" : ""}
+          ${error ? "border-red-400 focus:ring-red-300" : "border-[#E5E5E5] focus:ring-[#123C91]"}`}
+      />
+      {icon && (
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none">
+          {icon}
         </div>
-        {error && <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>}
+      )}
     </div>
+    {error && (
+      <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>
+    )}
+  </div>
 );
 
 /* ------------------------------------------------------------------ */
@@ -152,96 +181,96 @@ const CreateGroupPages = () => {
   /* ---------------------------------------------------------------- */
   /* المعلمين — النشطين والموثّقين بس، مستقلين عن باقي السلسلة           */
   /* ---------------------------------------------------------------- */
-useEffect(() => {
-  setLoadingTeachers(true);
+  useEffect(() => {
+    const canLoadTeachers =
+      data.curriculum && data.stage && data.grade && data.subject;
 
-  getUsers({ role: "teacher" })
-    .then((res) => {
-      const raw = res.data?.data;
+    if (!canLoadTeachers) {
+      setTeachers([]);
+      return;
+    }
 
-      const list = Array.isArray(raw)
-        ? raw
-        : Array.isArray(raw?.users)
-        ? raw.users
-        : Array.isArray(raw?.results)
-        ? raw.results
-        : [];
+    setLoadingTeachers(true);
 
-      console.log("Teachers Response:", list);
+    getAvailableTeachers({
+      curriculum: data.curriculum,
+      stage: data.stage,
+      grade: data.grade,
+      subject: data.subject,
+    })
+      .then((res) => {
+        const raw = res.data?.data;
 
-      const teachersOnly = list
-        .filter((u) => {
-          const role = (u.role || "")
-            .toString()
-            .toLowerCase();
+        const list = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.teachers)
+            ? raw.teachers
+            : Array.isArray(raw?.results)
+              ? raw.results
+              : [];
 
-          const isTeacher = role === "teacher";
-
-          const isDeleted =
-            u.isDeleted === true ||
-            u.deleted === true;
-
-          const isActiveUser =
-            u.registrationStatus === "active" &&
-            u.isActive !== false &&
-            u.isDeleted !== true;
-
-          return isTeacher && !isDeleted && isActiveUser;
-        })
-        .map((u) => ({
-          ...u,
-          id: u.id || u._id,
+        const normalizedTeachers = list.map((teacher) => ({
+          id: teacher.teacherId || teacher.id || teacher._id,
+          userId: teacher.userId || teacher.user?._id,
           fullName:
-            u.fullName ||
-            u.name ||
-            u.user?.fullName ||
-            "معلم بدون اسم",
+            teacher.fullName || teacher.user?.fullName || "معلم بدون اسم",
+          username: teacher.username || teacher.user?.username,
+          rating: teacher.rating,
+          totalReviews: teacher.totalReviews,
         }));
 
-      console.log("Filtered Teachers:", teachersOnly);
+        setTeachers(normalizedTeachers);
+      })
+      .catch((err) => {
+        console.error("فشل تحميل المعلمين المتاحين:", err);
+        setTeachers([]);
+      })
+      .finally(() => setLoadingTeachers(false));
+  }, [data.curriculum, data.stage, data.grade, data.subject]);
 
-      setTeachers(teachersOnly);
-    })
-    .catch((err) => {
-      console.error("فشل تحميل قائمة المعلمين:", err);
-      setTeachers([]);
-    })
-    .finally(() => setLoadingTeachers(false));
-}, []);
   const handleField = (field, value) => {
     setData((prev) => {
       const next = { ...prev, [field]: value };
-      // أي حلقة في السلسلة بتترستّت لما اللي قبلها يتغيّر
-      if (field === 'curriculum') {
-        next.stage = '';
-        next.grade = '';
-        next.subject = '';
-      } else if (field === 'stage') {
-        next.grade = '';
-        next.subject = '';
-      } else if (field === 'grade') {
-        next.subject = '';
+
+      if (field === "curriculum") {
+        next.stage = "";
+        next.grade = "";
+        next.subject = "";
+        next.teacher = "";
+      } else if (field === "stage") {
+        next.grade = "";
+        next.subject = "";
+        next.teacher = "";
+      } else if (field === "grade") {
+        next.subject = "";
+        next.teacher = "";
+      } else if (field === "subject") {
+        next.teacher = "";
       }
+
       return next;
     });
-    if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
+
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
   };
 
   const validate = () => {
     const next = {};
-    if (!data.curriculum) next.curriculum = 'المنهج مطلوب';
-    if (!data.stage) next.stage = 'المرحلة الدراسية مطلوبة';
-    if (!data.grade) next.grade = 'الصف الدراسي مطلوب';
-    if (!data.subject) next.subject = 'اسم المادة مطلوب';
-    if (!data.teacher) next.teacher = 'المعلم مطلوب';
-    if (!data.name?.trim()) next.name = 'اسم المجموعة مطلوب';
-    if (!data.serviceType) next.serviceType = 'نوع الخدمة مطلوب';
-    if (!data.capacity) next.capacity = 'عدد الطلاب مطلوب';
+    if (!data.curriculum) next.curriculum = "المنهج مطلوب";
+    if (!data.stage) next.stage = "المرحلة الدراسية مطلوبة";
+    if (!data.grade) next.grade = "الصف الدراسي مطلوب";
+    if (!data.subject) next.subject = "اسم المادة مطلوب";
+    if (!data.teacher) next.teacher = "المعلم مطلوب";
+    if (!data.name?.trim()) next.name = "اسم المجموعة مطلوب";
+    if (!data.serviceType) next.serviceType = "نوع الخدمة مطلوب";
+    if (!data.capacity) next.capacity = "عدد الطلاب مطلوب";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
-  const handleCancel = () => navigate('/admin/groups');
+  const handleCancel = () => navigate("/admin/groups");
 
   const handleSubmit = async () => {
     if (!validate()) return;
@@ -255,35 +284,48 @@ useEffect(() => {
         grade: data.grade,
         subject: data.subject,
         teacher: data.teacher,
-        type: 'group', // ثابت لأن الصفحة دي خاصة بإنشاء مجموعات
+        type: "group",
+        serviceType: data.serviceType,
         capacity: Number(data.capacity),
-        meetingLink: data.meetingLink || '',
+        description: data.description || "",
+        meetingLink: data.meetingLink || "",
       });
-      navigate('/admin/groups');
+      navigate("/admin/groups");
     } catch (err) {
       console.error(err);
-      setSubmitError(err.response?.data?.message || 'حدث خطأ أثناء إنشاء المجموعة');
+      setSubmitError(
+        err.response?.data?.message || "حدث خطأ أثناء إنشاء المجموعة",
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  return(
-
-     <AdminLayout>
-      <div dir="rtl" className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right mx-auto space-y-5">
+  return (
+    <AdminLayout>
+      <div
+        dir="rtl"
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right mx-auto space-y-5"
+      >
         <div>
-          <h2 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[18px] sm:text-[20px] text-[#1F2937] mb-1">إنشاء مجموعة جديدة</h2>
-          <p className="font-['IBM_Plex_Sans_Arabic'] text-[#575F69] text-[14px] sm:text-[16px]">أدخل تفاصيل المجموعة.</p>
+          <h2 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[18px] sm:text-[20px] text-[#1F2937] mb-1">
+            إنشاء مجموعة جديدة
+          </h2>
+          <p className="font-['IBM_Plex_Sans_Arabic'] text-[#575F69] text-[14px] sm:text-[16px]">
+            أدخل تفاصيل المجموعة.
+          </p>
         </div>
 
         <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5 space-y-4">
           {/* 1. المنهج */}
           <SelectField
             label="المنهج"
-            value={data.curriculum || ''}
-            onChange={(v) => handleField('curriculum', v)}
-            options={curriculums.map((c) => ({ id: c.id, name: c.name?.ar || c.name }))}
+            value={data.curriculum || ""}
+            onChange={(v) => handleField("curriculum", v)}
+            options={curriculums.map((c) => ({
+              id: c.id || c._id,
+              name: c.name?.ar || c.name,
+            }))}
             placeholder="اختر المنهج"
             error={errors.curriculum}
           />
@@ -291,15 +333,18 @@ useEffect(() => {
           {/* 2. المرحلة الدراسية — تعتمد على المنهج */}
           <SelectField
             label="المرحلة الدراسية"
-            value={data.stage || ''}
-            onChange={(v) => handleField('stage', v)}
-            options={stages.map((s) => ({ id: s.id, name: s.name?.ar || s.name }))}
+            value={data.stage || ""}
+            onChange={(v) => handleField("stage", v)}
+            options={stages.map((s) => ({
+              id: s.id || s._id,
+              name: s.name?.ar || s.name,
+            }))}
             placeholder={
               !data.curriculum
-                ? 'اختر المنهج أولاً'
+                ? "اختر المنهج أولاً"
                 : loadingStages
-                ? 'جارٍ تحميل المراحل...'
-                : 'اختر المرحلة الدراسية'
+                  ? "جارٍ تحميل المراحل..."
+                  : "اختر المرحلة الدراسية"
             }
             disabled={!data.curriculum || loadingStages}
             error={errors.stage}
@@ -308,15 +353,18 @@ useEffect(() => {
           {/* 3. الصف الدراسي — يعتمد على المرحلة */}
           <SelectField
             label="الصف الدراسي"
-            value={data.grade || ''}
-            onChange={(v) => handleField('grade', v)}
-            options={grades.map((g) => ({ id: g.id, name: g.name?.ar || g.name }))}
+            value={data.grade || ""}
+            onChange={(v) => handleField("grade", v)}
+            options={grades.map((g) => ({
+              id: g.id || g._id,
+              name: g.name?.ar || g.name,
+            }))}
             placeholder={
               !data.stage
-                ? 'اختر المرحلة أولاً'
+                ? "اختر المرحلة أولاً"
                 : loadingGrades
-                ? 'جارٍ تحميل الصفوف...'
-                : 'اختر الصف الدراسي'
+                  ? "جارٍ تحميل الصفوف..."
+                  : "اختر الصف الدراسي"
             }
             disabled={!data.stage || loadingGrades}
             error={errors.grade}
@@ -325,17 +373,20 @@ useEffect(() => {
           {/* 4. المادة — تعتمد على الصف */}
           <SelectField
             label="اسم المادة"
-            value={data.subject || ''}
-            onChange={(v) => handleField('subject', v)}
-            options={subjects.map((s) => ({ id: s.id, name: s.name?.ar || s.name }))}
+            value={data.subject || ""}
+            onChange={(v) => handleField("subject", v)}
+            options={subjects.map((s) => ({
+              id: s.id || s._id,
+              name: s.name?.ar || s.name,
+            }))}
             placeholder={
               !data.grade
-                ? 'اختر الصف أولاً'
+                ? "اختر الصف أولاً"
                 : loadingSubjects
-                ? 'جارٍ تحميل المواد...'
-                : subjects.length
-                ? 'اختر المادة الدراسية'
-                : 'لا توجد مواد لهذا الصف'
+                  ? "جارٍ تحميل المواد..."
+                  : subjects.length
+                    ? "اختر المادة الدراسية"
+                    : "لا توجد مواد لهذا الصف"
             }
             disabled={!data.grade || loadingSubjects}
             error={errors.subject}
@@ -344,26 +395,37 @@ useEffect(() => {
           {/* 5. المعلم — مستقل، لكن نعرض النشطين والموثّقين بس */}
           <SelectField
             label="المعلم"
-            value={data.teacher || ''}
-            onChange={(v) => handleField('teacher', v)}
-            options={teachers.map((t) => ({ id: t.id, name: t.fullName }))}
-            placeholder={loadingTeachers ? 'جارٍ تحميل المعلمين...' : (teachers.length ? 'اختر المعلم' : 'لا يوجد معلمون نشطون متاحون')}
-            disabled={loadingTeachers}
+            value={data.teacher || ""}
+            onChange={(v) => handleField("teacher", v)}
+            options={teachers.map((teacher) => ({
+              id: teacher.id,
+              name: teacher.fullName,
+            }))}
+            placeholder={
+              !data.subject
+                ? "اختر المادة أولًا"
+                : loadingTeachers
+                  ? "جارٍ تحميل المعلمين..."
+                  : teachers.length
+                    ? "اختر المعلم"
+                    : "لا يوجد معلمون متاحون لهذه المادة"
+            }
+            disabled={!data.subject || loadingTeachers}
             error={errors.teacher}
           />
 
           <InputField
             label="اسم المجموعة"
-            value={data.name || ''}
-            onChange={(v) => handleField('name', v)}
+            value={data.name || ""}
+            onChange={(v) => handleField("name", v)}
             placeholder="مجموعة أ"
             error={errors.name}
           />
 
           <SelectField
             label="نوع الخدمة"
-            value={data.serviceType || ''}
-            onChange={(v) => handleField('serviceType', v)}
+            value={data.serviceType || ""}
+            onChange={(v) => handleField("serviceType", v)}
             options={SERVICE_TYPE_OPTIONS}
             placeholder="اختر نوع الخدمة"
             error={errors.serviceType}
@@ -371,8 +433,8 @@ useEffect(() => {
 
           <InputField
             label="عدد الطلاب (سعة الفصل)"
-            value={data.capacity || ''}
-            onChange={(v) => handleField('capacity', v)}
+            value={data.capacity || ""}
+            onChange={(v) => handleField("capacity", v)}
             placeholder="20"
             type="number"
             min="1"
@@ -381,15 +443,15 @@ useEffect(() => {
 
           <InputField
             label="وصف المجموعة (اختياري)"
-            value={data.description || ''}
-            onChange={(v) => handleField('description', v)}
+            value={data.description || ""}
+            onChange={(v) => handleField("description", v)}
             placeholder="رياضيات - الصف الثالث الثانوي...."
           />
 
           <InputField
             label="رابط المجموعة التعليمية"
-            value={data.meetingLink || ''}
-            onChange={(v) => handleField('meetingLink', v)}
+            value={data.meetingLink || ""}
+            onChange={(v) => handleField("meetingLink", v)}
             placeholder="https://zoom.us/12548"
             icon={<LinkIcon size={16} />}
           />
@@ -403,7 +465,8 @@ useEffect(() => {
           <div className="flex items-start gap-2 bg-[#EAF4FF] border border-[#D6E6FB] rounded-lg px-4 py-3">
             <Info size={16} className="text-[#123C91] shrink-0 mt-0.5" />
             <p className="font-['IBM_Plex_Sans_Arabic'] text-[13px] text-[#1F2937] leading-5">
-              سيُستخدم هذا الرابط لجميع حصص هذه المجموعة. تأكد من صحة الرابط وإمكانية انضمام الطلاب إليه في الوقت المحدد للحصة.
+              سيُستخدم هذا الرابط لجميع حصص هذه المجموعة. تأكد من صحة الرابط
+              وإمكانية انضمام الطلاب إليه في الوقت المحدد للحصة.
             </p>
           </div>
         </div>
@@ -414,7 +477,7 @@ useEffect(() => {
             disabled={saving}
             className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px] disabled:opacity-60"
           >
-            {saving ? 'جارٍ الإنشاء...' : 'إنشاء المجموعة'}
+            {saving ? "جارٍ الإنشاء..." : "إنشاء المجموعة"}
           </button>
           <button
             onClick={handleCancel}

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Crown, Loader2, AlertCircle } from "lucide-react";
 // ⚠️ عدّل المسار ده حسب مكان ملف الـ api عندك في المشروع
-import { getAllPackages } from "../../services/authService";
+import { getAllPackages } from "../../services/APIService";
 
 // باقة التجربة المجانية مش باقة حقيقية من الباك إند، ثابتة تسويقياً فقط
 const FREE_TRIAL_PLAN = {
@@ -10,13 +10,18 @@ const FREE_TRIAL_PLAN = {
   sub: "مثالية للتجربة والتعرف على المنصة",
   price: "مجانية",
   period: "وصول محدود لمدة 7 أيام",
-  features: ["حضور حصة تجريبية مجانية", "تصفح المواد والمدرسين", "مشاهدة جدول الدروس", "التواصل مع الإدارة فقط"],
+  features: [
+    "حضور حصة تجريبية مجانية",
+    "تصفح المواد والمدرسين",
+    "مشاهدة جدول الدروس",
+    "التواصل مع الإدارة فقط",
+  ],
   button: "ابدأ مجانا الآن",
   variant: "outline",
   isPopular: false,
 };
 
-const ANNUAL_DISCOUNT = 0.2; 
+const ANNUAL_DISCOUNT = 0.2;
 
 const mapApiPackage = (pkg, isAnnual, isPopular) => {
   const monthly = pkg.price;
@@ -26,7 +31,9 @@ const mapApiPackage = (pkg, isAnnual, isPopular) => {
     id: pkg.id,
     title: pkg.name,
     sub: `باقة تشمل ${pkg.sessions} حصة دراسية شهرياً`,
-    price: isAnnual ? `EGP ${annual.toLocaleString()}` : `EGP ${monthly.toLocaleString()}`,
+    price: isAnnual
+      ? `EGP ${annual.toLocaleString()}`
+      : `EGP ${monthly.toLocaleString()}`,
     period: `حتى ${pkg.sessions} حصة شهرياً`,
     features: [
       `${pkg.sessions} حصة دراسية شهرياً`,
@@ -59,7 +66,10 @@ const Pricing = () => {
           .sort((a, b) => a.price - b.price);
         setApiPackages(active);
       } catch (err) {
-        setError(err?.response?.data?.message || "تعذر تحميل الباقات، حاول مرة أخرى لاحقاً");
+        setError(
+          err?.response?.data?.message ||
+            "تعذر تحميل الباقات، حاول مرة أخرى لاحقاً",
+        );
       } finally {
         setLoading(false);
       }
@@ -71,7 +81,9 @@ const Pricing = () => {
   const plans = useMemo(() => {
     if (apiPackages.length === 0) return [FREE_TRIAL_PLAN];
     const popularId = apiPackages[apiPackages.length - 1].id;
-    const mapped = apiPackages.map((pkg) => mapApiPackage(pkg, isAnnual, pkg.id === popularId));
+    const mapped = apiPackages.map((pkg) =>
+      mapApiPackage(pkg, isAnnual, pkg.id === popularId),
+    );
     return [FREE_TRIAL_PLAN, ...mapped];
   }, [apiPackages, isAnnual]);
 
@@ -86,27 +98,35 @@ const Pricing = () => {
         </p>
 
         <div className="flex items-center justify-center gap-4 mb-12" dir="rtl">
-          <span className={`font-semibold text-[16px] ${isAnnual ? "text-gray-500" : "text-[#123C91]"}`}>
+          <span
+            className={`font-semibold text-[16px] ${isAnnual ? "text-gray-500" : "text-[#123C91]"}`}
+          >
             شهرياً
           </span>
 
           <button
             onClick={() => setIsAnnual(!isAnnual)}
-            className={`relative w-14 h-7 rounded-full p-1 flex items-center transition-colors duration-300 ${isAnnual ? "bg-[#123C91]" : "bg-gray-300"
-              }`}
+            className={`relative w-14 h-7 rounded-full p-1 flex items-center transition-colors duration-300 ${
+              isAnnual ? "bg-[#123C91]" : "bg-gray-300"
+            }`}
           >
             <div
-              className={`w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-sm ${isAnnual ? "mr-7" : "mr-0"
-                }`}
+              className={`w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-sm ${
+                isAnnual ? "mr-7" : "mr-0"
+              }`}
             />
           </button>
 
           <div className="flex items-center gap-2">
-            <span className={`font-semibold text-[16px] ${isAnnual ? "text-[#123C91]" : "text-gray-500"}`}>
+            <span
+              className={`font-semibold text-[16px] ${isAnnual ? "text-[#123C91]" : "text-gray-500"}`}
+            >
               سنوياً
             </span>
 
-            <div className={`bg-[#EBF4FF] text-[#123C91] text-[10px] font-bold px-2 mr-1 py-0.5 rounded-md border border-[#123C91] transition-all duration-300 ${isAnnual ? "opacity-100 visible" : "opacity-0 invisible"}`}>
+            <div
+              className={`bg-[#EBF4FF] text-[#123C91] text-[10px] font-bold px-2 mr-1 py-0.5 rounded-md border border-[#123C91] transition-all duration-300 ${isAnnual ? "opacity-100 visible" : "opacity-0 invisible"}`}
+            >
               وفّر 20%
             </div>
           </div>
@@ -129,28 +149,48 @@ const Pricing = () => {
         {!loading && (
           <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {plans.map((plan) => (
-              <div key={plan.id} className={`flex flex-col relative p-6 rounded-2xl border transition-shadow ${plan.isPopular ? "border-[#123C91] shadow-2xl" : "border-[#1F293733] bg-[#FFFFFF]"}`}>
+              <div
+                key={plan.id}
+                className={`flex flex-col relative p-6 rounded-2xl border transition-shadow ${plan.isPopular ? "border-[#123C91] shadow-2xl" : "border-[#1F293733] bg-[#FFFFFF]"}`}
+              >
                 {plan.isPopular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#EAF4FF] text-[#123C91] text-xs font-bold px-4 py-1 rounded-full border border-[#123C91] flex items-center gap-1">
                     <Crown size={12} /> الأكثر اختياراً
                   </div>
                 )}
 
-                <h3 className="font-['Tajawal'] font-bold text-[27px] text-[#1F2937] text-right">{plan.title}</h3>
-                <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#1F2937] text-right mt-1">{plan.sub}</p>
-                <div className="font-['Tajawal'] font-bold text-[32px] text-[#1F2937] text-right mt-2">{plan.price}</div>
-                <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#5D3A82] text-right mt-1 mb-6">{plan.period}</p>
+                <h3 className="font-['Tajawal'] font-bold text-[27px] text-[#1F2937] text-right">
+                  {plan.title}
+                </h3>
+                <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#1F2937] text-right mt-1">
+                  {plan.sub}
+                </p>
+                <div className="font-['Tajawal'] font-bold text-[32px] text-[#1F2937] text-right mt-2">
+                  {plan.price}
+                </div>
+                <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#5D3A82] text-right mt-1 mb-6">
+                  {plan.period}
+                </p>
 
                 <ul className="text-right space-y-3 mb-8 grow">
                   {plan.features.map((f, j) => (
-                    <li key={j} className="flex items-center gap-2 font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#1F2937]">
-                      <Check size={16} className="text-[#123C91] shrink-0" strokeWidth={3} />
+                    <li
+                      key={j}
+                      className="flex items-center gap-2 font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#1F2937]"
+                    >
+                      <Check
+                        size={16}
+                        className="text-[#123C91] shrink-0"
+                        strokeWidth={3}
+                      />
                       <span>{f}</span>
                     </li>
                   ))}
                 </ul>
 
-                <button className={`h-12 rounded-lg font-['Tajawal'] font-medium text-[16px] transition-all ${plan.variant === "solid" ? "bg-[#123C91] text-white" : "bg-white text-[#123C91] border border-[#123C91] hover:bg-[#123C91] hover:text-white"}`}>
+                <button
+                  className={`h-12 rounded-lg font-['Tajawal'] font-medium text-[16px] transition-all ${plan.variant === "solid" ? "bg-[#123C91] text-white" : "bg-white text-[#123C91] border border-[#123C91] hover:bg-[#123C91] hover:text-white"}`}
+                >
                   {plan.button}
                 </button>
               </div>

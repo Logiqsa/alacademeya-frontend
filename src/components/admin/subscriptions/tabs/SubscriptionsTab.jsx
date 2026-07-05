@@ -1,19 +1,22 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { MoreVertical, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
-import { getAllSubscriptions } from "../../../../services/authService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
+import { getAllSubscriptions } from "../../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 6;
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
   const map = {
-    active:    "bg-[#00A63E26] text-[#00A63E]",
-    expired:   "bg-[#FF8A0026] text-[#FF8A00]",
+    active: "bg-[#00A63E26] text-[#00A63E]",
+    expired: "bg-[#FF8A0026] text-[#FF8A00]",
     suspended: "bg-red-100 text-red-500",
   };
-  const label = { active: "نشط", expired: "منتهي", suspended: "موقوف" }[status] ?? status;
+  const label =
+    { active: "نشط", expired: "منتهي", suspended: "موقوف" }[status] ?? status;
   return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${map[status] ?? "bg-gray-100 text-gray-500"}`}>
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${map[status] ?? "bg-gray-100 text-gray-500"}`}
+    >
       {label}
     </span>
   );
@@ -24,7 +27,10 @@ const RowActions = ({ align = "left" }) => {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative inline-block">
-      <button onClick={() => setOpen((p) => !p)} className="p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors">
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className="p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors"
+      >
         <MoreVertical size={17} />
       </button>
       {open && (
@@ -35,10 +41,14 @@ const RowActions = ({ align = "left" }) => {
           >
             {[
               { label: "عرض التفاصيل", cls: "text-[#374151]" },
-              { label: "إيقاف",         cls: "text-orange-500" },
-              { label: "حذف",           cls: "text-red-600" },
+              { label: "إيقاف", cls: "text-orange-500" },
+              { label: "حذف", cls: "text-red-600" },
             ].map(({ label, cls }) => (
-              <li key={label} onClick={() => setOpen(false)} className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] ${cls}`}>
+              <li
+                key={label}
+                onClick={() => setOpen(false)}
+                className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] ${cls}`}
+              >
                 {label}
               </li>
             ))}
@@ -51,18 +61,36 @@ const RowActions = ({ align = "left" }) => {
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 const Pagination = ({ page, total, totalPages, onChange }) => (
-  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1" dir="rtl">
+  <div
+    className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1"
+    dir="rtl"
+  >
     <span className="text-[13px] text-[#575F69] text-center sm:text-right">
-      عرض {Math.min(PAGE_SIZE, total - (page - 1) * PAGE_SIZE)} من أصل {total} اشتراك
+      عرض {Math.min(PAGE_SIZE, total - (page - 1) * PAGE_SIZE)} من أصل {total}{" "}
+      اشتراك
     </span>
     <div className="flex items-center gap-1 flex-wrap justify-center">
-      <button onClick={() => onChange(page - 1)} disabled={page === 1} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#575F69] disabled:opacity-40 hover:bg-gray-50 shrink-0">
+      <button
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#575F69] disabled:opacity-40 hover:bg-gray-50 shrink-0"
+      >
         <ChevronRight size={16} />
       </button>
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-        <button key={p} onClick={() => onChange(p)} className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-medium transition-colors shrink-0 ${p === page ? "bg-[#123C91] text-white" : "border border-gray-200 text-[#575F69] hover:bg-gray-50"}`}>{p}</button>
+        <button
+          key={p}
+          onClick={() => onChange(p)}
+          className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-medium transition-colors shrink-0 ${p === page ? "bg-[#123C91] text-white" : "border border-gray-200 text-[#575F69] hover:bg-gray-50"}`}
+        >
+          {p}
+        </button>
       ))}
-      <button onClick={() => onChange(page + 1)} disabled={page === totalPages} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#575F69] disabled:opacity-40 hover:bg-gray-50 shrink-0">
+      <button
+        onClick={() => onChange(page + 1)}
+        disabled={page === totalPages}
+        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#575F69] disabled:opacity-40 hover:bg-gray-50 shrink-0"
+      >
         <ChevronLeft size={16} />
       </button>
     </div>
@@ -73,7 +101,9 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
 const SubCard = ({ s }) => (
   <div className="p-4 flex flex-col gap-2.5">
     <div className="flex items-start justify-between gap-2">
-      <span className="font-['Tajawal'] font-semibold text-[15px] text-[#1F2937]">{s.student}</span>
+      <span className="font-['Tajawal'] font-semibold text-[15px] text-[#1F2937]">
+        {s.student}
+      </span>
       <RowActions align="left" />
     </div>
     <div className="flex items-center justify-between text-[13px]">
@@ -137,9 +167,14 @@ const SubscriptionsTab = () => {
     }
   }, []);
 
-  useEffect(() => { fetchSubscriptions(); }, [fetchSubscriptions]);
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [fetchSubscriptions]);
 
-  const rows = useMemo(() => flattenSubscriptions(subscriptions), [subscriptions]);
+  const rows = useMemo(
+    () => flattenSubscriptions(subscriptions),
+    [subscriptions],
+  );
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const paged = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -156,17 +191,27 @@ const SubscriptionsTab = () => {
     return (
       <div className="bg-white border border-gray-200 rounded-2xl py-14 px-4 text-center">
         <p className="text-[14px] text-[#E0394C] mb-3">{error}</p>
-        <button onClick={fetchSubscriptions} className="text-[13px] text-[#123C91] font-medium hover:underline">إعادة المحاولة</button>
+        <button
+          onClick={fetchSubscriptions}
+          className="text-[13px] text-[#123C91] font-medium hover:underline"
+        >
+          إعادة المحاولة
+        </button>
       </div>
     );
   }
 
   return (
     <div className="w-full max-w-full">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden" dir="rtl">
+      <div
+        className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+        dir="rtl"
+      >
         {rows.length === 0 ? (
           <div className="py-14 px-4 text-center">
-            <p className="text-[14px] text-[#9CA3AF]">لا توجد اشتراكات حالياً</p>
+            <p className="text-[14px] text-[#9CA3AF]">
+              لا توجد اشتراكات حالياً
+            </p>
           </div>
         ) : (
           <>
@@ -182,20 +227,47 @@ const SubscriptionsTab = () => {
               <table className="w-full text-right" style={{ minWidth: 680 }}>
                 <thead className="bg-[#F9FAFA] border-b border-gray-100">
                   <tr>
-                    {["الطالب", "المادة", "الباقة", "الخصم", "الحالة", "الإجراءات"].map((h) => (
-                      <th key={h} className="px-5 py-3.5 text-[13px] font-medium text-[#575F69] whitespace-nowrap">{h}</th>
+                    {[
+                      "الطالب",
+                      "المادة",
+                      "الباقة",
+                      "الخصم",
+                      "الحالة",
+                      "الإجراءات",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-5 py-3.5 text-[13px] font-medium text-[#575F69] whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {paged.map((s) => (
-                    <tr key={s.rowId} className="hover:bg-gray-50/70 transition-colors">
-                      <td className="px-5 py-3.5 font-['Tajawal'] font-semibold text-[15px] text-[#1F2937] whitespace-nowrap">{s.student}</td>
-                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">{s.subject}</td>
-                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">{s.package}</td>
-                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">{s.discount}</td>
-                      <td className="px-5 py-3.5"><StatusBadge status={s.status} /></td>
-                      <td className="px-5 py-3.5"><RowActions align="left" /></td>
+                    <tr
+                      key={s.rowId}
+                      className="hover:bg-gray-50/70 transition-colors"
+                    >
+                      <td className="px-5 py-3.5 font-['Tajawal'] font-semibold text-[15px] text-[#1F2937] whitespace-nowrap">
+                        {s.student}
+                      </td>
+                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
+                        {s.subject}
+                      </td>
+                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
+                        {s.package}
+                      </td>
+                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
+                        {s.discount}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <StatusBadge status={s.status} />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <RowActions align="left" />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -206,7 +278,12 @@ const SubscriptionsTab = () => {
       </div>
 
       {rows.length > 0 && (
-        <Pagination page={page} total={rows.length} totalPages={totalPages} onChange={setPage} />
+        <Pagination
+          page={page}
+          total={rows.length}
+          totalPages={totalPages}
+          onChange={setPage}
+        />
       )}
     </div>
   );

@@ -11,9 +11,10 @@ import {
   getClassroom,
   getClassroomSessions,
   getSessionAttendance,
-} from "../../../services/authService"; // عدّل المسار حسب مكان ملفك
+} from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
-const resolveName = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "--");
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "--";
 
 const STATUS_LABELS = {
   scheduled: "قادمة",
@@ -72,7 +73,9 @@ const PageHeader = ({ lesson }) => (
     <div className="flex items-center gap-3 min-w-0">
       <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3">{lesson.title}</h1>
+          <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3">
+            {lesson.title}
+          </h1>
           <StatusBadge status={lesson.status} />
         </div>
         <p className="text-[16px] font-normal leading-6 text-[#575F69]">
@@ -97,7 +100,10 @@ const AttendanceDetailsTable = ({ records = [] }) => {
   }
 
   return (
-    <div dir="rtl" className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div
+      dir="rtl"
+      className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+    >
       <div className="px-5 py-4 border-b border-gray-100">
         <h3
           className="text-[18px] font-semibold text-[#1F2937]"
@@ -132,7 +138,10 @@ const AttendanceDetailsTable = ({ records = [] }) => {
                 </td>
                 <td
                   className="px-5 py-3 text-[#575F69] whitespace-nowrap"
-                  style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontSize: "14px" }}
+                  style={{
+                    fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                    fontSize: "14px",
+                  }}
                 >
                   {r.gradeName}
                 </td>
@@ -141,7 +150,10 @@ const AttendanceDetailsTable = ({ records = [] }) => {
                 </td>
                 <td
                   className="px-5 py-3 text-[#575F69]"
-                  style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontSize: "14px" }}
+                  style={{
+                    fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                    fontSize: "14px",
+                  }}
                 >
                   {r.notes || "--"}
                 </td>
@@ -184,7 +196,9 @@ const LessonDetailsPage = () => {
       }
 
       const classroom =
-        classroomResult.status === "fulfilled" ? classroomResult.value.data?.data || {} : {};
+        classroomResult.status === "fulfilled"
+          ? classroomResult.value.data?.data || {}
+          : {};
       if (classroomResult.status === "rejected") {
         console.error("getClassroom failed:", classroomResult.reason);
       }
@@ -237,9 +251,15 @@ const LessonDetailsPage = () => {
             })
           : "--",
         time: s.scheduledDate
-          ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })
+          ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
           : "--",
-        duration: typeof s.duration === "number" ? `${s.duration} دقيقة` : s.duration ?? "--",
+        duration:
+          typeof s.duration === "number"
+            ? `${s.duration} دقيقة`
+            : (s.duration ?? "--"),
         status: STATUS_LABELS[s.status] || s.status || "--",
         // إجمالي الطلاب = عدد سجلات الحضور (كل طالب مسجل في الحصة)، أو عدد طلاب المجموعة لو مفيش سجلات
         totalStudents: records.length || classroom.students?.length || 0,
@@ -268,20 +288,32 @@ const LessonDetailsPage = () => {
   if (error || !lesson) {
     return (
       <TeacherLayout>
-        <div className="text-center py-16 text-red-500">{error || "لم يتم العثور على الحصة"}</div>
+        <div className="text-center py-16 text-red-500">
+          {error || "لم يتم العثور على الحصة"}
+        </div>
       </TeacherLayout>
     );
   }
 
   return (
     <TeacherLayout>
-      <div className="w-full p-1 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div
+        className="w-full p-1 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
         <div className="mx-auto space-y-5">
           <PageHeader lesson={lesson} />
 
-          <LessonStats totalStudents={lesson.totalStudents} attendance={lesson.attendance} absence={lesson.absence} />
+          <LessonStats
+            totalStudents={lesson.totalStudents}
+            attendance={lesson.attendance}
+            absence={lesson.absence}
+          />
 
-          <LiveLessonLink lessonUrl={lesson.lessonUrl} isLive={lesson.status === "مباشر الآن"} />
+          <LiveLessonLink
+            lessonUrl={lesson.lessonUrl}
+            isLive={lesson.status === "مباشر الآن"}
+          />
 
           <AttendanceDetailsTable records={attendanceRecords} />
 

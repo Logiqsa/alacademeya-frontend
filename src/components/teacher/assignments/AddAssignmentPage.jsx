@@ -1,8 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Upload, Settings2, FileText, Calendar, Clock, Loader2 } from "lucide-react";
+import {
+  X,
+  Upload,
+  Settings2,
+  FileText,
+  Calendar,
+  Clock,
+  Loader2,
+} from "lucide-react";
 import TeacherLayout from "../layout/TeacherLayout";
-import { getMyClassrooms, getClassroomSessions, createAssignment } from "../../../services/authService"; // عدّل المسار حسب مكان api.js عندك
+import {
+  getMyClassrooms,
+  getClassroomSessions,
+  createAssignment,
+} from "../../../services/APIService"; // عدّل المسار حسب مكان api.js عندك
 
 // ─── Reusable primitives ──────────────────────────────────────────────────────
 const SectionHeader = ({ icon: Icon, title }) => (
@@ -18,24 +30,26 @@ const SectionHeader = ({ icon: Icon, title }) => (
 );
 
 const Label = ({ children }) => (
-  <label
-    className="block font-['Tajawal'] font-medium text-[16px] text-right text-[#1F2937] pb-1"
-  >
+  <label className="block font-['Tajawal'] font-medium text-[16px] text-right text-[#1F2937] pb-1">
     {children}
   </label>
 );
 
 const inputClass =
-  "w-full h-12 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#123C91] transition-all text-right placeholder:text-[#8C9198]"
+  "w-full h-12 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#123C91] transition-all text-right placeholder:text-[#8C9198]";
 const SelectField = ({ value, onChange, options, placeholder, disabled }) => (
   <div className="relative">
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className={`${inputClass} appearance-none cursor-pointer ${disabled ? "bg-gray-50 text-gray-400 cursor-not-allowed" : ""
-        }`}
-      style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", direction: "rtl" }}
+      className={`${inputClass} appearance-none cursor-pointer ${
+        disabled ? "bg-gray-50 text-gray-400 cursor-not-allowed" : ""
+      }`}
+      style={{
+        fontFamily: "IBM Plex Sans Arabic, sans-serif",
+        direction: "rtl",
+      }}
     >
       <option value="">{placeholder}</option>
       {options.map((o) => (
@@ -58,12 +72,14 @@ const Toggle = ({ checked, onChange, label }) => (
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${checked ? "bg-blue-600" : "bg-gray-200"
-        }`}
+      className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${
+        checked ? "bg-blue-600" : "bg-gray-200"
+      }`}
     >
       <span
-        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${checked ? "translate-x-1" : "translate-x-5"
-          }`}
+        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
+          checked ? "translate-x-1" : "translate-x-5"
+        }`}
       />
     </button>
   </div>
@@ -155,7 +171,8 @@ const AddAssignmentPage = ({ onSubmit }) => {
       navigate(-1);
     } catch (err) {
       setErrorMsg(
-        err?.response?.data?.message || "حدث خطأ أثناء إضافة الواجب، حاول مرة أخرى"
+        err?.response?.data?.message ||
+          "حدث خطأ أثناء إضافة الواجب، حاول مرة أخرى",
       );
     } finally {
       setSubmitting(false);
@@ -173,11 +190,7 @@ const AddAssignmentPage = ({ onSubmit }) => {
         dir="rtl"
       >
         <div className="mx-auto">
-
-
-          <h1
-            className="font-[IBM_Plex_Sans_Arabic] text-xl mb-4 sm:text-2xl font-bold text-[#123C91]"
-          >
+          <h1 className="font-[IBM_Plex_Sans_Arabic] text-xl mb-4 sm:text-2xl font-bold text-[#123C91]">
             إضافة واجب
           </h1>
 
@@ -189,10 +202,8 @@ const AddAssignmentPage = ({ onSubmit }) => {
 
           {/* ── Two-column body ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
             {/* ════ RIGHT col — basic info + attachments ════ */}
             <div className="flex flex-col gap-5">
-
               {/* Basic info */}
               <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
                 <SectionHeader icon={FileText} title="بيانات الواجب الأساسية" />
@@ -262,7 +273,10 @@ const AddAssignmentPage = ({ onSubmit }) => {
                         <span>{f.name}</span>
                         <button
                           onClick={() =>
-                            set("files", form.files.filter((_, j) => j !== i))
+                            set(
+                              "files",
+                              form.files.filter((_, j) => j !== i),
+                            )
                           }
                           className="text-gray-400 hover:text-red-500 transition-all"
                         >
@@ -277,7 +291,6 @@ const AddAssignmentPage = ({ onSubmit }) => {
 
             {/* ════ LEFT col — settings ════ */}
             <div className="flex flex-col gap-5">
-
               {/* Assignment settings */}
               <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
                 <SectionHeader icon={Settings2} title="إعدادات الواجب" />
@@ -301,8 +314,8 @@ const AddAssignmentPage = ({ onSubmit }) => {
                         !form.groupId
                           ? "اختر المجموعة أولاً"
                           : loadingLessons
-                          ? "جارٍ التحميل..."
-                          : "اختر الحصة"
+                            ? "جارٍ التحميل..."
+                            : "اختر الحصة"
                       }
                       disabled={!form.groupId || loadingLessons}
                     />
@@ -316,7 +329,9 @@ const AddAssignmentPage = ({ onSubmit }) => {
                           className={`${inputClass} pl-9`}
                           value={form.deadline}
                           onChange={(e) => set("deadline", e.target.value)}
-                          style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
+                          style={{
+                            fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                          }}
                         />
                         <Calendar
                           size={15}
@@ -329,7 +344,9 @@ const AddAssignmentPage = ({ onSubmit }) => {
                           className={`${inputClass} pl-9`}
                           value={form.deadlineTime}
                           onChange={(e) => set("deadlineTime", e.target.value)}
-                          style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
+                          style={{
+                            fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                          }}
                         />
                         <Clock
                           size={15}
@@ -347,7 +364,9 @@ const AddAssignmentPage = ({ onSubmit }) => {
                         placeholder="100/100"
                         value={form.totalGrade}
                         onChange={(e) => set("totalGrade", e.target.value)}
-                        style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
+                        style={{
+                          fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                        }}
                       />
                     </div>
                     <div>
@@ -358,7 +377,9 @@ const AddAssignmentPage = ({ onSubmit }) => {
                         placeholder="50"
                         value={form.passGrade}
                         onChange={(e) => set("passGrade", e.target.value)}
-                        style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
+                        style={{
+                          fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                        }}
                       />
                     </div>
                   </div>
@@ -402,7 +423,6 @@ const AddAssignmentPage = ({ onSubmit }) => {
               إلغاء
             </button>
           </div>
-
         </div>
       </div>
     </TeacherLayout>

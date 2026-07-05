@@ -9,7 +9,7 @@ import { Plus } from "lucide-react";
 import {
   getMyStudentsSubscriptions,
   getMyStudents,
-} from "../../services/authService";
+} from "../../services/APIService";
 
 const STATUS_MAP = {
   active: "نشطة",
@@ -23,19 +23,19 @@ const mapStatus = (status) => STATUS_MAP[status] || status;
 // already-populated { id, name } object from getMyStudents(), so unlike
 // `stage`/`curriculum` it never needs an extra lookup call to resolve.
 function nameOf(obj) {
-  if (!obj) return '';
+  if (!obj) return "";
   const n = obj.name;
-  if (!n) return '';
-  if (typeof n === 'string') return n;
-  return n.ar || n.en || '';
+  if (!n) return "";
+  if (typeof n === "string") return n;
+  return n.ar || n.en || "";
 }
 function resolveGradeName(gradeValue) {
-  if (!gradeValue) return '';
-  if (typeof gradeValue === 'object') return nameOf(gradeValue) || '';
+  if (!gradeValue) return "";
+  if (typeof gradeValue === "object") return nameOf(gradeValue) || "";
   // Defensive fallback in case a grade ever arrives as a bare id instead
   // of the usual populated object — nothing to resolve it against here,
   // so it just shows "—" via the card's fallback rather than a raw id.
-  return '';
+  return "";
 }
 
 const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
@@ -86,14 +86,18 @@ const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
       subjectName,
       teacherName,
 
-      totalHours: item.package?.sessions != null ? `${item.package.sessions} ساعة` : "--",
+      totalHours:
+        item.package?.sessions != null ? `${item.package.sessions} ساعة` : "--",
       consumed: "--",
       remaining: "--",
       duration: "شهر",
       startDate,
 
       endDate: "--",
-      amount: item.finalPrice != null ? `EGP ${item.finalPrice.toLocaleString()}` : "--",
+      amount:
+        item.finalPrice != null
+          ? `EGP ${item.finalPrice.toLocaleString()}`
+          : "--",
       status: mapStatus(item.status || sub.status),
       studentId,
     };
@@ -148,7 +152,7 @@ const SubscriptionPage = () => {
   }, []);
 
   const tableRows = subscriptions.flatMap((sub) =>
-    mapSubscriptionToRows(sub, gradeNameByStudentId)
+    mapSubscriptionToRows(sub, gradeNameByStudentId),
   );
 
   const studentOptions = [...new Set(tableRows.map((row) => row.name))];
@@ -158,18 +162,23 @@ const SubscriptionPage = () => {
     const matchesSearch =
       searchTerm.trim() === "" ||
       row.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
-      row.subjectName?.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
+      row.subjectName
+        ?.toLowerCase()
+        .includes(searchTerm.trim().toLowerCase()) ||
       row.teacherName?.toLowerCase().includes(searchTerm.trim().toLowerCase());
 
-    const matchesStudent = selectedStudent === "all" || row.name === selectedStudent;
-    const matchesStatus = selectedStatus === "all" || row.status === selectedStatus;
+    const matchesStudent =
+      selectedStudent === "all" || row.name === selectedStudent;
+    const matchesStatus =
+      selectedStatus === "all" || row.status === selectedStatus;
 
     return matchesSearch && matchesStudent && matchesStatus;
   });
 
-
   const cardRows = filteredTableRows.filter((row, index) => {
-    const firstIndexOfGroup = filteredTableRows.findIndex((r) => r.groupId === row.groupId);
+    const firstIndexOfGroup = filteredTableRows.findIndex(
+      (r) => r.groupId === row.groupId,
+    );
     return firstIndexOfGroup === index;
   });
 
@@ -246,12 +255,9 @@ const SubscriptionPage = () => {
             "
           >
             <Plus size={18} />
-            <span className="font-medium">
-              إضافة ابن
-            </span>
+            <span className="font-medium">إضافة ابن</span>
           </button>
         </div>
-
 
         {isLoading && (
           <div className="text-center py-10 text-[#575F69]">
@@ -261,9 +267,7 @@ const SubscriptionPage = () => {
 
         {/* Error State */}
         {!isLoading && error && (
-          <div className="text-center py-10 text-[#D32F2F]">
-            {error}
-          </div>
+          <div className="text-center py-10 text-[#D32F2F]">{error}</div>
         )}
 
         {!isLoading && !error && (

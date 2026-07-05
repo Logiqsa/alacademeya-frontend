@@ -4,9 +4,10 @@ import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
-} from "../../../services/authService"; // عدّل المسار حسب مكانه عندك
+} from "../../../services/APIService"; // عدّل المسار حسب مكانه عندك
 
-const resolveLocalized = (val) => (typeof val === "string" ? val : val?.ar || val?.en || "");
+const resolveLocalized = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "";
 
 const formatRelativeTime = (dateStr) => {
   if (!dateStr) return "";
@@ -24,8 +25,15 @@ const formatRelativeTime = (dateStr) => {
 
 // ⚠️ تصنيف تقريبي بناءً على حقل type الحقيقي من الـ backend
 // (القيمة اللي شفناها فعليًا: "subscription"). عدّل القايمة دي لو عندك أنواع أكاديمية تانية.
-const ACADEMIC_TYPES = ["session", "classroom", "exam", "assignment", "attendance"];
-const getCategory = (type) => (ACADEMIC_TYPES.includes(type) ? "academic" : "system");
+const ACADEMIC_TYPES = [
+  "session",
+  "classroom",
+  "exam",
+  "assignment",
+  "attendance",
+];
+const getCategory = (type) =>
+  ACADEMIC_TYPES.includes(type) ? "academic" : "system";
 
 const mapNotification = (n) => ({
   id: n._id ?? n.id,
@@ -66,7 +74,7 @@ const NotificationsSection = ({ onStatsUpdate }) => {
       await markNotificationRead(notification.id);
       setNotifications((prev) => {
         const updated = prev.map((n) =>
-          n.id === notification.id ? { ...n, isRead: true } : n
+          n.id === notification.id ? { ...n, isRead: true } : n,
         );
         onStatsUpdate?.(updated);
         return updated;
@@ -103,7 +111,10 @@ const NotificationsSection = ({ onStatsUpdate }) => {
   });
 
   return (
-    <div dir="rtl" className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-4 sm:p-5">
+    <div
+      dir="rtl"
+      className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-4 sm:p-5"
+    >
       <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           {filters.map((f) => (
@@ -112,9 +123,11 @@ const NotificationsSection = ({ onStatsUpdate }) => {
               onClick={() => setFilter(f.id)}
               className={`
                 px-3 py-1.5 rounded-lg text-[12.5px] sm:text-[13px] font-medium transition-colors
-                ${filter === f.id
-                  ? "bg-[#123C91] text-white"
-                  : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"}
+                ${
+                  filter === f.id
+                    ? "bg-[#123C91] text-white"
+                    : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+                }
               `}
             >
               {f.label}
@@ -131,7 +144,9 @@ const NotificationsSection = ({ onStatsUpdate }) => {
       </div>
 
       {loading && (
-        <p className="text-center text-[#9CA3AF] text-[13px] py-8">جاري التحميل...</p>
+        <p className="text-center text-[#9CA3AF] text-[13px] py-8">
+          جاري التحميل...
+        </p>
       )}
 
       {!loading && error && (
