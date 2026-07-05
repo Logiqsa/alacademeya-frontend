@@ -11,8 +11,8 @@ import {
 } from "../../utils/scheduleWeek"; // ⚠️ عدّل المسار حسب مكان الملف عندك
 import { getMyClassrooms, getMyStudents } from "../../services/APIService"; // ⚠️ عدّل المسار حسب مكان السيرفس عندك
 import ParentLayout from "../../components/parent/layout/ParentLayout";
-import ScheduleFilters from "../../components/parent/schedule/ScheduleFilters";
-import CalendarStrip from "../../components/parent/schedule/CalendarStrip";
+// import ScheduleFilters from "../../components/parent/schedule/ScheduleFilters";
+// import CalendarStrip from "../../components/parent/schedule/CalendarStrip";
 import LessonsList from "../../components/parent/schedule/LessonCard";
 import StatsCards from "../../components/parent/schedule/StatsCards";
 
@@ -152,9 +152,9 @@ const LessonsSchedule = () => {
 
         <StatsCards stats={stats} />
 
-        <div className="bg-white border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
+        {/* <div className="bg-white border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <ScheduleFilters />
-        </div>
+        </div> */}
 
         <div className="mt-8">
           <div className="flex items-center justify-between mb-8 pb-4">

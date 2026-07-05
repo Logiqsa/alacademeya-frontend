@@ -5,13 +5,13 @@ import { Calendar, CheckCircle, Clock } from 'lucide-react';
 const StatsCards = ({ stats = { upcoming: 0, completed: 0, totalHours: 0 } }) => {
   const cards = [
     {
-      title: "الدروس القادمة",
+      title: "الحصص القادمة",
       value: String(stats.upcoming),
       icon: <Calendar className="text-[#10B981]" />,
       bgColor: "bg-green-50"
     },
     {
-      title: "الدروس المكتملة",
+      title: "الحصص المكتملة",
       value: String(stats.completed),
       icon: <CheckCircle className="text-[#123C91]" />,
       bgColor: "bg-blue-50"
