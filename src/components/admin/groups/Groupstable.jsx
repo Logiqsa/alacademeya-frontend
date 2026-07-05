@@ -2,6 +2,22 @@ import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList } from "lucide-react";
+import {
+  getAvailableTeachers,
+  getAllStudents,
+  getClassroomStudents,
+  getAllPackages,
+  updateClassroom,
+} from "../../../services/APIService"; 
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "--";
+
+const resolvePersonName = (p) =>
+  p?.user?.fullName || p?.fullName || p?.name || resolveName(p?.name) || "--";
+
+const resolvePersonId = (p) => p?.user?.id || p?.id;
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type }) => {
@@ -28,16 +44,20 @@ const statusBadge = (status) => {
 };
 
 // ─── Select Field ─────────────────────────────────────────────────────────────
-const SelectField = ({ label, options, placeholder }) => (
+const SelectField = ({ label, options, placeholder, value, onChange, disabled }) => (
   <div className="mb-3">
     <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">{label}</label>
     <div className="relative">
       <select
-        defaultValue=""
-        className="w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] appearance-none text-right text-[#1F2937]"
+        value={value ?? ""}
+        onChange={(e) => onChange?.(e.target.value)}
+        disabled={disabled}
+        className="w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] appearance-none text-right text-[#1F2937] disabled:opacity-60"
       >
         <option value="" disabled>{placeholder}</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
       </select>
       <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
     </div>
@@ -65,10 +85,14 @@ const Modal = ({ open, onClose, title, children }) => {
   );
 };
 
-const ModalFooter = ({ onClose, confirmLabel }) => (
+const ModalFooter = ({ onClose, confirmLabel, onConfirm, loading, disabled }) => (
   <div className="flex gap-3 mt-5">
-    <button className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:bg-[#0f3280] transition-colors">
-      {confirmLabel}
+    <button
+      onClick={onConfirm}
+      disabled={loading || disabled}
+      className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:bg-[#0f3280] transition-colors disabled:opacity-60"
+    >
+      {loading ? "جاري الحفظ..." : confirmLabel}
     </button>
     <button onClick={onClose} className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:border-[#123C91] transition-colors">
       إلغاء
@@ -76,34 +100,224 @@ const ModalFooter = ({ onClose, confirmLabel }) => (
   </div>
 );
 
-const AddStudentModal = ({ open, onClose }) => (
-  <Modal open={open} onClose={onClose} title="إضافة طالب للمجموعة">
-    <SelectField label="الطالب" placeholder="اختر الطالب" options={["أحمد محمد", "سارة علي", "عمر خالد", "نورا إبراهيم"]} />
-    <SelectField label="الباقة" placeholder="اختر الباقة" options={["باقة أساسية", "باقة متقدمة", "باقة مميزة"]} />
-    <ModalFooter onClose={onClose} confirmLabel="إضافة" />
-  </Modal>
-);
+// ─── Add Student Modal ─────────────────────────────────────────────────────────
+const AddStudentModal = ({ open, onClose, group, onChanged }) => {
+  const [students, setStudents] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [selectedPackage, setSelectedPackage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
-const AssignTeacherModal = ({ open, onClose }) => (
-  <Modal open={open} onClose={onClose} title="تعيين معلم">
-    <SelectField label="المعلم" placeholder="اختر المعلم" options={["محمد أحمد", "فاطمة حسن", "أحمد سالم", "منى صالح"]} />
-    <ModalFooter onClose={onClose} confirmLabel="تعيين المعلم" />
-  </Modal>
-);
+  useEffect(() => {
+    if (!open || !group) return;
+    setSelectedStudent("");
+    setSelectedPackage("");
+    setError(null);
+    setLoading(true);
 
-const AssignSubstituteModal = ({ open, onClose, currentTeacher }) => (
-  <Modal open={open} onClose={onClose} title="تعيين معلم بديل">
-    {currentTeacher && (
-      <div className="bg-[#FEF3C7] border border-[#FCD34D] rounded-lg px-3 py-2 mb-4 flex items-center justify-between">
-        <span className="text-[12px] text-[#92400E]">المعلم الحالي: <strong className="text-[#78350F]">{currentTeacher}</strong></span>
-        <span className="text-[11px] text-[#B45309]">المعلم الحالي</span>
-      </div>
-    )}
-    <SelectField label="المعلم البديل" placeholder="اختر المعلم البديل" options={["أحمد سالم", "فاطمة حسن", "خالد عمر", "منى صالح"]} />
-    <SelectField label="سبب التعيين" placeholder="اختر سبب التعيين" options={["إجازة", "مرض", "ظروف طارئة", "أخرى"]} />
-    <ModalFooter onClose={onClose} confirmLabel="تعيين المعلم البديل" />
-  </Modal>
-);
+    Promise.allSettled([
+      getAllStudents(),
+      getClassroomStudents(group.id),
+      getAllPackages(),
+    ])
+      .then(([allRes, enrolledRes, packagesRes]) => {
+        const all = allRes.status === "fulfilled" ? allRes.value.data?.data || [] : [];
+        const enrolled = enrolledRes.status === "fulfilled" ? enrolledRes.value.data?.data || [] : [];
+        const enrolledIds = new Set(enrolled.map(resolvePersonId));
+
+        setStudents(all.filter((s) => !enrolledIds.has(resolvePersonId(s))));
+        setPackages(packagesRes.status === "fulfilled" ? packagesRes.value.data?.data || [] : []);
+
+        if (allRes.status === "rejected") console.error("getAllStudents failed:", allRes.reason);
+        if (packagesRes.status === "rejected") console.error("getAllPackages failed:", packagesRes.reason);
+      })
+      .finally(() => setLoading(false));
+  }, [open, group]);
+
+  const handleSubmit = async () => {
+    if (!selectedStudent) {
+      setError("من فضلك اختر الطالب");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      // ⚠️ لسه محتاجين نأكد من بوستمان الـ endpoint الصحيح لإضافة طالب لمجموعة
+      // (مفيش POST /classrooms/:id/students في الكولكشن اللي شفناه لحد دلوقتي —
+      // الأقرب المتاح هو createSubscription، لكن شكل الـ body غير مؤكد)
+      throw new Error(
+        "الـ endpoint بتاع إضافة طالب للمجموعة لسه مش متأكد منه — ابعت سكرين شوت من بوستمان لنظبطه",
+      );
+    } catch (err) {
+      setError(err.message || "حدث خطأ أثناء إضافة الطالب");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="إضافة طالب للمجموعة">
+      <SelectField
+        label="الطالب"
+        placeholder={loading ? "جاري التحميل..." : "اختر الطالب"}
+        options={students.map((s) => ({ value: resolvePersonId(s), label: resolvePersonName(s) }))}
+        value={selectedStudent}
+        onChange={setSelectedStudent}
+        disabled={loading}
+      />
+      <SelectField
+        label="الباقة"
+        placeholder={loading ? "جاري التحميل..." : "اختر الباقة"}
+        options={packages.map((p) => ({ value: p.id, label: p.name || resolveName(p.name) }))}
+        value={selectedPackage}
+        onChange={setSelectedPackage}
+        disabled={loading}
+      />
+      {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
+      <ModalFooter onClose={onClose} confirmLabel="إضافة" onConfirm={handleSubmit} loading={submitting} />
+    </Modal>
+  );
+};
+
+// ─── Assign Teacher Modal ───────────────────────────────────────────────────────
+const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
+  const [teachers, setTeachers] = useState([]);
+  const [selectedTeacher, setSelectedTeacher] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!open || !group) return;
+    setSelectedTeacher("");
+    setError(null);
+    setLoading(true);
+
+    getAvailableTeachers()
+      .then((res) => setTeachers(res.data?.data || []))
+      .catch((err) => {
+        console.error("getAvailableTeachers failed:", err);
+        setError("تعذر تحميل قائمة المعلمين");
+      })
+      .finally(() => setLoading(false));
+  }, [open, group]);
+
+  const handleSubmit = async () => {
+    if (!selectedTeacher) {
+      setError("من فضلك اختر المعلم");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      // ⚠️ افتراض: PATCH /classrooms/:id بحقل "teacher" — لسه محتاج تأكيد من بوستمان
+      await updateClassroom(group.id, { teacher: selectedTeacher });
+      onChanged?.();
+      onClose();
+    } catch (err) {
+      console.error("updateClassroom (assign teacher) failed:", err.response?.data || err);
+      setError(err.response?.data?.message || "حدث خطأ أثناء تعيين المعلم");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="تعيين معلم">
+      <SelectField
+        label="المعلم"
+        placeholder={loading ? "جاري التحميل..." : "اختر المعلم"}
+        options={teachers.map((t) => ({ value: resolvePersonId(t), label: resolvePersonName(t) }))}
+        value={selectedTeacher}
+        onChange={setSelectedTeacher}
+        disabled={loading}
+      />
+      {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
+      <ModalFooter onClose={onClose} confirmLabel="تعيين المعلم" onConfirm={handleSubmit} loading={submitting} />
+    </Modal>
+  );
+};
+
+// ─── Assign Substitute Modal ────────────────────────────────────────────────────
+const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
+  const [teachers, setTeachers] = useState([]);
+  const [selectedTeacher, setSelectedTeacher] = useState("");
+  const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const REASONS = [
+    { value: "leave", label: "إجازة" },
+    { value: "sick", label: "مرض" },
+    { value: "emergency", label: "ظروف طارئة" },
+    { value: "other", label: "أخرى" },
+  ];
+
+  useEffect(() => {
+    if (!open || !group) return;
+    setSelectedTeacher("");
+    setReason("");
+    setError(null);
+    setLoading(true);
+
+    getAvailableTeachers()
+      .then((res) => setTeachers((res.data?.data || []).filter((t) => resolvePersonName(t) !== group.teacher)))
+      .catch((err) => {
+        console.error("getAvailableTeachers failed:", err);
+        setError("تعذر تحميل قائمة المعلمين");
+      })
+      .finally(() => setLoading(false));
+  }, [open, group]);
+
+  const handleSubmit = async () => {
+    if (!selectedTeacher || !reason) {
+      setError("من فضلك اختر المعلم البديل وسبب التعيين");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      // ⚠️ مفيش endpoint مؤكد لتعيين معلم بديل لحد دلوقتي — ابعت سكرين شوت من بوستمان لنظبطها
+      throw new Error(
+        "الـ endpoint بتاع تعيين المعلم البديل لسه مش موجود/مؤكد — ابعت سكرين شوت من بوستمان لنظبطه",
+      );
+    } catch (err) {
+      setError(err.message || "حدث خطأ أثناء تعيين المعلم البديل");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="تعيين معلم بديل">
+      {group?.teacher && (
+        <div className="bg-[#FEF3C7] border border-[#FCD34D] rounded-lg px-3 py-2 mb-4 flex items-center justify-between">
+          <span className="text-[12px] text-[#92400E]">المعلم الحالي: <strong className="text-[#78350F]">{group.teacher}</strong></span>
+        </div>
+      )}
+      <SelectField
+        label="المعلم البديل"
+        placeholder={loading ? "جاري التحميل..." : "اختر المعلم البديل"}
+        options={teachers.map((t) => ({ value: resolvePersonId(t), label: resolvePersonName(t) }))}
+        value={selectedTeacher}
+        onChange={setSelectedTeacher}
+        disabled={loading}
+      />
+      <SelectField
+        label="سبب التعيين"
+        placeholder="اختر سبب التعيين"
+        options={REASONS}
+        value={reason}
+        onChange={setReason}
+      />
+      {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
+      <ModalFooter onClose={onClose} confirmLabel="تعيين المعلم البديل" onConfirm={handleSubmit} loading={submitting} />
+    </Modal>
+  );
+};
 
 // ─── Dropdown (Portal-based, escapes table overflow clipping) ─────────────────
 const MENU_WIDTH = 190;
@@ -128,14 +342,12 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance }) => {
     const rect = btn.getBoundingClientRect();
     const menuHeight = items.length * 42 + 16;
 
-    // حاذي القائمة مع حافة الزرار اليمنى، وارجع لليسار لو هتخرج بره الشاشة
     let left = rect.right - MENU_WIDTH;
     if (left < 8) left = 8;
     if (left + MENU_WIDTH > window.innerWidth - 8) {
       left = window.innerWidth - MENU_WIDTH - 8;
     }
 
-    // افتح لتحت، ولو مفيش مساحة كفاية افتح لفوق بدل ما تتقص
     let top = rect.bottom + MENU_GAP;
     if (top + menuHeight > window.innerHeight - 8) {
       top = rect.top - menuHeight - MENU_GAP;
@@ -160,7 +372,6 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance }) => {
         setOpen(false);
       }
     };
-    // اقفل القائمة لو المستخدم عمل scroll أو غيّر حجم الشاشة عشان متفضلش عايمة في مكان غلط
     const handleReposition = () => setOpen(false);
 
     document.addEventListener("mousedown", handleOutside);
@@ -235,7 +446,7 @@ const MobileField = ({ label, children }) => (
 );
 
 // ─── Main Table ───────────────────────────────────────────────────────────────
-const GroupTable = ({ groups = [], onOpenAttendance }) => {
+const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
   const navigate = useNavigate();
   const [modal, setModal] = useState(null);
 
@@ -312,12 +523,23 @@ const GroupTable = ({ groups = [], onOpenAttendance }) => {
         </div>
       </div>
 
-      <AddStudentModal open={modal?.type === "add-student"} onClose={closeModal} />
-      <AssignTeacherModal open={modal?.type === "assign-teacher"} onClose={closeModal} />
+      <AddStudentModal
+        open={modal?.type === "add-student"}
+        onClose={closeModal}
+        group={modal?.group}
+        onChanged={onChanged}
+      />
+      <AssignTeacherModal
+        open={modal?.type === "assign-teacher"}
+        onClose={closeModal}
+        group={modal?.group}
+        onChanged={onChanged}
+      />
       <AssignSubstituteModal
         open={modal?.type === "assign-substitute"}
         onClose={closeModal}
-        currentTeacher={modal?.group?.teacher}
+        group={modal?.group}
+        onChanged={onChanged}
       />
     </>
   );
