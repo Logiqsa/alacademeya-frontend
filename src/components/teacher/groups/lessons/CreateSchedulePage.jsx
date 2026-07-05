@@ -43,12 +43,11 @@ const CreateSchedulePage = () => {
     setError(null);
     setLoading(true);
     try {
-      // ⚠️ افتراض بناءً على رسالة الخطأ "At least one schedule entry is required"
-      // يبدو إن الـ API محتاج entries[] بدل { days, time } الفلات
-      // لو ده مش شكل الـ body الصح، ابعتلي سكرين شوت من تاب الـ Body في بوستمان
-      const entries = selectedDays.map((day) => ({ day, time }));
+      // ✅ تم التأكيد من الـ Postman collection: شكل الـ body الصحيح هو
+      // { schedule: [ { day, startTime }, ... ] }
+      const schedule = selectedDays.map((day) => ({ day, startTime: time }));
 
-      await createOrUpdateClassroomSchedule(groupId, { entries });
+      await createOrUpdateClassroomSchedule(groupId, { schedule });
       navigate(`/teacher/groups/${groupId}/lessons`, {
         state: { showSuccessToast: true },
       });
