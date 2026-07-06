@@ -4,7 +4,7 @@ const assetUrl = (url) => !url ? "" : /^https?:\/\//i.test(url) ? url : `https:/
 
 const LessonAssignments = ({ assignments = [], onAdd }) => (
   <div dir="rtl" className="rounded-2xl border border-[#E5E5E5] bg-white p-5">
-    <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-semibold">الواجبات</h3>{!assignments.length && onAdd && <button type="button" onClick={onAdd} className="rounded-lg bg-[#123C91] px-3 py-2 text-sm text-white">إضافة واجب</button>}</div>
+    <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-semibold">الواجبات</h3>{!assignments.length && onAdd && <button type="button" onClick={onAdd} className="rounded-lg bg-[#123C91] text-white [&_svg]:text-white px-3 py-2 text-sm text-white">إضافة واجب</button>}</div>
     {!assignments.length ? <p className="py-6 text-center text-sm text-[#9CA3AF]">لا يوجد واجب مرتبط بهذه الحصة</p> : assignments.map((assignment) => (
       <div key={assignment.id || assignment._id} className="mb-3 rounded-xl border p-4">
         <div className="flex items-center gap-2"><HiOutlineClipboardList className="text-[#123C91]" /><p className="font-medium">{assignment.title}</p></div>

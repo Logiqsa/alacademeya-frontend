@@ -1,5 +1,4 @@
-import React from "react";
-import { HiOutlineEye, HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
+import { HiOutlineEye } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 
 const StatusBadge = ({ status }) => {
@@ -8,6 +7,7 @@ const StatusBadge = ({ status }) => {
     "مباشر الآن": "bg-[#00A63E26] text-[#00A63E] ",
     "منتهية": "bg-[#D32F2F26] text-[#D32F2F] ",
     "ملغية": "bg-[#1F293726] text-[#1F2937] ",
+    "فائتة": "bg-[#FF8A0026] text-[#B45309] ",
   };
 
   return (
@@ -38,7 +38,7 @@ const MobileField = ({ label, children }) => (
 
 // ⚠️ لازم يتمرر groupId من الصفحة الأب (GroupLessonsPage) عشان الـ navigate
 // يبني الرابط الصح ويوصل صفحة التفاصيل بالـ groupId + lessonId الاتنين
-const LessonsTable = ({ lessons = [], groupId, onEdit, onDelete }) => {
+const LessonsTable = ({ lessons = [], groupId }) => {
   const navigate = useNavigate();
 
   const handleView = (lessonId) => {
@@ -105,11 +105,9 @@ const LessonsTable = ({ lessons = [], groupId, onEdit, onDelete }) => {
                     (cellData, index) => (
                       <td
                         key={index}
-                        className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
+                        className={`px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap ${index === 1 ? "text-base font-bold text-[#1F2937]" : "text-[15px] font-semibold text-[#575F69]"}`}
                         style={{
                           fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                          fontWeight: 400,
-                          fontSize: "14px",
                           lineHeight: "24px",
                         }}
                       >

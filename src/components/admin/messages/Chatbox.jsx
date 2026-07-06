@@ -50,7 +50,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
         >
           <ArrowRight size={18} />
         </button>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-sm font-bold text-white sm:h-10 sm:w-10">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white text-sm font-bold text-white sm:h-10 sm:w-10">
           {conversation.avatarInitial}
         </span>
         <div className="min-w-0">
@@ -73,7 +73,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
                 <div
                   className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 sm:max-w-[75%] sm:px-4 sm:py-3 ${
                     isMe
-                      ? "rounded-tr-sm bg-[#123C91] text-white"
+                      ? "rounded-tr-sm bg-[#123C91] text-white [&_svg]:text-white"
                       : "rounded-tl-sm border border-blue-100 bg-[#EAF4FF] text-slate-700"
                   }`}
                 >
@@ -117,7 +117,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
           onClick={handleSend}
           disabled={!text.trim()}
           aria-label="إرسال"
-          className="flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#123C91] text-white transition-colors hover:bg-[#0f2f70] disabled:cursor-not-allowed disabled:bg-[#123C91]/25 sm:h-auto sm:w-auto sm:px-5 sm:py-2.5"
+          className="flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#123C91] text-white [&_svg]:text-white transition-colors hover:bg-[#0f2f70] disabled:cursor-not-allowed disabled:bg-[#123C91]/25 sm:h-auto sm:w-auto sm:px-5 sm:py-2.5"
         >
           <Send size={16} />
           <span className="hidden text-sm font-semibold font-['IBM_Plex_Sans_Arabic'] sm:inline">

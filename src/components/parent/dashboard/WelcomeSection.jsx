@@ -38,7 +38,7 @@ const WelcomeSection = ({ hasChildren = false }) => {
           </p>
 
           <button
-            className="bg-[#123C91] text-white rounded-lg mt-3 flex items-center justify-center hover:bg-blue-900 transition-colors font-['Tajawal'] font-medium text-[16px]"
+            className="bg-[#123C91] text-white [&_svg]:text-white rounded-lg mt-3 flex items-center justify-center hover:bg-blue-900 transition-colors font-['Tajawal'] font-medium text-[16px]"
             style={{ width: '160px', height: '48px', padding: '0 24px' }}
             onClick={() => navigate("/parent-dashboard/add-child")}
           >

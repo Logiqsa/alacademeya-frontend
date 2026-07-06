@@ -1,4 +1,3 @@
-import React from "react";
 import { HiOutlineEye } from "react-icons/hi";
 
 const StatusBadge = ({ status }) => {
@@ -7,6 +6,7 @@ const StatusBadge = ({ status }) => {
     "مباشر الآن": "bg-[#00A63E26] text-[#00A63E]",
     منتهية: "bg-[#D32F2F26] text-[#D32F2F]",
     ملغية: "bg-[#1F293726] text-[#1F2937]",
+    فائتة: "bg-[#FF8A0026] text-[#B45309]",
   };
   return (
     <span
@@ -45,11 +45,11 @@ const LessonsTable = ({ lessons = [], onView }) => {
               <tr
                 key={lesson.id}
                 onClick={() => onView?.(lesson.id)}
-                className="border-b border-[#F1F1F1] last:border-0 text-sm text-[#1F2937] hover:bg-gray-50 cursor-pointer transition-all"
+                className="border-b border-[#F1F1F1] last:border-0 text-[15px] font-semibold text-[#1F2937] hover:bg-gray-50 cursor-pointer transition-all"
               >
-                <td className="py-4 px-4 font-medium">{lesson.title}</td>
+                <td className="py-4 px-4 text-base font-bold">{lesson.title}</td>
                 <td className="py-4 px-4 text-[#575F69]">{lesson.date}</td>
-                <td className="py-4 px-4 text-[#575F69]">{lesson.time}</td>
+                <td className="py-4 px-4 text-base font-bold text-[#1F2937]">{lesson.time}</td>
                 <td className="py-4 px-4 text-[#575F69]">{lesson.duration} دقيقة</td>
                 <td className="py-4 px-4">
                   <StatusBadge status={lesson.status} />

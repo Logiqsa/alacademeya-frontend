@@ -23,7 +23,7 @@ const Paginationn = ({ page, totalPages, onChange, totalItems, displayedCount, u
                         key={i + 1}
                         onClick={() => onChange(i + 1)}
                         className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg text-xs sm:text-sm font-semibold transition-all shrink-0 ${page === i + 1
-                                ? "bg-[#123C91] text-white shadow-sm"
+                                ? "bg-[#123C91] text-white [&_svg]:text-white shadow-sm"
                                 : "border border-gray-200 hover:bg-gray-100 text-gray-600"
                             }`}
                     >

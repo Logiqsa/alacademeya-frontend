@@ -980,9 +980,6 @@ const TeacherAccountSettings = () => {
         onSaved={fetchProfile}
       />
       <TeacherProfessionalCard teacher={teacher} onSaved={fetchProfile} />
-      <SecurityCard
-        lastPasswordChange={teacher.lastPasswordChange || "آخر تحديث غير متاح"}
-      />
     </div>
   );
 };

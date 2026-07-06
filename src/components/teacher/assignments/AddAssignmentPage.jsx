@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   X,
@@ -61,30 +61,6 @@ const SelectField = ({ value, onChange, options, placeholder, disabled }) => (
   </div>
 );
 
-const Toggle = ({ checked, onChange, label }) => (
-  <div className="flex items-center justify-between" dir="rtl">
-    <span
-      className="text-sm text-gray-600"
-      style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
-    >
-      {label}
-    </span>
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${
-        checked ? "bg-blue-600" : "bg-gray-200"
-      }`}
-    >
-      <span
-        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
-          checked ? "translate-x-1" : "translate-x-5"
-        }`}
-      />
-    </button>
-  </div>
-);
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const AddAssignmentPage = ({ onSubmit }) => {
   const navigate = useNavigate();
@@ -102,14 +78,12 @@ const AddAssignmentPage = ({ onSubmit }) => {
     deadlineTime: "",
     totalGrade: 100,
     passGrade: 50,
-    showGradeToStudent: false,
-    notifyParent: false,
     files: [],
   });
 
   const [groups, setGroups] = useState([]);
   const [lessons, setLessons] = useState([]);
-  const [loadingLessons, setLoadingLessons] = useState(false);
+  const [loadingLessons, setLoadingLessons] = useState(Boolean(linkedClassroom));
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -124,11 +98,7 @@ const AddAssignmentPage = ({ onSubmit }) => {
 
   // جلب حصص المجموعة المختارة كل ما groupId يتغيّر
   useEffect(() => {
-    if (!form.groupId) {
-      setLessons([]);
-      return;
-    }
-    setLoadingLessons(true);
+    if (!form.groupId) return;
     getClassroomSessions(form.groupId)
       .then((res) => setLessons(res.data?.data || []))
       .catch(() => setLessons([]))
@@ -302,7 +272,12 @@ const AddAssignmentPage = ({ onSubmit }) => {
                     <Label>المجموعة المستهدفة</Label>
                     <SelectField
                       value={form.groupId}
-                      onChange={(v) => set("groupId", v)}
+                      onChange={(v) => {
+                        setLessons([]);
+                        setLoadingLessons(Boolean(v));
+                        set("groupId", v);
+                        set("lessonId", "");
+                      }}
                       options={groupOptions}
                       placeholder="اختر المجموعة"
                     />
@@ -389,22 +364,6 @@ const AddAssignmentPage = ({ onSubmit }) => {
                 </div>
               </div>
 
-              {/* Extra settings */}
-              <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                <SectionHeader icon={Settings2} title="إعدادات إضافية" />
-                <div className="flex flex-col gap-4">
-                  <Toggle
-                    checked={form.showGradeToStudent}
-                    onChange={(v) => set("showGradeToStudent", v)}
-                    label="عرض الدرجة للطلاب"
-                  />
-                  <Toggle
-                    checked={form.notifyParent}
-                    onChange={(v) => set("notifyParent", v)}
-                    label="إعلام ولي الأمر بالدرجة"
-                  />
-                </div>
-              </div>
             </div>
           </div>
 
@@ -413,7 +372,7 @@ const AddAssignmentPage = ({ onSubmit }) => {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1 disabled:opacity-60"
+              className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1 disabled:opacity-60"
             >
               {submitting && <Loader2 size={16} className="animate-spin" />}
               {submitting ? "جارٍ الإضافة..." : "إضافة الواجب"}

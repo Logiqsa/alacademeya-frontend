@@ -43,7 +43,6 @@ const KEY_TITLES = {
   NEW_MESSAGE: "رسالة جديدة",
   NEW_ASSIGNMENT: "واجب جديد",
   ASSIGNMENT_GRADED: "تم تصحيح الواجب",
-  EXAM_RESULT: "نتيجة الاختبار",
 
   STUDENT_ABSENT: "غياب طالب",
   STUDENT_LATE: "تأخر طالب",

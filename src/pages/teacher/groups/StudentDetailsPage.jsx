@@ -119,11 +119,9 @@ const StudentDetailsPage = () => {
               })
             : "--",
           attendance: attendanceLabel,
-          // ⚠️ الواجب/الدرجة/الاختبار لسه مفيش endpoint ليهم — بيفضلوا "--" لحد ما يتضافوا
+          // الواجب والدرجة غير متاحين في استجابة الحصة الحالية.
           homeworkStatus: "--",
           grade: "--",
-          gradeStatus: "--",
-          examGrade: "--",
         };
       });
 

@@ -22,7 +22,6 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
     { title: "المجموعات", icon: childrenIcon, path: "/teacher/groups" },
     { title: "الجدول", icon: scheduleIcon, path: "/teacher/schedule" },
     { title: "الواجبات", icon: messagesIcon, path: "/teacher/tasks" },
-    // { title: "الاختبارات", icon: subscriptionIcon, path: "/teacher/exams" },
     { title: "الرسائل", icon: messagesIcon, path: "/teacher/messages" },
     { title: "الإشعارات", icon: notificationsIcon, path: "/teacher/notifications" },
     // { title: "الأرباح", icon: subscriptionIcon, path: "/teacher/earnings" },

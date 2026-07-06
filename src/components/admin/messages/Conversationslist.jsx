@@ -95,7 +95,7 @@ export default function ConversationsLists({
             type="button"
             aria-label="محادثة جديدة"
             onClick={openNewChat}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#123C91] text-white transition-colors hover:bg-[#0f2f70]"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white transition-colors hover:bg-[#0f2f70]"
           >
             <Plus size={18} />
           </button>
@@ -126,7 +126,7 @@ export default function ConversationsLists({
             className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors font-['IBM_Plex_Sans_Arabic']
               ${
                 activeFilter === f.key
-                  ? "bg-[#123C91] text-white"
+                  ? "bg-[#123C91] text-white [&_svg]:text-white"
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200"
               }`}
           >
@@ -160,7 +160,7 @@ export default function ConversationsLists({
               {/* Top row */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-sm font-bold text-white">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white text-sm font-bold text-white">
                     {c.avatarInitial}
                   </span>
                   <div className="min-w-0 text-right">
@@ -177,7 +177,7 @@ export default function ConversationsLists({
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="whitespace-nowrap text-xs text-gray-400">{c.lastMessageTime}</span>
                   {c.unreadCount > 0 && (
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-[11px] font-semibold text-white">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white text-[11px] font-semibold text-white">
                       {c.unreadCount}
                     </span>
                   )}
@@ -221,7 +221,7 @@ export default function ConversationsLists({
                 const name = user.fullName ?? user.name ?? user.username ?? "مستخدم";
                 return (
                   <button key={id} type="button" onClick={() => createChat(user)} disabled={creatingId !== null} className="flex w-full items-center gap-3 rounded-xl p-3 text-right hover:bg-blue-50 disabled:opacity-60">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#123C91] font-bold text-white">{name.trim().charAt(0)}</span>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white font-bold text-white">{name.trim().charAt(0)}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-slate-800">{name}</span>
                       <span className="block truncate text-xs text-gray-400">{roleLabel[user.role] ?? user.role}{user.email ? ` · ${user.email}` : ""}</span>

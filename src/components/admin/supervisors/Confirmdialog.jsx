@@ -50,7 +50,7 @@ const ConfirmDialog = ({
             onClick={onConfirm}
             disabled={loading}
             className={`flex-1 py-3 px-6 rounded-xl font-medium text-[15px] disabled:opacity-60 cursor-pointer font-['IBM_Plex_Sans_Arabic'] text-white ${
-              danger ? "bg-red-600" : "bg-[#123C91]"
+              danger ? "bg-red-600" : "bg-[#123C91] text-white [&_svg]:text-white"
             }`}
           >
             {loading ? "جارٍ التنفيذ..." : confirmLabel}

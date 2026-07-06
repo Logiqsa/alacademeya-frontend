@@ -78,7 +78,7 @@ const DayCell = memo(function DayCell({ date, isCurrentMonth, isToday, isSelecte
           transition-colors duration-150
           ${
             isSelected
-              ? "bg-[#123C91] text-white font-semibold shadow-[0_4px_10px_rgba(18,60,145,0.35)]"
+              ? "bg-[#123C91] text-white [&_svg]:text-white font-semibold shadow-[0_4px_10px_rgba(18,60,145,0.35)]"
               : isCurrentMonth
                 ? isToday
                   ? "text-[#123C91] font-semibold border border-[#123C91]/40"
@@ -94,7 +94,7 @@ const DayCell = memo(function DayCell({ date, isCurrentMonth, isToday, isSelecte
       {hasEvent && (
         <span
           aria-hidden="true"
-          className={`absolute bottom-0 w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-[#123C91]"}`}
+          className={`absolute bottom-0 w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-[#123C91] text-white [&_svg]:text-white"}`}
         />
       )}
     </button>

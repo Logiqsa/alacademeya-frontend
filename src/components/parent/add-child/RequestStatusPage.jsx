@@ -114,7 +114,7 @@ const RequestStatusPage = () => {
         <p className="text-red-500 text-[14px] mb-4">{error}</p>
         <button
           onClick={() => load()}
-          className="flex items-center gap-2 px-6 py-2.5 bg-[#123C91] text-white rounded-xl text-[14px] font-medium cursor-pointer"
+          className="flex items-center gap-2 px-6 py-2.5 bg-[#123C91] text-white [&_svg]:text-white rounded-xl text-[14px] font-medium cursor-pointer"
         >
           <RotateCcw size={16} />
           إعادة المحاولة
@@ -129,7 +129,7 @@ const RequestStatusPage = () => {
         <p className="text-[#575F69] text-[14px] mb-4">لا يوجد طلب مسجل حتى الآن</p>
         <button
           onClick={() => load()}
-          className="flex items-center gap-2 px-6 py-2.5 bg-[#123C91] text-white rounded-xl text-[14px] font-medium cursor-pointer"
+          className="flex items-center gap-2 px-6 py-2.5 bg-[#123C91] text-white [&_svg]:text-white rounded-xl text-[14px] font-medium cursor-pointer"
         >
           <RotateCcw size={16} />
           تحديث

@@ -673,7 +673,7 @@ const RegisterForm = ({ type }) => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-14 rounded-lg bg-[#123C91] text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity mt-2"
+          className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity mt-2"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           {loading ? "جاري الإرسال..." : "التالي"}
@@ -761,7 +761,7 @@ const RegisterForm = ({ type }) => {
               <button
                 onClick={handleVerify}
                 disabled={otpLoading}
-                className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white disabled:opacity-70 transition-opacity"
+                className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white disabled:opacity-70 transition-opacity"
               >
                 {otpLoading ? "جاري التحقق..." : "تحقق"}
               </button>

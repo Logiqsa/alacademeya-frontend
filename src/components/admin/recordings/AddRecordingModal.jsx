@@ -54,7 +54,7 @@ const AddRecordingModal = ({ open, onClose, groups = [], onSuccess }) => {
       <input ref={inputRef} type="file" accept=".mp4,.mov,.mkv,.avi,video/*" className="hidden" onChange={(e) => setForm((p) => ({ ...p, file: e.target.files?.[0] || null }))} />
     </div>
     {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
-    <button onClick={submit} disabled={saving} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#123C91] py-3 text-white disabled:opacity-60">{saving && <Loader2 className="animate-spin" size={17} />}{saving ? "جارٍ الرفع..." : "رفع التسجيل"}</button>
+    <button onClick={submit} disabled={saving} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#123C91] text-white [&_svg]:text-white py-3 text-white disabled:opacity-60">{saving && <Loader2 className="animate-spin" size={17} />}{saving ? "جارٍ الرفع..." : "رفع التسجيل"}</button>
   </div></div>;
 };
 

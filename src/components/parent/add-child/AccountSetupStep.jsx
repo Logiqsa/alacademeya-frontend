@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
@@ -21,8 +21,8 @@ const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
 
     if (!data.password) {
       next.password = 'كلمة المرور مطلوبة';
-    } else if (data.password.length < 6) {
-      next.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    } else if (data.password.length < 8) {
+      next.password = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
     }
 
     if (!data.passwordConfirm) {
@@ -130,7 +130,7 @@ const AccountSetupStep = ({ onNext, onBack, data, onChange }) => {
       <div className="flex gap-4 mt-6">
         <button
           onClick={handleNext}
-          className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer"
+          className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium cursor-pointer"
         >
           التالي
         </button>

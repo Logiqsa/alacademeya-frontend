@@ -3,7 +3,7 @@ import MonthlySchedule from "../../components/schedule/MonthlySchedule";
 
 const SchedulePage = () => (
   <StudentLayout>
-    <MonthlySchedule title="جدول حصصك" subtitle="متابعة حصصك خلال الشهر الحالي والتنقل بين الشهور." />
+    <MonthlySchedule role="student" title="جدول حصصك" subtitle="متابعة حصصك خلال الشهر الحالي والتنقل بين الشهور." />
   </StudentLayout>
 );
 

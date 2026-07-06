@@ -106,7 +106,7 @@ const LoginForm = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-14 rounded-lg bg-[#123C91] text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
+          className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           {loading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}

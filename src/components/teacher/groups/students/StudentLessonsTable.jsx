@@ -27,13 +27,6 @@ const homeworkBadge = (v) => {
   return <Badge label={v} type="orange" />;
 };
 
-const gradeBadge = (v) => {
-  if (v === "مكتمل") return <Badge label={v} type="green" />;
-  if (v === "قيد الانتظار") return <Badge label={v} type="orange" />;
-  if (v === "لايوجد اختبار") return <Badge label={v} type="gray" />;
-  return <Badge label={v} type="gray" />;
-};
-
 // ─── Mobile Row Field ─────────────────────────────────────────────────────────
 const MobileField = ({ label, children }) => (
   <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-50 last:border-b-0">
@@ -47,7 +40,7 @@ const MobileField = ({ label, children }) => (
  * Props:
  *  lessons: Array<{
  *    id, title, date,
- *    attendance, homeworkStatus, grade, gradeStatus, examGrade
+ *    attendance, homeworkStatus, grade
  *  }>
  */
 const StudentLessonsTable = ({ lessons = [] }) => {
@@ -75,7 +68,7 @@ const StudentLessonsTable = ({ lessons = [] }) => {
                   fontFamily: "IBM Plex Sans Arabic, sans-serif",
                 }}
               >
-                {["اسم الحصة", "التاريخ", "الحضور", "حالة الواجب", "الدرجة", "حالة الاختبار", "درجة الاختبار"].map(
+                {["اسم الحصة", "التاريخ", "الحضور", "حالة الواجب", "الدرجة"].map(
                   (header) => (
                     <th
                       key={header}
@@ -129,18 +122,6 @@ const StudentLessonsTable = ({ lessons = [] }) => {
                     {lesson.grade}
                   </td>
 
-                  <td className="px-4 lg:px-6 py-3 lg:py-4">{gradeBadge(lesson.gradeStatus)}</td>
-
-                  <td
-                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] font-medium whitespace-nowrap"
-                    style={{
-                      fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                      fontSize: "14px",
-                      lineHeight: "24px",
-                    }}
-                  >
-                    {lesson.examGrade}
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -170,8 +151,6 @@ const StudentLessonsTable = ({ lessons = [] }) => {
             <div className="space-y-0.5">
               <MobileField label="حالة الواجب">{homeworkBadge(lesson.homeworkStatus)}</MobileField>
               <MobileField label="الدرجة">{lesson.grade}</MobileField>
-              <MobileField label="حالة الاختبار">{gradeBadge(lesson.gradeStatus)}</MobileField>
-              <MobileField label="درجة الاختبار">{lesson.examGrade}</MobileField>
             </div>
           </div>
         ))}

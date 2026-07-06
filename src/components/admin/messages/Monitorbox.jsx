@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { ArrowRight, Trash2, Eye } from "lucide-react";
 
 const bubbleStyle = (sender) => {
-  if (sender === "teacher") return "rounded-tr-sm bg-[#123C91] text-white ml-auto";
+  if (sender === "teacher") return "rounded-tr-sm bg-[#123C91] text-white [&_svg]:text-white ml-auto";
   return "rounded-tl-sm border border-blue-100 bg-[#EAF4FF] text-slate-700 mr-auto";
 };
 
@@ -42,7 +42,7 @@ export default function MonitorBox({ conversation, onBack }) {
           >
             <ArrowRight size={18} />
           </button>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-sm font-bold text-white sm:h-10 sm:w-10">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white text-sm font-bold text-white sm:h-10 sm:w-10">
             {conversation.avatarInitial}
           </span>
           <div className="min-w-0">

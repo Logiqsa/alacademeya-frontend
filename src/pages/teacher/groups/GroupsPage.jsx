@@ -151,12 +151,12 @@ const GroupsPage = () => {
               مجموعاتك التعليمية
             </h1>
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
-              استعرض جميع مجموعاتك الدراسية، ونظّم الحصص والمهام والاختبارات.
+              استعرض جميع مجموعاتك الدراسية، ونظّم الحصص والمهام.
             </p>
           </div>
           {/* <button
             onClick={() => navigate("/add-new-group")}
-            className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 hover:bg-[#0e2d6b] transition-all shrink-0"
+            className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5 hover:bg-[#0e2d6b] transition-all shrink-0"
           >
             إنشاء مجموعة
           </button> */}

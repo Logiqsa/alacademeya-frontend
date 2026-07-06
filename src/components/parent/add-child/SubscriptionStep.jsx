@@ -27,8 +27,8 @@ const SubscriptionStep = ({ onNext, onBack }) => {
 
             <div className="flex justify-end">
                 <div className="bg-[#FFFFFF] p-1 rounded-full border border-[#E5E5E5] flex items-center w-fit">
-                    <button onClick={() => setBillingCycle('monthly')} className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${billingCycle === 'monthly' ? 'bg-[#123C91] text-white' : 'text-[#575F69]'}`}>شهري</button>
-                    <button onClick={() => setBillingCycle('yearly')} className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${billingCycle === 'yearly' ? 'bg-[#123C91] text-white' : 'text-[#575F69]'}`}>سنوي</button>
+                    <button onClick={() => setBillingCycle('monthly')} className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${billingCycle === 'monthly' ? 'bg-[#123C91] text-white [&_svg]:text-white' : 'text-[#575F69]'}`}>شهري</button>
+                    <button onClick={() => setBillingCycle('yearly')} className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${billingCycle === 'yearly' ? 'bg-[#123C91] text-white [&_svg]:text-white' : 'text-[#575F69]'}`}>سنوي</button>
                 </div>
             </div>
 
@@ -99,7 +99,7 @@ const SubscriptionStep = ({ onNext, onBack }) => {
             </div>
 
             <div className="flex gap-4 mt-10">
-                <button onClick={onNext} className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer">إرسال طلب الاشتراك</button>
+                <button onClick={onNext} className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium cursor-pointer">إرسال طلب الاشتراك</button>
                 <button onClick={onBack} className="flex-1 py-3 border border-[#E5E5E5] rounded-xl font-medium text-[123C91] cursor-pointer">السابق</button>
             </div>
         </div>

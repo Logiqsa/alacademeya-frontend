@@ -223,7 +223,7 @@ export default function ForgotPassword() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-14 rounded-lg bg-[#123C91] text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity mt-2"
+            className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity mt-2"
             style={{ fontFamily: "Tajawal, sans-serif" }}
           >
             {loading ? "جاري الإرسال..." : "إرسال الكود"}
@@ -314,7 +314,7 @@ export default function ForgotPassword() {
                       type="button"
                       onClick={handleOtpNext}
                       disabled={verifyLoading}
-                      className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white transition-opacity disabled:opacity-70"
+                      className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white transition-opacity disabled:opacity-70"
                     >
                       {verifyLoading ? "جاري التحقق..." : "التالي"}
                     </button>
@@ -400,7 +400,7 @@ export default function ForgotPassword() {
                       type="button"
                       onClick={handleResetPassword}
                       disabled={resetLoading}
-                      className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white disabled:opacity-70 transition-opacity"
+                      className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white disabled:opacity-70 transition-opacity"
                     >
                       {resetLoading ? "جاري الحفظ..." : "حفظ كلمة المرور"}
                     </button>

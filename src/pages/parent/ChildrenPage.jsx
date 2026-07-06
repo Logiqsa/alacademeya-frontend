@@ -77,7 +77,7 @@ const ChildrenPage = () => {
           </div>
           <button
             onClick={() => navigate("/parent-dashboard/add-child")}
-            className="flex items-center justify-center bg-[#123C91] text-white text-sm rounded-lg w-40 h-3 py-3 px-6 gap-2"
+            className="flex items-center justify-center bg-[#123C91] text-white [&_svg]:text-white text-sm rounded-lg w-40 h-3 py-3 px-6 gap-2"
             style={{ height: "48px" }}
           >
             <Plus size={20} />

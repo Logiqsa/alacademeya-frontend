@@ -115,7 +115,7 @@ const Navbar = () => {
                 </span>
                 <button
                   onClick={handleDashboardClick}
-                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white text-[16px] font-medium"
+                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white [&_svg]:text-white text-[16px] font-medium"
                 >
                   لوحة التحكم
                 </button>
@@ -124,7 +124,7 @@ const Navbar = () => {
               <>
                 <button
                   onClick={() => navigate("/select-account-type")}
-                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white text-[16px] font-medium transition-none"
+                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white [&_svg]:text-white text-[16px] font-medium transition-none"
                 >
                   إنشاء حساب
                 </button>
@@ -190,7 +190,7 @@ const Navbar = () => {
               </span>
               <button
                 onClick={() => { handleDashboardClick(); setMenuOpen(false); }}
-                className="h-10 w-full rounded-lg bg-[#123C91] text-white text-[16px] font-medium"
+                className="h-10 w-full rounded-lg bg-[#123C91] text-white [&_svg]:text-white text-[16px] font-medium"
               >
                 لوحة التحكم
               </button>
@@ -199,7 +199,7 @@ const Navbar = () => {
             <>
               <button
                 onClick={() => { navigate("/select-account-type"); setMenuOpen(false); }}
-                className="h-10 w-full rounded-lg bg-[#123C91] text-white text-[16px] font-medium transition-none"
+                className="h-10 w-full rounded-lg bg-[#123C91] text-white [&_svg]:text-white text-[16px] font-medium transition-none"
               >
                 إنشاء حساب
               </button>

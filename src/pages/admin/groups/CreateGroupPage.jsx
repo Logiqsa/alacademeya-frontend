@@ -23,7 +23,7 @@ const SERVICE_TYPE_OPTIONS = [
 ];
 
 /* ------------------------------------------------------------------ */
-/* Shared Field Components — styled identically to ExamBasicInfoStep    */
+/* Shared Field Components                                             */
 /* ------------------------------------------------------------------ */
 
 const SelectField = ({
@@ -475,7 +475,7 @@ const CreateGroupPages = () => {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px] disabled:opacity-60"
+            className="flex-1 py-3 px-6 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px] disabled:opacity-60"
           >
             {saving ? "جارٍ الإنشاء..." : "إنشاء المجموعة"}
           </button>

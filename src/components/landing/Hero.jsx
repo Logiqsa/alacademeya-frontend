@@ -23,7 +23,7 @@ export default function Hero() {
             وتضمن تواصلًا آمنًا بين الجميع في نظام ذكي ومحمي بالكامل.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-            <button className="w-full sm:w-50 h-14 bg-[#123C91] text-white rounded-lg font-medium text-lg">ابدأ الآن</button>
+            <button className="w-full sm:w-50 h-14 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-medium text-lg">ابدأ الآن</button>
             <button className="w-full sm:w-50 h-14 border border-[#1F2937]/20 bg-white text-[#123C91] rounded-lg font-medium text-lg">استكشف المنصة</button>
           </div>
         </div>

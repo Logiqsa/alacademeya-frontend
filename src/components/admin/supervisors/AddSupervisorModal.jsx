@@ -449,7 +449,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium text-[15px] disabled:opacity-60 cursor-pointer font-['IBM_Plex_Sans_Arabic']"
+            className="flex-1 py-3 px-6 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[15px] disabled:opacity-60 cursor-pointer font-['IBM_Plex_Sans_Arabic']"
           >
             {saving
               ? "جارٍ الحفظ..."

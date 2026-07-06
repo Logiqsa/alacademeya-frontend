@@ -113,7 +113,8 @@ export const deleteSubject = (id) => API.delete(`/subjects/${id}`);
 // ─── Parent / Students ────────────────────────────────────────────────────────
 export const removeStudent = (studentId) =>
   API.delete(`/parents/students/${studentId}`);
-export const addStudent = (payload) => API.post("/parents/students", payload);
+export const addStudent = (payload) =>
+  API.post("/parents/students", payload, { headers: { lang: "ar" } });
 export const getMyStudents = () => API.get("/parents/students");
 export const getStudentsStatistics = () =>
   API.get("/parents/students/statistics");
@@ -239,6 +240,7 @@ export const createClassroomSession = (formData) =>
   });
 export const startSession = (sessionId) => API.patch(`/sessions/${sessionId}/start`);
 export const endSession = (sessionId) => API.patch(`/sessions/${sessionId}/end`);
+export const getNextSessions = () => API.get("/sessions/next");
 
 export const getAllPackages = (params) => API.get("/packages", { params });
 export const getPackage = (id) => API.get(`/packages/${id}`);

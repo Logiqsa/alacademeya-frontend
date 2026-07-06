@@ -891,10 +891,6 @@ const StudentAccountSettings = () => {
         onUpdated={handleProfileUpdated}
       />
       <StudentAcademicCard student={student} onUpdated={handleProfileUpdated} />
-      <SecurityCard
-        lastPasswordChange={student.lastPasswordChange || "آخر تحديث غير متاح"}
-        onPasswordChanged={handleForceReLogin}
-      />
     </div>
   );
 };

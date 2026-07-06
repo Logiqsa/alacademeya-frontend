@@ -111,7 +111,7 @@ const MultiSelectField = ({
                 onClick={() => toggle(o)}
                 className={`px-3 py-1 rounded-lg text-[13px] font-medium border transition-colors ${
                   active
-                    ? "bg-[#123C91] text-white border-[#123C91]"
+                    ? "bg-[#123C91] text-white [&_svg]:text-white border-[#123C91]"
                     : "bg-white text-[#6B7280] border-[#1F293733] hover:border-[#123C91]"
                 }`}
               >
@@ -416,7 +416,7 @@ const TeacherDetailsPage = () => {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-14 bg-[#123C91] text-white rounded-xl font-semibold text-[15px] hover:bg-[#0f3278] transition-colors disabled:opacity-60 mt-2"
+            className="w-full h-14 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-semibold text-[15px] hover:bg-[#0f3278] transition-colors disabled:opacity-60 mt-2"
             style={{ fontFamily: "Tajawal, sans-serif" }}
           >
             {submitting ? "جاري الإرسال..." : "تقديم الطلب"}

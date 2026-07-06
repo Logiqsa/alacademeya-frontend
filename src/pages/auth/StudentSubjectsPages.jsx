@@ -175,7 +175,7 @@ const StudentSubjectsPages = () => {
                 onClick={() => setStudyLanguage("ar")}
                 className={`h-12 text-[14px] font-medium transition-colors ${
                   studyLanguage === "ar"
-                    ? "bg-[#123C91] text-white"
+                    ? "bg-[#123C91] text-white [&_svg]:text-white"
                     : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
                 }`}
               >
@@ -186,7 +186,7 @@ const StudentSubjectsPages = () => {
                 onClick={() => setStudyLanguage("en")}
                 className={`h-12 text-[14px] font-medium transition-colors border-r border-[#1F293733] ${
                   studyLanguage === "en"
-                    ? "bg-[#123C91] text-white"
+                    ? "bg-[#123C91] text-white [&_svg]:text-white"
                     : "bg-white text-[#6B7280] hover:bg-[#F9FAFA]"
                 }`}
               >
@@ -220,7 +220,7 @@ const StudentSubjectsPages = () => {
                   onClick={() => toggle(subject.id)}
                   className={`px-4 py-2 rounded-full border text-[14px] font-medium transition-colors ${
                     isSelected
-                      ? "bg-[#123C91] text-white border-[#123C91]"
+                      ? "bg-[#123C91] text-white [&_svg]:text-white border-[#123C91]"
                       : "bg-white text-[#1F2937] border-[#1F293733] hover:border-[#123C91]"
                   }`}
                 >
@@ -234,7 +234,7 @@ const StudentSubjectsPages = () => {
         <button
           onClick={handleSubmit}
           disabled={loading || loadingSubjects}
-          className="w-full h-14 rounded-lg bg-[#123C91] text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
+          className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           {loading ? "جاري إنشاء الحساب..." : "إنشاء الحساب"}

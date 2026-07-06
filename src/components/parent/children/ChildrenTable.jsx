@@ -147,7 +147,7 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#123C91] text-white flex items-center justify-center font-bold text-lg shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center font-bold text-lg shrink-0">
                         {getInitial(name)}
                       </div>
                       <div className="min-w-0">
@@ -197,7 +197,7 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-full bg-[#123C91] text-white flex items-center justify-center font-bold text-lg shrink-0">
+                  <div className="w-11 h-11 rounded-full bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center font-bold text-lg shrink-0">
                     {getInitial(name)}
                   </div>
                   <div className="min-w-0">
@@ -262,7 +262,7 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
             </div>
 
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-14 h-14 rounded-full bg-[#123C91] text-white flex items-center justify-center font-bold text-xl shrink-0">
+              <div className="w-14 h-14 rounded-full bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center font-bold text-xl shrink-0">
                 {getInitial(viewTarget.user?.fullName)}
               </div>
               <div className="min-w-0">
@@ -320,7 +320,7 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
 
             <button
               onClick={() => setViewTarget(null)}
-              className="w-full h-12 rounded-lg bg-[#123C91] text-white font-medium text-[14px] mt-6"
+              className="w-full h-12 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[14px] mt-6"
             >
               إغلاق
             </button>

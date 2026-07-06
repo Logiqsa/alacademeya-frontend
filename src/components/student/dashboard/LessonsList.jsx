@@ -64,7 +64,7 @@ const LessonCard = ({ title, location, duration, time, status, actionLabel, onAc
             w-full xs:w-auto transition-colors
             ${
               status === "live"
-                ? "bg-[#123C91] text-white hover:bg-[#0F2F73]"
+                ? "bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0F2F73]"
                 : "border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] cursor-default"
             }
           `}

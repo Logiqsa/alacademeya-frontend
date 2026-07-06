@@ -1,9 +1,8 @@
 import React from "react";
-import { BookOpen, FileCheck2, ClipboardList, Users } from "lucide-react";
+import { BookOpen, ClipboardList, Users } from "lucide-react";
 
 const StatsOverview = ({
   upcomingLessons = 4,
-  activeExams = 1,
   activeAssignments = 2,
   activeGroups = 4,
 }) => {
@@ -14,13 +13,6 @@ const StatsOverview = ({
       icon: BookOpen,
       color: "text-teal-600",
       bg: "bg-teal-50",
-    },
-    {
-      label: "الاختبارات النشطة",
-      value: activeExams,
-      icon: FileCheck2,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
     },
     {
       label: "الواجبات النشطة",
@@ -41,7 +33,7 @@ const StatsOverview = ({
   return (
     <div
       dir="rtl"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+      className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"
     >
       {stats.map((s) => {
         const Icon = s.icon;

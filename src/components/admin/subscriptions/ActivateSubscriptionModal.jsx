@@ -134,7 +134,7 @@ const ActivateSubscriptionPage = () => {
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] disabled:opacity-60 transition-colors"
+              className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] disabled:opacity-60 transition-colors"
             >
               {saving ? "جارٍ التفعيل..." : "تفعيل الاشتراك"}
             </button>

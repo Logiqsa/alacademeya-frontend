@@ -194,7 +194,7 @@ const ConfirmDialog = ({
             onClick={onConfirm}
             disabled={loading}
             className={`flex-1 py-2.5 rounded-xl text-white font-medium text-[13px] transition-colors flex items-center justify-center gap-2 disabled:opacity-70
-              ${danger ? "bg-[#E0394C] hover:bg-[#c62e3f]" : "bg-[#123C91] hover:bg-[#0f3280]"}`}
+              ${danger ? "bg-[#E0394C] hover:bg-[#c62e3f]" : "bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f3280]"}`}
           >
             {loading && <Loader2 size={14} className="animate-spin" />}
             {confirmLabel}
@@ -482,7 +482,7 @@ const AddCodeModal = ({ open, onClose, onCreated }) => {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] disabled:opacity-60 transition-colors shadow-sm shadow-[#123C91]/20 flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] disabled:opacity-60 transition-colors shadow-sm shadow-[#123C91]/20 flex items-center justify-center gap-2"
           >
             {submitting && <Loader2 size={15} className="animate-spin" />}
             إنشاء الكود
@@ -526,7 +526,7 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
           onClick={() => onChange(p)}
           className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-medium transition-colors shrink-0 ${
             p === page
-              ? "bg-[#123C91] text-white shadow-sm shadow-[#123C91]/25"
+              ? "bg-[#123C91] text-white [&_svg]:text-white shadow-sm shadow-[#123C91]/25"
               : "border border-gray-200 text-[#575F69] hover:bg-gray-50"
           }`}
         >
@@ -705,7 +705,7 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
         {onOpenAdd && (
           <button
             onClick={onOpenAdd}
-            className="flex items-center gap-1.5 bg-[#123C91] hover:bg-[#0f3280] text-white text-[13px] font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-[#123C91]/20 shrink-0"
+            className="flex items-center gap-1.5 bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f3280] text-white text-[13px] font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-[#123C91]/20 shrink-0"
           >
             <Plus size={15} />
             <span className="hidden xs:inline">إنشاء كود</span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { addStudent } from '../../../services/APIService';
 
@@ -30,6 +30,7 @@ const SERVER_ERROR_MESSAGES = {
   INVALID_STAGE: 'المرحلة الدراسية المختارة غير صحيحة',
   INVALID_GRADE: 'الصف الدراسي المختار غير صحيح',
   VALIDATION_ERROR: 'يوجد خطأ في البيانات المدخلة، يرجى مراجعة الحقول',
+  PARENT_PROFILE_NOT_FOUND: 'ملف ولي الأمر غير موجود، يرجى تسجيل الخروج والدخول مرة أخرى أو التواصل مع الدعم',
 };
 
 const getServerErrorMessage = (err) => {
@@ -77,22 +78,20 @@ const ReviewStep = ({
     setLoading(true);
     try {
       const payload = {
-        fullName: data.fullName,
-        email: data.email,
+        fullName: data.fullName.trim(),
+        email: data.email.trim().toLowerCase(),
         birthDate: data.birthDate
           ? new Date(data.birthDate).toISOString().split('T')[0]
           : undefined,
-        country: data.country?.id,
         countryCode: data.country?.code,
+        studyLanguage: data.language,
         curriculum: data.curriculum,
         stage: data.stage,
         grade: data.grade,
-        language: data.language,
-        subjects: data.subjects,
-        username: data.username,
+        preferredSubjects: data.subjects,
+        username: data.username.trim(),
         password: data.password,
         passwordConfirm: data.passwordConfirm,
-        role: 'student',
       };
       await addStudent(payload);
       toast.success('تم إنشاء حساب الطالب بنجاح!');
@@ -123,6 +122,7 @@ const ReviewStep = ({
       {/* المعلومات الشخصية */}
       <Section title="المعلومات الشخصية">
         <Row label="الاسم الكامل" value={data.fullName} />
+        <Row label="البريد الإلكتروني" value={data.email} />
         <Row
           label="تاريخ الميلاد"
           value={data.birthDate ? new Date(data.birthDate).toLocaleDateString('ar-EG') : '—'}
@@ -168,7 +168,7 @@ const ReviewStep = ({
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer disabled:opacity-70 transition-opacity text-[14px] sm:text-[16px]"
+          className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium cursor-pointer disabled:opacity-70 transition-opacity text-[14px] sm:text-[16px]"
         >
           {loading ? 'جاري الإرسال...' : 'إرسال الطلب'}
         </button>

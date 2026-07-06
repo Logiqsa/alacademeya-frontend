@@ -217,7 +217,7 @@ const CorrectionModal = ({ student, onClose, onSubmit }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 sm:px-6 pb-6">
           <button
             onClick={handleSubmit}
-            className="order-1 sm:order-1 bg-[#123C91] text-white rounded-xl py-3.5 font-semibold hover:bg-[#0e2f73] transition-colors"
+            className="order-1 sm:order-1 bg-[#123C91] text-white [&_svg]:text-white rounded-xl py-3.5 font-semibold hover:bg-[#0e2f73] transition-colors"
             style={{ fontFamily: "Tajawal, sans-serif", fontSize: "15px" }}
           >
             حفظ و إرسال
@@ -271,7 +271,7 @@ const StudentRow = ({ student, onCorrect, onEdit }) => {
         {showCorrect && (
           <button
             onClick={() => onCorrect(student)}
-            className="bg-[#123C91] text-white text-xs font-semibold px-3.5 sm:px-4 py-1.5 rounded-lg hover:bg-[#0e2f73] transition-colors whitespace-nowrap"
+            className="bg-[#123C91] text-white [&_svg]:text-white text-xs font-semibold px-3.5 sm:px-4 py-1.5 rounded-lg hover:bg-[#0e2f73] transition-colors whitespace-nowrap"
             style={{ fontFamily: "Tajawal, sans-serif" }}
           >
             تصحيح

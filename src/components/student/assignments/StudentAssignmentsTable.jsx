@@ -362,7 +362,7 @@ const SubmitAssignmentModal = ({ assignmentId, onClose, onSubmitted }) => {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="px-4 py-2 text-sm rounded-lg bg-[#123C91] text-white hover:bg-[#0e2f70] disabled:opacity-60 flex items-center gap-2"
+            className="px-4 py-2 text-sm rounded-lg bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0e2f70] disabled:opacity-60 flex items-center gap-2"
           >
             {submitting && <Loader2 className="animate-spin" size={15} />}
             تسليم

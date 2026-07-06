@@ -114,7 +114,7 @@ const LessonCard = ({
               href={meetingLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[12px] px-3 py-1 rounded-lg bg-[#123C91] text-white font-medium whitespace-nowrap hover:bg-[#0f2f73] transition-colors"
+              className="flex items-center gap-1 text-[12px] px-3 py-1 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium whitespace-nowrap hover:bg-[#0f2f73] transition-colors"
             >
               <Video size={14} />
               انضم

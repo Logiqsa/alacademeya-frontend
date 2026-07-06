@@ -52,7 +52,7 @@ const SuccessStep = ({ onStatusClick }) => {
       </div>
 
      
-      <button onClick={onStatusClick} className="bg-[#123C91] text-white py-3 px-12 rounded-xl font-medium mt-6 cursor-pointer">
+      <button onClick={onStatusClick} className="bg-[#123C91] text-white [&_svg]:text-white py-3 px-12 rounded-xl font-medium mt-6 cursor-pointer">
         عرض حالة الطلب
       </button>
     </div>

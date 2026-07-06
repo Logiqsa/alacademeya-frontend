@@ -12,7 +12,7 @@ const LessonCard = ({ groupName, level, time, duration, status, actionLabel, onA
       : { label: 'قادمة', cls: 'bg-[#F3F4F6] text-[#6B7280]' };
 
   const btnCls = isLive
-    ? 'bg-[#123C91] text-white hover:bg-[#0f3278]'
+    ? 'bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f3278]'
     : 'border border-[#E5E5E5] text-[#1F2937] bg-white hover:bg-gray-50';
 
   return (

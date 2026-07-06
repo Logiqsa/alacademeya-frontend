@@ -161,7 +161,7 @@ const CreateLessonPage = () => {
               aria-checked={attachmentsEnabled}
               onClick={() => setAttachmentsEnabled((prev) => !prev)}
               className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                attachmentsEnabled ? "bg-[#123C91]" : "bg-gray-200"
+                attachmentsEnabled ? "bg-[#123C91] text-white [&_svg]:text-white" : "bg-gray-200"
               }`}
             >
               <span
@@ -234,7 +234,7 @@ const CreateLessonPage = () => {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1 disabled:opacity-60"
+            className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1 disabled:opacity-60"
           >
             {submitting ? "جاري الإنشاء..." : "إنشاء حصة"}
             {!submitting && <ArrowRight size={18} />}
