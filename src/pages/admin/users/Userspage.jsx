@@ -10,7 +10,11 @@ import UsersTable from "../../../components/admin/users/Userstable";
 import {
   getUsers,
   deleteUser as deleteUserApi,
+  getAllStudents,
+  getTeachers,
   updateUser,
+  updateStudentProfile,
+  updateTeacherProfile,
 } from "../../../services/APIService";
 
 const PAGE_SIZE = 6;
@@ -168,6 +172,32 @@ const UsersPage = () => {
 
   const handleApprove = async (user) => {
     try {
+      if (user.rawRole === "student" || user.rawRole === "teacher") {
+        const profileResponse = user.rawRole === "student"
+          ? await getAllStudents({ user: user.id })
+          : await getTeachers({ user: user.id });
+        const responseData = profileResponse.data?.data ?? profileResponse.data;
+        const profiles = Array.isArray(responseData)
+          ? responseData
+          : responseData?.students || responseData?.teachers || [responseData];
+        const profile = profiles.find(Boolean);
+        const profileId = profile?.id || profile?._id;
+
+        if (!profileId) {
+          throw new Error(
+            user.rawRole === "teacher"
+              ? "ملف المعلم غير موجود"
+              : "ملف الطالب غير موجود",
+          );
+        }
+
+        if (user.rawRole === "teacher") {
+          await updateTeacherProfile(profileId, { status: "approved" });
+        } else {
+          await updateStudentProfile(profileId, { status: "approved" });
+        }
+      }
+
       await updateUser(user.id, {
         registrationStatus: "active",
         isActive: true,
@@ -194,7 +224,7 @@ const UsersPage = () => {
         toast.error("هذا المستخدم لم يعد موجودًا، جاري تحديث القائمة");
         fetchUsers(); // إعادة تحميل كامل بدل الحذف المحلي فقط
       } else {
-        toast.error(err.response?.data?.message || "تعذر قبول الطلب");
+        toast.error(err.response?.data?.message || err.message || "تعذر قبول الطلب");
       }
     }
   };

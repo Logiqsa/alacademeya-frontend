@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import LessonStats from "../../../components/student/groupLesson/Lessonstats";
 import LiveLessonLink from "../../../components/student/groupLesson/Livelessonlink";
-import LessonAssignments from "../../../components/student/groupLesson/Lessonassignments";
+import LessonAssignments from "../../../components/teacher/groups/lessons/LessonAssignments";
 import LessonQuizzes from "../../../components/student/groupLesson/Lessonquizzes";
-import LessonRecordings from "../../../components/student/groupLesson/Lessonrecordings";
-import LessonFiles from "../../../components/student/groupLesson/Lessonfiles";
+import LessonRecordings from "../../../components/teacher/groups/lessons/LessonRecordings";
+import LessonFiles from "../../../components/teacher/groups/lessons/LessonFiles";
 import {
   getMyClassrooms,
   getClassroomSessions,
   getSessionAttendance,
+  getAssignmentsByClassroom,
+  getSessionRecording,
 } from "../../../services/APIService";
 
 const resolveName = (val) =>
@@ -80,11 +82,11 @@ const StudentLessonDetailsPage = () => {
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [assignments, setAssignments] = useState([]);
+  const [recording, setRecording] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     const loadData = async () => {
       const [classroomsResult, sessionsResult] = await Promise.allSettled([
@@ -132,6 +134,19 @@ const StudentLessonDetailsPage = () => {
       } catch (err) {
         console.error("getSessionAttendance failed:", err);
       }
+
+      const [assignmentsResult, recordingResult] = await Promise.allSettled([
+        getAssignmentsByClassroom(groupId),
+        getSessionRecording(lessonId),
+      ]);
+      if (assignmentsResult.status === "fulfilled") {
+        const list = assignmentsResult.value.data?.data || [];
+        setAssignments(list.filter((assignment) => {
+          const sessionId = assignment.session?.id || assignment.session?._id || assignment.session;
+          return sessionId === lessonId;
+        }));
+      }
+      setRecording(recordingResult.status === "fulfilled" ? recordingResult.value.data?.data || null : null);
 
       if (cancelled) return;
 
@@ -210,14 +225,14 @@ const StudentLessonDetailsPage = () => {
             onJoin={(url) => window.open(url, "_blank")}
           />
 
-          <LessonFiles attachments={lesson.attachments} />
+          <LessonFiles files={lesson.attachments} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <LessonAssignments />
+            <LessonAssignments assignments={assignments} />
             <LessonQuizzes />
           </div>
 
-          <LessonRecordings />
+          <LessonRecordings recording={recording} />
         </div>
       </div>
     </StudentLayout>

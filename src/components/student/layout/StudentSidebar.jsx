@@ -33,6 +33,11 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       path: "/student/exams",
     },
     {
+      title: "الجدول",
+      icon: examsIcon,
+      path: "/student/schedule",
+    },
+    {
       title: "الرسائل",
       icon: messagesIcon,
       path: "/student/messages",

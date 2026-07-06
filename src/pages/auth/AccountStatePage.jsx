@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/auth/AuthLayout";
 import logo from "../../assets/icons/logo.svg";
@@ -7,12 +7,60 @@ import whatsappIcon from "../../assets/icons/whatsapp.svg";
 import reviewTimeIcon from "../../assets/icons/review-time.svg";
 import { AuthContext } from "../../context/AuthContext";
 import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
+import { getAccountState } from "../../services/APIService";
+
+const DASHBOARD_BY_ROLE = {
+  student: "/student-dashboard",
+  teacher: "/teacher-dashboard",
+  parent: "/parent-dashboard",
+  admin: "/admin-dashboard",
+};
+
+const accountData = (response) => response?.data?.data || response?.data || {};
+
+const isActivated = (data) => {
+  const status = String(data.registrationStatus || data.status || "").toLowerCase();
+  return data.isActive === true || ["active", "approved", "accepted"].includes(status);
+};
 
 const AccountStatePage = () => {
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
+  const { user, logout, updateUser } = useContext(AuthContext);
   const { contactSettings } = useContactSettings();
   const whatsappUrl = whatsappLink(contactSettings?.whatsappNumber);
+
+  useEffect(() => {
+    let active = true;
+
+    getAccountState()
+      .then((response) => {
+        if (!active) return;
+
+        const data = accountData(response);
+        if (!isActivated(data)) return;
+
+        const responseUser = data.user && typeof data.user === "object" ? data.user : {};
+        const role = responseUser.role || data.role || user?.role;
+        const dashboard = DASHBOARD_BY_ROLE[role];
+        if (!dashboard) return;
+
+        updateUser?.({
+          ...user,
+          ...responseUser,
+          isActive: true,
+          registrationStatus: "active",
+          role,
+        });
+        navigate(dashboard, { replace: true });
+      })
+      .catch(() => {
+        // Keep showing the account-state page when the status check fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [navigate, updateUser, user]);
 
   return (
     <AuthLayout>

@@ -1,77 +1,18 @@
-import React from "react";
 import { HiOutlineClipboardList, HiOutlineDownload } from "react-icons/hi";
 
-const statusStyles = {
-  نشط: "bg-[#E6F9EE] text-[#00A63E]",
-  منتهي: "bg-[#FDECEA] text-[#D32F2F]",
-};
+const assetUrl = (url) => !url ? "" : /^https?:\/\//i.test(url) ? url : `https://api.alacademeya.com/${url.replace(/^\//, "")}`;
 
-const AssignmentItem = ({ title, deadline, submitted, total, status, onDownload }) => (
-  <div className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-[#E5E5E5] bg-white hover:border-gray-300 transition-all">
-    <div className="flex items-center gap-3 min-w-0">
-      <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
-        <HiOutlineClipboardList size={20} className="text-[#123C91]" />
+const LessonAssignments = ({ assignments = [], onAdd }) => (
+  <div dir="rtl" className="rounded-2xl border border-[#E5E5E5] bg-white p-5">
+    <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-semibold">الواجبات</h3>{!assignments.length && onAdd && <button type="button" onClick={onAdd} className="rounded-lg bg-[#123C91] px-3 py-2 text-sm text-white">إضافة واجب</button>}</div>
+    {!assignments.length ? <p className="py-6 text-center text-sm text-[#9CA3AF]">لا يوجد واجب مرتبط بهذه الحصة</p> : assignments.map((assignment) => (
+      <div key={assignment.id || assignment._id} className="mb-3 rounded-xl border p-4">
+        <div className="flex items-center gap-2"><HiOutlineClipboardList className="text-[#123C91]" /><p className="font-medium">{assignment.title}</p></div>
+        <p className="mt-2 text-xs text-[#575F69]">التسليم: {new Date(assignment.dueDate).toLocaleString("ar-EG")} • الدرجة: {assignment.totalScore}</p>
+        {!!assignment.attachments?.length && <div className="mt-3 flex flex-wrap gap-2">{assignment.attachments.map((file) => <a key={file.id || file._id || file.url} href={assetUrl(file.url)} target="_blank" rel="noreferrer" download={file.originalName} className="flex items-center gap-1 rounded-lg border px-2 py-1 text-xs"><HiOutlineDownload />{file.originalName || "تحميل المرفق"}</a>)}</div>}
       </div>
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p
-            className="text-[14px] font-medium text-[#1F2937] truncate mb-2"
-            style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", lineHeight: "16px" }}
-          >
-            {title}
-          </p>
-          <span 
-            className={`text-[10px] font-medium mb-2 px-2 py-0.5 rounded-full ${statusStyles[status] || "bg-gray-100 text-gray-600"}`}
-            style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
-          >
-            {status}
-          </span>
-        </div>
-        <p 
-          className="text-[12px] text-[#575F69] mt-1" 
-          style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", lineHeight: "16px" }}
-        >
-          الموعد النهائي: {deadline} • مُسلَّم: {submitted}/{total}
-        </p>
-      </div>
-    </div>
-    <button
-      onClick={onDownload}
-      className="p-2 rounded-lg text-[#1F2937] hover:bg-gray-100 transition-all shrink-0"
-    >
-      <HiOutlineDownload size={20} />
-    </button>
+    ))}
   </div>
 );
-
-const LessonAssignments = ({ assignments = [] }) => {
-  const defaultAssignments = [
-    { id: 1, title: "واجب التفاضل والتكامل", deadline: "25/18", submitted: 18, total: 25, status: "نشط" },
-    { id: 2, title: "واجب التفاضل والتكامل", deadline: "25/18", submitted: 18, total: 25, status: "نشط" },
-  ];
-
-  const displayAssignments = assignments.length > 0 ? assignments : defaultAssignments;
-
-  return (
-    <div dir="rtl" className="bg-white rounded-2xl border border-[#E5E5E5] p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3
-          className="text-[20px] font-semibold text-[#1F2937]"
-          style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", lineHeight: "24px" }}
-        >
-          الواجبات
-        </h3>
-        <button className="w-8 h-8 rounded-lg bg-white  flex items-center justify-center text-[#1F2937] hover:bg-gray-100 transition-all text-xl leading-none border border-[#E5E5E5]">
-          +
-        </button>
-      </div>
-      <div className="space-y-3">
-        {displayAssignments.map((a) => (
-          <AssignmentItem key={a.id} {...a} onDownload={() => {}} />
-        ))}
-      </div>
-    </div>
-  );
-};
 
 export default LessonAssignments;

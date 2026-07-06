@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -261,15 +261,15 @@ const TeacherDetailsPage = () => {
 
     setSubmitting(true);
     try {
-      const payload = {
-        language: "ar",
-        curriculum: form.curriculum,
-        experienceYears: form.experienceYears
-          ? Number(form.experienceYears)
-          : undefined,
-        grades: form.grades,
-        subjects: form.subjects,
-      };
+      const payload = new FormData();
+      payload.append("language", "ar");
+      payload.append("curriculum", form.curriculum);
+      if (form.experienceYears) {
+        payload.append("experienceYears", String(Number(form.experienceYears)));
+      }
+      form.grades.forEach((gradeId) => payload.append("grades", gradeId));
+      form.subjects.forEach((subjectId) => payload.append("subjects", subjectId));
+      if (fileObj) payload.append("cv", fileObj);
 
       const res = await completeTeacherProfile(payload);
 

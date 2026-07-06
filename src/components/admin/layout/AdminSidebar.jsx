@@ -34,6 +34,11 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       icon: scheduleIcon,
       path: "/admin/groups",
     },
+    {
+      title: "جدول الحصص",
+      icon: scheduleIcon,
+      path: "/admin/schedule",
+    },
 
     {
       title: "المشرفين",

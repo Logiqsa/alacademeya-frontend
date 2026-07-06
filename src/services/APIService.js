@@ -45,7 +45,11 @@ export const completeStudentProfile = (payload) =>
   API.post("/auth/completeStudentProfile", payload);
 
 export const completeTeacherProfile = (payload) =>
-  API.patch("/auth/completeTeacherProfile", payload);
+  API.patch("/auth/completeTeacherProfile", payload, {
+    headers: payload instanceof FormData
+      ? { "Content-Type": "multipart/form-data" }
+      : undefined,
+  });
 
 export const saveStudentInterests = (payload) =>
   API.post("/auth/student/interests", payload);
@@ -187,26 +191,39 @@ export const getClassroomStudents = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/students/`, { params });
 
 // ─── Classroom Schedule ────────────────────────────────────────────────────────
+export const getMonthlySchedule = ({ year, month } = {}) =>
+  API.get("/schedule", {
+    params: { year, month },
+    headers: { lang: "ar" },
+  });
+
 // ✅ اتأكد من الـ Postman collection: الـ route مش /classrooms/:id/schedule
 // الـ route الصح هو /schedule/:classroomId على طول (مش تحت /classrooms)
 // PUT {{BASE_URL}}/schedule/:classroomId  body: { days: string[], time: "HH:mm" }
 export const getClassroomSchedule = (classroomId) =>
-  API.get(`/schedule/${classroomId}`);
+  API.get(`/schedule/${classroomId}`, { headers: { lang: "ar" } });
 
 export const createOrUpdateClassroomSchedule = (classroomId, payload) =>
-  API.put(`/schedule/${classroomId}`, payload);
+  API.put(`/schedule/${classroomId}`, payload, { headers: { lang: "ar" } });
+export const deleteClassroomSchedule = (classroomId) =>
+  API.delete(`/schedule/${classroomId}`, { headers: { lang: "ar" } });
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Students (Global / Admin)
 // ──────────────────────────────────────────────────────────────────────────────
 export const getAllStudents = (params) => API.get("/students", { params });
 export const getStudent = (studentId) => API.get(`/students/${studentId}`);
+export const updateStudentProfile = (studentId, payload) =>
+  API.patch(`/students/${studentId}`, payload);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Teachers
 // ──────────────────────────────────────────────────────────────────────────────
 export const getAvailableTeachers = (params) =>
   API.get("/teachers/available", { params });
+export const getTeachers = (params) => API.get("/teachers", { params });
+export const updateTeacherProfile = (teacherId, payload) =>
+  API.patch(`/teachers/${teacherId}`, payload);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Sessions — Attendance
@@ -217,6 +234,8 @@ export const createClassroomSession = (formData) =>
   API.post("/sessions/", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+export const startSession = (sessionId) => API.patch(`/sessions/${sessionId}/start`);
+export const endSession = (sessionId) => API.patch(`/sessions/${sessionId}/end`);
 
 export const getAllPackages = (params) => API.get("/packages", { params });
 export const getPackage = (id) => API.get(`/packages/${id}`);
@@ -248,6 +267,14 @@ export const updateAssignment = (assignmentId, payload) =>
 
 export const deleteAssignment = (assignmentId) =>
   API.delete(`/assignments/${assignmentId}`);
+
+// ─── Recordings ──────────────────────────────────────────────────────────────
+export const createRecording = (formData) =>
+  API.post("/recordings", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const getSessionRecording = (sessionId) =>
+  API.get(`/recordings/session/${sessionId}`);
 
 // GET /assignments/:assignmentId/submissions → { success, results, data: [...] }
 // كل عنصر: { assignment, student: {...}, attachments, score, feedback, status, submittedAt, id }

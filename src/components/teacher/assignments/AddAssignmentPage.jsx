@@ -89,12 +89,15 @@ const Toggle = ({ checked, onChange, label }) => (
 const AddAssignmentPage = ({ onSubmit }) => {
   const navigate = useNavigate();
   const fileRef = useRef();
+  const query = new URLSearchParams(window.location.search);
+  const linkedClassroom = query.get("classroom") || "";
+  const linkedSession = query.get("session") || "";
 
   const [form, setForm] = useState({
     title: "",
     description: "",
-    groupId: "",
-    lessonId: "",
+    groupId: linkedClassroom,
+    lessonId: linkedSession,
     deadline: "",
     deadlineTime: "",
     totalGrade: 100,

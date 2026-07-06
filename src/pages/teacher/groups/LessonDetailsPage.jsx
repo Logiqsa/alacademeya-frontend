@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Share2 } from "lucide-react";
+import { Share2, Play, Square, Loader2 } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LessonRecordings from "../../../components/teacher/groups/lessons/LessonRecordings";
 import LessonQuizzes from "../../../components/teacher/groups/lessons/LessonQuizzes";
@@ -12,6 +12,10 @@ import {
   getClassroom,
   getClassroomSessions,
   getSessionAttendance,
+  getAssignmentsByClassroom,
+  getSessionRecording,
+  startSession,
+  endSession,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const resolveName = (val) =>
@@ -70,7 +74,7 @@ const AttendanceBadge = ({ status }) => {
 };
 
 // ─── Header الصفحة + زرار تسجيل الحضور ─────────────────────────────────────────
-const PageHeader = ({ lesson, onOpenAttendance }) => (
+const PageHeader = ({ lesson, onOpenAttendance, onLifecycle, lifecycleLoading, elapsed }) => (
   <div dir="rtl" className="flex items-center justify-between gap-3 flex-wrap">
     <div className="flex items-center gap-3 min-w-0">
       <div className="min-w-0">
@@ -87,6 +91,13 @@ const PageHeader = ({ lesson, onOpenAttendance }) => (
     </div>
 
     <div className="flex items-center gap-2">
+      {lesson.rawStatus !== "completed" && (
+        <button onClick={onLifecycle} disabled={lifecycleLoading} className={`h-10 px-4 rounded-lg text-white text-sm font-medium flex items-center gap-2 ${lesson.rawStatus === "live" ? "bg-red-600" : "bg-green-600"}`}>
+          {lifecycleLoading ? <Loader2 size={16} className="animate-spin" /> : lesson.rawStatus === "live" ? <Square size={15} /> : <Play size={16} />}
+          {lesson.rawStatus === "live" ? "إنهاء الحصة" : "بدء الحصة"}
+        </button>
+      )}
+      {lesson.rawStatus === "live" && <span dir="ltr" className="rounded-lg bg-red-50 px-3 py-2 font-mono text-sm text-red-600">{elapsed}</span>}
       <button
         onClick={onOpenAttendance}
         className="h-10 px-4 rounded-lg bg-[#123C91] text-white text-[14px] font-medium hover:bg-[#0f3280] transition-colors"
@@ -191,6 +202,10 @@ const LessonDetailsPage = () => {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [assignments, setAssignments] = useState([]);
+  const [recording, setRecording] = useState(null);
+  const [lifecycleLoading, setLifecycleLoading] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const loadData = async ({ silent } = {}) => {
     let cancelled = false;
@@ -254,6 +269,19 @@ const LessonDetailsPage = () => {
     const presentCount = records.filter((r) => r.status === "present").length;
     const absentCount = records.filter((r) => r.status === "absent").length;
 
+    const [assignmentsResult, recordingResult] = await Promise.allSettled([
+      getAssignmentsByClassroom(groupId),
+      getSessionRecording(lessonId),
+    ]);
+    if (assignmentsResult.status === "fulfilled") {
+      const allAssignments = assignmentsResult.value.data?.data || [];
+      setAssignments(allAssignments.filter((assignment) => {
+        const sessionId = assignment.session?.id || assignment.session?._id || assignment.session;
+        return sessionId === lessonId;
+      }));
+    } else setAssignments([]);
+    setRecording(recordingResult.status === "fulfilled" ? recordingResult.value.data?.data || null : null);
+
     setAttendanceRecords(records);
     setLesson({
       id: s.id,
@@ -283,6 +311,9 @@ const LessonDetailsPage = () => {
       attendance: presentCount,
       absence: absentCount,
       lessonUrl: s.meetingLink || classroom.meetingLink || "",
+      rawStatus: s.status,
+      startedAt: s.startedAt || s.startAt,
+      attachments: s.attachments || [],
     });
     setLoading(false);
 
@@ -301,6 +332,36 @@ const LessonDetailsPage = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, lessonId]);
+
+  useEffect(() => {
+    if (lesson?.rawStatus !== "live") return undefined;
+    const startedAt = lesson.startedAt ? new Date(lesson.startedAt).getTime() : Date.now();
+    const tick = () => setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [lesson?.rawStatus, lesson?.startedAt]);
+
+  const elapsed = [Math.floor(elapsedSeconds / 3600), Math.floor((elapsedSeconds % 3600) / 60), elapsedSeconds % 60]
+    .map((part) => String(part).padStart(2, "0")).join(":");
+
+  const handleLifecycle = async () => {
+    setLifecycleLoading(true);
+    try {
+      const response = lesson.rawStatus === "live" ? await endSession(lessonId) : await startSession(lessonId);
+      const updated = response.data?.data || {};
+      setLesson((current) => ({
+        ...current,
+        rawStatus: updated.status || (current.rawStatus === "live" ? "completed" : "live"),
+        status: STATUS_LABELS[updated.status || (current.rawStatus === "live" ? "completed" : "live")],
+        startedAt: updated.startedAt || updated.startAt || current.startedAt || new Date().toISOString(),
+      }));
+    } catch (err) {
+      setError(err.response?.data?.message || "تعذر تحديث حالة الحصة");
+    } finally {
+      setLifecycleLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -332,6 +393,9 @@ const LessonDetailsPage = () => {
             onOpenAttendance={() =>
               navigate(`/teacher/groups/${groupId}/lessons/${lessonId}/attendance`)
             }
+            onLifecycle={handleLifecycle}
+            lifecycleLoading={lifecycleLoading}
+            elapsed={elapsed}
           />
 
           <LessonStats
@@ -350,12 +414,12 @@ const LessonDetailsPage = () => {
           {/* ⚠️ المكونات دي (الملفات/الواجبات/الاختبارات/التسجيلات) لسه بتعرض
               بيانات افتراضية جوّاها لأنه مفيش endpoints مخصصة لها في api.js
               الحالي. لما تتضاف، هنوصلها بنفس الطريقة اللي وصلنا بيها الحضور. */}
-          <LessonFiles />
+          <LessonFiles files={lesson.attachments} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <LessonAssignments />
+            <LessonAssignments assignments={assignments} onAdd={() => navigate(`/assignments/new?classroom=${groupId}&session=${lessonId}`)} />
             <LessonQuizzes />
           </div>
-          <LessonRecordings />
+          <LessonRecordings recording={recording} />
         </div>
       </div>
     </TeacherLayout>

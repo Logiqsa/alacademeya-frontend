@@ -1,11 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  Clock,
-  Calendar,
   Paperclip,
   ArrowRight,
-  ChevronDown,
   X,
   FileText,
 } from "lucide-react";
@@ -17,10 +14,7 @@ const CreateLessonPage = () => {
   const { groupId } = useParams();
 
   const [form, setForm] = useState({
-    subject: "",
-    date: "",
-    time: "",
-    duration: "60",
+    title: "",
     description: "",
   });
   const [attachmentsEnabled, setAttachmentsEnabled] = useState(false);
@@ -43,11 +37,7 @@ const CreateLessonPage = () => {
   };
 
   const validate = () => {
-    if (!form.subject) return "من فضلك اختر عنوان الحصة";
-    if (!form.date) return "من فضلك اختر تاريخ الحصة";
-    if (!form.time) return "من فضلك اختر وقت الحصة";
-    if (!form.duration || Number(form.duration) <= 0)
-      return "من فضلك أدخل مدة صحيحة";
+    if (!form.title.trim()) return "من فضلك أدخل عنوان الحصة";
     return null;
   };
 
@@ -62,15 +52,10 @@ const CreateLessonPage = () => {
     setSubmitting(true);
 
     try {
-      // ندمج التاريخ والوقت في تاريخ واحد (scheduledDate) زي ما الـ API محتاجه
-      const scheduledDate = new Date(`${form.date}T${form.time}`).toISOString();
-
       const payload = new FormData();
       payload.append("classroom", groupId);
-      payload.append("title", form.subject);
+      payload.append("title", form.title.trim());
       payload.append("description", form.description || "");
-      payload.append("scheduledDate", scheduledDate);
-      payload.append("duration", form.duration);
 
       if (attachmentsEnabled) {
         files.forEach((file) => payload.append("attachments", file));
@@ -104,31 +89,6 @@ const CreateLessonPage = () => {
     "w-full h-12 border border-[#E5E5E5] rounded-[8px] px-4 py-3 text-sm text-[#1A1A1A] focus:border-[#123C91] focus:ring-1 focus:ring-[#123C91] outline-none transition-all bg-[#F9FAFA] appearance-none placeholder:text-[#8C9198]";
   const labelClass = "block text-sm font-semibold text-gray-700 mb-2";
 
-  const CustomSelect = ({ name, label, options }) => (
-    <div className="relative">
-      <label className={labelClass}>{label}</label>
-      <select
-        name={name}
-        value={form[name]}
-        onChange={handleChange}
-        className={`${inputClass} ${form[name] ? "text-[#1A1A1A]" : "text-[#8C9198]"}`}
-      >
-        <option value="" disabled>
-          اختر المادة الدراسية
-        </option>
-        {options?.map((opt, i) => (
-          <option key={i} value={opt} className="text-gray-700">
-            {opt}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        className="absolute left-4 top-10.5 text-[#8C9198] pointer-events-none"
-        size={16}
-      />
-    </div>
-  );
-
   const formatSize = (bytes) => {
     if (bytes < 1024) return `${bytes} بايت`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} كيلوبايت`;
@@ -153,60 +113,17 @@ const CreateLessonPage = () => {
 
         <div className="space-y-5 sm:space-y-6 pt-5 sm:pt-6">
           {/* عنوان الحصة */}
-          <CustomSelect
-            name="subject"
-            label="عنوان الحصة"
-            options={["رياضيات", "فيزياء"]}
-          />
-
-          {/* التاريخ + الوقت */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>التاريخ</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  name="date"
-                  value={form.date}
-                  onChange={handleChange}
-                  className={`${inputClass} pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
-                />
-                <Calendar
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C9198] pointer-events-none"
-                  size={16}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className={labelClass}>الوقت</label>
-              <div className="relative">
-                <input
-                  type="time"
-                  name="time"
-                  value={form.time}
-                  onChange={handleChange}
-                  className={`${inputClass} pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
-                />
-                <Clock
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C9198] pointer-events-none"
-                  size={16}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* المدة */}
           <div>
-            <label className={labelClass}>المدة (بالدقائق)</label>
+            <label className={labelClass}>عنوان الحصة</label>
             <input
-              type="number"
-              name="duration"
-              value={form.duration}
+              type="text"
+              name="title"
+              value={form.title}
               onChange={handleChange}
-              placeholder="60 دقيقة"
+              placeholder="مثال: مراجعة الفصل الأول"
               className={inputClass}
             />
+            <p className="mt-2 text-xs text-[#8C9198]">تاريخ ووقت الحصة يُحددان تلقائياً من جدول المجموعة لليوم.</p>
           </div>
 
           {/* وصف الحصة */}

@@ -1,28 +1,11 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Upload } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import RecordingsFilters from "../../../components/admin/recordings/RecordingsFilters";
 import RecordingsTable from "../../../components/admin/recordings/RecordingsTable";
 import AddRecordingModal from "../../../components/admin/recordings/AddRecordingModal";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_RECORDINGS = [
-  { id: 1,  title: "شرح المعادلات التفاضلية - الجزء الأول", group: "مجموعة الرياضيات A", lesson: "الثانية", teacher: "عادل منصور", duration: "1:42:30", uploadDate: "2024-12-20" },
-  { id: 2,  title: "شرح المعادلات التفاضلية - الجزء الأول", group: "مجموعة الرياضيات A", lesson: "الثانية", teacher: "عادل منصور", duration: "1:42:30", uploadDate: "2024-12-20" },
-  { id: 3,  title: "شرح المعادلات التفاضلية - الجزء الأول", group: "مجموعة الرياضيات A", lesson: "الثانية", teacher: "عادل منصور", duration: "1:42:30", uploadDate: "2024-12-20" },
-  { id: 4,  title: "شرح المعادلات التفاضلية - الجزء الأول", group: "مجموعة الرياضيات A", lesson: "الثانية", teacher: "عادل منصور", duration: "1:42:30", uploadDate: "2024-12-20" },
-  { id: 5,  title: "شرح المعادلات التفاضلية - الجزء الأول", group: "مجموعة الرياضيات A", lesson: "الثانية", teacher: "عادل منصور", duration: "1:42:30", uploadDate: "2024-12-20" },
-  { id: 6,  title: "شرح المعادلات التفاضلية - الجزء الأول", group: "مجموعة الرياضيات A", lesson: "الثانية", teacher: "عادل منصور", duration: "1:42:30", uploadDate: "2024-12-20" },
-  { id: 7,  title: "شرح المعادلات التفاضلية - الجزء الثاني", group: "مجموعة الرياضيات B", lesson: "الأولى",  teacher: "عادل منصور", duration: "1:20:00", uploadDate: "2024-12-21" },
-  { id: 8,  title: "شرح المعادلات التفاضلية - الجزء الثاني", group: "مجموعة الرياضيات B", lesson: "الأولى",  teacher: "عادل منصور", duration: "1:20:00", uploadDate: "2024-12-21" },
-  { id: 9,  title: "شرح المعادلات التفاضلية - الجزء الثالث", group: "مجموعة الرياضيات C", lesson: "الثالثة", teacher: "عادل منصور", duration: "0:55:10", uploadDate: "2024-12-22" },
-  { id: 10, title: "شرح المعادلات التفاضلية - الجزء الثالث", group: "مجموعة الرياضيات C", lesson: "الثالثة", teacher: "عادل منصور", duration: "0:55:10", uploadDate: "2024-12-22" },
-  { id: 11, title: "شرح المعادلات التفاضلية - الجزء الرابع",  group: "مجموعة الرياضيات A", lesson: "الرابعة", teacher: "عادل منصور", duration: "1:10:45", uploadDate: "2024-12-23" },
-  { id: 12, title: "شرح المعادلات التفاضلية - الجزء الرابع",  group: "مجموعة الرياضيات A", lesson: "الرابعة", teacher: "عادل منصور", duration: "1:10:45", uploadDate: "2024-12-23" },
-];
-
-const GROUP_OPTIONS = ["جميع المجموعات", "مجموعة الرياضيات A", "مجموعة الرياضيات B", "مجموعة الرياضيات C"];
+import { getClassrooms, getClassroomSessions, getSessionRecording } from "../../../services/APIService";
 
 const PAGE_SIZE = 6;
 
@@ -31,8 +14,43 @@ const RecordingsPages = () => {
   const [filterGroup, setFilterGroup] = useState("جميع المجموعات");
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
+  const [recordings, setRecordings] = useState([]);
+  const [groups, setGroups] = useState([]);
 
-  const filtered = MOCK_RECORDINGS.filter(
+  const loadRecordings = useCallback(async () => {
+    try {
+      const groupsRes = await getClassrooms({ limit: 100 });
+      const classroomList = groupsRes.data?.data || [];
+      setGroups(classroomList);
+      const sessionsByClassroom = await Promise.all(classroomList.map(async (classroom) => ({
+        classroom,
+        sessions: (await getClassroomSessions(classroom.id || classroom._id)).data?.data || [],
+      })));
+      const rows = await Promise.all(sessionsByClassroom.flatMap(({ classroom, sessions }) => sessions.map(async (session) => {
+        try {
+          const response = await getSessionRecording(session.id || session._id);
+          const recording = response.data?.data;
+          return recording ? {
+            id: recording.id || recording._id,
+            title: recording.title,
+            group: classroom.name,
+            lesson: session.title,
+            teacher: classroom.teacher?.user?.fullName || classroom.teacher?.name || "—",
+            duration: recording.duration || "—",
+            uploadDate: recording.createdAt ? new Date(recording.createdAt).toLocaleDateString("en-CA") : "—",
+          } : null;
+        } catch { return null; }
+      })));
+      setRecordings(rows.filter(Boolean));
+    } catch { setRecordings([]); }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(loadRecordings, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadRecordings]);
+
+  const filtered = recordings.filter(
     (r) =>
       (r.title.includes(search) || r.teacher.includes(search)) &&
       (filterGroup === "جميع المجموعات" || r.group === filterGroup)
@@ -71,7 +89,7 @@ const RecordingsPages = () => {
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             filterGroup={filterGroup}
             onFilterGroupChange={(v) => { setFilterGroup(v); setPage(1); }}
-            groupOptions={GROUP_OPTIONS}
+            groupOptions={["جميع المجموعات", ...groups.map((g) => g.name)]}
           />
         </div>
 
@@ -92,7 +110,8 @@ const RecordingsPages = () => {
         <AddRecordingModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          groupOptions={GROUP_OPTIONS.filter((g) => g !== "جميع المجموعات")}
+          groups={groups}
+          onSuccess={loadRecordings}
         />
       </div>
     </AdminLayout>

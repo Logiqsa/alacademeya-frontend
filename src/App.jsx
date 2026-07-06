@@ -25,6 +25,7 @@ import { AuthContext } from "./context/AuthContext";
 import RegisterSuccessPage from "./pages/auth/RegisterSuccessPage";
 import TeacherHome from "./pages/teacher/TeacherHome";
 import StudentHome from "./pages/student/StudentHome";
+import StudentSchedulePage from "./pages/student/SchedulePage";
 import StudentDetailsPages from "./pages/auth/StudentDetailsPages";
 import StudentSubjectsPages from "./pages/auth/StudentSubjectsPages";
 import GroupsPage from "./pages/teacher/groups/GroupsPage";
@@ -52,6 +53,7 @@ import CreateExamPage from "./pages/teacher/exam/addExam/CreateExamPage";
 import TeacherGuard from "./guards/TeacherGuard";
 import StudentGuard from "./guards/StudentGuard";
 import AdminHome from "./pages/admin/AdminHome";
+import AdminSchedulePage from "./pages/admin/SchedulePage";
 import AdminAccountSettingsPage from "./pages/admin/AdminAccountSettingsPage";
 import AdminNotificationss from "./pages/admin/notifications/Notifications";
 import UsersPage from "./pages/admin/users/Userspage";
@@ -129,6 +131,7 @@ function App() {
         <Route path="/student/exams/:id/take" element={<StudentGuard><TakeExamPage /></StudentGuard>} />
         <Route path="/student/exams/:id/result" element={<StudentGuard><ExamResultPage /></StudentGuard>} />
         <Route path="/student/assignments" element={<StudentGuard><StudentAssignmentsPage /></StudentGuard>} />
+        <Route path="/student/schedule" element={<StudentGuard><StudentSchedulePage /></StudentGuard>} />
         <Route path="/student/groups/:groupId/lessons" element={<StudentGuard><StudentGroupLessonsPage /></StudentGuard>} />
         <Route path="/student/groups/:groupId/lessons/:lessonId" element={<StudentGuard><StudentLessonDetailsPage /></StudentGuard>} />
         <Route path="/student/groups/:groupId/lessons/:lessonId/files" element={<StudentGuard><LessonFilesPage /></StudentGuard>} />
@@ -165,6 +168,7 @@ function App() {
         <Route path="/admin/notifications" element={user ? <AdminNotificationss /> : <Navigate to="/login" replace />} />
         <Route path="/admin/users" element={user ? <UsersPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/groups" element={user ? <GroupsPages /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/schedule" element={user ? <AdminSchedulePage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/groups/:groupId/attendance" element={user ? <AttendancePage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/groups/new" element={user ? <CreateGroupPages /> : <Navigate to="/login" replace />} />
         <Route path="/admin/supervisors" element={user ? <SupervisorsPage /> : <Navigate to="/login" replace />} />
