@@ -191,22 +191,53 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
     loadCountries();
   }, [open]);
 
-  // Prefill the form when editing
+  // Prefill the form when editing.
+  // Waits for `countries` so we can strip the existing calling code out of the
+  // stored phone number (otherwise it gets prepended a second time on save).
   useEffect(() => {
     if (!open) return;
-    if (isEditMode) {
-      setData({
-        name: supervisor.name || "",
-        email: supervisor.email || "",
-        phone: supervisor.phone || "",
-        password: "",
-        country: supervisor.countryId || "",
-      });
-    } else {
+    if (!isEditMode) {
       setData(EMPTY_FORM);
+      setErrors({});
+      return;
     }
+    if (countries.length === 0) return; // wait for countries to load first
+
+    const rawPhone = (supervisor.phone || "").trim();
+    const matchedCountry = countries.find((c) => c.id === supervisor.countryId);
+    const matchedCode = matchedCountry
+      ? normalizePhoneCode(matchedCountry.phoneCode)
+      : "";
+
+    let localPhone = rawPhone;
+    if (matchedCode && rawPhone.startsWith(matchedCode)) {
+      // Known country + code matches the stored number → strip it cleanly
+      localPhone = rawPhone.slice(matchedCode.length);
+    } else if (rawPhone.startsWith("+")) {
+      // Country code unknown/unmatched — try every known calling code as a
+      // fallback so we don't accidentally double it up later.
+      const fallbackMatch = countries.find((c) => {
+        const code = normalizePhoneCode(c.phoneCode);
+        return code && rawPhone.startsWith(code);
+      });
+      if (fallbackMatch) {
+        localPhone = rawPhone.slice(
+          normalizePhoneCode(fallbackMatch.phoneCode).length,
+        );
+      }
+      // else: leave rawPhone as-is; handleSubmit will detect the leading "+"
+      // and send it unchanged instead of prepending a code on top of it.
+    }
+
+    setData({
+      name: supervisor.name || "",
+      email: supervisor.email || "",
+      phone: localPhone.replace(/[^\d+]/g, ""),
+      password: "",
+      country: supervisor.countryId || "",
+    });
     setErrors({});
-  }, [open, isEditMode, supervisor]);
+  }, [open, isEditMode, supervisor, countries]);
 
   if (!open) return null;
 
@@ -237,6 +268,16 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
     onClose();
   };
 
+  // If data.phone already starts with "+", it means we couldn't confidently
+  // strip a calling code from it (unmatched/unknown country) — send it as-is
+  // rather than risk prepending a code on top of it.
+  const buildFullPhone = () =>
+    data.phone.startsWith("+")
+      ? data.phone
+      : phoneCode
+        ? `${phoneCode}${data.phone}`
+        : data.phone;
+
   const handleSubmit = async () => {
     if (!validate()) return;
     setSaving(true);
@@ -245,7 +286,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
         const payload = {
           fullName: data.name,
           email: data.email,
-          phone: phoneCode ? `${phoneCode}${data.phone}` : data.phone,
+          phone: buildFullPhone(),
           country: data.country,
           countryCode: selectedCountry?.code,
         };
@@ -261,7 +302,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
           fullName: data.name,
           username,
           email: data.email,
-          phone: phoneCode ? `${phoneCode}${data.phone}` : data.phone,
+          phone: buildFullPhone(),
           password: data.password,
           passwordConfirm: data.password,
           country: data.country,
@@ -360,7 +401,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
                 inputMode="numeric"
                 value={data.phone}
                 onChange={(e) =>
-                  handleField("phone", e.target.value.replace(/\D/g, ""))
+                  handleField("phone", e.target.value.replace(/[^\d+]/g, ""))
                 }
                 placeholder="رقم الهاتف"
                 className="flex-1 min-w-0 h-full px-3 bg-transparent font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none placeholder:text-[#8C9198] text-right"
