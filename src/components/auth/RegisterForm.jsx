@@ -151,6 +151,40 @@ const CountryDropdown = ({
   );
 };
 
+// ─── Phone Country-Code Dropdown ───────────────────────────────────────────
+// مستقل تمامًا عن حقل "الدولة" فوق — المستخدم يقدر يختار أي كود دولة يعايزه
+// لرقم الهاتف، بغض النظر عن الدولة اللي اختارها في الحقل التاني.
+// اتبنى بـ <select> أصلي (مش custom dropdown) عشان يفتح ويختار بشكل مضمون
+// 100% على كل المتصفحات من غير مشاكل z-index أو ref.
+const PhoneCodeDropdown = ({ value, onChange, countries = [], loading }) => {
+  return (
+    <div className="relative w-auto min-w-24 shrink-0 border-l border-[#1F293733]">
+      <select
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={loading}
+        className="h-12 pl-6 pr-2 appearance-none bg-[#E5E7EB] text-[#374151] text-[13px] outline-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed w-full"
+      >
+        <option value="" disabled>
+          {loading ? "..." : "الكود"}
+        </option>
+        {countries.map((c) => {
+          const code = normalizePhoneCode(c.phoneCode);
+          return (
+            <option key={c.id} value={c.id}>
+              {code || "+--"}
+            </option>
+          );
+        })}
+      </select>
+      <ChevronDown
+        size={13}
+        className="absolute left-2 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none"
+      />
+    </div>
+  );
+};
+
 const RegisterForm = ({ type }) => {
   const navigate = useNavigate();
   const otpRefs = useRef([]);
@@ -174,6 +208,9 @@ const RegisterForm = ({ type }) => {
     passwordConfirm: "",
     specialization: "",
     country: "",
+    // كود الدولة الخاص برقم الهاتف — منفصل عن حقل "الدولة" فوق، المستخدم
+    // يقدر يختاره بحرية بغض النظر عن الدولة التانية.
+    phoneCountryId: "",
     academicLevel: "",
     // نوع الطالب: مدرسي (school) أو جامعي (university) — بتتحدد من
     // المستخدم صراحةً وبترتبط مباشرة بحقل studentType في الباك إند.
@@ -210,8 +247,10 @@ const RegisterForm = ({ type }) => {
     return () => clearInterval(interval);
   }, [showOtpModal, timer]);
 
-  const selectedCountry = countries.find((c) => c.id === formData.country);
-  const phoneCode = normalizePhoneCode(selectedCountry?.phoneCode);
+  const selectedPhoneCountry = countries.find(
+    (c) => c.id === formData.phoneCountryId,
+  );
+  const phoneCode = normalizePhoneCode(selectedPhoneCountry?.phoneCode);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -240,6 +279,10 @@ const RegisterForm = ({ type }) => {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       toast.error("يرجى إدخال بريد إلكتروني صحيح");
+      return false;
+    }
+    if (!formData.phoneCountryId) {
+      toast.error("يرجى اختيار كود الدولة لرقم الهاتف");
       return false;
     }
     if (
@@ -556,9 +599,18 @@ const RegisterForm = ({ type }) => {
               dir="ltr"
               className="flex w-full h-12 rounded-lg overflow-hidden border border-[#1F293733] bg-[#F9FAFA] focus-within:border-[#123C91] transition-colors"
             >
-              <div className="w-auto min-w-15 px-2 shrink-0 flex items-center justify-center bg-[#E5E7EB] text-[#6B7280] text-[13px] border-r border-[#1F293733]">
-                {phoneCode || "+--"}
-              </div>
+              {/* دروب داون مستقل لكود الدولة — المستخدم يختار أي كود يعايزه */}
+              <PhoneCodeDropdown
+                value={formData.phoneCountryId}
+                countries={countries}
+                loading={loadingCountries}
+                onChange={(selectedId) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    phoneCountryId: selectedId,
+                  }))
+                }
+              />
               <input
                 name="phone"
                 type="tel"
