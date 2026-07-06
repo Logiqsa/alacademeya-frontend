@@ -1,6 +1,16 @@
 import React, { useRef, useState, useEffect } from "react";
-import { MoreVertical, Upload, Eye } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
+import {
+  MoreVertical,
+  Upload,
+  Eye,
+  X,
+  Loader2,
+  FileText,
+  Paperclip,
+} from "lucide-react";
+// عدّل هذا المسار حسب مكان ملف الـ api عندك
+import { getAssignment, getMySubmission, submitAssignment } from "../../../services/APIService";
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type, subLabel }) => {
@@ -40,60 +50,103 @@ const statusBadge = (status, timeRemaining) => {
   return <Badge label={status} type="gray" />;
 };
 
-// ─── Row Actions Menu (the "..." button in the screenshot) ───────────────────
+// ─── Row Actions Menu (fixed positioning + portal so it never gets clipped by the table's scroll container) ───
 const RowActionsMenu = ({ assignment, onView, onSubmit }) => {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
 
   const canSubmit = assignment.status !== "تم التسليم";
+  const MENU_WIDTH = 176; // matches w-44
+
+  const updatePosition = () => {
+    if (!btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    let left = rect.left;
+    if (left + MENU_WIDTH > window.innerWidth - 8) {
+      left = window.innerWidth - MENU_WIDTH - 8;
+    }
+    if (left < 8) left = 8;
+    setCoords({ top: rect.bottom + 4, left });
+  };
+
+  const toggleOpen = () => {
+    if (!open) updatePosition();
+    setOpen((v) => !v);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleClickOutside = (e) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    const handleReposition = () => updatePosition();
+
+    document.addEventListener("mousedown", handleClickOutside);
+    // capture: true حتى يلتقط الـ scroll اللي بيحصل جوه الجدول (overflow-x-auto) مش بس الصفحة
+    window.addEventListener("scroll", handleReposition, true);
+    window.addEventListener("resize", handleReposition);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleReposition, true);
+      window.removeEventListener("resize", handleReposition);
+    };
+  }, [open]);
 
   return (
-    <div className="relative inline-block" ref={ref}>
+    <div className="inline-block">
       <button
-        onClick={() => setOpen((v) => !v)}
+        ref={btnRef}
+        onClick={toggleOpen}
         className="p-2 flex items-center justify-center rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-all duration-200"
         aria-label="إجراءات الواجب"
       >
         <MoreVertical size={18} />
       </button>
 
-      {open && (
-        <div
-          dir="rtl"
-          className="absolute left-0 z-20 mt-1 w-44 bg-white rounded-xl border border-gray-100 shadow-lg overflow-hidden py-1"
-        >
-          <button
-            onClick={() => {
-              setOpen(false);
-              onView?.(assignment.id);
-            }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#575F69] hover:bg-gray-50 transition-colors"
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            dir="rtl"
+            style={{ position: "fixed", top: coords.top, left: coords.left, zIndex: 9999 }}
+            className="w-44 bg-white rounded-xl border border-gray-100 shadow-lg overflow-hidden py-1"
           >
-            <Eye size={16} />
-            عرض التفاصيل
-          </button>
-          {canSubmit && (
             <button
               onClick={() => {
                 setOpen(false);
-                onSubmit?.(assignment.id);
+                onView?.(assignment.id);
               }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#123C91] hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#575F69] hover:bg-gray-50 transition-colors"
             >
-              <Upload size={16} />
-              تسليم الحل
+              <Eye size={16} />
+              عرض التفاصيل
             </button>
-          )}
-        </div>
-      )}
+            {canSubmit && (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  onSubmit?.(assignment.id);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#123C91] hover:bg-gray-50 transition-colors"
+              >
+                <Upload size={16} />
+                تسليم الحل
+              </button>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
@@ -106,22 +159,249 @@ const MobileField = ({ label, children }) => (
   </div>
 );
 
-const StudentAssignmentsTable = ({ assignments = [], onView, onSubmit }) => {
-  const navigate = useNavigate();
+// ─── Assignment Details Modal ("عرض التفاصيل") ─────────────────────────────
+const AssignmentDetailsModal = ({ assignmentId, onClose }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [assignment, setAssignment] = useState(null);
+  const [submission, setSubmission] = useState(null);
 
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
+
+    Promise.all([
+      getAssignment(assignmentId),
+      getMySubmission(assignmentId).catch(() => null), // ممكن يرجع 404 لو لسه مقدمش
+    ])
+      .then(([assignmentRes, submissionRes]) => {
+        if (!active) return;
+        setAssignment(assignmentRes?.data?.data ?? null);
+        setSubmission(submissionRes?.data?.data ?? null);
+      })
+      .catch(() => {
+        if (active) setError("تعذر تحميل تفاصيل الواجب، حاول مرة أخرى");
+      })
+      .finally(() => active && setLoading(false));
+
+    return () => {
+      active = false;
+    };
+  }, [assignmentId]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
+      dir="rtl"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
+          <h3 className="font-semibold text-[#1A1A1A] text-base">تفاصيل الواجب</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-[#575F69]">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="px-5 py-4">
+          {loading && (
+            <div className="flex items-center justify-center py-10 text-[#575F69]">
+              <Loader2 className="animate-spin" size={22} />
+            </div>
+          )}
+
+          {!loading && error && <p className="text-sm text-[#FB2C36] text-center py-6">{error}</p>}
+
+          {!loading && !error && assignment && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-[#1A1A1A] text-[15px] mb-1">{assignment.title}</h4>
+                {assignment.description && (
+                  <p className="text-sm text-[#575F69] leading-6 whitespace-pre-wrap">
+                    {assignment.description}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-[#8C9198] block mb-0.5">موعد التسليم</span>
+                  <span className="text-[#575F69] font-medium">{assignment.dueDate ?? "--"}</span>
+                </div>
+                <div>
+                  <span className="text-[#8C9198] block mb-0.5">الدرجة</span>
+                  <span className="text-[#575F69] font-medium">{submission?.score ?? "--"}</span>
+                </div>
+              </div>
+
+              {assignment.attachments?.length > 0 && (
+                <div>
+                  <span className="text-[#8C9198] text-sm block mb-1.5">مرفقات الواجب</span>
+                  <div className="space-y-1.5">
+                    {assignment.attachments.map((att, i) => (
+                      <a
+                        key={i}
+                        href={att.url ?? att}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 text-sm text-[#123C91] hover:underline"
+                      >
+                        <FileText size={15} />
+                        {att.name ?? `مرفق ${i + 1}`}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t border-gray-100 pt-3">
+                <span className="text-[#8C9198] text-sm block mb-1.5">حالة التسليم</span>
+                {submission ? (
+                  <div className="space-y-2">
+                    <Badge label="تم التسليم" type="green" />
+                    {submission.feedback && (
+                      <p className="text-sm text-[#575F69]">ملاحظات المعلم: {submission.feedback}</p>
+                    )}
+                  </div>
+                ) : (
+                  <Badge label="لم يتم التسليم" type="red" />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Submit Assignment Modal ("تسليم الحل") — متصل فعليًا بالـ API ─────────
+const SubmitAssignmentModal = ({ assignmentId, onClose, onSubmitted }) => {
+  const [files, setFiles] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleFileChange = (e) => {
+    setFiles(Array.from(e.target.files || []));
+    setError("");
+  };
+
+  const handleSubmit = async () => {
+    if (files.length === 0) {
+      setError("من فضلك أرفق ملف الحل قبل التسليم");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      files.forEach((file) => formData.append("attachments", file));
+      await submitAssignment(assignmentId, formData);
+      onSubmitted?.(assignmentId);
+      onClose();
+    } catch (err) {
+      setError(err?.response?.data?.message || "حدث خطأ أثناء تسليم الواجب، حاول مرة أخرى");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
+      dir="rtl"
+      onClick={() => !submitting && onClose()}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h3 className="font-semibold text-[#1A1A1A] text-base">تسليم الحل</h3>
+          <button
+            onClick={() => !submitting && onClose()}
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-[#575F69]"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-3">
+          <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-8 cursor-pointer hover:border-[#123C91] transition-colors">
+            <Upload size={22} className="text-[#8C9198]" />
+            <span className="text-sm text-[#575F69]">اضغط لاختيار ملف الحل</span>
+            <input type="file" multiple className="hidden" onChange={handleFileChange} />
+          </label>
+
+          {files.length > 0 && (
+            <ul className="space-y-1.5">
+              {files.map((f, i) => (
+                <li key={i} className="flex items-center gap-2 text-sm text-[#575F69]">
+                  <Paperclip size={14} />
+                  {f.name}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {error && <p className="text-sm text-[#FB2C36]">{error}</p>}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            disabled={submitting}
+            className="px-4 py-2 text-sm rounded-lg text-[#575F69] hover:bg-gray-50 disabled:opacity-50"
+          >
+            إلغاء
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="px-4 py-2 text-sm rounded-lg bg-[#123C91] text-white hover:bg-[#0e2f70] disabled:opacity-60 flex items-center gap-2"
+          >
+            {submitting && <Loader2 className="animate-spin" size={15} />}
+            تسليم
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Table ────────────────────────────────────────────────────────────
+const StudentAssignmentsTable = ({ assignments = [], onView, onSubmitted }) => {
+  const [localAssignments, setLocalAssignments] = useState(assignments);
+  const [detailsId, setDetailsId] = useState(null);
+  const [submitId, setSubmitId] = useState(null);
+
+  useEffect(() => {
+    setLocalAssignments(assignments);
+  }, [assignments]);
+
+  // لو مررت onView من برة (مثلاً عشان تعمل navigate لصفحة تفاصيل)، هيتستخدم بدل المودال الداخلي
   const handleView = (assignmentId) => {
     if (onView) {
       onView(assignmentId);
     } else {
-      navigate(`/student/assignments/${assignmentId}`);
+      setDetailsId(assignmentId);
     }
   };
 
-  const handleSubmit = (assignmentId) => {
-    onSubmit?.(assignmentId);
+  const handleOpenSubmit = (assignmentId) => setSubmitId(assignmentId);
+
+  const handleSubmitted = (assignmentId) => {
+    setLocalAssignments((prev) =>
+      prev.map((a) => (a.id === assignmentId ? { ...a, status: "تم التسليم" } : a))
+    );
+    onSubmitted?.(assignmentId); // فرصة للأب يعمل refetch للداتا الحقيقية (الدرجة إلخ)
   };
 
-  if (assignments.length === 0) {
+  if (localAssignments.length === 0) {
     return (
       <div
         dir="rtl"
@@ -134,7 +414,6 @@ const StudentAssignmentsTable = ({ assignments = [], onView, onSubmit }) => {
 
   return (
     <div dir="rtl" className="w-full">
-
       <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-230 text-right">
@@ -165,7 +444,7 @@ const StudentAssignmentsTable = ({ assignments = [], onView, onSubmit }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {assignments.map((a) => (
+              {localAssignments.map((a) => (
                 <tr key={a.id} className="hover:bg-gray-50/80 transition-colors">
                   <td
                     className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69]"
@@ -199,7 +478,7 @@ const StudentAssignmentsTable = ({ assignments = [], onView, onSubmit }) => {
                   </td>
 
                   <td className="px-4 lg:px-6 py-3 lg:py-4">
-                    <RowActionsMenu assignment={a} onView={handleView} onSubmit={handleSubmit} />
+                    <RowActionsMenu assignment={a} onView={handleView} onSubmit={handleOpenSubmit} />
                   </td>
                 </tr>
               ))}
@@ -208,15 +487,14 @@ const StudentAssignmentsTable = ({ assignments = [], onView, onSubmit }) => {
         </div>
       </div>
 
-
       <div className="md:hidden space-y-3">
-        {assignments.map((a) => (
+        {localAssignments.map((a) => (
           <div key={a.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-[#1A1A1A] font-semibold text-[16px]" style={{ fontFamily: "Tajawal, sans-serif" }}>
                 {a.title}
               </h4>
-              <RowActionsMenu assignment={a} onView={handleView} onSubmit={handleSubmit} />
+              <RowActionsMenu assignment={a} onView={handleView} onSubmit={handleOpenSubmit} />
             </div>
 
             <div className="flex items-center gap-2 mb-3">{statusBadge(a.status, a.timeRemaining)}</div>
@@ -230,6 +508,18 @@ const StudentAssignmentsTable = ({ assignments = [], onView, onSubmit }) => {
           </div>
         ))}
       </div>
+
+      {detailsId && (
+        <AssignmentDetailsModal assignmentId={detailsId} onClose={() => setDetailsId(null)} />
+      )}
+
+      {submitId && (
+        <SubmitAssignmentModal
+          assignmentId={submitId}
+          onClose={() => setSubmitId(null)}
+          onSubmitted={handleSubmitted}
+        />
+      )}
     </div>
   );
 };

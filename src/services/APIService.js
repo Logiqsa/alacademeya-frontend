@@ -288,3 +288,21 @@ export const getAssignmentSubmissions = (assignmentId) =>
 // افتراض مؤقت: PATCH /submissions/:submissionId  body: { score, feedback }
 export const gradeSubmission = (submissionId, payload) =>
   API.patch(`/submissions/${submissionId}`, payload);
+
+
+
+
+  // ================= Student Assignments =================
+
+export const getMyAssignments = () =>
+  API.get("/assignments/my");
+
+export const getMySubmission = (assignmentId) =>
+  API.get(`/assignments/${assignmentId}/my-submission`);
+
+export const submitAssignment = (assignmentId, formData) =>
+  API.post(`/assignments/${assignmentId}/submit`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
