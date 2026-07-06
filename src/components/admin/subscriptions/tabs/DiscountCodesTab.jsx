@@ -206,26 +206,42 @@ const ConfirmDialog = ({
 };
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
-// The menu is rendered through a portal into document.body and positioned with
-// `position: fixed`, computed from the trigger button's bounding rect. This is
-// what stops it from being clipped or dragged around when the table (or the
-// mobile card list) scrolls horizontally/vertically — an absolutely-positioned
-// menu nested inside an `overflow-x-auto` container gets cut off at the
-// container's edge and visually "jumps" as you scroll; a portal sidesteps that
-// entirely since it lives outside the scrolling ancestor.
+// Rendered through a portal into document.body and positioned with
+// `position: fixed`, computed from the trigger button's bounding rect — this
+// is what stops it from being clipped by `overflow-x-auto` on the table, or by
+// the mobile card list's scroll container.
+//
+// Responsive handling added:
+//  - horizontal position is clamped so the menu never overflows past either
+//    edge of the viewport (important on narrow phone screens where a button
+//    near the left edge would otherwise push the menu off-screen)
+//  - if there isn't enough room below the button (e.g. the last row/card on a
+//    short mobile screen), the menu opens upward instead of getting clipped
+//    by the bottom of the viewport
+const MENU_WIDTH = 160; // matches w-40
+const MENU_HEIGHT_ESTIMATE = 96; // ~2 items
+
 const RowActions = ({ discount, busy, onToggleActive, onDeleteRequest }) => {
   const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, right: 0 });
+  const [coords, setCoords] = useState({ top: 0, left: 0, openUpward: false });
   const btnRef = useRef(null);
   const menuRef = useRef(null);
 
   const computeCoords = useCallback(() => {
     const rect = btnRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setCoords({
-      top: rect.bottom + 6,
-      right: Math.max(8, window.innerWidth - rect.right),
-    });
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < MENU_HEIGHT_ESTIMATE + 12;
+
+    // Anchor to the button's right edge (menu reads RTL), then clamp so it
+    // never runs off either side of the viewport.
+    let left = rect.right - MENU_WIDTH;
+    left = Math.max(8, Math.min(left, window.innerWidth - MENU_WIDTH - 8));
+
+    const top = openUpward ? rect.top - 6 : rect.bottom + 6;
+
+    setCoords({ top, left, openUpward });
   }, []);
 
   useLayoutEffect(() => {
@@ -263,7 +279,7 @@ const RowActions = ({ discount, busy, onToggleActive, onDeleteRequest }) => {
         ref={btnRef}
         onClick={() => setOpen((p) => !p)}
         disabled={busy}
-        className="p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors disabled:opacity-40"
+        className="p-2.5 sm:p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors disabled:opacity-40"
       >
         {busy ? (
           <Loader2 size={17} className="animate-spin" />
@@ -276,15 +292,23 @@ const RowActions = ({ discount, busy, onToggleActive, onDeleteRequest }) => {
           <ul
             ref={menuRef}
             dir="rtl"
-            style={{ position: "fixed", top: coords.top, right: coords.right }}
-            className="z-[70] w-40 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
+            style={{
+              position: "fixed",
+              top: coords.openUpward ? undefined : coords.top,
+              bottom: coords.openUpward
+                ? window.innerHeight - coords.top
+                : undefined,
+              left: coords.left,
+              width: MENU_WIDTH,
+            }}
+            className="z-[70] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
           >
             <li
               onClick={() => {
                 setOpen(false);
                 onToggleActive(discount);
               }}
-              className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E8821C] flex items-center gap-2 justify-end"
+              className="px-4 py-3 sm:py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 active:bg-gray-100 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E8821C] flex items-center gap-2 justify-end"
             >
               {discount.isActive ? "إيقاف" : "تفعيل"}
               {discount.isActive ? (
@@ -298,7 +322,7 @@ const RowActions = ({ discount, busy, onToggleActive, onDeleteRequest }) => {
                 setOpen(false);
                 onDeleteRequest(discount);
               }}
-              className="px-4 py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E0394C] flex items-center gap-2 justify-end"
+              className="px-4 py-3 sm:py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 active:bg-gray-100 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E0394C] flex items-center gap-2 justify-end"
             >
               حذف
               <Trash2 size={14} />
@@ -368,16 +392,20 @@ const AddCodeModal = ({ open, onClose, onCreated }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1220]/50 backdrop-blur-[2px] px-4 py-6"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B1220]/50 backdrop-blur-[2px] px-0 sm:px-4 py-0 sm:py-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         dir="rtl"
-        className="bg-white w-full max-w-md rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto"
       >
-        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-gray-100">
+        <div className="flex justify-center pt-3 sm:hidden">
+          <div className="w-10 h-1 rounded-full bg-[#E5E5E5]" />
+        </div>
+
+        <div className="flex items-center justify-between px-5 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-gray-100">
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-gray-100 hover:text-[#374151] transition-colors shrink-0"
@@ -385,10 +413,10 @@ const AddCodeModal = ({ open, onClose, onCreated }) => {
             <X size={16} />
           </button>
           <div className="flex items-center gap-2.5">
-            <h3 className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937]">
+            <h3 className="font-['Tajawal'] font-semibold text-[15px] sm:text-[16px] text-[#1F2937]">
               إنشاء كود خصم جديد
             </h3>
-            <span className="w-8 h-8 rounded-lg bg-[#123C91]/10 text-[#123C91] flex items-center justify-center">
+            <span className="w-8 h-8 rounded-lg bg-[#123C91]/10 text-[#123C91] flex items-center justify-center shrink-0">
               <TicketPercent size={16} />
             </span>
           </div>
@@ -450,7 +478,7 @@ const AddCodeModal = ({ open, onClose, onCreated }) => {
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row-reverse gap-3 px-5 sm:px-6 pb-5 sm:pb-6">
+        <div className="flex flex-col-reverse sm:flex-row-reverse gap-3 px-5 sm:px-6 pb-5 sm:pb-6">
           <button
             onClick={handleSubmit}
             disabled={submitting}
@@ -477,7 +505,7 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
     dir="rtl"
     className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1"
   >
-    <span className="text-[13px] text-[#8C9198] text-center sm:text-right">
+    <span className="text-[12px] sm:text-[13px] text-[#8C9198] text-center sm:text-right">
       عرض{" "}
       <span className="font-medium text-[#575F69]">
         {Math.min(PAGE_SIZE, total - (page - 1) * PAGE_SIZE)}
@@ -528,9 +556,9 @@ const CodeCard = ({ code, busy, onToggleActive, onDeleteRequest }) => (
     </div>
 
     <div className="flex items-center justify-between gap-3 mb-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 min-w-0">
         <TypeIcon type={code.type} />
-        <div>
+        <div className="min-w-0">
           <p className="text-[13px] font-semibold text-[#1F2937] leading-tight">
             {discountLabel(code)}
           </p>
@@ -539,7 +567,7 @@ const CodeCard = ({ code, busy, onToggleActive, onDeleteRequest }) => (
           </p>
         </div>
       </div>
-      <div className="text-left">
+      <div className="text-left shrink-0">
         <p className="text-[11px] text-[#9CA3AF] mb-1">الاستخدامات</p>
         <UsageCount usedCount={code.usedCount} />
       </div>
@@ -666,7 +694,7 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
     <div className="w-full max-w-full" dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-4">
-        <div>
+        <div className="min-w-0">
           <h2 className="font-['Tajawal'] font-semibold text-[16px] sm:text-[18px] text-[#1F2937]">
             أكواد الخصم
           </h2>
