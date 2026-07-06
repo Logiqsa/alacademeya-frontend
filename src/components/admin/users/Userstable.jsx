@@ -95,9 +95,8 @@ const Badge = ({ label, type }) => {
 
   return (
     <span
-      className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
-        map[type] ?? map.gray
-      }`}
+      className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${map[type] ?? map.gray
+        }`}
     >
       {label}
     </span>
@@ -170,9 +169,8 @@ const UserDetailsModal = ({
       }}
     >
       <div
-        className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-xl ${
-          isTeacher ? "max-w-4xl sm:p-7" : "max-w-sm"
-        }`}
+        className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-xl ${isTeacher ? "max-w-4xl sm:p-7" : "max-w-sm"
+          }`}
         dir="rtl"
       >
         <div className="flex items-center justify-between mb-4">
@@ -214,11 +212,10 @@ const UserDetailsModal = ({
           onClick={(event) => {
             if (!userWhatsappUrl) event.preventDefault();
           }}
-          className={`mb-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-            userWhatsappUrl
+          className={`mb-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${userWhatsappUrl
               ? "bg-[#25D366] text-white hover:bg-[#20bd5a]"
               : "cursor-not-allowed bg-gray-100 text-gray-400"
-          }`}
+            }`}
         >
           <MessageCircle size={18} />
           تواصل عبر واتساب
@@ -298,7 +295,7 @@ const UserDetailsModal = ({
               onClick={(event) => {
                 if (!user.cvUrl) event.preventDefault();
               }}
-             className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-colors sm:w-auto [&_svg]:text-white ${
+             className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold !text-white transition-colors sm:w-auto [&_svg]:!text-white ${
   user.cvUrl
     ? "bg-[#123C91] hover:bg-[#0f327a]"
     : "cursor-not-allowed bg-gray-100"
@@ -467,9 +464,9 @@ const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete }) => {
     const top = shouldOpenAbove
       ? Math.max(screenPadding, rect.top - menuHeight - gap)
       : Math.min(
-          rect.bottom + gap,
-          window.innerHeight - menuHeight - screenPadding,
-        );
+        rect.bottom + gap,
+        window.innerHeight - menuHeight - screenPadding,
+      );
 
     const left = Math.min(
       Math.max(screenPadding, rect.right - menuWidth),
@@ -540,9 +537,8 @@ const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete }) => {
                       item.onClick();
                       setOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-sm text-right hover:bg-gray-50 ${
-                      item.tone ?? "text-[#575F69]"
-                    }`}
+                    className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-sm text-right hover:bg-gray-50 ${item.tone ?? "text-[#575F69]"
+                      }`}
                   >
                     <Icon size={15} />
                     <span>{item.label}</span>
@@ -662,18 +658,18 @@ const UsersTable = ({ users = [], onApprove, onToggleStatus, onDelete }) => {
       setDetailsUser((currentUser) =>
         currentUser?.id === user.id
           ? {
-              ...currentUser,
-              ...fullTeacherData,
-              id: currentUser.id,
-              name:
-                fullTeacherData.fullName ||
-                fullTeacherData.name ||
-                currentUser.name,
-              role: currentUser.role,
-              status: currentUser.status,
-              teacherStatus: fullTeacherData.status,
-              teacherId,
-            }
+            ...currentUser,
+            ...fullTeacherData,
+            id: currentUser.id,
+            name:
+              fullTeacherData.fullName ||
+              fullTeacherData.name ||
+              currentUser.name,
+            role: currentUser.role,
+            status: currentUser.status,
+            teacherStatus: fullTeacherData.status,
+            teacherId,
+          }
           : currentUser,
       );
 
