@@ -230,6 +230,9 @@ export const updateTeacherProfile = (teacherId, payload) =>
 // ──────────────────────────────────────────────────────────────────────────────
 export const getSessionAttendance = (sessionId) =>
   API.get(`/sessions/${sessionId}/attendance`);
+export const saveSessionAttendance = (sessionId, payload) =>
+  API.patch(`/sessions/${sessionId}/attendance`, payload);
+
 export const createClassroomSession = (formData) =>
   API.post("/sessions/", formData, {
     headers: { "Content-Type": "multipart/form-data" },

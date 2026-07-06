@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getClassroomStudents,
-} from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك لو مختلف
+  getSessionAttendance,
+  saveSessionAttendance,
+} from "../../../services/APIService"; 
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 
 // ─── Radio صغير مخصص (حاضر / غائب) ─────────────────────────────────────────────
@@ -39,40 +41,64 @@ const AttendanceRegistrationPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError("");
+useEffect(() => {
+  let cancelled = false;
 
-    const load = async () => {
-      try {
-        const res = await getClassroomStudents(groupId);
-        const list = res.data?.data || res.data || [];
-        if (cancelled) return;
+  const load = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const normalized = list.map((s) => ({
-          id: s.id || s._id || s.student?.id || s.student?._id,
-          fullName:
-            s.fullName ||
-            s.user?.fullName ||
-            s.student?.user?.fullName ||
-            "طالب بدون اسم",
-        }));
+      // تحميل الطلاب والحضور مع بعض
+      const [studentsRes, attendanceRes] = await Promise.all([
+        getClassroomStudents(groupId),
+        getSessionAttendance(lessonId),
+      ]);
 
-        setStudents(normalized);
-      } catch (err) {
-        console.error("فشل تحميل طلاب المجموعة:", err);
-        setError("تعذر تحميل قائمة الطلاب");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
+      if (cancelled) return;
 
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [groupId]);
+      const studentsList =
+        studentsRes.data?.data || studentsRes.data || [];
+
+      const normalized = studentsList.map((s) => ({
+        id: s.id || s._id || s.student?.id || s.student?._id,
+        fullName:
+          s.fullName ||
+          s.user?.fullName ||
+          s.student?.user?.fullName ||
+          "طالب بدون اسم",
+      }));
+
+      setStudents(normalized);
+
+      const attendance = attendanceRes.data?.data || [];
+
+      const map = {};
+
+      attendance.forEach((item) => {
+        const studentId =
+          item.student?.id ||
+          item.student?._id ||
+          item.student;
+
+        map[studentId] = item.status;
+      });
+
+      setStatusMap(map);
+    } catch (err) {
+      console.error(err);
+      setError("تعذر تحميل البيانات");
+    } finally {
+      if (!cancelled) setLoading(false);
+    }
+  };
+
+  load();
+
+  return () => {
+    cancelled = true;
+  };
+}, [groupId, lessonId]);
 
   const setStatus = (studentId, status) => {
     setStatusMap((prev) => ({ ...prev, [studentId]: status }));
@@ -82,38 +108,32 @@ const AttendanceRegistrationPage = () => {
     navigate(`/teacher/groups/${groupId}/lessons/${lessonId}`);
   };
 
-  const handleSave = async () => {
+ const handleSave = async () => {
+  try {
     setSaving(true);
     setError("");
-    try {
-      const records = students.map((s) => ({
-        student: s.id,
-        status: statusMap[s.id] || "absent",
-      }));
 
-      // ⚠️ مفيش endpoint جاهز لتسجيل الحضور بشكل جماعي في APIService حاليًا.
-      // لازم تتأكد من شكل الـ endpoint الصح من الباك (URL + body) وتضيفه هناك،
-      // مثال متوقع:
-      // export const recordSessionAttendance = (sessionId, payload) =>
-      //   API.post(`/sessions/${sessionId}/attendance`, payload);
-      // وبعدين تستدعيه هنا:
-      // await recordSessionAttendance(lessonId, { records });
+    const attendance = students.map((student) => ({
+      student: student.id,
+      status: statusMap[student.id] || "absent",
+    }));
 
-      console.log("سيتم إرسال بيانات الحضور دي للباك:", {
-        session: lessonId,
-        records,
-      });
+    await saveSessionAttendance(lessonId, {
+      attendance,
+    });
 
-      goBack();
-    } catch (err) {
-      console.error("فشل حفظ الحضور:", err);
-      setError(
-        err?.response?.data?.message || "تعذر حفظ الحضور، حاول مرة أخرى",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+    goBack();
+  } catch (err) {
+    console.error(err);
+
+    setError(
+      err.response?.data?.message ||
+        "حدث خطأ أثناء حفظ الحضور"
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <TeacherLayout>
