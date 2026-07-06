@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Eye, EyeOff, ChevronDown } from "lucide-react";
-import { createUser, getCountries } from "../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان ملف api.js عندك
+import { createUser, updateUser, getCountries } from "../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان ملف api.js عندك
 
 const getFlagUrl = (code) => {
   if (!code) return null;
@@ -160,21 +160,21 @@ const InputField = ({
   </div>
 );
 
+const EMPTY_FORM = { name: "", email: "", phone: "", password: "", country: "" };
+
 // ─── Modal ───────────────────────────────────────────────────────────────────
-const AddSupervisorModal = ({ open, onClose, onSuccess }) => {
+// Pass `supervisor` to edit an existing record; omit it (or pass null) to add a new one.
+const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => {
+  const isEditMode = Boolean(supervisor);
+
   const [saving, setSaving] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [errors, setErrors] = useState({});
   const [countries, setCountries] = useState([]);
   const [loadingCountries, setLoadingCountries] = useState(true);
-  const [data, setData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    country: "",
-  });
+  const [data, setData] = useState(EMPTY_FORM);
 
+  // Load countries whenever the modal opens
   useEffect(() => {
     if (!open) return;
     const loadCountries = async () => {
@@ -190,6 +190,23 @@ const AddSupervisorModal = ({ open, onClose, onSuccess }) => {
     };
     loadCountries();
   }, [open]);
+
+  // Prefill the form when editing
+  useEffect(() => {
+    if (!open) return;
+    if (isEditMode) {
+      setData({
+        name: supervisor.name || "",
+        email: supervisor.email || "",
+        phone: supervisor.phone || "",
+        password: "",
+        country: supervisor.countryId || "",
+      });
+    } else {
+      setData(EMPTY_FORM);
+    }
+    setErrors({});
+  }, [open, isEditMode, supervisor]);
 
   if (!open) return null;
 
@@ -207,43 +224,64 @@ const AddSupervisorModal = ({ open, onClose, onSuccess }) => {
     if (!data.email.trim()) next.email = "البريد الإلكتروني مطلوب";
     if (!data.country) next.country = "يرجى اختيار الدولة";
     if (!data.phone.trim()) next.phone = "رقم الهاتف مطلوب";
-    if (!data.password.trim()) next.password = "كلمة المرور مطلوبة";
+    // Password is only required when creating a new account
+    if (!isEditMode && !data.password.trim())
+      next.password = "كلمة المرور مطلوبة";
     setErrors(next);
     return Object.keys(next).length === 0;
+  };
+
+  const handleClose = () => {
+    setData(EMPTY_FORM);
+    setErrors({});
+    onClose();
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
     setSaving(true);
     try {
-      const username = data.email.split("@")[0]; // مشتق تلقائيًا من الإيميل
-      await createUser({
-        fullName: data.name,
-        username,
-        email: data.email,
-        phone: phoneCode ? `${phoneCode}${data.phone}` : data.phone,
-        password: data.password,
-        passwordConfirm: data.password,
-        country: data.country,
-        countryCode: selectedCountry?.code,
-        role: "admin",
-        isVerified: true,
-      });
-      setData({ name: "", email: "", phone: "", password: "", country: "" });
+      if (isEditMode) {
+        const payload = {
+          fullName: data.name,
+          email: data.email,
+          phone: phoneCode ? `${phoneCode}${data.phone}` : data.phone,
+          country: data.country,
+          countryCode: selectedCountry?.code,
+        };
+        // Only send password if the admin actually typed a new one
+        if (data.password.trim()) {
+          payload.password = data.password;
+          payload.passwordConfirm = data.password;
+        }
+        await updateUser(supervisor.id, payload);
+      } else {
+        const username = data.email.split("@")[0]; // مشتق تلقائيًا من الإيميل
+        await createUser({
+          fullName: data.name,
+          username,
+          email: data.email,
+          phone: phoneCode ? `${phoneCode}${data.phone}` : data.phone,
+          password: data.password,
+          passwordConfirm: data.password,
+          country: data.country,
+          countryCode: selectedCountry?.code,
+          role: "admin",
+          isVerified: true,
+        });
+      }
+      handleClose();
       onSuccess?.();
-      onClose();
     } catch (err) {
-      const msg = err?.response?.data?.message || "حدث خطأ أثناء إضافة المشرف";
+      const msg =
+        err?.response?.data?.message ||
+        (isEditMode
+          ? "حدث خطأ أثناء تعديل بيانات المشرف"
+          : "حدث خطأ أثناء إضافة المشرف");
       setErrors((p) => ({ ...p, form: msg }));
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleClose = () => {
-    setData({ name: "", email: "", phone: "", password: "", country: "" });
-    setErrors({});
-    onClose();
   };
 
   return (
@@ -263,7 +301,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess }) => {
 
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[18px] text-[#1F2937]">
-            إضافة مشرف جديد
+            {isEditMode ? "تعديل بيانات المشرف" : "إضافة مشرف جديد"}
           </h3>
           <button
             onClick={handleClose}
@@ -279,7 +317,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess }) => {
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <InputField
             label="الاسم بالكامل"
             value={data.name}
@@ -338,7 +376,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess }) => {
           {/* Password */}
           <div className="w-full">
             <label className="block font-['Tajawal'] font-medium text-[15px] text-right text-[#1F2937] pb-1">
-              كلمة المرور
+              {isEditMode ? "كلمة المرور (اتركها فارغة للإبقاء عليها)" : "كلمة المرور"}
             </label>
             <div className="relative">
               <input
@@ -371,7 +409,11 @@ const AddSupervisorModal = ({ open, onClose, onSuccess }) => {
             disabled={saving}
             className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium text-[15px] disabled:opacity-60 cursor-pointer font-['IBM_Plex_Sans_Arabic']"
           >
-            {saving ? "جارٍ الإضافة..." : "إضافة"}
+            {saving
+              ? "جارٍ الحفظ..."
+              : isEditMode
+                ? "حفظ التعديلات"
+                : "إضافة"}
           </button>
           <button
             onClick={handleClose}

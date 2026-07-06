@@ -6,7 +6,8 @@ import SupervisorsFilters from "../../../components/admin/supervisors/Supervisor
 import SupervisorsTable from "../../../components/admin/supervisors/SupervisorsTable";
 import AddSupervisorModal from "../../../components/admin/supervisors/AddSupervisorModal";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-import { getUsers } from "../../../services/APIService";
+import { getUsers, updateUser, deleteUser } from "../../../services/APIService";
+import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 
 const PAGE_SIZE = 6;
 
@@ -16,7 +17,9 @@ const mapUserToSupervisor = (u) => ({
   name: u.fullName || u.username,
   email: u.email,
   phone: u.phone,
-  status: (u.isActive ?? u.isVerified) ? "نشط" : "متوقف", // ⚠️ عدّل حسب اسم الحقل الفعلي
+  countryId: u.country?.id || u.country, // ⚠️ عدّل حسب شكل الحقل الراجع من الباك اند (object ولا id مباشرة)
+  isActive: Boolean(u.isActive ?? u.isVerified), // ⚠️ عدّل حسب اسم الحقل الفعلي
+  status: (u.isActive ?? u.isVerified) ? "نشط" : "متوقف",
 });
 
 const SupervisorsPage = () => {
@@ -28,6 +31,17 @@ const SupervisorsPage = () => {
   const [supervisors, setSupervisors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Edit modal state
+  const [editingSupervisor, setEditingSupervisor] = useState(null);
+
+  // Delete confirmation state
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Suspend/activate state (tracks which row is mid-request so we can disable it)
+  const [togglingId, setTogglingId] = useState(null);
+  const [actionError, setActionError] = useState(null);
 
   const fetchSupervisors = async () => {
     setLoading(true);
@@ -67,6 +81,48 @@ const SupervisorsPage = () => {
     paused: supervisors.filter((s) => s.status === "متوقف").length,
     active: supervisors.filter((s) => s.status === "نشط").length,
     total: supervisors.length,
+  };
+
+  // ─── Edit ───────────────────────────────────────────────────────────────
+  const handleEdit = (supervisor) => {
+    setEditingSupervisor(supervisor);
+  };
+
+  // ─── Suspend / Activate ─────────────────────────────────────────────────
+  const handleToggleSuspend = async (supervisor) => {
+    setActionError(null);
+    setTogglingId(supervisor.id);
+    try {
+      await updateUser(supervisor.id, { isActive: !supervisor.isActive }); // ⚠️ عدّل اسم الحقل لو مختلف في الباك اند
+      await fetchSupervisors();
+    } catch (err) {
+      console.error(err);
+      setActionError("حدث خطأ أثناء تحديث حالة المشرف");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  // ─── Delete ─────────────────────────────────────────────────────────────
+  const handleDeleteRequest = (supervisor) => {
+    setActionError(null);
+    setDeleteTarget(supervisor);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteUser(deleteTarget.id);
+      setDeleteTarget(null);
+      await fetchSupervisors();
+    } catch (err) {
+      console.error(err);
+      setActionError("حدث خطأ أثناء حذف المشرف");
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -115,6 +171,12 @@ const SupervisorsPage = () => {
           />
         </div>
 
+        {actionError && (
+          <div className="mt-4 p-3 rounded-lg bg-red-50 text-red-600 text-[13px] text-right">
+            {actionError}
+          </div>
+        )}
+
         {/* Table */}
         <div className="mt-4">
           {loading ? (
@@ -126,7 +188,13 @@ const SupervisorsPage = () => {
               {error}
             </div>
           ) : (
-            <SupervisorsTable supervisors={paginated} />
+            <SupervisorsTable
+              supervisors={paginated}
+              onEdit={handleEdit}
+              onToggleSuspend={handleToggleSuspend}
+              onDelete={handleDeleteRequest}
+              togglingId={togglingId}
+            />
           )}
         </div>
 
@@ -145,6 +213,26 @@ const SupervisorsPage = () => {
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           onSuccess={fetchSupervisors} // يحدّث الجدول بعد الإضافة
+        />
+
+        {/* Edit Supervisor Modal (same component, edit mode) */}
+        <AddSupervisorModal
+          open={Boolean(editingSupervisor)}
+          supervisor={editingSupervisor}
+          onClose={() => setEditingSupervisor(null)}
+          onSuccess={fetchSupervisors}
+        />
+
+        {/* Delete confirmation */}
+        <ConfirmDialog
+          open={Boolean(deleteTarget)}
+          title="حذف المشرف"
+          message={`هل أنت متأكد من حذف "${deleteTarget?.name}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+          confirmLabel="حذف"
+          danger
+          loading={deleting}
+          onConfirm={handleDeleteConfirm}
+          onClose={() => setDeleteTarget(null)}
         />
       </div>
     </AdminLayout>
