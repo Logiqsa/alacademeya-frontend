@@ -120,17 +120,19 @@ const GroupLessonsPage = () => {
           title: s.title || "حصة",
           date: s.scheduledDate
             ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
             : "--",
-          time: s.scheduledDate
-            ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
+          time: s.startAt
+            ? new Date(s.startAt).toLocaleTimeString("ar-EG", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+              timeZone: "Africa/Cairo",
+            })
             : "--",
           duration:
             typeof s.duration === "number"
