@@ -8,6 +8,7 @@ import { AuthContext } from "../../context/AuthContext";
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  // بدل "email" بس، بقى فيه حقل واحد بياخد إيميل أو يوزرنيم أو رقم تليفون
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -58,12 +59,15 @@ const LoginForm = () => {
 
       <form className="w-full space-y-5" onSubmit={handleSubmit}>
         <div>
-          <label className="block text-[14px] font-medium text-[#1F2937] mb-2">البريد الإلكتروني</label>
+          <label className="block text-[14px] font-medium text-[#1F2937] mb-2">
+            البريد الإلكتروني أو اسم المستخدم أو رقم الهاتف
+          </label>
           <input
-            type="email"
-            placeholder="أدخل بريدك الإلكتروني"
+            type="text"
+            placeholder="أدخل بريدك الإلكتروني أو اسم المستخدم أو رقم هاتفك"
             required
-            onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+            autoComplete="username"
+            onChange={(e) => setCredentials({ ...credentials, email: e.target.value.trim() })}
             className="w-full h-12 px-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91] text-[14px]"
           />
         </div>
@@ -75,6 +79,7 @@ const LoginForm = () => {
               type={showPassword ? "text" : "password"}
               placeholder="********"
               required
+              autoComplete="current-password"
               onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
               className="w-full h-12 px-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91] text-[14px]"
             />

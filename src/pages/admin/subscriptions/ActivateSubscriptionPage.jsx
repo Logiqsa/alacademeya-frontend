@@ -377,16 +377,37 @@ const ActivateSubscriptionPage = () => {
       const list = extractList(res.data);
 
       const normalizedTeachers = list
-        .map((teacher) => ({
-          id: teacher.teacherId || teacher.id || teacher._id,
-          userId: teacher.userId || teacher.user?._id,
-          fullName:
-            teacher.fullName || teacher.user?.fullName || "معلم بدون اسم",
-          username: teacher.username || teacher.user?.username,
-          rating: teacher.rating,
-          totalReviews: teacher.totalReviews,
-        }))
-        .filter((teacher) => teacher.id);
+        .map((teacher) => {
+          // الحقول جاية مباشرة على الأوبجكت (id, fullName, isActive, registrationStatus)
+          // بنعمل fallback لأي شكل تاني (teacherId / user.xxx) احتياطًا بس
+          const teacherIdValue = teacher.id || teacher._id || teacher.teacherId;
+          const isActive = teacher.isActive ?? teacher.user?.isActive;
+          const registrationStatus =
+            teacher.registrationStatus ?? teacher.user?.registrationStatus;
+          const isDeleted =
+            teacher.isDeleted ?? teacher.user?.isDeleted ?? false;
+
+          return {
+            id: teacherIdValue,
+            userId: teacher.userId || teacher.user?._id || teacherIdValue,
+            fullName:
+              teacher.fullName || teacher.user?.fullName || "معلم بدون اسم",
+            username: teacher.username || teacher.user?.username,
+            rating: teacher.rating,
+            totalReviews: teacher.totalReviews,
+            isActive,
+            registrationStatus,
+            isDeleted,
+          };
+        })
+        // الشرط المطلوب بالظبط: لازم يكون مفعّل، حالته "active"، ومش محذوف
+        .filter(
+          (teacher) =>
+            teacher.id &&
+            teacher.isActive === true &&
+            teacher.registrationStatus === "active" &&
+            teacher.isDeleted !== true,
+        );
 
       patchSubject(subjectId, {
         teachers: normalizedTeachers,
@@ -446,7 +467,6 @@ const ActivateSubscriptionPage = () => {
     if (!current.teachersLoaded && !current.loadingTeachers) {
       loadAvailableTeachers(subjectId);
     }
-
   };
   useEffect(() => {
     if (!openSubject) return;

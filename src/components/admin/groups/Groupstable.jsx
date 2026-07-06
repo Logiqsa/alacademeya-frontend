@@ -148,8 +148,7 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       // (مفيش POST /classrooms/:id/students في الكولكشن اللي شفناه لحد دلوقتي —
       // الأقرب المتاح هو createSubscription، لكن شكل الـ body غير مؤكد)
       throw new Error(
-        "الـ endpoint بتاع إضافة طالب للمجموعة لسه مش متأكد منه — ابعت سكرين شوت من بوستمان لنظبطه",
-      );
+""      );
     } catch (err) {
       setError(err.message || "حدث خطأ أثناء إضافة الطالب");
     } finally {
