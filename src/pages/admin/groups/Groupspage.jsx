@@ -232,6 +232,7 @@ const GroupsPage = () => {
             }}
           />
         </div>
+      
 
         <div className="mt-4">
           {loading ? (
