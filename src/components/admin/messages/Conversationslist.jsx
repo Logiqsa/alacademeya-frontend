@@ -1,4 +1,4 @@
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Inbox } from "lucide-react";
 
 const filters = [
   { key: "all", label: "الكل" },
@@ -28,16 +28,17 @@ export default function ConversationsLists({
   });
 
   return (
-    <div className="flex w-full flex-col h-full" dir="rtl">
+    <div className="flex h-full w-full flex-col" dir="rtl">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
-        <h2 className="text-base font-bold text-slate-800 font-['IBM_Plex_Sans_Arabic']">
+      <div className="flex items-center justify-between px-3 pb-2.5 pt-3.5 sm:px-4 sm:pb-3 sm:pt-4">
+        <h2 className="text-[15px] font-bold text-slate-800 font-['IBM_Plex_Sans_Arabic'] sm:text-base">
           المحادثات
         </h2>
         {mode === "chat" && (
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#123C91] text-white hover:bg-[#0f2f70] transition-colors"
+            aria-label="محادثة جديدة"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#123C91] text-white transition-colors hover:bg-[#0f2f70]"
           >
             <Plus size={18} />
           </button>
@@ -45,34 +46,27 @@ export default function ConversationsLists({
       </div>
 
       {/* Search */}
-      <div className="px-4 pb-3">
+      <div className="px-3 pb-2.5 sm:px-4 sm:pb-3">
         <div className="relative">
-          <Search
-            size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+          <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={
-              mode === "chat"
-                ? "ابحث عن معلم او مجموعة..."
-                : "ابحث عن معلم او طالب..."
-            }
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-9 pl-3 text-sm text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic']"
+            placeholder={mode === "chat" ? "ابحث عن معلم او مجموعة..." : "ابحث عن معلم او طالب..."}
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-3 pr-9 text-[13px] text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic'] sm:py-2 sm:text-sm"
           />
         </div>
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto px-4 pb-3">
+      <div className="scrollbar-none flex items-center gap-1.5 overflow-x-auto px-3 pb-3 sm:px-4">
         {filters.map((f) => (
           <button
             key={f.key}
             type="button"
             onClick={() => onFilterChange(f.key)}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors font-['IBM_Plex_Sans_Arabic']
+            className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors font-['IBM_Plex_Sans_Arabic']
               ${
                 activeFilter === f.key
                   ? "bg-[#123C91] text-white"
@@ -85,11 +79,14 @@ export default function ConversationsLists({
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2">
+      <div className="flex-1 space-y-2 overflow-y-auto px-2.5 pb-4 sm:px-3">
         {filtered.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-gray-400 font-['IBM_Plex_Sans_Arabic']">
-            لا توجد محادثات مطابقة
-          </p>
+          <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
+              <Inbox size={18} className="text-gray-300" />
+            </div>
+            <p className="text-sm text-gray-400 font-['IBM_Plex_Sans_Arabic']">لا توجد محادثات مطابقة</p>
+          </div>
         ) : (
           filtered.map((c) => (
             <button
@@ -104,43 +101,34 @@ export default function ConversationsLists({
                 }`}
             >
               {/* Top row */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-sm font-bold text-white">
                     {c.avatarInitial}
                   </span>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-slate-800">
-                      {c.name}
-                    </p>
+                  <div className="min-w-0 text-right">
+                    <p className="truncate text-sm font-semibold text-slate-800">{c.name}</p>
                     {mode === "monitor" && (
-                      <p className="text-[11px] text-gray-400">
-                        معلم ←&nbsp;ولي أمر
-                      </p>
+                      <p className="truncate text-[11px] text-gray-400">معلم ←&nbsp;ولي أمر</p>
                     )}
                     {mode === "chat" && (
-                      <p className="text-[11px] text-gray-400">{c.role}</p>
+                      <p className="truncate text-[11px] text-gray-400">{c.role}</p>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Time + unread */}
-              <div className="mt-1 flex items-center justify-end gap-2">
-                <span className="text-xs text-gray-400">
-                  {c.lastMessageTime}
-                </span>
-                {c.unreadCount > 0 && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#123C91] text-[11px] font-semibold text-white">
-                    {c.unreadCount}
-                  </span>
-                )}
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="whitespace-nowrap text-xs text-gray-400">{c.lastMessageTime}</span>
+                  {c.unreadCount > 0 && (
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-[11px] font-semibold text-white">
+                      {c.unreadCount}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Preview */}
-              <p className="mt-1 truncate text-xs text-gray-500 text-right">
-                {c.lastMessagePreview}
-              </p>
+              <p className="mt-1.5 truncate text-xs text-gray-500 text-right">{c.lastMessagePreview}</p>
             </button>
           ))
         )}

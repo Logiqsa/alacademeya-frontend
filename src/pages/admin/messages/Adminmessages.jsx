@@ -5,7 +5,6 @@ import ChatBox from "../../../components/admin/messages/Chatbox";
 import { useChatRooms } from "../../../api/useChatRooms"; // تأكد من المسار الصحيح
 import { AuthContext } from "../../../context/AuthContext";
 
-// الفلترات الجديدة بناءً على طلبك
 const FILTERS = [
   { key: "all", label: "الكل" },
   { key: "groups", label: "الفصول" },
@@ -13,6 +12,7 @@ const FILTERS = [
   { key: "teacher", label: "المعلمون" },
   { key: "parent", label: "أولياء الأمور" },
 ];
+
 export default function AdminMessages() {
   const { user } = useContext(AuthContext);
   const currentUserId = user?._id ?? user?.id;
@@ -41,18 +41,11 @@ export default function AdminMessages() {
     openConversation(null);
   };
 
-  // Logic الفلترة الجديد
   const filteredConversations = conversations.filter((c) => {
-    console.log(c);
-
     if (activeFilter === "all") return true;
-
-    // الفصول (تعتمد على الـ category أو الـ type)
     if (activeFilter === "groups") {
       return c.category === "groups" || c.type === "classroom";
     }
-
-    // الأدوار (تعتمد على الـ role داخل الـ participants)
     return c.participants?.some((p) => p.role === activeFilter);
   });
 
@@ -60,26 +53,23 @@ export default function AdminMessages() {
 
   return (
     <AdminLayout>
-      <div
-        className="w-full font-['IBM_Plex_Sans_Arabic'] text-right pb-4"
-        dir="rtl"
-      >
+      <div className="w-full pb-4 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-[24px] font-semibold text-[#123C91] mb-2">
-            مركز الرسائل
-          </h1>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-[20px] font-semibold text-[#123C91] sm:text-[24px]">مركز الرسائل</h1>
         </div>
 
         {loading ? (
-          <div className="flex justify-center items-center h-96">
-            <div className="w-8 h-8 border-4 border-blue-900 border-t-transparent rounded-full animate-spin" />
+          <div className="flex h-[60vh] items-center justify-center sm:h-96">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-900 border-t-transparent" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-[350px_1fr] gap-4 h-[800px] ">
+          <div className="grid h-[calc(100dvh-160px)] grid-cols-1 gap-3 sm:gap-4 md:h-[750px] md:grid-cols-[300px_1fr] lg:h-[800px] lg:grid-cols-[350px_1fr]">
             {/* Conversations List */}
             <div
-              className={`${showChatMobile ? "hidden" : "flex"} md:flex flex-col bg-white rounded-3xl border border-[#E5E5E5] overflow-hidden`}
+              className={`${
+                showChatMobile ? "hidden" : "flex"
+              } min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white sm:rounded-3xl md:flex`}
             >
               <ConversationsList
                 conversations={filteredConversations}
@@ -94,16 +84,14 @@ export default function AdminMessages() {
 
             {/* Chat Box */}
             <div
-              className={`${showChatMobile ? "flex" : "hidden"} md:flex flex-col  bg-white rounded-3xl border border-[#E5E5E5] overflow-hidden`}
+              className={`${
+                showChatMobile ? "flex" : "hidden"
+              } min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white sm:rounded-3xl md:flex`}
             >
               {activeConversation ? (
-                <ChatBox
-                  conversation={activeConversation}
-                  onSend={sendMessage}
-                  onBack={handleBack}
-                />
+                <ChatBox conversation={activeConversation} onSend={sendMessage} onBack={handleBack} />
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
+                <div className="flex h-full items-center justify-center px-4 text-center text-sm text-gray-400">
                   اختر محادثة للبدء
                 </div>
               )}

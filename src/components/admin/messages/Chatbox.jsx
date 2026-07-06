@@ -4,6 +4,7 @@ import { Send, CheckCheck, ArrowRight } from "lucide-react";
 export default function ChatBox({ conversation, onSend, onBack }) {
   const [text, setText] = useState("");
   const endRef = useRef(null);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -11,8 +12,13 @@ export default function ChatBox({ conversation, onSend, onBack }) {
 
   if (!conversation) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-gray-400 font-['IBM_Plex_Sans_Arabic']">اختر محادثة لعرض الرسائل</p>
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-50">
+          <Send size={20} className="text-gray-300" />
+        </div>
+        <p className="text-sm text-gray-400 font-['IBM_Plex_Sans_Arabic']">
+          اختر محادثة لعرض الرسائل
+        </p>
       </div>
     );
   }
@@ -22,6 +28,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
     if (!trimmed) return;
     onSend(conversation.id, trimmed);
     setText("");
+    textareaRef.current?.focus();
   };
 
   const handleKeyDown = (e) => {
@@ -33,46 +40,51 @@ export default function ChatBox({ conversation, onSend, onBack }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" dir="rtl">
-
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-gray-100 p-4">
+      <div className="flex items-center gap-2.5 border-b border-gray-100 px-3 py-3 sm:gap-3 sm:px-4 sm:py-4">
         <button
           type="button"
           onClick={onBack}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-gray-100 md:hidden"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-gray-100 md:hidden"
           aria-label="رجوع"
         >
           <ArrowRight size={18} />
         </button>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-sm font-bold text-white">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-sm font-bold text-white sm:h-10 sm:w-10">
           {conversation.avatarInitial}
         </span>
-        <div>
-          <p className="text-[15px] font-semibold text-slate-800 font-['IBM_Plex_Sans_Arabic']">
+        <div className="min-w-0">
+          <p className="truncate text-[14px] font-semibold text-slate-800 font-['IBM_Plex_Sans_Arabic'] sm:text-[15px]">
             {conversation.name}
           </p>
-          <p className="text-[12px] text-gray-400 font-['IBM_Plex_Sans_Arabic']">{conversation.role}</p>
+          <p className="truncate text-[11px] text-gray-400 font-['IBM_Plex_Sans_Arabic'] sm:text-[12px]">
+            {conversation.role}
+          </p>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5">
-        <div className="mt-auto space-y-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3 sm:p-5">
+        <div className="mt-auto space-y-3 sm:space-y-4">
           {conversation.messages.map((m) => {
             const isMe = m.sender === "me";
             return (
               <div key={m.id} className={`flex ${isMe ? "justify-start" : "justify-end"}`}>
                 <div
-                  className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 ${
+                  className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 sm:max-w-[75%] sm:px-4 sm:py-3 ${
                     isMe
                       ? "rounded-tr-sm bg-[#123C91] text-white"
                       : "rounded-tl-sm border border-blue-100 bg-[#EAF4FF] text-slate-700"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed font-['IBM_Plex_Sans_Arabic']">{m.text}</p>
+                  <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed font-['IBM_Plex_Sans_Arabic'] sm:text-sm">
+                    {m.text}
+                  </p>
                   <div className={`mt-1 flex items-center gap-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                    <span className={`text-[11px] ${isMe ? "text-blue-200" : "text-gray-400"}`}>{m.time}</span>
-                    {isMe && m.status === "read" && <CheckCheck size={14} className="text-blue-200" />}
+                    <span className={`text-[10px] sm:text-[11px] ${isMe ? "text-blue-200" : "text-gray-400"}`}>
+                      {m.time}
+                    </span>
+                    {isMe && m.status === "read" && <CheckCheck size={13} className="text-blue-200" />}
                   </div>
                 </div>
               </div>
@@ -83,23 +95,27 @@ export default function ChatBox({ conversation, onSend, onBack }) {
       </div>
 
       {/* Input */}
-      <div className="flex items-center gap-2 border-t border-gray-100 p-3 md:gap-3 md:p-4">
+      <div className="flex items-center gap-2 border-t border-gray-100 p-2.5 sm:gap-3 sm:p-4">
         <input
+          ref={textareaRef}
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="اكتب رسالتك هنا..."
-          className="flex-1 min-w-0 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic']"
+          className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-[13px] text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic'] sm:px-4 sm:text-sm"
         />
         <button
           type="button"
           onClick={handleSend}
+          disabled={!text.trim()}
           aria-label="إرسال"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#123C91]/20 text-[#123C91] hover:bg-[#123C91]/30 md:h-auto md:w-auto md:gap-2 md:px-5 md:py-2.5 transition-colors"
+          className="flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#123C91] text-white transition-colors hover:bg-[#0f2f70] disabled:cursor-not-allowed disabled:bg-[#123C91]/25 sm:h-auto sm:w-auto sm:px-5 sm:py-2.5"
         >
           <Send size={16} />
-          <span className="hidden text-sm font-semibold md:inline font-['IBM_Plex_Sans_Arabic']">إرسال</span>
+          <span className="hidden text-sm font-semibold font-['IBM_Plex_Sans_Arabic'] sm:inline">
+            إرسال
+          </span>
         </button>
       </div>
     </div>
