@@ -48,7 +48,7 @@ const SubscriptionsPage = () => {
           </div>
           <button
             onClick={handleHeaderBtn}
-            className="w-full sm:w-auto shrink-0 px-5 py-2.5 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] active:bg-[#0c285f] transition-colors whitespace-nowrap"
+            className="w-full sm:w-auto shrink-0 px-5 py-2.5 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] active:bg-[#0c285f] transition-colors whitespace-nowrap"
           >
             {tabBtnLabel[activeTab]}
           </button>

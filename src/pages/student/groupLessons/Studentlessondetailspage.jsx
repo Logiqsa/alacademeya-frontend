@@ -4,7 +4,6 @@ import StudentLayout from "../../../components/student/layout/StudentLayout";
 import LessonStats from "../../../components/student/groupLesson/Lessonstats";
 import LiveLessonLink from "../../../components/student/groupLesson/Livelessonlink";
 import LessonAssignments from "../../../components/teacher/groups/lessons/LessonAssignments";
-import LessonQuizzes from "../../../components/student/groupLesson/Lessonquizzes";
 import LessonRecordings from "../../../components/teacher/groups/lessons/LessonRecordings";
 import LessonFiles from "../../../components/teacher/groups/lessons/LessonFiles";
 import {
@@ -23,21 +22,19 @@ const STATUS_LABELS = {
   live: "مباشر الآن",
   ended: "منتهية",
   cancelled: "ملغاة",
+  missed: "فائتة",
 };
 
 const computeDisplayStatus = (session) => {
   if (session.status === "completed") return "ended";
   if (session.status === "cancelled") return "cancelled";
+  if (["live", "active"].includes(session.status)) return "live";
 
   const start = new Date(session.scheduledDate || session.startAt);
-  const end = session.endAt
-    ? new Date(session.endAt)
-    : new Date(start.getTime() + (session.duration || 45) * 60000);
   const now = new Date();
 
   if (now < start) return "upcoming";
-  if (now >= start && now <= end) return "live";
-  return "ended";
+  return "missed";
 };
 
 const StatusBadge = ({ status }) => {
@@ -46,6 +43,7 @@ const StatusBadge = ({ status }) => {
     "مباشر الآن": "bg-[#00A63E26] text-[#00A63E]",
     منتهية: "bg-[#D32F2F26] text-[#D32F2F]",
     ملغاة: "bg-gray-100 text-gray-500",
+    فائتة: "bg-orange-100 text-orange-700",
   };
   return (
     <span
@@ -167,9 +165,11 @@ const StudentLessonDetailsPage = () => {
         time: startDate.toLocaleTimeString("ar-EG", {
           hour: "2-digit",
           minute: "2-digit",
+          hour12: true,
         }),
         duration: `${session.duration || 45} دقيقة`,
         status: STATUS_LABELS[status] || status,
+        statusKey: status === "ended" ? "completed" : status,
         totalStudents: totalRecords || classroomData.students?.length || 0,
         attendance: presentCount,
         absence: absentCount,
@@ -221,7 +221,7 @@ const StudentLessonDetailsPage = () => {
 
           <LiveLessonLink
             lessonUrl={lesson.lessonUrl}
-            isLive={lesson.status === "مباشر الآن"}
+            status={lesson.statusKey}
             onJoin={(url) => window.open(url, "_blank")}
           />
 
@@ -229,7 +229,6 @@ const StudentLessonDetailsPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <LessonAssignments assignments={assignments} />
-            <LessonQuizzes />
           </div>
 
           <LessonRecordings recording={recording} />

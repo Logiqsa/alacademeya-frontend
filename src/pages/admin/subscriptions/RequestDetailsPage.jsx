@@ -137,7 +137,7 @@ const RequestDetailsPage = () => {
             <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <button
                 onClick={() => navigate(`/admin/subscriptions/requests/${request.id}/activate`)}
-                className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] transition-colors"
+                className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] transition-colors"
               >
                 تفعيل الاشتراك
               </button>

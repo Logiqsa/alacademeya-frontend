@@ -48,7 +48,7 @@ const GroupCard = ({ group, onViewLessons, onViewStudents, onEdit, onDelete }) =
     <div className="flex gap-3 mt-2">
       <button
         onClick={() => onViewLessons(group.id)}
-        className="flex-1 bg-[#123C91] text-white rounded-xl py-2.5 text-[14px] font-medium hover:bg-blue-900 transition"
+        className="flex-1 bg-[#123C91] text-white [&_svg]:text-white rounded-xl py-2.5 text-[14px] font-medium hover:bg-blue-900 transition"
       >
         الحصص
       </button>

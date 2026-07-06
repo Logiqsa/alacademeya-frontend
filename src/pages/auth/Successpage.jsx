@@ -47,7 +47,7 @@ const SuccessPage = () => {
 
         <button
           onClick={() => navigate("/account-state", { state: { role } })}
-          className="w-full h-14 rounded-xl bg-[#123C91] text-white font-medium text-[16px] mb-3"
+          className="w-full h-14 rounded-xl bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] mb-3"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           عرض حالة الطلب

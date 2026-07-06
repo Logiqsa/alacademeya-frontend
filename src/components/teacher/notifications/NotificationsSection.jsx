@@ -28,7 +28,6 @@ const formatRelativeTime = (dateStr) => {
 const ACADEMIC_TYPES = [
   "session",
   "classroom",
-  "exam",
   "assignment",
   "attendance",
 ];
@@ -125,7 +124,7 @@ const NotificationsSection = ({ onStatsUpdate }) => {
                 px-3 py-1.5 rounded-lg text-[12.5px] sm:text-[13px] font-medium transition-colors
                 ${
                   filter === f.id
-                    ? "bg-[#123C91] text-white"
+                    ? "bg-[#123C91] text-white [&_svg]:text-white"
                     : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
                 }
               `}

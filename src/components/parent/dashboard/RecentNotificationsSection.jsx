@@ -6,16 +6,8 @@ const notifications = [
     time: "منذ 5 دقائق",
   },
   {
-    title: "حصل محمد على درجة 95% في اختبار الرياضيات",
-    time: "منذ ساعة",
-  },
-  {
     title: "تم تحديث الجدول الدراسي",
     time: "منذ ساعتين",
-  },
-  {
-    title: "حصلت سلمى على درجة 100% في اختبار الجغرافيا",
-    time: "منذ 3 ساعات",
   },
 ];
 
@@ -45,7 +37,7 @@ const RecentNotificationsSection = () => {
                 {n.time}
               </p>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#123C91] flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center shrink-0">
               <img src={bellIcon} alt="" className="w-4 h-4 invert" />
             </div>
           </div>

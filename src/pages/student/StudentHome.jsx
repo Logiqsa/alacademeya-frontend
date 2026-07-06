@@ -18,8 +18,6 @@ const StudentHome = () => {
   const [stats, setStats] = useState({
     upcomingLessons: 0,
     activeGroups: 0,
-    // ⚠️ مفيش endpoint حاليًا للاختبارات/الواجبات بتاعة الطالب في APIService.js
-    activeExams: null,
     activeAssignments: null,
   });
   const [loading, setLoading] = useState(true);
@@ -84,11 +82,9 @@ const StudentHome = () => {
       >
         <WelcomeHeader studentName={firstName} />
 
-        {/* ⚠️ TODO: activeExams / activeAssignments لسه مفيش endpoint ليهم بتاعة الطالب */}
         <StatsOverview
           upcomingLessons={loading ? "--" : stats.upcomingLessons}
           activeGroups={loading ? "--" : stats.activeGroups}
-          activeExams={stats.activeExams ?? "--"}
           activeAssignments={stats.activeAssignments ?? "--"}
         />
 

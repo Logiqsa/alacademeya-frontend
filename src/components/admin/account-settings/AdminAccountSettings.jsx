@@ -708,10 +708,6 @@ const AdminAccountSettings = () => {
         onUpdated={handleProfileUpdated}
         onEmailChanged={handleForceReLogin}
       />
-      <SecurityCard
-        lastPasswordChange={admin.lastPasswordChange || "آخر تحديث غير متاح"}
-        onPasswordChanged={handleForceReLogin}
-      />
       <ContactSettingsCard />
     </div>
   );

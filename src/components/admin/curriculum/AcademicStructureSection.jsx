@@ -269,7 +269,7 @@ const AcademicStructureSection = () => {
         </div>
         <button
           onClick={handleAdd}
-          className="inline-flex items-center justify-center gap-2 py-2.5 px-5 bg-[#123C91] text-white rounded-xl font-['IBM_Plex_Sans_Arabic'] font-medium text-[14px] sm:text-[15px] cursor-pointer hover:bg-[#0F3278] transition-colors w-fit"
+          className="inline-flex items-center justify-center gap-2 py-2.5 px-5 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-['IBM_Plex_Sans_Arabic'] font-medium text-[14px] sm:text-[15px] cursor-pointer hover:bg-[#0F3278] transition-colors w-fit"
         >
           <Plus size={16} />
           إضافة منهج

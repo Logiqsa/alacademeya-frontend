@@ -8,7 +8,7 @@ import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
 
 import dashboardIcon from "../../../assets/icons/dashboard.png";
 import assignmentsIcon from "../../../assets/icons/children.png";
-import examsIcon from "../../../assets/icons/schedule.png";
+import scheduleIcon from "../../../assets/icons/schedule.png";
 import messagesIcon from "../../../assets/icons/messages.png";
 import notificationsIcon from "../../../assets/icons/notifications.png";
 import settingsIcon from "../../../assets/icons/settings.png";
@@ -28,13 +28,8 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       path: "/student/assignments",
     },
     {
-      title: "الاختبارات",
-      icon: examsIcon,
-      path: "/student/exams",
-    },
-    {
       title: "الجدول",
-      icon: examsIcon,
+      icon: scheduleIcon,
       path: "/student/schedule",
     },
     {

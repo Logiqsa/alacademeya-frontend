@@ -1,4 +1,4 @@
-const COLOR_POOL = ["bg-[#123C91]", "bg-[#12C6B0]", "bg-[#7C3AED]", "bg-[#EA580C]"];
+const COLOR_POOL = ["bg-[#123C91] text-white [&_svg]:text-white", "bg-[#12C6B0]", "bg-[#7C3AED]", "bg-[#EA580C]"];
 
 const getInitial = (name) => (name?.trim()?.[0] || "؟");
 
@@ -97,7 +97,7 @@ const ChildrenOverviewSection = ({ children = [] }) => {
                 </div>
                 <div className="w-full bg-[#123C9133] h-2 rounded-full mb-4">
                   <div
-                    className="bg-[#123C91] h-2 rounded-full"
+                    className="bg-[#123C91] text-white [&_svg]:text-white h-2 rounded-full"
                     style={{ width: `${score}%` }}
                   ></div>
                 </div>

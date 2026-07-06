@@ -90,7 +90,7 @@ const ModalFooter = ({ onClose, confirmLabel, onConfirm, loading, disabled }) =>
     <button
       onClick={onConfirm}
       disabled={loading || disabled}
-      className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:bg-[#0f3280] transition-colors disabled:opacity-60"
+      className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:bg-[#0f3280] transition-colors disabled:opacity-60"
     >
       {loading ? "جاري الحفظ..." : confirmLabel}
     </button>

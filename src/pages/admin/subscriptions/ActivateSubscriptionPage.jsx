@@ -665,7 +665,7 @@ const ActivateSubscriptionPage = () => {
             <button
               onClick={handleActivate}
               disabled={submitting || metaLoading || subjects.length === 0}
-              className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] transition-colors shadow-sm shadow-[#123C91]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] transition-colors shadow-sm shadow-[#123C91]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {submitting && <Loader2 size={16} className="animate-spin" />}
               تفعيل الاشتراك

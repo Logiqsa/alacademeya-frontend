@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useCallback, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useCallback, useContext } from "react";
 import toast from "react-hot-toast";
 
 import { User, Loader2 } from "lucide-react";
@@ -16,7 +15,6 @@ import {
   ParentProfileCard,
   StudentPersonalCard,
   StudentAcademicCard,
-  SecurityCard,
 } from "./ProfileCards";
 import { getArabicCountryName } from "../../../utils/countryName";
 
@@ -220,10 +218,6 @@ const AccountSettings = () => {
     } catch {}
     await afterSave(sens);
   };
-  const handleSaveParentSecurity = async (payload) => {
-    await updateMyProfile(payload);
-    await afterSave(true);
-  };
   const handleSaveStudentInfo = async (payload, sens) => {
     await updateStudent(activeStudent.id, payload);
     await afterSave(sens);
@@ -231,10 +225,6 @@ const AccountSettings = () => {
   const handleSaveStudentAcademic = async (payload) => {
     await updateStudent(activeStudent.id, payload);
     await afterSave(false);
-  };
-  const handleSaveStudentSecurity = async (payload) => {
-    await updateStudent(activeStudent.id, payload);
-    await afterSave(true);
   };
 
   const activeStudent =
@@ -327,7 +317,6 @@ const AccountSettings = () => {
             loadingCountries={loadingCountries}
             onSave={handleSaveParentInfo}
           />
-          <SecurityCard onSave={handleSaveParentSecurity} />
         </>
       )}
 
@@ -346,7 +335,6 @@ const AccountSettings = () => {
             loadingCurriculums={loadingCurriculums}
             onSave={handleSaveStudentAcademic}
           />
-          <SecurityCard onSave={handleSaveStudentSecurity} />
         </>
       )}
     </div>

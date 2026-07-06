@@ -1,7 +1,8 @@
-import React from "react";
 import { Share2 } from "lucide-react";
 
-const LiveLessonLink = ({ lessonUrl, isLive, onJoin, onShare }) => {
+const LiveLessonLink = ({ lessonUrl, status, onJoin, onShare }) => {
+  const isLive = status === "live";
+  const stateText = status === "completed" ? "الحصة منتهية" : status === "missed" ? "الحصة فائتة" : "سيتم تفعيل الرابط عند بدء المعلم للحصة.";
   return (
     <div
       className="w-full rounded-2xl bg-[#1F2937] text-white px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
@@ -12,7 +13,7 @@ const LiveLessonLink = ({ lessonUrl, isLive, onJoin, onShare }) => {
           رابط الحصة المباشرة
         </h3>
         <p className="text-[14px] text-gray-400" style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}>
-          {isLive ? "الحصة مباشرة الآن، انضم وتفاعل مع معلمك وزملائك." : "سيتم تفعيل الرابط عند بدء المعلم للحصة."}
+          {isLive ? "الحصة مباشرة الآن، انضم وتفاعل مع معلمك وزملائك." : stateText}
         </p>
       </div>
 
@@ -23,7 +24,7 @@ const LiveLessonLink = ({ lessonUrl, isLive, onJoin, onShare }) => {
           className="flex items-center gap-2 px-7 py-2.5 rounded-xl bg-white text-[#1F2937] text-[16px] font-semibold hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
         >
-          {isLive ? "الانضمام للحصة" : "لم تبدأ بعد"}
+          {isLive ? "الانضمام للحصة" : status === "completed" ? "منتهية" : status === "missed" ? "فائتة" : "لم تبدأ بعد"}
         </button>
 
         <button

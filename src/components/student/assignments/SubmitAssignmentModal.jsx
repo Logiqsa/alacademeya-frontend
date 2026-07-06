@@ -104,7 +104,7 @@ const SubmitAssignmentModal = ({ open, onClose, onSubmit }) => {
           <button
             onClick={handleSubmit}
             disabled={!file}
-            className="flex-1 h-11 rounded-lg bg-[#123C91] text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#0e2f73] transition-colors"
+            className="flex-1 h-11 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#0e2f73] transition-colors"
           >
             إرسال
           </button>

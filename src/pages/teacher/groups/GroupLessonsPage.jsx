@@ -10,8 +10,8 @@ import Pagination from "../../../components/teacher/groups/lessons/Paginationn";
 import {
   getClassroomSessions,
   getClassroom,
-  deleteClassroom,
   getSessionAttendance,
+  getClassroomSchedule,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const ITEMS_PER_PAGE = 5;
@@ -23,6 +23,7 @@ const STATUS_LABELS = {
   live: "مباشر الآن",
   completed: "منتهية",
   cancelled: "ملغية",
+  missed: "فائتة",
 };
 
 const resolveName = (val) =>
@@ -43,6 +44,7 @@ const GroupLessonsPage = () => {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasSchedule, setHasSchedule] = useState(false);
 
   const [showToast, setShowToast] = useState(false);
 
@@ -64,10 +66,17 @@ const GroupLessonsPage = () => {
     setError(null);
 
     // بنستخدم allSettled عشان لو endpoint الـ classroom فشل، الصفحة تفضل تعرض الحصص عادي
-    const [classroomResult, sessionsResult] = await Promise.allSettled([
+    const [classroomResult, sessionsResult, scheduleResult] = await Promise.allSettled([
       getClassroom(groupId),
       getClassroomSessions(groupId),
+      getClassroomSchedule(groupId),
     ]);
+
+    setHasSchedule(
+      scheduleResult.status === "fulfilled" &&
+      scheduleResult.value.data?.data?.isActive !== false &&
+      Array.isArray(scheduleResult.value.data?.data?.schedule),
+    );
 
     if (classroomResult.status === "fulfilled") {
       setGroupName(
@@ -115,6 +124,7 @@ const GroupLessonsPage = () => {
           );
         }
 
+        const isMissed = s.status === "scheduled" && s.scheduledDate && new Date(s.scheduledDate) < new Date();
         return {
           id: s.id,
           title: s.title || "حصة",
@@ -126,8 +136,8 @@ const GroupLessonsPage = () => {
               day: "numeric",
             })
             : "--",
-          time: s.startAt
-            ? new Date(s.startAt).toLocaleTimeString("ar-EG", {
+          time: s.startAt || s.scheduledDate
+            ? new Date(s.startAt || s.scheduledDate).toLocaleTimeString("ar-EG", {
               hour: "2-digit",
               minute: "2-digit",
               hour12: true,
@@ -140,7 +150,7 @@ const GroupLessonsPage = () => {
               : (s.duration ?? "--"),
           attendance,
           absence,
-          status: STATUS_LABELS[s.status] || s.status || "--",
+          status: isMissed ? "فائتة" : STATUS_LABELS[s.status] || s.status || "--",
         };
       });
 
@@ -223,11 +233,11 @@ const GroupLessonsPage = () => {
               }
               className="w-full sm:w-40 h-12 rounded-lg bg-white border border-[#E5E5E5] text-[#1A1A1A] flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
             >
-              إنشاء جدول
+              {hasSchedule ? "تعديل الجدول" : "إنشاء جدول"}
             </button>
             <button
               onClick={() => navigate(`/teacher/groups/${groupId}/lessons/new`)}
-              className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
+              className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
             >
               إنشاء حصة جديدة
             </button>

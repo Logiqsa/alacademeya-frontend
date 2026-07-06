@@ -369,7 +369,7 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
         </button>
         <button
           onClick={handleNext}
-          className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px]"
+          className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px]"
         >
           التالي
         </button>

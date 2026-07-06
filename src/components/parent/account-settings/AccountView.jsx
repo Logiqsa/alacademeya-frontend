@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { User, Loader2 } from "lucide-react";
 import {
   getMyProfile,
@@ -383,19 +383,6 @@ const AccountView = () => {
             />
           </SectionCard>
 
-          <SectionCard
-            title="الأمان وكلمة المرور"
-            subtitle="تغيير كلمة المرور وإعدادات الأمان"
-            editLabel="تغيير كلمة المرور"
-            onEditClick={() => handleNavigateToEdit("parent", "security")}
-          >
-            <div className="sm:col-span-2">
-              <DataRow label="كلمة المرور" value="••••••••" />
-              <p className="text-xs text-(--text-light) mt-1">
-                آخر تغيير منذ 3 أشهر
-              </p>
-            </div>
-          </SectionCard>
         </>
       )}
 
@@ -476,20 +463,6 @@ const AccountView = () => {
                 )}
               </SectionCard>
 
-              {/* Security */}
-              <SectionCard
-                title="الأمان وكلمة المرور"
-                subtitle="تغيير كلمة المرور وإعدادات الأمان"
-                editLabel="تغيير كلمة المرور"
-                onEditClick={() => handleNavigateToEdit(s.id, "security")}
-              >
-                <div className="sm:col-span-2">
-                  <DataRow label="كلمة المرور" value="••••••••" />
-                  <p className="text-xs text-(--text-light) mt-1">
-                    آخر تغيير منذ 3 أشهر
-                  </p>
-                </div>
-              </SectionCard>
             </>
           );
         })()}

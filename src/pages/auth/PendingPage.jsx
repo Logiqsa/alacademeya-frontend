@@ -105,7 +105,7 @@ const PendingPage = () => {
 
         {/* <button
           onClick={() => navigate("/login")}
-          className="w-full h-14 rounded-xl bg-[#123C91] text-white font-medium text-[16px]"
+          className="w-full h-14 rounded-xl bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px]"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           العودة لتسجيل الدخول
@@ -113,7 +113,7 @@ const PendingPage = () => {
 
         <button
           onClick={() => navigate("/account-state")}
-          className="w-full h-14 rounded-xl bg-[#123C91] text-white font-medium text-[16px]"
+          className="w-full h-14 rounded-xl bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px]"
         >
           متابعة حالة الحساب
         </button>

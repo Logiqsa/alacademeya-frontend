@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Share2, Play, Square, Loader2 } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LessonRecordings from "../../../components/teacher/groups/lessons/LessonRecordings";
-import LessonQuizzes from "../../../components/teacher/groups/lessons/LessonQuizzes";
 import LessonAssignments from "../../../components/teacher/groups/lessons/LessonAssignments";
 import LessonFiles from "../../../components/teacher/groups/lessons/LessonFiles";
 import LiveLessonLink from "../../../components/teacher/groups/lessons/LiveLessonLink";
@@ -98,12 +97,14 @@ const PageHeader = ({ lesson, onOpenAttendance, onLifecycle, lifecycleLoading, e
         </button>
       )}
       {lesson.rawStatus === "live" && <span dir="ltr" className="rounded-lg bg-red-50 px-3 py-2 font-mono text-sm text-red-600">{elapsed}</span>}
-      <button
-        onClick={onOpenAttendance}
-        className="h-10 px-4 rounded-lg bg-[#123C91] text-white text-[14px] font-medium hover:bg-[#0f3280] transition-colors"
-      >
-        تسجيل الحضور
-      </button>
+      {lesson.rawStatus !== "completed" && (
+        <button
+          onClick={onOpenAttendance}
+          className="h-10 px-4 rounded-lg bg-[#123C91] text-white [&_svg]:text-white text-[14px] font-medium hover:bg-[#0f3280] transition-colors"
+        >
+          تسجيل الحضور
+        </button>
+      )}
       <button
         className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-[#374151] hover:bg-gray-50 transition-colors"
         title="مشاركة"
@@ -283,6 +284,7 @@ const LessonDetailsPage = () => {
     setRecording(recordingResult.status === "fulfilled" ? recordingResult.value.data?.data || null : null);
 
     setAttendanceRecords(records);
+    const displayStatus = s.status === "scheduled" && s.scheduledDate && new Date(s.scheduledDate) < new Date() ? "missed" : s.status;
     setLesson({
       id: s.id,
       title: s.title || "حصة",
@@ -296,16 +298,18 @@ const LessonDetailsPage = () => {
           })
         : "--",
       time: s.scheduledDate
-        ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
+          ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
             hour: "2-digit",
             minute: "2-digit",
+            hour12: true,
           })
         : "--",
       duration:
         typeof s.duration === "number"
           ? `${s.duration} دقيقة`
           : (s.duration ?? "--"),
-      status: STATUS_LABELS[s.status] || s.status || "--",
+      status: displayStatus === "missed" ? "فائتة" : STATUS_LABELS[s.status] || s.status || "--",
+      displayStatus,
       // إجمالي الطلاب = عدد سجلات الحضور (كل طالب مسجل في الحصة)، أو عدد طلاب المجموعة لو مفيش سجلات
       totalStudents: records.length || classroom.students?.length || 0,
       attendance: presentCount,
@@ -353,6 +357,7 @@ const LessonDetailsPage = () => {
       setLesson((current) => ({
         ...current,
         rawStatus: updated.status || (current.rawStatus === "live" ? "completed" : "live"),
+        displayStatus: updated.status || (current.rawStatus === "live" ? "completed" : "live"),
         status: STATUS_LABELS[updated.status || (current.rawStatus === "live" ? "completed" : "live")],
         startedAt: updated.startedAt || updated.startAt || current.startedAt || new Date().toISOString(),
       }));
@@ -406,18 +411,14 @@ const LessonDetailsPage = () => {
 
           <LiveLessonLink
             lessonUrl={lesson.lessonUrl}
-            isLive={lesson.status === "مباشر الآن"}
+            status={lesson.displayStatus}
           />
 
           <AttendanceDetailsTable records={attendanceRecords} />
 
-          {/* ⚠️ المكونات دي (الملفات/الواجبات/الاختبارات/التسجيلات) لسه بتعرض
-              بيانات افتراضية جوّاها لأنه مفيش endpoints مخصصة لها في api.js
-              الحالي. لما تتضاف، هنوصلها بنفس الطريقة اللي وصلنا بيها الحضور. */}
           <LessonFiles files={lesson.attachments} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <LessonAssignments assignments={assignments} onAdd={() => navigate(`/assignments/new?classroom=${groupId}&session=${lessonId}`)} />
-            <LessonQuizzes />
           </div>
           <LessonRecordings recording={recording} />
         </div>

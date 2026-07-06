@@ -19,6 +19,7 @@ const normalizeRoom = (room) => ({
     ? new Date(room.lastMessageAt).toLocaleTimeString("ar-EG", {
         hour: "2-digit",
         minute: "2-digit",
+        hour12: true,
       })
     : "",
   lastMessagePreview: room.lastMessage ?? "",
@@ -38,8 +39,9 @@ const normalizeMessage = (msg, currentUserId) => {
     ? new Date(msg.createdAt).toLocaleTimeString("ar-EG", {
         hour: "2-digit",
         minute: "2-digit",
+        hour12: true,
       })
-    : new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+    : new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit", hour12: true });
 
   return {
     id: msg._id ?? msg.id,
@@ -158,6 +160,7 @@ export function useChatRooms(currentUserId) {
     const now = new Date().toLocaleTimeString("ar-EG", {
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
     });
 
     // أضف optimistic message
@@ -191,6 +194,7 @@ export function useChatRooms(currentUserId) {
         ? new Date(saved.createdAt).toLocaleTimeString("ar-EG", {
             hour: "2-digit",
             minute: "2-digit",
+            hour12: true,
           })
         : now;
 

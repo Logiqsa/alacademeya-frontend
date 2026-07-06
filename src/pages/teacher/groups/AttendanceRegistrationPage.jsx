@@ -217,7 +217,7 @@ useEffect(() => {
               <button
                 onClick={handleSave}
                 disabled={saving || loading || students.length === 0}
-                className="flex-1 h-12 rounded-lg bg-[#123C91] text-white font-medium text-[14px] hover:bg-[#0f3280] transition-colors disabled:opacity-60"
+                className="flex-1 h-12 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[14px] hover:bg-[#0f3280] transition-colors disabled:opacity-60"
               >
                 {saving ? "جاري الحفظ..." : "حفظ"}
               </button>

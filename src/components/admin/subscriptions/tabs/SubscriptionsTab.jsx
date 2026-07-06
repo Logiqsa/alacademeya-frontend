@@ -56,7 +56,7 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
         <button
           key={p}
           onClick={() => onChange(p)}
-          className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-medium transition-colors shrink-0 ${p === page ? "bg-[#123C91] text-white" : "border border-gray-200 text-[#575F69] hover:bg-gray-50"}`}
+          className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-medium transition-colors shrink-0 ${p === page ? "bg-[#123C91] text-white [&_svg]:text-white" : "border border-gray-200 text-[#575F69] hover:bg-gray-50"}`}
         >
           {p}
         </button>

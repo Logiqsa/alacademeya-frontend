@@ -160,7 +160,7 @@ const CreateCurriculumPage = () => {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex items-center gap-2 bg-[#123C91] text-white px-6 py-2.5 rounded-lg font-['Tajawal'] hover:bg-[#0F3278] transition-all disabled:opacity-70"
+            className="flex items-center gap-2 bg-[#123C91] text-white [&_svg]:text-white px-6 py-2.5 rounded-lg font-['Tajawal'] hover:bg-[#0F3278] transition-all disabled:opacity-70"
           >
             {saving ? (
               <Loader2 className="animate-spin" size={18} />

@@ -243,7 +243,7 @@ const SubscriptionPage = () => {
               h-12
               px-6
               rounded-xl
-              bg-[#123C91]
+              bg-[#123C91] text-white [&_svg]:text-white
               text-white
               flex
               items-center

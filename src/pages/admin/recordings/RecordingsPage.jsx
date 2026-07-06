@@ -75,7 +75,7 @@ const RecordingsPages = () => {
           </div>
           <button
             onClick={() => setModalOpen(true)}
-            className="order-1 sm:order-2 w-full sm:w-auto px-5 h-12 rounded-lg bg-[#123C91] text-white flex items-center justify-center gap-2 font-['Tajawal'] font-medium text-[16px] shrink-0"
+            className="order-1 sm:order-2 w-full sm:w-auto px-5 h-12 rounded-lg bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center gap-2 font-['Tajawal'] font-medium text-[16px] shrink-0"
           >
             <Upload size={18} />
             رفع تسجيل

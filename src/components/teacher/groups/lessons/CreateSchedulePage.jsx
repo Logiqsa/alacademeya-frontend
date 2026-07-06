@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Clock } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
 
-import { createOrUpdateClassroomSchedule } from "../../../../services/APIService";
+import { createOrUpdateClassroomSchedule, getClassroomSchedule } from "../../../../services/APIService";
 
 const DAYS = [
   { key: "saturday", label: "السبت" },
@@ -23,6 +23,29 @@ const CreateSchedulePage = () => {
   const [time, setTime] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    getClassroomSchedule(groupId)
+      .then((response) => {
+        if (!active) return;
+        const schedule = response.data?.data?.schedule;
+        if (Array.isArray(schedule) && schedule.length) {
+          setEditing(true);
+          setSelectedDays(schedule.map((item) => item.day));
+          setTime(schedule[0].startTime || "");
+        }
+      })
+      .catch((err) => {
+        if (err.response?.status !== 404 && active) {
+          setError(err.response?.data?.message || "تعذر تحميل الجدول الحالي");
+        }
+      })
+      .finally(() => active && setInitialLoading(false));
+    return () => { active = false; };
+  }, [groupId]);
 
   const toggleDay = (key) => {
     setSelectedDays((prev) =>
@@ -62,10 +85,10 @@ const CreateSchedulePage = () => {
   return (
     <TeacherLayout>
       <h2 className="font-[IBM_Plex_Sans_Arabic] text-xl sm:text-2xl font-bold text-[#123C91]">
-        إنشاء جدول
+        {editing ? "تعديل الجدول" : "إنشاء جدول"}
       </h2>
 
-      <div
+      {initialLoading ? <p className="py-16 text-center text-[#575F69]">جاري تحميل الجدول...</p> : <div
         className="mx-auto p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm mt-6 sm:mt-8"
         dir="rtl"
       >
@@ -127,12 +150,12 @@ const CreateSchedulePage = () => {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-2 disabled:opacity-60"
+            className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-2 disabled:opacity-60"
           >
-            {loading ? "جاري الإنشاء..." : "إنشاء جدول الحصص"}
+            {loading ? "جاري الحفظ..." : editing ? "حفظ تعديلات الجدول" : "إنشاء جدول الحصص"}
           </button>
         </div>
-      </div>
+      </div>}
     </TeacherLayout>
   );
 };

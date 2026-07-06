@@ -57,7 +57,7 @@ const PendingPage = () => {
 
         <button
           onClick={() => navigate("/register/account-state")}
-          className="w-full h-13 rounded-xl bg-[#123C91] text-white font-semibold text-[15px] mb-4 hover:bg-[#0f3278] transition-colors"
+          className="w-full h-13 rounded-xl bg-[#123C91] text-white [&_svg]:text-white font-semibold text-[15px] mb-4 hover:bg-[#0f3278] transition-colors"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           عرض حالة الطلب

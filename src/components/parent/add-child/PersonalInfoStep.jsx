@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import DatePicker from "react-datepicker";
@@ -152,6 +152,11 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
   const validate = () => {
     const next = {};
     if (!data.fullName?.trim()) next.fullName = "الاسم الكامل مطلوب";
+    if (!data.email?.trim()) {
+      next.email = "البريد الإلكتروني مطلوب";
+    } else if (!/^\S+@\S+\.\S+$/.test(data.email.trim())) {
+      next.email = "أدخل بريدًا إلكترونيًا صحيحًا";
+    }
     if (!startDate) next.birthDate = "تاريخ الميلاد مطلوب";
     if (!data.country?.id) next.country = "الدولة مطلوبة";
     setErrors(next);
@@ -202,7 +207,7 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
         </div>
 
         {/* البريد الإلكتروني */}
-        {/* <div className="sm:col-span-2">
+        <div className="sm:col-span-2">
           <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1 w-fit">
             البريد الإلكتروني
           </label>
@@ -218,7 +223,7 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
               {errors.email}
             </p>
           )}
-        </div> */}
+        </div>
 
         {/* تاريخ الميلاد */}
         <div className="sm:col-span-2">
@@ -284,7 +289,7 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
         </button>
         <button
           onClick={handleNext}
-          className="flex-1 py-3 px-6 bg-[#123C91] text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px]"
+          className="flex-1 py-3 px-6 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium cursor-pointer text-[14px] sm:text-[16px]"
         >
           التالي
         </button>

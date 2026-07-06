@@ -17,6 +17,7 @@ const STATUS_LABELS = {
   live: "مباشر الآن",
   ended: "منتهية",
   cancelled: "ملغاة",
+  missed: "فائتة",
 };
 
 const resolveName = (val) =>
@@ -26,16 +27,13 @@ const resolveName = (val) =>
 const computeDisplayStatus = (session) => {
   if (session.status === "completed") return "ended";
   if (session.status === "cancelled") return "cancelled";
+  if (["live", "active"].includes(session.status)) return "live";
 
   const start = new Date(session.scheduledDate || session.startAt);
-  const end = session.endAt
-    ? new Date(session.endAt)
-    : new Date(start.getTime() + (session.duration || 45) * 60000);
   const now = new Date();
 
   if (now < start) return "upcoming";
-  if (now >= start && now <= end) return "live";
-  return "ended";
+  return "missed";
 };
 
 const StudentGroupLessonsPage = () => {
@@ -96,6 +94,7 @@ const StudentGroupLessonsPage = () => {
             time: date.toLocaleTimeString("ar-EG", {
               hour: "2-digit",
               minute: "2-digit",
+              hour12: true,
             }),
             duration: s.duration || 45,
             status: STATUS_LABELS[status] || status,

@@ -39,7 +39,7 @@ const mapApiPackage = (pkg, isAnnual, isPopular) => {
       `${pkg.sessions} حصة دراسية شهرياً`,
       "حضور الدروس المباشرة",
       "مشاهدة تسجيلات الحصص",
-      "الواجبات والاختبارات",
+      "الواجبات والمتابعة",
       "تقييمات وتقارير أداء",
       "تواصل ولي الأمر مع المدرس",
     ],
@@ -107,7 +107,7 @@ const Pricing = () => {
           <button
             onClick={() => setIsAnnual(!isAnnual)}
             className={`relative w-14 h-7 rounded-full p-1 flex items-center transition-colors duration-300 ${
-              isAnnual ? "bg-[#123C91]" : "bg-gray-300"
+              isAnnual ? "bg-[#123C91] text-white [&_svg]:text-white" : "bg-gray-300"
             }`}
           >
             <div
@@ -189,7 +189,7 @@ const Pricing = () => {
                 </ul>
 
                 <button
-                  className={`h-12 rounded-lg font-['Tajawal'] font-medium text-[16px] transition-all ${plan.variant === "solid" ? "bg-[#123C91] text-white" : "bg-white text-[#123C91] border border-[#123C91] hover:bg-[#123C91] hover:text-white"}`}
+                  className={`h-12 rounded-lg font-['Tajawal'] font-medium text-[16px] transition-all ${plan.variant === "solid" ? "bg-[#123C91] text-white [&_svg]:text-white" : "bg-white text-[#123C91] border border-[#123C91] hover:bg-[#123C91] hover:text-white hover:[&_svg]:text-white"}`}
                 >
                   {plan.button}
                 </button>

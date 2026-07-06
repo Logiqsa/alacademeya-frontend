@@ -46,7 +46,7 @@ const ChildCard = ({
               w-11
               h-11
               rounded-full
-              bg-[#123C91]
+              bg-[#123C91] text-white [&_svg]:text-white
               text-white
               flex
               items-center

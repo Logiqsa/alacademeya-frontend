@@ -114,6 +114,7 @@ const formatNextLesson = (sessions = []) => {
   const time = nextDate.toLocaleTimeString("ar-EG", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
 
   if (diffDays === 0) return `الحصة القادمة اليوم ${time}`;

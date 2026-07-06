@@ -300,7 +300,7 @@ const UserDetailsModal = ({
               }}
               className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors sm:w-auto ${
                 user.cvUrl
-                  ? "bg-[#123C91] text-white hover:bg-[#0f327a]"
+                  ? "bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f327a]"
                   : "cursor-not-allowed bg-gray-100 text-gray-400"
               }`}
             >
@@ -847,7 +847,7 @@ const UsersTable = ({ users = [], onApprove, onToggleStatus, onDelete }) => {
         title="الموافقة على الطلب"
         message="هل تريد الموافقة على طلب تسجيل هذا المستخدم وتفعيل حسابه؟"
         confirmLabel="موافقة"
-        confirmClass="bg-[#123C91] hover:bg-[#0f3280]"
+        confirmClass="bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f3280]"
         iconColor="bg-blue-100 text-blue-500"
       />
 
@@ -861,7 +861,7 @@ const UsersTable = ({ users = [], onApprove, onToggleStatus, onDelete }) => {
         title="تفعيل الحساب"
         message="هل تريد تفعيل حساب هذا المستخدم؟"
         confirmLabel="تفعيل"
-        confirmClass="bg-[#123C91] hover:bg-[#0f3280]"
+        confirmClass="bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f3280]"
         iconColor="bg-blue-100 text-blue-500"
       />
 
