@@ -77,6 +77,7 @@ import StudentGroupLessonsPage from "./pages/student/groupLessons/Studentgrouple
 import StudentLessonDetailsPage from "./pages/student/groupLessons/Studentlessondetailspage";
 import LessonFilesPage from "./pages/student/groupLessons/Lessonfilespage";
 import CreateSchedulePage from "./components/teacher/groups/lessons/CreateSchedulePage";
+import AttendanceRegistrationPage from "./pages/teacher/groups/AttendanceRegistrationPage";
 
 
 function App() {
@@ -155,6 +156,7 @@ function App() {
         <Route path="/teacher/earnings" element={<TeacherGuard><EarningsPage /></TeacherGuard>} />
         <Route path="/teacher/exam/:examId" element={<TeacherGuard><ExamDetailsPage /></TeacherGuard>} />
         <Route path="/teacher/exams/new" element={<TeacherGuard><CreateExamPage /></TeacherGuard>} />
+        <Route path="/teacher/groups/:groupId/lessons/:lessonId/attendance" element={<TeacherGuard><AttendanceRegistrationPage /></TeacherGuard>} />
 
 
         {/* Admin */}

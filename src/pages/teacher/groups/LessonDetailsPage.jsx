@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { Share2 } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LessonRecordings from "../../../components/teacher/groups/lessons/LessonRecordings";
 import LessonQuizzes from "../../../components/teacher/groups/lessons/LessonQuizzes";
@@ -68,7 +69,8 @@ const AttendanceBadge = ({ status }) => {
   );
 };
 
-const PageHeader = ({ lesson }) => (
+// ─── Header الصفحة + زرار تسجيل الحضور ─────────────────────────────────────────
+const PageHeader = ({ lesson, onOpenAttendance }) => (
   <div dir="rtl" className="flex items-center justify-between gap-3 flex-wrap">
     <div className="flex items-center gap-3 min-w-0">
       <div className="min-w-0">
@@ -82,6 +84,21 @@ const PageHeader = ({ lesson }) => (
           {lesson.groupName} • {lesson.date} • {lesson.time} • {lesson.duration}
         </p>
       </div>
+    </div>
+
+    <div className="flex items-center gap-2">
+      <button
+        onClick={onOpenAttendance}
+        className="h-10 px-4 rounded-lg bg-[#123C91] text-white text-[14px] font-medium hover:bg-[#0f3280] transition-colors"
+      >
+        تسجيل الحضور
+      </button>
+      <button
+        className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-[#374151] hover:bg-gray-50 transition-colors"
+        title="مشاركة"
+      >
+        <Share2 size={16} />
+      </button>
     </div>
   </div>
 );
@@ -169,112 +186,120 @@ const AttendanceDetailsTable = ({ records = [] }) => {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const LessonDetailsPage = () => {
   const { groupId, lessonId } = useParams();
+  const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const loadData = async ({ silent } = {}) => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
 
-    const loadData = async () => {
-      // بنجيب الـ classroom والـ sessions الأول عشان نعرف الحصة المطلوبة موجودة
-      const [classroomResult, sessionsResult] = await Promise.allSettled([
-        getClassroom(groupId),
-        getClassroomSessions(groupId),
-      ]);
+    // بنجيب الـ classroom والـ sessions الأول عشان نعرف الحصة المطلوبة موجودة
+    const [classroomResult, sessionsResult] = await Promise.allSettled([
+      getClassroom(groupId),
+      getClassroomSessions(groupId),
+    ]);
 
-      if (cancelled) return;
+    if (cancelled) return;
 
-      if (sessionsResult.status === "rejected") {
-        console.error("getClassroomSessions failed:", sessionsResult.reason);
-        setError("حدث خطأ أثناء تحميل بيانات الحصة");
-        setLoading(false);
-        return;
-      }
-
-      const classroom =
-        classroomResult.status === "fulfilled"
-          ? classroomResult.value.data?.data || {}
-          : {};
-      if (classroomResult.status === "rejected") {
-        console.error("getClassroom failed:", classroomResult.reason);
-      }
-
-      const sessions = sessionsResult.value.data?.data || [];
-      // ⚠️ مفيش endpoint مخصص لجلب حصة واحدة بالـ id (زي /sessions/{id})
-      // فبنجيب القائمة كاملة ونلاقي فيها الحصة المطلوبة محليًا
-      const s = sessions.find((x) => x.id === lessonId);
-
-      if (!s) {
-        setError("لم يتم العثور على هذه الحصة");
-        setLoading(false);
-        return;
-      }
-
-      // ─── حضور وغياب الحصة دي — من GET /sessions/:id/attendance ─────────────
-      let records = [];
-      try {
-        const attendanceRes = await getSessionAttendance(lessonId);
-        const rawAttendance = attendanceRes.data?.data || [];
-        records = rawAttendance.map((a) => ({
-          id: a.id,
-          studentName: a.student?.user?.fullName || "--",
-          gradeName: resolveName(a.student?.grade?.name),
-          status: a.status,
-          statusLabel: ATTENDANCE_STATUS_LABELS[a.status] || a.status || "--",
-          notes: a.notes,
-        }));
-      } catch (err) {
-        // مش هنوقف الصفحة كلها لو الحضور فشل، بس هنسيب القوائم فاضية
-        console.error("getSessionAttendance failed:", err);
-      }
-
-      if (cancelled) return;
-
-      const presentCount = records.filter((r) => r.status === "present").length;
-      const absentCount = records.filter((r) => r.status === "absent").length;
-
-      setAttendanceRecords(records);
-      setLesson({
-        id: s.id,
-        title: s.title || "حصة",
-        groupName: resolveName(classroom.name) || "مجموعة",
-        date: s.scheduledDate
-          ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          : "--",
-        time: s.scheduledDate
-          ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "--",
-        duration:
-          typeof s.duration === "number"
-            ? `${s.duration} دقيقة`
-            : (s.duration ?? "--"),
-        status: STATUS_LABELS[s.status] || s.status || "--",
-        // إجمالي الطلاب = عدد سجلات الحضور (كل طالب مسجل في الحصة)، أو عدد طلاب المجموعة لو مفيش سجلات
-        totalStudents: records.length || classroom.students?.length || 0,
-        attendance: presentCount,
-        absence: absentCount,
-        lessonUrl: s.meetingLink || classroom.meetingLink || "",
-      });
+    if (sessionsResult.status === "rejected") {
+      console.error("getClassroomSessions failed:", sessionsResult.reason);
+      setError("حدث خطأ أثناء تحميل بيانات الحصة");
       setLoading(false);
-    };
+      return;
+    }
 
-    loadData();
+    const classroom =
+      classroomResult.status === "fulfilled"
+        ? classroomResult.value.data?.data || {}
+        : {};
+    if (classroomResult.status === "rejected") {
+      console.error("getClassroom failed:", classroomResult.reason);
+    }
+
+    const sessions = sessionsResult.value.data?.data || [];
+    // ⚠️ مفيش endpoint مخصص لجلب حصة واحدة بالـ id (زي /sessions/{id})
+    // فبنجيب القائمة كاملة ونلاقي فيها الحصة المطلوبة محليًا
+    const s = sessions.find((x) => x.id === lessonId);
+
+    if (!s) {
+      setError("لم يتم العثور على هذه الحصة");
+      setLoading(false);
+      return;
+    }
+
+    // ─── حضور وغياب الحصة دي — من GET /sessions/:id/attendance ─────────────
+    let records = [];
+    try {
+      const attendanceRes = await getSessionAttendance(lessonId);
+      const rawAttendance = attendanceRes.data?.data || [];
+      records = rawAttendance.map((a) => ({
+        id: a.id,
+        studentName: a.student?.user?.fullName || "--",
+        gradeName: resolveName(a.student?.grade?.name),
+        status: a.status,
+        statusLabel: ATTENDANCE_STATUS_LABELS[a.status] || a.status || "--",
+        notes: a.notes,
+      }));
+    } catch (err) {
+      // مش هنوقف الصفحة كلها لو الحضور فشل، بس هنسيب القوائم فاضية
+      console.error("getSessionAttendance failed:", err);
+    }
+
+    const presentCount = records.filter((r) => r.status === "present").length;
+    const absentCount = records.filter((r) => r.status === "absent").length;
+
+    setAttendanceRecords(records);
+    setLesson({
+      id: s.id,
+      title: s.title || "حصة",
+      groupName: resolveName(classroom.name) || "مجموعة",
+      date: s.scheduledDate
+        ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+        : "--",
+      time: s.scheduledDate
+        ? new Date(s.scheduledDate).toLocaleTimeString("ar-EG", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "--",
+      duration:
+        typeof s.duration === "number"
+          ? `${s.duration} دقيقة`
+          : (s.duration ?? "--"),
+      status: STATUS_LABELS[s.status] || s.status || "--",
+      // إجمالي الطلاب = عدد سجلات الحضور (كل طالب مسجل في الحصة)، أو عدد طلاب المجموعة لو مفيش سجلات
+      totalStudents: records.length || classroom.students?.length || 0,
+      attendance: presentCount,
+      absence: absentCount,
+      lessonUrl: s.meetingLink || classroom.meetingLink || "",
+    });
+    setLoading(false);
 
     return () => {
       cancelled = true;
     };
+  };
+
+  useEffect(() => {
+    let cleanup;
+    (async () => {
+      cleanup = await loadData();
+    })();
+    return () => {
+      if (cleanup) cleanup();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, lessonId]);
 
   if (loading) {
@@ -302,7 +327,12 @@ const LessonDetailsPage = () => {
         dir="rtl"
       >
         <div className="mx-auto space-y-5">
-          <PageHeader lesson={lesson} />
+          <PageHeader
+            lesson={lesson}
+            onOpenAttendance={() =>
+              navigate(`/teacher/groups/${groupId}/lessons/${lessonId}/attendance`)
+            }
+          />
 
           <LessonStats
             totalStudents={lesson.totalStudents}
