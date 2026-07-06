@@ -213,8 +213,8 @@ const UserDetailsModal = ({
             if (!userWhatsappUrl) event.preventDefault();
           }}
           className={`mb-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${userWhatsappUrl
-              ? "bg-[#25D366] text-white hover:bg-[#20bd5a]"
-              : "cursor-not-allowed bg-gray-100 text-gray-400"
+            ? "bg-[#25D366] text-white hover:bg-[#20bd5a]"
+            : "cursor-not-allowed bg-gray-100 text-gray-400"
             }`}
         >
           <MessageCircle size={18} />
@@ -295,11 +295,10 @@ const UserDetailsModal = ({
               onClick={(event) => {
                 if (!user.cvUrl) event.preventDefault();
               }}
-             className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold !text-white transition-colors sm:w-auto [&_svg]:!text-white ${
-  user.cvUrl
-    ? "bg-[#123C91] hover:bg-[#0f327a]"
-    : "cursor-not-allowed bg-gray-100"
-}`}
+              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold !text-white transition-colors sm:w-auto [&_svg]:!text-white ${user.cvUrl
+                  ? "bg-[#123C91] hover:bg-[#0f327a]"
+                  : "cursor-not-allowed bg-gray-100"
+                }`}
             >
               <FileText size={17} />
               {user.cvUrl ? "عرض السيرة الذاتية" : "السيرة الذاتية غير متاحة"}
