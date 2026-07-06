@@ -184,7 +184,7 @@ const Schedule = () => {
         </div>
 
         <div className="mt-8">
-          <div className="flex items-center justify-between mb-8 pb-4">
+          {/* <div className="flex items-center justify-between mb-8 pb-4">
             <button
               onClick={goPrevWeek}
               className="flex items-center gap-1 text-[#1F293780] font-normal"
@@ -213,7 +213,7 @@ const Schedule = () => {
             >
               الأسبوع التالي <ChevronLeft size={20} />
             </button>
-          </div>
+          </div> */}
         </div>
 
         <CalendarStrip
