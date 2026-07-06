@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getCountries } from "../../../services/APIService";
 import { Loader2 } from "lucide-react";
+import { countryOption } from "../../../utils/countryName";
 
 const CurriculumForm = ({ data, onChange }) => {
   const [countries, setCountries] = useState([]);
@@ -12,7 +13,7 @@ const CurriculumForm = ({ data, onChange }) => {
       .then((res) => {
         const list = res?.data?.data || res?.data || [];
         setCountries(
-          list.map((c) => ({ id: c._id || c.id, label: c.name?.ar || c.name })),
+          list.map(countryOption),
         );
       })
       .finally(() => setLoading(false));

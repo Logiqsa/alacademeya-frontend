@@ -62,7 +62,13 @@ const pickName = (name) => {
 // بيوحد شكل العنصر (id / label) مهما كان شكل الحقول جاي من الباك إند
 const normalizeOption = (item) => ({
   id: item.id || item._id || item.value || item.code,
-  label: pickName(item.name) || item.title || item.label || "",
+  label:
+    item.nameAr ||
+    item.arabicName ||
+    pickName(item.name) ||
+    item.title ||
+    item.label ||
+    "",
 });
 
 // أول حرف من الاسم عشان نعرضه بدل صورة البروفايل
@@ -400,7 +406,7 @@ const StudentPersonalCard = ({
   // اسم الدولة للعرض: بندوّر عليه في الليستة المحمّلة (لو متوفرة)، وإلا بنعرض الـ id كاحتياطي
   const countryLabel =
     countryOptions.find((c) => c.id === student.country)?.label ||
-    student.country;
+    "—";
 
   return (
     <form

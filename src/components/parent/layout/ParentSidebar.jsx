@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../../context/AuthContext";
+import { useSidebarUnread } from "../../../api/useSidebarUnread";
 
 import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
@@ -16,6 +17,7 @@ import logoutIcon from "../../../assets/icons/logout.png";
 
 
 const ParentSidebar = ({ isOpen, setIsOpen }) => {
+  const unread = useSidebarUnread();
   const menu = [
     {
       title: "لوحة التحكم",
@@ -143,10 +145,11 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
           >
             {({ isActive }) => (
               <>
+                <span className="relative shrink-0">
                 <img
                   src={item.icon}
                   alt={item.title}
-                  className={`w-5 h-5 shrink-0 transition-all duration-200 ${isActive
+                  className={`block w-5 h-5 transition-all duration-200 ${isActive
                     ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
                     : ""
                     }`}
@@ -159,6 +162,11 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
                       : {}
                   }
                 />
+                {((item.path === "/parent/messages" && unread.messages) ||
+                  (item.path === "/parent/notifications" && unread.notifications)) && (
+                  <span className="absolute -left-1 -top-1 h-3 w-3 rounded-full border-2 border-[#1F2937] bg-red-500" />
+                )}
+                </span>
 
                 {isOpen && <span>{item.title}</span>}
               </>

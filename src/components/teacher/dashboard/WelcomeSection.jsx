@@ -26,7 +26,7 @@ const Welcome = ({ hasChildren = false }) => {
       </div>
 
       <p className="text-gray-500 font-medium -mt-3 px-2">
-        هنا يمكنك متابعة رحلة تعلم أبنائك لحظة بلحظة.
+        هنا يمكنك متابعة رحلة تعليمك لحظة بلحظة.
       </p>
 
   

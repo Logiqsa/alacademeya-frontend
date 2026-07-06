@@ -8,6 +8,7 @@ import {
   getCurriculumStages,
   getStageGrades,
 } from "../../../services/APIService";
+import { getArabicCountryName } from "../../../utils/countryName";
 import { useNavigate } from "react-router-dom";
 
 /* ─── helpers ─── */
@@ -132,7 +133,7 @@ const AccountView = () => {
         const raw = res?.data?.data ?? res?.data ?? [];
         const list = (Array.isArray(raw) ? raw : []).map((c) => ({
           id: c.id,
-          name: c.name || "Unknown",
+          name: getArabicCountryName(c) || "Unknown",
         }));
         setCountries(list);
       })
@@ -378,7 +379,7 @@ const AccountView = () => {
             <DataRow label="رقم الهاتف" value={orDash(parent.phone)} />
             <DataRow
               label="الدولة"
-              value={orDash(parent.countryName || parent.countryCode)}
+              value={orDash(parent.countryName)}
             />
           </SectionCard>
 

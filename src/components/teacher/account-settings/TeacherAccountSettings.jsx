@@ -55,6 +55,8 @@ const extractList = (resData) => {
 const normalizeOption = (item) => ({
   id: item._id || item.id || item.value || item.code,
   label:
+    item.nameAr ||
+    item.arabicName ||
     pickName(item.name) ||
     item.title ||
     item.label ||
@@ -62,6 +64,18 @@ const normalizeOption = (item) => ({
     item.name_ar ||
     "",
 });
+
+const groupOptionsByLabel = (options) => {
+  const groups = new Map();
+  options.forEach((option) => {
+    const key = option.label.trim().toLocaleLowerCase("ar");
+    if (!key || !option.id) return;
+    const existing = groups.get(key);
+    if (existing) existing.ids.push(option.id);
+    else groups.set(key, { ...option, ids: [option.id] });
+  });
+  return [...groups.values()];
+};
 
 const LANGUAGE_OPTIONS = [
   { id: "ar", label: "العربية" },
@@ -341,12 +355,14 @@ const MultiSelectDropdown = ({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-  const toggle = (id) => {
-    if (value.includes(id)) onChange(value.filter((v) => v !== id));
-    else onChange([...value, id]);
+  const toggle = (option) => {
+    const ids = option.ids ?? [option.id];
+    const allSelected = ids.every((id) => value.includes(id));
+    if (allSelected) onChange(value.filter((id) => !ids.includes(id)));
+    else onChange([...new Set([...value, ...ids])]);
   };
   const selectedLabels = options
-    .filter((o) => value.includes(o.id))
+    .filter((o) => (o.ids ?? [o.id]).some((id) => value.includes(id)))
     .map((o) => o.label)
     .join("، ");
   return (
@@ -383,11 +399,11 @@ const MultiSelectDropdown = ({
             </li>
           )}
           {options.map((opt) => {
-            const checked = value.includes(opt.id);
+            const checked = (opt.ids ?? [opt.id]).every((id) => value.includes(id));
             return (
               <li
                 key={opt.id}
-                onClick={() => toggle(opt.id)}
+                onClick={() => toggle(opt)}
                 className="px-3.5 py-2.5 text-sm cursor-pointer hover:bg-(--bg-section) text-(--text-dark) flex items-center justify-between"
               >
                 {opt.label}
@@ -589,17 +605,39 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
         .catch(() => toast.error("تعذر تحميل المراحل الدراسية"))
         .finally(() => setLoadingGrades(false));
     }
-    if (subjectOptions.length === 0) {
-      setLoadingSubjects(true);
-      getSubjects()
-        .then((res) =>
-          setSubjectOptions(extractList(res.data).map(normalizeOption)),
-        )
-        .catch(() => toast.error("تعذر تحميل المواد الدراسية"))
-        .finally(() => setLoadingSubjects(false));
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
+
+  useEffect(() => {
+    if (!editing) return;
+    if (!form.gradeIds.length) {
+      setSubjectOptions([]);
+      return;
+    }
+
+    let active = true;
+    setLoadingSubjects(true);
+    Promise.all(
+      form.gradeIds.map((grade) =>
+        getSubjects({ grade })
+          .then((res) => extractList(res.data))
+          .catch(() => []),
+      ),
+    )
+      .then((results) => {
+        if (active) {
+          setSubjectOptions(
+            groupOptionsByLabel(results.flat().map(normalizeOption)),
+          );
+        }
+      })
+      .catch(() => toast.error("تعذر تحميل المواد الدراسية"))
+      .finally(() => active && setLoadingSubjects(false));
+
+    return () => {
+      active = false;
+    };
+  }, [editing, form.gradeIds]);
 
   const handleCancel = () => {
     setForm(buildForm());
@@ -637,13 +675,15 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
     LANGUAGE_OPTIONS.find((l) => l.id === id)?.label || "—";
   const experienceLabel = (id) =>
     EXPERIENCE_OPTIONS.find((o) => o.id === id)?.label || "—";
-  const joinedNames = (arr) =>
-    arr?.length
-      ? arr
-          .map((i) => pickName(i.name))
-          .filter(Boolean)
-          .join("، ")
-      : "—";
+  const joinedNames = (arr) => {
+    if (!arr?.length) return "—";
+    const names = new Map();
+    arr.forEach((item) => {
+      const name = pickName(item.name).trim();
+      if (name) names.set(name.toLocaleLowerCase("ar"), name);
+    });
+    return [...names.values()].join("، ") || "—";
+  };
 
   return (
     <form
@@ -700,7 +740,9 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
             value={form.gradeIds}
             options={gradeOptions}
             loading={loadingGrades}
-            onChange={(ids) => setForm((prev) => ({ ...prev, gradeIds: ids }))}
+            onChange={(ids) =>
+              setForm((prev) => ({ ...prev, gradeIds: ids, subjects: [] }))
+            }
             placeholder="اختر المرحلة الدراسية"
             emptyLabel="لا توجد مراحل"
           />

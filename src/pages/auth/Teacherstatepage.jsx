@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, Clock, MessageCircle } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
 import { getAccountState } from "../../services/APIService";
-
-const WHATSAPP_NUMBER = "201000000000"; // ← replace with real number
+import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
 
 const steps = [
   {
@@ -48,6 +47,8 @@ const StepIcon = ({ color, done }) => {
 const AccountStatePage = () => {
   const navigate = useNavigate();
   const [state, setState] = useState(null);
+  const { contactSettings } = useContactSettings();
+  const whatsappUrl = whatsappLink(contactSettings?.whatsappNumber);
 
   useEffect(() => {
     getAccountState()
@@ -126,10 +127,12 @@ const AccountStatePage = () => {
 
         {/* whatsapp button */}
         <a
-          href={`https://wa.me/${WHATSAPP_NUMBER}`}
+          href={whatsappUrl || undefined}
           target="_blank"
           rel="noreferrer"
-          className="w-full h-12 mb-4 rounded-xl bg-[#25D366] text-white font-semibold text-[15px] flex items-center justify-center gap-2 hover:bg-[#1ebe5d] transition-colors"
+          aria-disabled={!whatsappUrl}
+          onClick={(event) => { if (!whatsappUrl) event.preventDefault(); }}
+          className={`w-full h-12 mb-4 rounded-xl text-white font-semibold text-[15px] flex items-center justify-center gap-2 transition-colors ${whatsappUrl ? "bg-[#25D366] hover:bg-[#1ebe5d]" : "bg-gray-300 cursor-not-allowed"}`}
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           <MessageCircle size={18} />

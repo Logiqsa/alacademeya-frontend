@@ -14,6 +14,7 @@ import {
   getStageGrades,
   getAllSubjects,
 } from "../../../services/APIService";
+import { getArabicCountryName } from "../../../utils/countryName";
 
 const getName = (item) => {
   if (!item) return "";
@@ -66,7 +67,7 @@ const AddChildPage = () => {
       .then((res) => {
         const list = res.data?.data || res.data || [];
         setCountriesMap(
-          Object.fromEntries(list.map((c) => [c.id, getName(c)])),
+          Object.fromEntries(list.map((c) => [c.id, getArabicCountryName(c)])),
         );
       })
       .catch(() => {});

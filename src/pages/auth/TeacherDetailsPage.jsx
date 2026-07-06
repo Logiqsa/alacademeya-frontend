@@ -73,11 +73,13 @@ const MultiSelectField = ({
     return o.name ?? o;
   };
 
-  const toggle = (id) => {
+  const toggle = (option) => {
+    const ids = option.ids ?? [option.id ?? option];
+    const allSelected = ids.every((id) => selected.includes(id));
     onChange(
-      selected.includes(id)
-        ? selected.filter((s) => s !== id)
-        : [...selected, id],
+      allSelected
+        ? selected.filter((id) => !ids.includes(id))
+        : [...new Set([...selected, ...ids])],
     );
   };
 
@@ -100,12 +102,13 @@ const MultiSelectField = ({
         {!disabled &&
           options.map((o) => {
             const id = o.id ?? o;
-            const active = selected.includes(id);
+            const ids = o.ids ?? [id];
+            const active = ids.every((subjectId) => selected.includes(subjectId));
             return (
               <button
                 key={id}
                 type="button"
-                onClick={() => toggle(id)}
+                onClick={() => toggle(o)}
                 className={`px-3 py-1 rounded-lg text-[13px] font-medium border transition-colors ${
                   active
                     ? "bg-[#123C91] text-white border-[#123C91]"
@@ -119,6 +122,23 @@ const MultiSelectField = ({
       </div>
     </div>
   );
+};
+
+const subjectName = (subject) =>
+  subject?.name?.ar || subject?.name?.en || subject?.name || "";
+
+const groupSubjectsByName = (items) => {
+  const groups = new Map();
+  items.forEach((subject) => {
+    const id = subject.id ?? subject._id;
+    const name = subjectName(subject).trim();
+    if (!id || !name) return;
+    const key = name.toLocaleLowerCase("ar");
+    const existing = groups.get(key);
+    if (existing) existing.ids.push(id);
+    else groups.set(key, { ...subject, id, ids: [id] });
+  });
+  return [...groups.values()];
 };
 
 // Main page
@@ -216,10 +236,7 @@ const TeacherDetailsPage = () => {
     )
       .then((results) => {
         const merged = results.flat();
-        const unique = merged.filter(
-          (item, idx, self) => self.findIndex((s) => s.id === item.id) === idx,
-        );
-        setSubjects(unique);
+        setSubjects(groupSubjectsByName(merged));
       })
       .finally(() => setLoadingSubjects(false));
   }, [form.grades]);

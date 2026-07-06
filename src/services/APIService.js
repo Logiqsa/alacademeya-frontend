@@ -57,6 +57,11 @@ export const getAccountState = () => API.get("/auth/account-state");
 
 export const getCountries = () => API.get("/countries");
 
+// ─── Contact Settings ────────────────────────────────────────────────────────
+export const getContactSettings = () => API.get("/contact-settings");
+export const updateContactSettings = (payload) =>
+  API.patch("/contact-settings", payload);
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Curriculums
 // ──────────────────────────────────────────────────────────────────────────────

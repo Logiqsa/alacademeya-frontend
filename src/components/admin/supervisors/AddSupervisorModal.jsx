@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { createUser, updateUser, getCountries } from "../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان ملف api.js عندك
+import { getArabicCountryName } from "../../../utils/countryName";
 
 const getFlagUrl = (code) => {
   if (!code) return null;
@@ -12,7 +13,7 @@ const normalizeCountries = (raw) => {
   return list.map((c) => ({
     id: c.id,
     code: c.code,
-    name: c.name || "Unknown",
+    name: getArabicCountryName(c) || "Unknown",
     flagUrl: getFlagUrl(c.code),
     phoneCode: c.phoneCode || "",
   }));

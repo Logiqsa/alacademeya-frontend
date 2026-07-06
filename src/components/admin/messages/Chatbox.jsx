@@ -77,6 +77,13 @@ export default function ChatBox({ conversation, onSend, onBack }) {
                       : "rounded-tl-sm border border-blue-100 bg-[#EAF4FF] text-slate-700"
                   }`}
                 >
+                  <p
+                    className={`mb-1 text-[11px] font-semibold ${
+                      isMe ? "text-blue-100" : "text-[#123C91]"
+                    }`}
+                  >
+                    {m.senderName || (isMe ? "أنت" : conversation.name)}
+                  </p>
                   <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed font-['IBM_Plex_Sans_Arabic'] sm:text-sm">
                     {m.text}
                   </p>

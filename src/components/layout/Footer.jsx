@@ -1,11 +1,13 @@
-import React from "react";
+import { Mail, MessageCircle } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
 import fbIcon from "../../assets/icons/facebook.png";
 import twitterIcon from "../../assets/icons/twitter.png";
 import instagramIcon from "../../assets/icons/instagram.png";
 import youtubeIcon from "../../assets/icons/youtube.png";
+import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
 
 const Footer = () => {
+  const { contactSettings } = useContactSettings();
   const handleScroll = (id) => {
     if (id === "top") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -52,6 +54,17 @@ const Footer = () => {
             <li><button onClick={() => handleScroll("faq")} className="text-primary hover:text-[#12C6B0] transition-colors duration-300">الأسئلة الشائعة</button></li>
           </ul>
         </div>
+
+        {/* ================= SOCIAL ================= */}
+        {(contactSettings?.email || contactSettings?.whatsappNumber) && (
+          <div>
+            <h2 className="font-['Tajawal'] font-bold text-[24px] text-[#1F2937] mb-5">تواصل معنا</h2>
+            <div className="space-y-3" dir="ltr">
+              {contactSettings.email && <a href={`mailto:${contactSettings.email}`} className="flex items-center gap-2 text-[#123C91] hover:text-[#12C6B0]"><Mail size={18} />{contactSettings.email}</a>}
+              {contactSettings.whatsappNumber && <a href={whatsappLink(contactSettings.whatsappNumber)} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[#123C91] hover:text-[#12C6B0]"><MessageCircle size={18} />{contactSettings.whatsappNumber}</a>}
+            </div>
+          </div>
+        )}
 
         {/* ================= SOCIAL ================= */}
         <div>

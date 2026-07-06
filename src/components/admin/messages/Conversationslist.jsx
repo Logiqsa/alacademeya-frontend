@@ -1,4 +1,6 @@
-import { Plus, Search, Inbox } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Inbox, Plus, Search, X } from "lucide-react";
+import { getUsers } from "../../../services/APIService";
 
 const filters = [
   { key: "all", label: "الكل" },
@@ -15,16 +17,70 @@ export default function ConversationsLists({
   onSearchChange,
   activeFilter,
   onFilterChange,
+  onCreateChat,
   mode = "chat",
 }) {
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [creatingId, setCreatingId] = useState(null);
+  const [userSearch, setUserSearch] = useState("");
+  const [error, setError] = useState("");
+
+  const openNewChat = async () => {
+    setShowNewChat(true);
+    if (users.length) return;
+    setUsersLoading(true);
+    setError("");
+    try {
+      const res = await getUsers({ page: 1, limit: 100 });
+      const body = res.data ?? {};
+      const list = body.data ?? body.users ?? (Array.isArray(body) ? body : []);
+      setUsers(
+        list.filter(
+          (user) =>
+            !user.isDeleted && ["student", "teacher", "parent"].includes(user.role),
+        ),
+      );
+    } catch {
+      setError("تعذر تحميل المستخدمين");
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const matchingUsers = useMemo(() => {
+    const query = userSearch.trim().toLowerCase();
+    if (!query) return users;
+    return users.filter((user) =>
+      [user.fullName, user.name, user.email, user.username]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query)),
+    );
+  }, [users, userSearch]);
+
+  const roleLabel = { student: "طالب", teacher: "معلم", parent: "ولي أمر" };
+
+  const createChat = async (user) => {
+    const userId = user.id ?? user._id;
+    setCreatingId(userId);
+    setError("");
+    const created = await onCreateChat?.(userId);
+    setCreatingId(null);
+    if (created) {
+      setShowNewChat(false);
+      setUserSearch("");
+    } else {
+      setError("تعذر إنشاء محادثة الدعم");
+    }
+  };
   const filtered = conversations.filter((c) => {
-    const matchesFilter = activeFilter === "all" || c.category === activeFilter;
     const matchesSearch =
-      c.name.includes(searchQuery) ||
+      (c.name ?? "").includes(searchQuery) ||
       (c.teacherName ?? "").includes(searchQuery) ||
       (c.parentName ?? "").includes(searchQuery) ||
       (c.role ?? "").includes(searchQuery);
-    return matchesFilter && matchesSearch;
+    return matchesSearch;
   });
 
   return (
@@ -38,6 +94,7 @@ export default function ConversationsLists({
           <button
             type="button"
             aria-label="محادثة جديدة"
+            onClick={openNewChat}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-[#123C91] text-white transition-colors hover:bg-[#0f2f70]"
           >
             <Plus size={18} />
@@ -133,6 +190,50 @@ export default function ConversationsLists({
           ))
         )}
       </div>
+
+      {showNewChat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 p-4" dir="rtl">
+          <div className="flex max-h-[620px] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4">
+              <div>
+                <h3 className="font-semibold text-slate-800">محادثة دعم جديدة</h3>
+                <p className="mt-0.5 text-xs text-gray-400">اختر المستخدم الذي تريد مراسلته</p>
+              </div>
+              <button type="button" onClick={() => setShowNewChat(false)} className="rounded-full p-2 text-gray-500 hover:bg-gray-100" aria-label="إغلاق">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="relative">
+                <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="ابحث بالاسم أو البريد الإلكتروني..." className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pr-9 pl-3 text-sm focus:border-[#123C91] focus:outline-none" autoFocus />
+              </div>
+            </div>
+            <div className="min-h-40 flex-1 overflow-y-auto px-3 pb-4">
+              {usersLoading ? (
+                <p className="py-10 text-center text-sm text-gray-400">جاري تحميل المستخدمين...</p>
+              ) : error ? (
+                <p className="py-10 text-center text-sm text-red-500">{error}</p>
+              ) : matchingUsers.length === 0 ? (
+                <p className="py-10 text-center text-sm text-gray-400">لا يوجد مستخدمون مطابقون</p>
+              ) : matchingUsers.map((user) => {
+                const id = user.id ?? user._id;
+                const name = user.fullName ?? user.name ?? user.username ?? "مستخدم";
+                return (
+                  <button key={id} type="button" onClick={() => createChat(user)} disabled={creatingId !== null} className="flex w-full items-center gap-3 rounded-xl p-3 text-right hover:bg-blue-50 disabled:opacity-60">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#123C91] font-bold text-white">{name.trim().charAt(0)}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-slate-800">{name}</span>
+                      <span className="block truncate text-xs text-gray-400">{roleLabel[user.role] ?? user.role}{user.email ? ` · ${user.email}` : ""}</span>
+                    </span>
+                    {creatingId === id && <span className="text-xs text-[#123C91]">جاري الإنشاء...</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

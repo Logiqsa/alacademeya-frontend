@@ -4,14 +4,9 @@ import { ChevronDown } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { getCountries } from "../../../services/APIService";
+import { getArabicCountryName } from "../../../utils/countryName";
 
-const getName = (item) => {
-  if (!item) return "";
-  if (typeof item.name === "string") return item.name;
-  if (typeof item.name === "object")
-    return item.name?.ar || item.name?.en || "";
-  return "";
-};
+const getName = getArabicCountryName;
 
 const getFlagUrl = (code) =>
   code ? `https://flagcdn.com/w40/${code.toLowerCase()}.png` : null;

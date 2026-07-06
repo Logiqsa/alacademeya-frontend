@@ -18,6 +18,7 @@ import {
   StudentAcademicCard,
   SecurityCard,
 } from "./ProfileCards";
+import { getArabicCountryName } from "../../../utils/countryName";
 
 const getFlagUrl = (code) =>
   code ? `https://flagcdn.com/w40/${code.toLowerCase()}.png` : null;
@@ -29,7 +30,7 @@ function normalizeCountries(raw) {
   return list.map((c) => ({
     id: c.id,
     code: c.code,
-    name: c.name || "Unknown",
+    name: getArabicCountryName(c) || "Unknown",
     flagUrl: getFlagUrl(c.code),
     phoneCode: c.phoneCode || "",
   }));

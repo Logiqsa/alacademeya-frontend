@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Eye, EyeOff, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
+import { getArabicCountryName } from "../../utils/countryName";
 import {
   register,
   verifyAccount,
@@ -24,7 +25,7 @@ const normalizeCountries = (raw) => {
     id: c.id,
     code: c.code,
     name: c.name || "Unknown",
-    nameEn: c.name || "",
+    nameAr: getArabicCountryName(c),
     flagUrl: getFlagUrl(c.code),
     phoneCode: c.phoneCode || "",
   }));
@@ -71,9 +72,7 @@ const CountryDropdown = ({
 
   const filtered = countries.filter((c) => {
     const s = search.toLowerCase();
-    return (
-      c.name.toLowerCase().includes(s) || c.nameEn.toLowerCase().includes(s)
-    );
+    return c.name.toLowerCase().includes(s) || c.nameAr.includes(s);
   });
 
   useEffect(() => {
@@ -87,7 +86,7 @@ const CountryDropdown = ({
   return (
     <div ref={ref} className="relative">
       <label className="block text-[13px] font-medium text-[#1F2937] mb-1">
-        الدولة
+        دولة الإقامة
       </label>
       <button
         type="button"
@@ -106,7 +105,7 @@ const CountryDropdown = ({
           ) : selected ? (
             <>
               <FlagIcon country={selected} />
-              {selected.name}
+              {selected.nameAr}
             </>
           ) : (
             "اختر الدولة"
@@ -141,7 +140,7 @@ const CountryDropdown = ({
                 className="px-4 py-2.5 cursor-pointer flex items-center gap-3 hover:bg-[#F0F4FC]"
               >
                 <FlagIcon country={c} />
-                <span>{c.name}</span>
+                <span>{c.nameAr}</span>
               </li>
             ))}
           </ul>
@@ -206,7 +205,6 @@ const RegisterForm = ({ type }) => {
     phone: "",
     password: "",
     passwordConfirm: "",
-    specialization: "",
     country: "",
     // كود الدولة الخاص برقم الهاتف — منفصل عن حقل "الدولة" فوق، المستخدم
     // يقدر يختاره بحرية بغض النظر عن الدولة التانية.
@@ -223,7 +221,7 @@ const RegisterForm = ({ type }) => {
       try {
         const res = await getCountries();
         setCountries(normalizeCountries(res.data));
-      } catch (err) {
+      } catch {
         console.error("Failed to load countries");
       } finally {
         setLoadingCountries(false);
@@ -317,10 +315,6 @@ const RegisterForm = ({ type }) => {
       toast.error("يرجى اختيار المرحلة الدراسية");
       return false;
     }
-    if (type === "teacher" && !formData.specialization.trim()) {
-      toast.error("يرجى إدخال التخصص");
-      return false;
-    }
     return true;
   };
 
@@ -351,8 +345,6 @@ const RegisterForm = ({ type }) => {
             : "university";
         payload.studentType = formData.studentType;
       }
-      if (type === "teacher") payload.specialization = formData.specialization;
-
       await register(payload);
 
       toast.success("تم إنشاء الحساب!");
@@ -625,23 +617,6 @@ const RegisterForm = ({ type }) => {
             </div>
           </div>
         </div>
-
-        {/* Specialization — teacher only */}
-        {type === "teacher" && (
-          <div>
-            <label className="block text-[13px] font-medium text-[#1F2937] mb-1">
-              التخصص
-            </label>
-            <input
-              name="specialization"
-              type="text"
-              placeholder="مثال: رياضيات، علوم، لغة عربية..."
-              value={formData.specialization}
-              onChange={handleChange}
-              className={inputClass}
-            />
-          </div>
-        )}
 
         {/* Password */}
         <div>

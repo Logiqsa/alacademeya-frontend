@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
-import { Pencil, Eye, EyeOff, ChevronDown, Loader2 } from "lucide-react";
+import { Pencil, Eye, EyeOff, ChevronDown, Loader2, Mail, MessageCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { getMyProfile, updateMyProfile } from "../../../services/APIService";
+import { getContactSettings, getCountries, getMyProfile, updateContactSettings, updateMyProfile } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext"; // عدّل المسار حسب مشروعك
+import { countryOption, getArabicCountryName } from "../../../utils/countryName";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -49,14 +50,6 @@ const PASSWORD_RULES = [
     label: "لا يحتوي على مسافات",
     test: (p) => p.length > 0 && !/\s/.test(p),
   },
-];
-
-const COUNTRY_OPTIONS = [
-  { id: "eg", label: "مصر" },
-  { id: "sa", label: "السعودية" },
-  { id: "ae", label: "الإمارات" },
-  { id: "kw", label: "الكويت" },
-  { id: "jo", label: "الأردن" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -210,6 +203,84 @@ const PasswordRulesList = ({ password }) => (
   </div>
 );
 
+const ContactSettingsCard = () => {
+  const [form, setForm] = useState({ email: "", whatsappNumber: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getContactSettings()
+      .then((res) => {
+        const data = res.data?.data;
+        if (data) {
+          setForm({ email: data.email || "", whatsappNumber: data.whatsappNumber || "" });
+        }
+      })
+      .catch(() => setError("تعذر تحميل إعدادات التواصل"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+      setError("يرجى إدخال بريد إلكتروني صحيح");
+      return;
+    }
+    if (!/^\+[1-9]\d{7,14}$/.test(form.whatsappNumber.trim())) {
+      setError("رقم واتساب يجب أن يبدأ بـ + وكود الدولة، مثال: +201001234567");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await updateContactSettings({
+        email: form.email.trim(),
+        whatsappNumber: form.whatsappNumber.trim(),
+      });
+      const data = res.data?.data;
+      if (data) setForm({ email: data.email, whatsappNumber: data.whatsappNumber });
+      toast.success(res.data?.message || "تم تحديث وسائل التواصل بنجاح");
+    } catch (err) {
+      setError(err.response?.data?.message || "تعذر حفظ إعدادات التواصل");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
+      <SectionHeader
+        title="إعدادات التواصل"
+        subtitle="تظهر هذه البيانات في الصفحة الرئيسية وصفحات متابعة الطلب."
+      />
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 className="animate-spin text-(--primary)" /></div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label className="mb-1.5 flex items-center gap-2 text-sm text-(--text-light)"><Mail size={16} />البريد الإلكتروني</label>
+            <input type="email" dir="ltr" value={form.email} onChange={(e) => setForm((old) => ({ ...old, email: e.target.value }))} placeholder="support@example.com" className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) outline-none focus:border-(--primary)" />
+          </div>
+          <div>
+            <label className="mb-1.5 flex items-center gap-2 text-sm text-(--text-light)"><MessageCircle size={16} />رقم واتساب</label>
+            <input type="tel" dir="ltr" value={form.whatsappNumber} onChange={(e) => setForm((old) => ({ ...old, whatsappNumber: e.target.value }))} placeholder="+201001234567" className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) outline-none focus:border-(--primary)" />
+          </div>
+        </div>
+      )}
+      {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
+      {!loading && (
+        <button type="submit" disabled={saving} className="mt-5 flex items-center gap-2 rounded-lg bg-(--primary) px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+          {saving && <Loader2 size={14} className="animate-spin" />}
+          حفظ إعدادات التواصل
+        </button>
+      )}
+    </form>
+  );
+};
+
 const Dropdown = ({
   label,
   value,
@@ -279,12 +350,12 @@ const Dropdown = ({
 /* Cards                                                               */
 /* ------------------------------------------------------------------ */
 
-const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
+const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged }) => {
   const buildForm = () => ({
     fullName: admin.fullName || "",
     username: admin.username || "",
     email: admin.email || "",
-    countryId: admin.countryId || "eg",
+    countryId: admin.country?._id || admin.country?.id || admin.country || "",
   });
 
   const [editing, setEditing] = useState(false);
@@ -303,6 +374,11 @@ const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
     setError("");
     setEditing(false);
   };
+
+  const countryLabel =
+    getArabicCountryName(admin.country) ||
+    countryOptions.find((country) => country.id === form.countryId)?.label ||
+    "—";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -356,7 +432,7 @@ const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
           <ViewField label="اسم المستخدم" value={admin.username} />
           <ViewField label="البريد الإلكتروني" value={admin.email} />
           <ViewField label="رقم الهاتف" value={admin.phone} />
-          <ViewField label="الدولة" value={admin.country} />
+          <ViewField label="الدولة" value={countryLabel} />
         </ViewGrid>
       ) : (
         <EditBox>
@@ -379,7 +455,7 @@ const AdminPersonalCard = ({ admin, onUpdated, onEmailChanged }) => {
           <Dropdown
             label="الدولة"
             value={form.countryId}
-            options={COUNTRY_OPTIONS}
+            options={countryOptions}
             onChange={(id) => setForm((prev) => ({ ...prev, countryId: id }))}
             placeholder="اختر الدولة"
           />
@@ -524,6 +600,7 @@ const AdminAccountSettings = () => {
   const [admin, setAdmin] = useState(ctxUser || null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [countryOptions, setCountryOptions] = useState([]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -546,6 +623,15 @@ const AdminAccountSettings = () => {
 
   useEffect(() => {
     fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    getCountries()
+      .then((res) => {
+        const list = res.data?.data || res.data || [];
+        setCountryOptions(Array.isArray(list) ? list.map(countryOption) : []);
+      })
+      .catch(() => setCountryOptions([]));
   }, []);
 
   const handleProfileUpdated = (updatedUser) => {
@@ -618,6 +704,7 @@ const AdminAccountSettings = () => {
       {/* Cards */}
       <AdminPersonalCard
         admin={admin}
+        countryOptions={countryOptions}
         onUpdated={handleProfileUpdated}
         onEmailChanged={handleForceReLogin}
       />
@@ -625,6 +712,7 @@ const AdminAccountSettings = () => {
         lastPasswordChange={admin.lastPasswordChange || "آخر تحديث غير متاح"}
         onPasswordChanged={handleForceReLogin}
       />
+      <ContactSettingsCard />
     </div>
   );
 };

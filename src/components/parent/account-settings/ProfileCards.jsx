@@ -396,7 +396,7 @@ export const ParentProfileCard = ({
   const selectedCountry = countries.find((c) => c.id === form.countryId);
   const countryDisplay = (() => {
     const current = countries.find((c) => c.id === resolveCountryId());
-    return current?.name || parent?.countryName || parent?.countryCode || "—";
+    return current?.name || parent?.countryName || "—";
   })();
 
   const handleSubmit = async (e) => {
@@ -560,7 +560,7 @@ export const StudentPersonalCard = ({
   const selectedCountry = countries.find((c) => c.id === form.countryId);
   const countryDisplay = (() => {
     const current = countries.find((c) => c.id === resolveCountryId());
-    return current?.name || u.countryCode || student?.countryCode || "—";
+    return current?.name || "—";
   })();
 
   const { code: phoneCode, rest: phoneRest } = splitPhone(

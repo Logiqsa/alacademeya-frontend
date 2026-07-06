@@ -1,8 +1,8 @@
-import React from "react";
+import { CheckCircle, Mail, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
+import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
 
 const MESSAGES = {
   student: {
@@ -29,6 +29,8 @@ const PendingPage = () => {
   const navigate = useNavigate();
   const role = new URLSearchParams(window.location.search).get("role") || "student";
   const content = MESSAGES[role] || MESSAGES.student;
+  const { contactSettings } = useContactSettings();
+  const whatsappUrl = whatsappLink(contactSettings?.whatsappNumber);
 
   return (
     <AuthLayout>
@@ -85,6 +87,21 @@ const PendingPage = () => {
             </div>
           ))}
         </div>
+
+        {(whatsappUrl || contactSettings?.email) && (
+          <div className="mb-4 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+            {whatsappUrl && (
+              <a href={whatsappUrl} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#25D366] text-sm font-semibold text-white">
+                <MessageCircle size={18} /> تواصل عبر واتساب
+              </a>
+            )}
+            {contactSettings?.email && (
+              <a href={`mailto:${contactSettings.email}`} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#123C91] text-sm font-semibold text-[#123C91]">
+                <Mail size={18} /> راسلنا بالبريد
+              </a>
+            )}
+          </div>
+        )}
 
         {/* <button
           onClick={() => navigate("/login")}

@@ -1,0 +1,95 @@
+import { useCallback, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import { getNotifications } from "../services/APIService";
+import { getChatRooms } from "./chatApi";
+import { getSocket } from "./socket";
+
+const extractList = (payload, keys) => {
+  let value = payload;
+  for (let i = 0; i < 4 && value && !Array.isArray(value); i += 1) {
+    const key = keys.find((candidate) => Array.isArray(value[candidate]));
+    if (key) return value[key];
+    value = value.data;
+  }
+  return Array.isArray(value) ? value : [];
+};
+
+const unreadRoom = (room, userId) => {
+  const value =
+    room.unreadCount ??
+    room.unreadMessagesCount ??
+    room.unreadMessageCount ??
+    room.unreadMessages ??
+    room.hasUnreadMessages ??
+    room.hasUnread ??
+    room.isUnread ??
+    room.unread?.count ??
+    room.unread;
+
+  if (Array.isArray(value)) return value.length > 0;
+  if (value && typeof value === "object") {
+    const ownValue = value[userId] ?? value[String(userId)];
+    return Array.isArray(ownValue) ? ownValue.length > 0 : ownValue === true || Number(ownValue) > 0;
+  }
+  return value === true || Number(value) > 0;
+};
+
+export function useSidebarUnread() {
+  const { user } = useContext(AuthContext);
+  const userId = user?._id ?? user?.id;
+  const { pathname } = useLocation();
+  const [unread, setUnread] = useState({ messages: false, notifications: false });
+
+  const refresh = useCallback(async () => {
+    const [roomsResult, notificationsResult] = await Promise.allSettled([
+      getChatRooms(),
+      getNotifications(),
+    ]);
+
+    setUnread((current) => ({
+      messages:
+        roomsResult.status === "fulfilled"
+          ? extractList(roomsResult.value.data, ["rooms"]).some((room) => unreadRoom(room, userId))
+          : current.messages,
+      notifications:
+        notificationsResult.status === "fulfilled"
+          ? extractList(notificationsResult.value.data, ["notifications"]).some((item) => {
+              const isRead = item.isRead ?? item.read ?? item.status === "read";
+              return !isRead;
+            })
+          : current.notifications,
+    }));
+  }, [userId]);
+
+  useEffect(() => {
+    const initial = window.setTimeout(refresh, 0);
+    const interval = window.setInterval(refresh, 10000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, [pathname, refresh]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    const onAny = (eventName, payload) => {
+      const event = String(eventName).toLowerCase();
+      if (event.includes("notification")) {
+        setUnread((current) => ({ ...current, notifications: true }));
+      }
+      if (event.includes("message")) {
+        const message = payload?.message ?? payload;
+        const senderId = message?.sender?._id ?? message?.sender?.id ?? message?.sender;
+        if (String(senderId) !== String(userId)) {
+          setUnread((current) => ({ ...current, messages: true }));
+        }
+      }
+    };
+
+    socket.onAny(onAny);
+    return () => socket.offAny(onAny);
+  }, [userId]);
+
+  return unread;
+}

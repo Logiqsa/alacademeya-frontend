@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/auth/AuthLayout";
 import logo from "../../assets/icons/logo.svg";
@@ -6,10 +6,13 @@ import clockIcon from "../../assets/icons/clock.svg";
 import whatsappIcon from "../../assets/icons/whatsapp.svg";
 import reviewTimeIcon from "../../assets/icons/review-time.svg";
 import { AuthContext } from "../../context/AuthContext";
+import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
 
 const AccountStatePage = () => {
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
+  const { contactSettings } = useContactSettings();
+  const whatsappUrl = whatsappLink(contactSettings?.whatsappNumber);
 
   return (
     <AuthLayout>
@@ -75,7 +78,10 @@ const AccountStatePage = () => {
             <p style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "16px", color: "#1F2937" }}>تواصل معنا عبر واتساب</p>
             <p style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontWeight: 400, fontSize: "14px", color: "#575F69" }}>تحقق من رقم واتسابك سنرسل لك إشعارا فور الموافقة على طلبك.</p>
             <button
-              onClick={() => window.open("https://wa.me/", "_blank")}
+              onClick={() => whatsappUrl && window.open(whatsappUrl, "_blank", "noopener,noreferrer")}
+              disabled={!whatsappUrl}
+              aria-disabled={!whatsappUrl}
+              className="disabled:cursor-not-allowed disabled:opacity-50"
               style={{ width: "240px", height: "40px", borderRadius: "8px", paddingRight: "24px", paddingLeft: "24px", backgroundColor: "#123C91", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
             >
               <img src={whatsappIcon} alt="" className="w-4 h-4 brightness-0 invert" />

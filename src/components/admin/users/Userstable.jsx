@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MoreVertical,
   Eye,
@@ -8,8 +8,12 @@ import {
   User,
   X,
   Info,
+  FileText,
+  ExternalLink,
+  MessageCircle,
 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { getArabicCountryName } from "../../../utils/countryName";
 const getCurrentMonth = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -21,6 +25,63 @@ const getCurrentMonth = () => {
 const formatMonthlyHours = (minutes = 0) => {
   const hours = minutes / 60;
   return `${hours.toFixed(1).replace(".0", "")} ساعة`;
+};
+
+const localizedName = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.ar || value.en || value.name?.ar || value.name?.en || "";
+};
+
+const listNames = (value) => {
+  if (!Array.isArray(value)) return localizedName(value) || "--";
+  const names = value
+    .map((item) => localizedName(item?.name ?? item))
+    .filter(Boolean);
+  return [...new Set(names)].join("، ") || "--";
+};
+
+const fileUrl = (value) => {
+  const raw =
+    (typeof value === "string"
+      ? value
+      : value?.url || value?.secureUrl || value?.path) || "";
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://api.alacademeya.com/${raw.replace(/^\//, "")}`;
+};
+
+const whatsappUrl = (phone) => {
+  const number = String(phone || "")
+    .trim()
+    .replace(/[^\d]/g, "")
+    .replace(/^00/, "");
+
+  return number ? `https://wa.me/${number}` : "";
+};
+
+const teacherData = (profile) => {
+  const profileUser =
+    profile?.user && typeof profile.user === "object" ? profile.user : {};
+  const merged = { ...profileUser, ...profile };
+  const cv =
+    merged.cv ??
+    merged.cvUrl ??
+    merged.resume ??
+    merged.resumeUrl ??
+    merged.documents?.cv;
+
+  return {
+    ...merged,
+    username: merged.username || profileUser.username,
+    phone: merged.phone || profileUser.phone,
+    countryName: getArabicCountryName(merged.country),
+    curriculaLabel: listNames(merged.curriculums ?? merged.curriculum),
+    gradesLabel: listNames(merged.grades ?? merged.grade),
+    subjectsLabel: listNames(merged.subjects ?? merged.subject),
+    certificatesLabel: listNames(merged.certificates),
+    cvUrl: fileUrl(cv),
+  };
 };
 
 const Badge = ({ label, type }) => {
@@ -79,9 +140,9 @@ const UserCell = ({ name, avatarUrl }) => (
 );
 
 const DetailRow = ({ label, value }) => (
-  <div className="bg-[#F9FAFA] rounded-xl px-4 py-3 flex items-center justify-between gap-2">
+  <div className="flex min-h-16 flex-col justify-center gap-1 rounded-xl bg-[#F9FAFA] px-4 py-3">
     <span className="text-[12px] text-[#8C9198]">{label}</span>
-    <span className="text-[14px] font-medium text-[#1F2937] font-['Tajawal']">
+    <span className="break-words text-[14px] font-medium text-[#1F2937] font-['Tajawal']">
       {value ?? "--"}
     </span>
   </div>
@@ -99,6 +160,7 @@ const UserDetailsModal = ({
   const isTeacher = user.role === "معلم";
   const isParent = user.role === "ولي أمر";
   const isStudent = user.role === "طالب";
+  const userWhatsappUrl = whatsappUrl(user.phone);
 
   return (
     <div
@@ -108,7 +170,9 @@ const UserDetailsModal = ({
       }}
     >
       <div
-        className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl max-h-[90vh] overflow-y-auto"
+        className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-xl ${
+          isTeacher ? "max-w-4xl sm:p-7" : "max-w-sm"
+        }`}
         dir="rtl"
       >
         <div className="flex items-center justify-between mb-4">
@@ -142,30 +206,33 @@ const UserDetailsModal = ({
             {roleBadge(user.role)}
           </div>
         </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-2">
+        <a
+          href={userWhatsappUrl || undefined}
+          target={userWhatsappUrl ? "_blank" : undefined}
+          rel={userWhatsappUrl ? "noopener noreferrer" : undefined}
+          aria-disabled={!userWhatsappUrl}
+          onClick={(event) => {
+            if (!userWhatsappUrl) event.preventDefault();
+          }}
+          className={`mb-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+            userWhatsappUrl
+              ? "bg-[#25D366] text-white hover:bg-[#20bd5a]"
+              : "cursor-not-allowed bg-gray-100 text-gray-400"
+          }`}
+        >
+          <MessageCircle size={18} />
+          تواصل عبر واتساب
+        </a>
+        <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <DetailRow label="تاريخ الانضمام" value={user.joinDate} />
-
-          <DetailRow
-            label="رقم الهاتف"
-            value={user.phone ?? "+20 111 987 6543"}
-          />
+          <DetailRow label="رقم الهاتف" value={user.phone} />
+          <DetailRow label="اسم المستخدم" value={user.username} />
         </div>
 
-        {(isStudent || isTeacher) && (
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <DetailRow label="المرحلة" value={user.stage ?? "ثانوية"} />
-
-            {isStudent && (
-              <DetailRow
-                label="الباقة"
-                value={user.package ?? "باقة لمادة واحدة"}
-              />
-            )}
-
-            {isTeacher && (
-              <DetailRow label="المادة" value={user.subject ?? "الرياضيات"} />
-            )}
+        {isStudent && (
+          <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <DetailRow label="المرحلة" value={user.stage} />
+            <DetailRow label="الباقة" value={user.package} />
           </div>
         )}
 
@@ -177,19 +244,33 @@ const UserDetailsModal = ({
 
         {isTeacher && (
           <>
-            <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <DetailRow
                 label="سنوات الخبرة"
-                value={user.experience ?? "8 سنوات"}
+                value={user.experienceYears ?? user.experience}
               />
-
               <DetailRow
-                label="المنهج"
-                value={user.curriculum ?? "المنهج المصري"}
+                label="المواد"
+                value={user.subjectsLabel ?? user.subject}
+              />
+              <DetailRow
+                label="المناهج"
+                value={user.curriculaLabel ?? user.curriculum}
+              />
+              <DetailRow
+                label="الصفوف"
+                value={user.gradesLabel ?? user.grade}
+              />
+              <DetailRow label="الدولة" value={user.countryName} />
+              <DetailRow label="لغة التدريس" value={user.language} />
+              <DetailRow label="التقييم" value={user.rating} />
+              <DetailRow
+                label="حالة ملف المعلم"
+                value={user.teacherStatus ?? user.status}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <DetailRow
                 label="الساعات الشهرية"
                 value={
@@ -208,6 +289,25 @@ const UserDetailsModal = ({
                 }
               />
             </div>
+
+            <a
+              href={user.cvUrl || undefined}
+              target="_blank"
+              rel="noreferrer"
+              aria-disabled={!user.cvUrl}
+              onClick={(event) => {
+                if (!user.cvUrl) event.preventDefault();
+              }}
+              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors sm:w-auto ${
+                user.cvUrl
+                  ? "bg-[#123C91] text-white hover:bg-[#0f327a]"
+                  : "cursor-not-allowed bg-gray-100 text-gray-400"
+              }`}
+            >
+              <FileText size={17} />
+              {user.cvUrl ? "عرض السيرة الذاتية" : "السيرة الذاتية غير متاحة"}
+              {user.cvUrl && <ExternalLink size={15} />}
+            </a>
 
             {reportError && (
               <p className="mt-2 text-[12px] text-red-500 text-center">
@@ -557,6 +657,25 @@ const UsersTable = ({ users = [], onApprove, onToggleStatus, onDelete }) => {
       if (!teacherId) {
         throw new Error("معرف المعلم غير موجود");
       }
+
+      const fullTeacherData = teacherData(teacherProfile);
+      setDetailsUser((currentUser) =>
+        currentUser?.id === user.id
+          ? {
+              ...currentUser,
+              ...fullTeacherData,
+              id: currentUser.id,
+              name:
+                fullTeacherData.fullName ||
+                fullTeacherData.name ||
+                currentUser.name,
+              role: currentUser.role,
+              status: currentUser.status,
+              teacherStatus: fullTeacherData.status,
+              teacherId,
+            }
+          : currentUser,
+      );
 
       const month = getCurrentMonth();
 

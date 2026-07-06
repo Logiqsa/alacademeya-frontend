@@ -10,6 +10,8 @@ const normalizeRoom = (room) => ({
   // لكلمة ثابتة، عشان تشتغل مع فلاتر الوالد ("teachers") والطالب ("groups")
   // مع بعض من غير تعارض — كل صفحة بتربط الـ key بتاعها بنفس القيمة دي.
   category: room.type === "support" ? "admin" : "classroom",
+  type: room.type,
+  participants: room.participants ?? [],
   avatarInitial: (room.displayName ?? room.name ?? "?").trim().charAt(0),
   studentName: room.studentName ?? null,
   unreadCount: room.unreadCount ?? 0,
@@ -25,6 +27,13 @@ const normalizeRoom = (room) => ({
 
 const normalizeMessage = (msg, currentUserId) => {
   const senderId = msg.sender?._id ?? msg.sender?.id ?? msg.sender;
+  const senderName =
+    msg.sender?.fullName ??
+    msg.sender?.name ??
+    msg.senderName ??
+    msg.author?.fullName ??
+    msg.author?.name ??
+    "مستخدم";
   const time = msg.createdAt
     ? new Date(msg.createdAt).toLocaleTimeString("ar-EG", {
         hour: "2-digit",
@@ -34,7 +43,8 @@ const normalizeMessage = (msg, currentUserId) => {
 
   return {
     id: msg._id ?? msg.id,
-    sender: senderId === currentUserId ? "me" : "them",
+    sender: String(senderId) === String(currentUserId) ? "me" : "them",
+    senderName,
     text: msg.text ?? msg.content ?? "",
     time,
     status: msg.readBy?.length > 1 ? "read" : "sent",
@@ -80,7 +90,7 @@ export function useChatRooms(currentUserId) {
       const senderId = rawMsg.sender?._id ?? rawMsg.sender?.id ?? rawMsg.sender;
 
       // لو الرسالة من "me" — الـ optimistic موجودة بالفعل، متضيفهاش
-      if (senderId === currentUserId) return;
+      if (String(senderId) === String(currentUserId)) return;
 
       setConversations((prev) =>
         prev.map((c) => {
@@ -154,6 +164,7 @@ export function useChatRooms(currentUserId) {
     const optimisticMessage = {
       id: tempId,
       sender: "me",
+      senderName: "أنت",
       text,
       time: now,
       status: "sent",
@@ -213,14 +224,15 @@ export function useChatRooms(currentUserId) {
     }
   }, []);
 
-  const startSupportConversation = useCallback(async () => {
+  const startSupportConversation = useCallback(async (userId = currentUserId) => {
     try {
       // ✅ الباك إند مستني حقل "userId" (مش "participants") — راجع Postman collection
       const res = await startSupportRoom({
-        userId: currentUserId,
+        userId,
       });
       const created = res.data?.data ?? res.data;
-      const newRoomId = created?.id ?? created?._id;
+      const newRoomId =
+        created?.id ?? created?._id ?? created?.room?.id ?? created?.room?._id;
 
       const rooms = await fetchRooms();
       setConversations(rooms);

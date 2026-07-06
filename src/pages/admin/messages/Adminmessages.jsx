@@ -1,17 +1,9 @@
-import React, { useState, useContext } from "react";
+import { useState, useContext } from "react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import ConversationsList from "../../../components/admin/messages/Conversationslist";
 import ChatBox from "../../../components/admin/messages/Chatbox";
 import { useChatRooms } from "../../../api/useChatRooms"; // تأكد من المسار الصحيح
 import { AuthContext } from "../../../context/AuthContext";
-
-const FILTERS = [
-  { key: "all", label: "الكل" },
-  { key: "groups", label: "الفصول" },
-  { key: "student", label: "الطلاب" },
-  { key: "teacher", label: "المعلمون" },
-  { key: "parent", label: "أولياء الأمور" },
-];
 
 export default function AdminMessages() {
   const { user } = useContext(AuthContext);
@@ -24,6 +16,7 @@ export default function AdminMessages() {
     openConversation,
     leaveConversation,
     sendMessage,
+    startSupportConversation,
   } = useChatRooms(currentUserId);
 
   const [showChatMobile, setShowChatMobile] = useState(false);
@@ -39,6 +32,15 @@ export default function AdminMessages() {
     leaveConversation(activeId);
     setShowChatMobile(false);
     openConversation(null);
+  };
+
+  const handleCreateSupportChat = async (userId) => {
+    const roomId = await startSupportConversation(userId);
+    if (roomId) {
+      setShowChatMobile(true);
+      return true;
+    }
+    return false;
   };
 
   const filteredConversations = conversations.filter((c) => {
@@ -79,6 +81,7 @@ export default function AdminMessages() {
                 onSearchChange={setSearchQuery}
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
+                onCreateChat={handleCreateSupportChat}
               />
             </div>
 
