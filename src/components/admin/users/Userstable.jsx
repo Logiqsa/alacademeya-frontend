@@ -298,11 +298,11 @@ const UserDetailsModal = ({
               onClick={(event) => {
                 if (!user.cvUrl) event.preventDefault();
               }}
-              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors sm:w-auto ${
-                user.cvUrl
-                  ? "bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f327a]"
-                  : "cursor-not-allowed bg-gray-100 text-gray-400"
-              }`}
+             className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-colors sm:w-auto [&_svg]:text-white ${
+  user.cvUrl
+    ? "bg-[#123C91] hover:bg-[#0f327a]"
+    : "cursor-not-allowed bg-gray-100"
+}`}
             >
               <FileText size={17} />
               {user.cvUrl ? "عرض السيرة الذاتية" : "السيرة الذاتية غير متاحة"}
