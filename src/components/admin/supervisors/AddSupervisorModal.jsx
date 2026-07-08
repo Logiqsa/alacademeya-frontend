@@ -161,7 +161,55 @@ const InputField = ({
   </div>
 );
 
-const EMPTY_FORM = { name: "", email: "", phone: "", password: "", country: "" };
+// ─── Role selector (segmented control) ──────────────────────────────────────
+const ROLE_OPTIONS = [
+  { value: "admin", label: "مشرف" },
+  { value: "super-admin", label: "مشرف عام" },
+];
+
+const RoleSelector = ({ value, onChange, error }) => (
+  <div className="w-full">
+    <label className="block font-['Tajawal'] font-medium text-[15px] text-right text-[#1F2937] pb-1">
+      الصلاحية
+    </label>
+    <div
+      className={`flex gap-1.5 p-1 rounded-lg bg-[#F3F4F6] border ${
+        error ? "border-red-400" : "border-[#E5E5E5]"
+      }`}
+    >
+      {ROLE_OPTIONS.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={`flex-1 h-10 rounded-md font-['IBM_Plex_Sans_Arabic'] text-[14px] font-medium cursor-pointer transition-all
+              ${
+                active
+                  ? "bg-[#123C91] text-white shadow-[0px_1px_3px_rgba(18,60,145,0.35)]"
+                  : "text-[#575F69] hover:bg-white"
+              }`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+    {error && (
+      <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>
+    )}
+  </div>
+);
+
+const EMPTY_FORM = {
+  name: "",
+  email: "",
+  phone: "",
+  password: "",
+  country: "",
+  role: "admin",
+};
 
 // ─── Modal ───────────────────────────────────────────────────────────────────
 // Pass `supervisor` to edit an existing record; omit it (or pass null) to add a new one.
@@ -236,6 +284,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
       phone: localPhone.replace(/[^\d+]/g, ""),
       password: "",
       country: supervisor.countryId || "",
+      role: supervisor.role || "admin", // ⚠️ عدّل حسب اسم الحقل الراجع من الباك اند لو مختلف
     });
     setErrors({});
   }, [open, isEditMode, supervisor, countries]);
@@ -256,6 +305,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
     if (!data.email.trim()) next.email = "البريد الإلكتروني مطلوب";
     if (!data.country) next.country = "يرجى اختيار الدولة";
     if (!data.phone.trim()) next.phone = "رقم الهاتف مطلوب";
+    if (!data.role) next.role = "يرجى اختيار الصلاحية";
     // Password is only required when creating a new account
     if (!isEditMode && !data.password.trim())
       next.password = "كلمة المرور مطلوبة";
@@ -290,6 +340,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
           phone: buildFullPhone(),
           country: data.country,
           countryCode: selectedCountry?.code,
+          role: data.role,
         };
         // Only send password if the admin actually typed a new one
         if (data.password.trim()) {
@@ -308,7 +359,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
           passwordConfirm: data.password,
           country: data.country,
           countryCode: selectedCountry?.code,
-          role: "admin",
+          role: data.role,
           isVerified: true,
         });
       }
@@ -337,11 +388,11 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
         className="bg-white w-full sm:max-w-120 rounded-t-3xl sm:rounded-2xl p-6 pb-8 sm:pb-6 shadow-xl max-h-[92dvh] overflow-y-auto"
         dir="rtl"
       >
-        <div className="flex justify-center mb-4 sm:hidden">
+        <div className="flex justify-center mb-2  sm:hidden">
           <div className="w-10 h-1 rounded-full bg-[#E5E5E5]" />
         </div>
 
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-1 -mt-2">
           <h3 className="font-['IBM_Plex_Sans_Arabic'] font-medium text-[18px] text-[#1F2937]">
             {isEditMode ? "تعديل بيانات المشرف" : "إضافة مشرف جديد"}
           </h3>
@@ -359,7 +410,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
           </div>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-1">
           <InputField
             label="الاسم بالكامل"
             value={data.name}
@@ -375,6 +426,12 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
             placeholder="example@email.com"
             type="email"
             error={errors.email}
+          />
+
+          <RoleSelector
+            value={data.role}
+            onChange={(v) => handleField("role", v)}
+            error={errors.role}
           />
 
           <CountryDropdown
@@ -445,7 +502,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
           </div>
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-2">
           <button
             onClick={handleSubmit}
             disabled={saving}

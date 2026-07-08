@@ -18,6 +18,7 @@ const mapUserToSupervisor = (u) => ({
   email: u.email,
   phone: u.phone,
   countryId: u.country?.id || u.country, // ⚠️ عدّل حسب شكل الحقل الراجع من الباك اند (object ولا id مباشرة)
+  role: u.role || "admin", // ⚠️ عدّل حسب اسم الحقل الفعلي لو مختلف ("admin" | "super-admin")
   isActive: Boolean(u.isActive ?? u.isVerified), // ⚠️ عدّل حسب اسم الحقل الفعلي
   status: (u.isActive ?? u.isVerified) ? "نشط" : "متوقف",
 });
@@ -47,10 +48,13 @@ const SupervisorsPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getUsers({ role: "admin" });
+      const res = await getUsers({ role: "admin" }); // ⚠️ لو عايز تجيب super-admin كمان، شوف الملاحظة تحت
       // شكل الـ response ممكن يكون res.data أو res.data.data أو res.data.users
       const list = res.data?.data || res.data?.users || res.data || [];
-      const onlyAdmins = list.filter((u) => u.role === "admin"); // فلترة إضافية احتياطية
+      // فلترة إضافية احتياطية: يقبل admin و super-admin كمان
+      const onlyAdmins = list.filter(
+        (u) => u.role === "admin" || u.role === "super-admin",
+      );
       setSupervisors(onlyAdmins.map(mapUserToSupervisor));
     } catch (err) {
       console.error(err);
