@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, X, AlertTriangle } from "lucide-react";
 
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
@@ -12,6 +12,7 @@ import {
   getClassroom,
   getSessionAttendance,
   getClassroomSchedule,
+  endSession,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const ITEMS_PER_PAGE = 5;
@@ -28,6 +29,54 @@ const STATUS_LABELS = {
 
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
+
+// ─── End Session Confirm Modal ─────────────────────────────────────────────
+const EndSessionModal = ({ open, lesson, loading, error, onConfirm, onClose }) => {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose(); }}
+    >
+      <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl" dir="rtl">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+            <AlertTriangle size={20} className="text-amber-500" />
+          </div>
+          <div>
+            <h3 className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937] mb-1">
+              إنهاء الحصة
+            </h3>
+            <p className="text-sm text-[#575F69]">
+              هل أنت متأكد من إنهاء حصة{" "}
+              <strong className="text-[#1F2937]">"{lesson?.title}"</strong>؟ لن
+              تتمكن من التراجع عن هذا الإجراء.
+            </p>
+          </div>
+        </div>
+
+        {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
+
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex-1 py-3 bg-red-600 text-white rounded-xl font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:bg-red-700 transition-colors disabled:opacity-60"
+          >
+            {loading ? "جاري الإنهاء..." : "إنهاء الحصة"}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:border-[#123C91] transition-colors disabled:opacity-60"
+          >
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const GroupLessonsPage = () => {
@@ -47,10 +96,17 @@ const GroupLessonsPage = () => {
   const [hasSchedule, setHasSchedule] = useState(false);
 
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("تم إنشاء الحصة بنجاح");
+
+  // ─── إنهاء الحصة ────────────────────────────────────────────────────────────
+  const [endTarget, setEndTarget] = useState(null); // { id, title }
+  const [ending, setEnding] = useState(false);
+  const [endError, setEndError] = useState(null);
 
   // ─── Toast نجاح إضافة الحصة/الجدول ─────────────────────────────────────────
   useEffect(() => {
     if (location.state?.showSuccessToast) {
+      setToastMessage("تم إنشاء الحصة بنجاح");
       setShowToast(true);
 
       // بنشيل الـ state من الـ history عشان الرسالة متظهرش تاني لو المستخدم عمل refresh
@@ -128,6 +184,7 @@ const GroupLessonsPage = () => {
         return {
           id: s.id,
           title: s.title || "حصة",
+          rawStatus: s.status,
           date: s.scheduledDate
             ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
               weekday: "long",
@@ -193,6 +250,37 @@ const GroupLessonsPage = () => {
   const handleDelete = (id) =>
     console.log("TODO: deleteSession endpoint not available yet —", id);
 
+  // بيتفتح لما المعلم يدوس زرار "إنهاء الحصة" في الجدول (LessonsTable لازم يستدعي onEndSession(lesson))
+  const handleEndRequest = (lesson) => {
+    setEndError(null);
+    setEndTarget(lesson);
+  };
+
+  const closeEndModal = () => {
+    if (ending) return;
+    setEndTarget(null);
+    setEndError(null);
+  };
+
+  const handleConfirmEnd = async () => {
+    if (!endTarget) return;
+    setEnding(true);
+    setEndError(null);
+    try {
+      await endSession(endTarget.id);
+      setEndTarget(null);
+      setToastMessage("تم إنهاء الحصة بنجاح");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+      fetchData();
+    } catch (err) {
+      console.error("endSession failed:", err.response?.data || err);
+      setEndError(err.response?.data?.message || "حدث خطأ أثناء إنهاء الحصة");
+    } finally {
+      setEnding(false);
+    }
+  };
+
   return (
     <TeacherLayout>
       <div
@@ -204,7 +292,7 @@ const GroupLessonsPage = () => {
           <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#D6E4C3] shadow-lg rounded-xl px-4 py-3 min-w-[280px]">
             <CheckCircle2 className="text-green-600 shrink-0" size={20} />
             <p className="text-sm text-[#1A1A1A] font-medium flex-1">
-              تم إنشاء الحصة بنجاح
+              {toastMessage}
             </p>
             <button
               onClick={() => setShowToast(false)}
@@ -288,6 +376,7 @@ const GroupLessonsPage = () => {
               groupId={groupId}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onEndSession={handleEndRequest}
             />
           )}
         </div>
@@ -302,6 +391,15 @@ const GroupLessonsPage = () => {
           unitLabel="حصة"
         />
       </div>
+
+      <EndSessionModal
+        open={!!endTarget}
+        lesson={endTarget}
+        loading={ending}
+        error={endError}
+        onConfirm={handleConfirmEnd}
+        onClose={closeEndModal}
+      />
     </TeacherLayout>
   );
 };

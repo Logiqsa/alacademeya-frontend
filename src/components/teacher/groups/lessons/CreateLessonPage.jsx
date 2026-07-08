@@ -1,13 +1,35 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Paperclip,
   ArrowRight,
   X,
   FileText,
+  AlertTriangle,
 } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
-import { createClassroomSession } from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
+import { createClassroomSession, getClassroomSchedule } from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
+
+const DAY_LABELS = {
+  saturday: "السبت",
+  sunday: "الأحد",
+  monday: "الاثنين",
+  tuesday: "الثلاثاء",
+  wednesday: "الأربعاء",
+  thursday: "الخميس",
+  friday: "الجمعة",
+};
+
+// JS Date.getDay(): 0=Sunday..6=Saturday
+const TODAY_KEY_BY_JS_DAY = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+];
 
 const CreateLessonPage = () => {
   const navigate = useNavigate();
@@ -21,7 +43,32 @@ const CreateLessonPage = () => {
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [scheduledToday, setScheduledToday] = useState(true);
+  const [checkingSchedule, setCheckingSchedule] = useState(true);
   const fileInputRef = useRef(null);
+
+  const todayKey = TODAY_KEY_BY_JS_DAY[new Date().getDay()];
+
+  useEffect(() => {
+    let active = true;
+    getClassroomSchedule(groupId)
+      .then((response) => {
+        if (!active) return;
+        const schedule = response.data?.data?.schedule;
+        const hasToday =
+          Array.isArray(schedule) && schedule.some((item) => item.day === todayKey);
+        setScheduledToday(hasToday);
+      })
+      .catch((err) => {
+        // مفيش جدول للمجموعة أصلاً (404) → يبقى أكيد مفيش حصة النهارده
+        if (active) setScheduledToday(err.response?.status !== 404);
+      })
+      .finally(() => active && setCheckingSchedule(false));
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -73,6 +120,8 @@ const CreateLessonPage = () => {
       const KNOWN_ERRORS = {
         SESSION_ALREADY_EXISTS:
           "يوجد حصة أخرى مجدولة لهذه المجموعة في نفس الموعد، من فضلك اختر تاريخًا أو وقتًا مختلفًا",
+        "There is no classroom schedule for today":
+          "لا يوجد جدول لهذه المجموعة اليوم، من فضلك تأكد إن اليوم من أيام جدول المجموعة أو عدّل الجدول أولاً",
       };
 
       setError(
@@ -105,6 +154,27 @@ const CreateLessonPage = () => {
         className="mx-auto p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm mt-6 sm:mt-8"
         dir="rtl"
       >
+        {!checkingSchedule && !scheduledToday && (
+          <div className="mb-5 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <AlertTriangle size={18} className="text-amber-500 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-800">
+                مفيش حصة مجدولة على هذه المجموعة النهاردة ({DAY_LABELS[todayKey]})
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                عشان تقدر تنشئ حصة، لازم يكون النهاردة من أيام جدول المجموعة. تقدر تعدّل الجدول من هنا.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate(`/teacher/groups/${groupId}/schedule`)}
+                className="mt-2 text-xs font-semibold text-[#123C91] underline"
+              >
+                تعديل جدول المجموعة
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="pb-5 sm:pb-6 border-b border-gray-100">
           <p className="text-sm font-semibold text-[#1A1A1A]">
             بيانات الحصة الأساسية
@@ -233,7 +303,7 @@ const CreateLessonPage = () => {
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 mt-2">
           <button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || (!checkingSchedule && !scheduledToday)}
             className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1 disabled:opacity-60"
           >
             {submitting ? "جاري الإنشاء..." : "إنشاء حصة"}
