@@ -84,7 +84,7 @@ const StageRow = ({ stage, defaultOpen = false }) => {
 
       {open && (
         <div className="px-4 py-4 space-y-2">
-          <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] text-[#8C9198]">
+          <p className="font-['IBM_Plex_Sans_Arabic'] text-[16px] text-[#8C9198]">
             الصفوف الدراسية
           </p>
           <div className="flex flex-wrap gap-2">
@@ -146,7 +146,7 @@ const CurriculumCard = ({
             <h3 className="font-['IBM_Plex_Sans_Arabic'] font-medium mb-2 text-[15px] sm:text-[16px] text-[#1F2937]">
               {pickName(curriculum.name)}
             </h3>
-            <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] sm:text-[13px] text-[#8C9198]">
+            <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] sm:text-[16px] text-[#8C9198]">
               {stages
                 ? `${stages.length} مراحل دراسية`
                 : "اضغط لعرض المراحل الدراسية"}
@@ -168,7 +168,7 @@ const CurriculumCard = ({
             className="text-[#D92D20] cursor-pointer p-1 -m-1 hover:opacity-80"
             aria-label="حذف"
           >
-            <Trash2 size={17} />
+            {/* <Trash2 size={17} /> */}
           </button>
           <button
             type="button"
@@ -176,14 +176,14 @@ const CurriculumCard = ({
             className="text-[#575F69] cursor-pointer p-1 -m-1 hover:opacity-80"
             aria-label="تعديل"
           >
-            <Pencil size={17} />
+            {/* <Pencil size={17} /> */}
           </button>
         </div>
       </div>
 
       {open && (
         <div className="px-5 pb-5 space-y-3">
-          <p className="font-['IBM_Plex_Sans_Arabic'] text-[13px] text-[#8C9198]">
+          <p className="font-['IBM_Plex_Sans_Arabic'] text-[16px] text-[#8C9198]">
             المراحل الدراسية
           </p>
           {loadingStages && (
