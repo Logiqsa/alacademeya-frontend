@@ -8,6 +8,7 @@ import {
   getClassroomStudents,
   getAllPackages,
   updateClassroom,
+  createSubscription,
 } from "../../../services/APIService"; 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -141,16 +142,25 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       setError("من فضلك اختر الطالب");
       return;
     }
+    if (!selectedPackage) {
+      setError("من فضلك اختر الباقة");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      // ⚠️ لسه محتاجين نأكد من بوستمان الـ endpoint الصحيح لإضافة طالب لمجموعة
-      // (مفيش POST /classrooms/:id/students في الكولكشن اللي شفناه لحد دلوقتي —
-      // الأقرب المتاح هو createSubscription، لكن شكل الـ body غير مؤكد)
-      throw new Error(
-""      );
+      // ⚠️ افتراض: مفيش POST /classrooms/:id/students مؤكد، فاستخدمنا createSubscription
+      // بـ body: { student, classroom, package } — لسه محتاج تأكيد شكل الـ body من بوستمان
+      await createSubscription({
+        student: selectedStudent,
+        classroom: group.id,
+        package: selectedPackage,
+      });
+      onChanged?.();
+      onClose();
     } catch (err) {
-      setError(err.message || "حدث خطأ أثناء إضافة الطالب");
+      console.error("createSubscription (add student) failed:", err.response?.data || err);
+      setError(err.response?.data?.message || "حدث خطأ أثناء إضافة الطالب");
     } finally {
       setSubmitting(false);
     }
@@ -279,12 +289,17 @@ const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
     setSubmitting(true);
     setError(null);
     try {
-      // ⚠️ مفيش endpoint مؤكد لتعيين معلم بديل لحد دلوقتي — ابعت سكرين شوت من بوستمان لنظبطها
-      throw new Error(
-        "الـ endpoint بتاع تعيين المعلم البديل لسه مش موجود/مؤكد — ابعت سكرين شوت من بوستمان لنظبطه",
-      );
+      // ⚠️ افتراض: مفيش endpoint مخصص لتعيين معلم بديل، فاستخدمنا نفس PATCH /classrooms/:id
+      // بحقول substituteTeacher و substituteReason — لسه محتاج تأكيد من بوستمان
+      await updateClassroom(group.id, {
+        substituteTeacher: selectedTeacher,
+        substituteReason: reason,
+      });
+      onChanged?.();
+      onClose();
     } catch (err) {
-      setError(err.message || "حدث خطأ أثناء تعيين المعلم البديل");
+      console.error("updateClassroom (assign substitute) failed:", err.response?.data || err);
+      setError(err.response?.data?.message || "حدث خطأ أثناء تعيين المعلم البديل");
     } finally {
       setSubmitting(false);
     }

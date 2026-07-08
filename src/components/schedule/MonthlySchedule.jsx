@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  CalendarDays,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Info,
   UserRound,
   Video,
 } from "lucide-react";
@@ -19,6 +20,17 @@ const DAY_NAMES = {
   thursday: "الخميس",
   friday: "الجمعة",
 };
+
+// نفس ترتيب DAY_NAMES بالظبط، بيتماشى مع weekdayIndex تحت (السبت = أول عمود)
+const WEEKDAY_HEADERS = [
+  "السبت",
+  "الأحد",
+  "الاثنين",
+  "الثلاثاء",
+  "الأربعاء",
+  "الخميس",
+  "الجمعة",
+];
 
 const STATUS_LABELS = {
   scheduled: "قادمة",
@@ -50,6 +62,27 @@ const formatTime12 = (time) => {
   });
 };
 
+const getDurationMinutes = (lesson) => {
+  if (lesson.duration) return lesson.duration;
+  if (lesson.startTime && lesson.endTime) {
+    const [sh, sm] = lesson.startTime.split(":").map(Number);
+    const [eh, em] = lesson.endTime.split(":").map(Number);
+    const diff = eh * 60 + em - (sh * 60 + sm);
+    return diff > 0 ? diff : null;
+  }
+  return null;
+};
+
+const getStudentLabel = (lesson) => {
+  if (typeof lesson.student === "string") return lesson.student;
+  return (
+    lesson.student?.fullName ||
+    lesson.student?.name ||
+    lesson.classroomName ||
+    "—"
+  );
+};
+
 const withDisplayStatus = (lesson, date) => {
   if (lesson.status !== "scheduled") return lesson;
   const scheduledAt = lesson.scheduledDate
@@ -63,8 +96,37 @@ const monthLabel = (date) =>
     date,
   );
 
-const MonthlySchedule = ({ title, subtitle, role }) => {
+const pad2 = (n) => String(n).padStart(2, "0");
+const toISODate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const isSameDay = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
+// JS getDay(): 0=Sunday..6=Saturday → نحولها لترتيب يبدأ بالسبت (index 0)
+const weekdayIndex = (date) => (date.getDay() - 6 + 7) % 7;
+
+const buildMonthGrid = (viewDate) => {
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const firstOfMonth = new Date(year, month, 1);
+  const lastOfMonth = new Date(year, month + 1, 0);
+  const leadingCount = weekdayIndex(firstOfMonth);
+  const totalCells = Math.ceil((leadingCount + lastOfMonth.getDate()) / 7) * 7;
+
+  const gridStart = new Date(year, month, 1 - leadingCount);
+
+  return Array.from({ length: totalCells }, (_, i) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + i);
+    return { date, isCurrentMonth: date.getMonth() === month };
+  });
+};
+
+const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
   const navigate = useNavigate();
+  const today = useMemo(() => new Date(), []);
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [days, setDays] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
@@ -84,9 +146,9 @@ const MonthlySchedule = ({ title, subtitle, role }) => {
         const nextDays = Array.isArray(list) ? list : [];
         setDays(nextDays);
 
-        const today = new Date().toLocaleDateString("en-CA");
+        const todayISO = new Date().toLocaleDateString("en-CA");
         const preferred =
-          nextDays.find((day) => day.date === today) ||
+          nextDays.find((day) => day.date === todayISO) ||
           nextDays.find((day) => day.lessons?.length) ||
           nextDays[0];
         setSelectedDate(preferred?.date || "");
@@ -102,10 +164,24 @@ const MonthlySchedule = ({ title, subtitle, role }) => {
     };
   }, [year, month]);
 
+  const daysByDate = useMemo(() => {
+    const map = new Map();
+    days.forEach((d) => map.set(d.date, d));
+    return map;
+  }, [days]);
+
+  const grid = useMemo(() => buildMonthGrid(monthDate), [monthDate]);
+
   const selectedDay = useMemo(
-    () => days.find((day) => day.date === selectedDate),
-    [days, selectedDate],
+    () => daysByDate.get(selectedDate),
+    [daysByDate, selectedDate],
   );
+
+  const selectedDayName = useMemo(() => {
+    if (!selectedDate) return "";
+    const [y, m, d] = selectedDate.split("-").map(Number);
+    return WEEKDAY_HEADERS[weekdayIndex(new Date(y, m - 1, d))];
+  }, [selectedDate]);
 
   const changeMonth = (amount) => {
     setLoading(true);
@@ -131,33 +207,37 @@ const MonthlySchedule = ({ title, subtitle, role }) => {
 
   return (
     <div
-      className="mx-auto max-w-7xl p-2 text-right font-['IBM_Plex_Sans_Arabic']"
+      className="mx-auto w-full min-w-0 text-right font-['IBM_Plex_Sans_Arabic']"
       dir="rtl"
     >
-      <h1 className="mb-2 text-2xl font-semibold text-[#123C91]">{title}</h1>
-      <p className="mb-6 text-[#575F69]">{subtitle}</p>
+      {!hideHeader && (
+        <>
+          <h1 className="mb-2 text-2xl font-semibold text-[#123C91]">{title}</h1>
+          <p className="mb-6 text-[#575F69]">{subtitle}</p>
+        </>
+      )}
 
-      <section className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-sm sm:p-6">
-        <div className="mb-5 flex items-center justify-between gap-3">
+      <section className="w-full min-w-0 rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-sm sm:p-6 md:p-8">
+        {/* Header: month title + nav */}
+        <div className="mb-5  flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => changeMonth(-1)}
-            className="rounded-lg border p-2 text-[#123C91]"
+            className="rounded-lg border p-2 mr-4 text-[#123C91] shrink-0"
             aria-label="الشهر السابق"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={18} />
           </button>
-          <h2 className="flex items-center gap-2 font-semibold text-[#1F2937]">
-            <CalendarDays size={20} />
+          <h2 className="text-[15px] sm:text-[16px] font-semibold text-[#1F2937]">
             {monthLabel(monthDate)}
           </h2>
           <button
             type="button"
             onClick={() => changeMonth(1)}
-            className="rounded-lg border p-2 text-[#123C91]"
+            className="rounded-lg border p-2  ml-4 text-[#123C91] shrink-0"
             aria-label="الشهر التالي"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
           </button>
         </div>
 
@@ -169,25 +249,73 @@ const MonthlySchedule = ({ title, subtitle, role }) => {
           <p className="py-12 text-center text-red-500">{error}</p>
         ) : (
           <>
-            <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-              {days.map((day) => (
-                <button
-                  key={day.date}
-                  type="button"
-                  onClick={() => setSelectedDate(day.date)}
-                  className={`min-w-20 rounded-xl border px-3 py-2 text-center transition-colors ${selectedDate === day.date ? "border-[#123C91] bg-[#123C91] text-white [&_svg]:text-white" : "border-[#E5E5E5] bg-white text-[#575F69]"}`}
+            {/* Weekday headers */}
+            <div className="grid grid-cols-7 gap-0.5 xs:gap-1 sm:gap-2 mb-1 sm:mb-2 px-1 sm:px-2">
+              {WEEKDAY_HEADERS.map((name) => (
+                <span
+                  key={name}
+                  className="text-center text-[10px] sm:text-[13px] font-medium text-[#8C9198] py-1 sm:py-2 truncate"
                 >
-                  <span className="block text-xs">
-                    {DAY_NAMES[day.dayName] || day.dayName}
-                  </span>
-                  <span className="block text-lg font-semibold">
-                    {Number(day.date.slice(-2))}
-                  </span>
-                  <span className="block text-[10px]">
-                    {day.lessons?.length || 0} حصة
-                  </span>
-                </button>
+                  {name}
+                </span>
               ))}
+            </div>
+
+            {/* Month grid */}
+            <div className="grid grid-cols-7 gap-0.5 xs:gap-1 sm:gap-2 mb-6 px-1 sm:px-0">
+              {grid.map(({ date, isCurrentMonth }) => {
+                const iso = toISODate(date);
+                const dayData = daysByDate.get(iso);
+                const hasEvent = !!dayData?.lessons?.length;
+                const isSelected = iso === selectedDate;
+                const isToday = isSameDay(date, today);
+
+                return (
+                  <button
+                    key={iso}
+                    type="button"
+                    disabled={!isCurrentMonth}
+                    onClick={() => isCurrentMonth && setSelectedDate(iso)}
+                    className="relative flex items-center justify-center py-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91] focus-visible:ring-offset-1 disabled:cursor-default"
+                  >
+                    <span
+                      className={`
+                        flex items-center justify-center
+                        w-7 h-7 sm:w-10 sm:h-10 md:w-11 md:h-11
+                        rounded-full text-[12px] sm:text-[14px] md:text-[15px]
+                        transition-colors duration-150
+                        ${
+                          isSelected
+                            ? "bg-[#123C91] text-white [&_svg]:text-white font-semibold shadow-[0_4px_10px_rgba(18,60,145,0.35)]"
+                            : isCurrentMonth
+                              ? isToday
+                                ? "text-[#123C91] font-semibold border border-[#123C91]/40"
+                                : "text-[#1F2937] hover:bg-[#F0F4FF]"
+                              : "text-[#C7CBD1]"
+                        }
+                      `}
+                    >
+                      {date.getDate()}
+                    </span>
+                    {hasEvent && (
+                      <span
+                        aria-hidden="true"
+                        className={`absolute bottom-0 w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-[#123C91]"}`}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected day header */}
+            <div className="flex items-center justify-between mb-4 pt-4 px-6 border-t border-[#F1F1F1]">
+              <h3 className="text-[15px] font-semibold text-[#1F2937]">
+                {selectedDayName ? `حصص ${selectedDayName}` : "الحصص"}
+              </h3>
+              <span className="text-[13px] text-[#8C9198]">
+                {selectedDay?.lessons?.length || 0} حصة
+              </span>
             </div>
 
             {!selectedDay?.lessons?.length ? (
@@ -195,68 +323,82 @@ const MonthlySchedule = ({ title, subtitle, role }) => {
                 لا توجد حصص في هذا اليوم
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 px-6 md:grid-cols-2">
                 {selectedDay.lessons.map((rawLesson, index) => {
                   const lesson = withDisplayStatus(rawLesson, selectedDay.date);
+                  const duration = getDurationMinutes(lesson);
+                  const isLive = ["live", "active"].includes(lesson.status);
+
                   return (
                     <article
                       key={
                         lesson.id ||
                         `${lesson.classroom}-${lesson.startTime}-${index}`
                       }
-                      className="rounded-2xl border border-[#E5E5E5] border-r-4 border-r-[#123C91] p-4"
+                      className="bg-white border border-[#E5E5E5] rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border-r-4 border-r-[#123C91] p-4"
                     >
-                      <div className="mb-3 flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-bold text-[#1F2937]">
-                            {lesson.title || lesson.classroomName}
-                          </h3>
-                          <p className="mt-1 text-base font-bold text-[#123C91]">
-                            {lesson.classroomName}
-                          </p>
-                        </div>
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <h4 className="text-[#1F2937] font-semibold text-[15px] leading-6 flex-1">
+                          {lesson.title || lesson.classroomName}
+                        </h4>
                         <span
-                          className={`rounded-lg px-2 py-1 text-xs font-bold ${badgeClass(lesson)}`}
+                          className={`px-3 py-1 rounded-lg text-[12px] font-medium whitespace-nowrap ${badgeClass(lesson)}`}
                         >
                           {STATUS_LABELS[lesson.status] || lesson.status}
                         </span>
                       </div>
-                      <div className="space-y-2 text-[15px] font-semibold text-[#575F69]">
-                        <p className="flex items-center gap-2 text-base font-bold text-[#1F2937]">
-                          <Clock size={17} />
-                          {formatTime12(lesson.startTime)}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <UserRound size={17} />
-                          {lesson.teacher?.name || "—"}
-                        </p>
-                        <p className="font-bold">
-                          {lesson.subject?.name?.ar ||
+
+                      <div className="flex items-center text-[#6B7280] text-[13px] mb-4">
+                        <BookOpen size={16} className="ml-2 shrink-0" />
+                        <span>
+                          {lesson.teacher?.name ||
+                            lesson.subject?.name?.ar ||
                             lesson.subject?.name?.en ||
                             "—"}
-                        </p>
+                        </span>
                       </div>
-                      {["live", "active"].includes(lesson.status) &&
-                        lesson.meetingLink && (
-                          <a
-                            href={lesson.meetingLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-[#123C91] px-4 py-2 text-sm text-white [&_svg]:text-white"
-                          >
-                            <Video size={16} />
-                            دخول الحصة
-                          </a>
-                        )}
-                      {lesson.status === "completed" && (
-                        <button
-                          type="button"
-                          onClick={() => openDetails(lesson)}
-                          className="mt-4 flex w-full items-center justify-center rounded-lg border border-[#123C91] px-4 py-2 text-sm font-medium text-[#123C91]"
-                        >
-                          تفاصيل الحصة
-                        </button>
-                      )}
+
+                      <div className="border-t border-[#F1F1F1] mb-4" />
+
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 text-[#8C9198] text-[13px] sm:text-[14px]">
+                          <Clock size={16} className="text-[#12C6B0]" />
+                          <span>{formatTime12(lesson.startTime)}</span>
+                          {duration && (
+                            <>
+                              <span>•</span>
+                              <span>{duration} د</span>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="bg-[#F3F4F6] text-[#1F2937] text-[12px] px-3 py-1 rounded-lg font-medium whitespace-nowrap">
+                            {getStudentLabel(lesson)}
+                          </span>
+
+                          {isLive && lesson.meetingLink ? (
+                            <a
+                              href={lesson.meetingLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label="انضم للحصة"
+                              className="w-7 h-7 flex items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f2f73] transition-colors"
+                            >
+                              <Video size={14} />
+                            </a>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => openDetails(lesson)}
+                              aria-label="تفاصيل الحصة"
+                              className="w-7 h-7 flex items-center justify-center rounded-full text-[#8C9198] hover:text-[#123C91] hover:bg-[#F0F4FF] transition-colors"
+                            >
+                              <Info size={15} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </article>
                   );
                 })}
