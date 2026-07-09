@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Plus } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import SupervisorsStatsBar from "../../../components/admin/supervisors/SupervisorsStatsBar";
@@ -10,6 +10,7 @@ import { getUsers, updateUser, deleteUser } from "../../../services/APIService";
 import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 
 const PAGE_SIZE = 6;
+const SUPERVISOR_ROLES = ["admin", "super-admin"];
 
 // حوّل شكل اليوزر الراجع من الـ API لشكل الجدول
 const mapUserToSupervisor = (u) => ({
@@ -23,9 +24,15 @@ const mapUserToSupervisor = (u) => ({
   status: (u.isActive ?? u.isVerified) ? "نشط" : "متوقف",
 });
 
+const extractUsersList = (res) => {
+  const list = res.data?.data || res.data?.users || res.data || [];
+  return Array.isArray(list) ? list : [];
+};
+
 const SupervisorsPage = () => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
+  const [filterRole, setFilterRole] = useState("جميع الصلاحيات");
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -44,38 +51,46 @@ const SupervisorsPage = () => {
   const [togglingId, setTogglingId] = useState(null);
   const [actionError, setActionError] = useState(null);
 
-  const fetchSupervisors = async () => {
+  const fetchSupervisors = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getUsers({ role: "admin" }); // ⚠️ لو عايز تجيب super-admin كمان، شوف الملاحظة تحت
-      // شكل الـ response ممكن يكون res.data أو res.data.data أو res.data.users
-      const list = res.data?.data || res.data?.users || res.data || [];
-      // فلترة إضافية احتياطية: يقبل admin و super-admin كمان
-      const onlyAdmins = list.filter(
-        (u) => u.role === "admin" || u.role === "super-admin",
+      const responses = await Promise.all(
+        SUPERVISOR_ROLES.map((role) => getUsers({ role })),
       );
-      setSupervisors(onlyAdmins.map(mapUserToSupervisor));
+      const list = responses.flatMap(extractUsersList);
+      const uniqueUsers = Array.from(
+        new Map(
+          list.map((user) => [user.id || user._id || user.email, user]),
+        ).values(),
+      );
+      setSupervisors(
+        uniqueUsers
+          .filter((u) => SUPERVISOR_ROLES.includes(u.role))
+          .map(mapUserToSupervisor),
+      );
     } catch (err) {
       console.error(err);
       setError("حدث خطأ أثناء تحميل بيانات المشرفين");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchSupervisors();
-  }, []);
+    const timer = setTimeout(fetchSupervisors, 0);
+    return () => clearTimeout(timer);
+  }, [fetchSupervisors]);
 
   const filtered = useMemo(
     () =>
       supervisors.filter(
         (s) =>
           (s.name?.includes(search) || s.email?.includes(search)) &&
-          (filterStatus === "جميع الحالات" || s.status === filterStatus),
+          (filterStatus === "جميع الحالات" || s.status === filterStatus) &&
+          (filterRole === "جميع الصلاحيات" || s.role === filterRole),
       ),
-    [supervisors, search, filterStatus],
+    [supervisors, search, filterStatus, filterRole],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -170,6 +185,11 @@ const SupervisorsPage = () => {
             filterStatus={filterStatus}
             onFilterStatusChange={(v) => {
               setFilterStatus(v);
+              setPage(1);
+            }}
+            filterRole={filterRole}
+            onFilterRoleChange={(v) => {
+              setFilterRole(v);
               setPage(1);
             }}
           />

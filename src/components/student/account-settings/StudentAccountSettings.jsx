@@ -12,6 +12,7 @@ import {
   getStageGrades,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
+import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -888,6 +889,10 @@ const StudentAccountSettings = () => {
         student={student}
         countryOptions={countryOptions}
         loadingCountries={loadingCountries}
+        onUpdated={handleProfileUpdated}
+      />
+      <TimezoneSettingsCard
+        timezone={student.timezone}
         onUpdated={handleProfileUpdated}
       />
       <StudentAcademicCard student={student} onUpdated={handleProfileUpdated} />

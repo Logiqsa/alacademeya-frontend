@@ -15,6 +15,12 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+const roleLabel = (role) => {
+  if (role === "super-admin") return "مشرف عام";
+  if (role === "admin") return "مشرف";
+  return role || "—";
+};
+
 /* ─── Actions Dropdown (rendered via portal so it can never be clipped) ──── */
 const ActionsMenu = ({ s, onEdit, onToggleSuspend, onDelete }) => {
   const [open, setOpen] = useState(false);
@@ -137,6 +143,7 @@ const TableRow = ({ s, onEdit, onToggleSuspend, onDelete }) => (
     <td className="px-4 py-4 text-[14px] font-medium text-[#1F2937]">{s.name}</td>
     <td className="px-4 py-4 text-[14px] text-[#575F69]">{s.email}</td>
     <td className="px-4 py-4 text-[14px] text-[#575F69]" dir="ltr">{s.phone}</td>
+    <td className="px-4 py-4 text-[14px] text-[#575F69]">{roleLabel(s.role)}</td>
     <td className="px-4 py-4"><StatusBadge status={s.status} /></td>
     <td className="px-4 py-4">
       <ActionsMenu s={s} onEdit={onEdit} onToggleSuspend={onToggleSuspend} onDelete={onDelete} />
@@ -162,6 +169,10 @@ const MobileCard = ({ s, onEdit, onToggleSuspend, onDelete }) => (
         <span className="text-[13px] text-[#575F69]" dir="ltr">{s.phone}</span>
       </div>
       <div className="flex items-center justify-between">
+        <span className="text-[12px] text-[#9CA3AF]">الصلاحية</span>
+        <span className="text-[13px] text-[#575F69]">{roleLabel(s.role)}</span>
+      </div>
+      <div className="flex items-center justify-between">
         <span className="text-[12px] text-[#9CA3AF]">الحالة</span>
         <StatusBadge status={s.status} />
       </div>
@@ -181,6 +192,7 @@ const SupervisorsTable = ({ supervisors = [], onEdit, onToggleSuspend, onDelete 
                 <th className="px-4 py-3 text-right text-[13px] font-medium text-[#575F69]">الاسم</th>
                 <th className="px-4 py-3 text-right text-[13px] font-medium text-[#575F69]">البريد الإلكتروني</th>
                 <th className="px-4 py-3 text-right text-[13px] font-medium text-[#575F69]">رقم الهاتف</th>
+                <th className="px-4 py-3 text-right text-[13px] font-medium text-[#575F69]">الصلاحية</th>
                 <th className="px-4 py-3 text-right text-[13px] font-medium text-[#575F69]">الحالة</th>
                 <th className="px-4 py-3 text-right text-[13px] font-medium text-[#575F69]">الإجراءات</th>
               </tr>
@@ -191,7 +203,7 @@ const SupervisorsTable = ({ supervisors = [], onEdit, onToggleSuspend, onDelete 
               ))}
               {supervisors.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-[#9CA3AF] text-[14px]">
+                  <td colSpan={6} className="px-4 py-12 text-center text-[#9CA3AF] text-[14px]">
                     لا توجد نتائج مطابقة
                   </td>
                 </tr>
