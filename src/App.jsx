@@ -75,6 +75,7 @@ import LessonFilesPage from "./pages/student/groupLessons/Lessonfilespage";
 import CreateSchedulePage from "./components/teacher/groups/lessons/CreateSchedulePage";
 import AttendanceRegistrationPage from "./pages/teacher/groups/AttendanceRegistrationPage";
 import SessionDetailsPage from "./pages/shared/SessionDetailsPage";
+import AddSubscriptionPage from "./pages/admin/subscriptions/Addsubscriptionpage";
 
 
 function App() {
@@ -172,8 +173,7 @@ function App() {
         {/* <Route path="/admin/subscriptions/requests/:id" element={user ? <RequestDetailsPage  /> : <Navigate to="/login" replace />} />     */}
         <Route path="/admin/subscriptions/requests/:id/activate" element={user ? <ActivateSubscriptionPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/curriculum/create" element={user ? <CreateCurriculumPage /> : <Navigate to="/login" replace />} />
-
-
+        <Route path="/admin/subscriptions/add" element={user ? <AddSubscriptionPage /> : <Navigate to="/login" replace />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
