@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { getContactSettings, getCountries, getMyProfile, updateContactSettings, updateMyProfile } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext"; // عدّل المسار حسب مشروعك
 import { countryOption, getArabicCountryName } from "../../../utils/countryName";
+import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -707,6 +708,10 @@ const AdminAccountSettings = () => {
         countryOptions={countryOptions}
         onUpdated={handleProfileUpdated}
         onEmailChanged={handleForceReLogin}
+      />
+      <TimezoneSettingsCard
+        timezone={admin.timezone}
+        onUpdated={handleProfileUpdated}
       />
       <ContactSettingsCard />
     </div>

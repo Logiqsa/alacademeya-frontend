@@ -17,6 +17,7 @@ import {
   StudentAcademicCard,
 } from "./ProfileCards";
 import { getArabicCountryName } from "../../../utils/countryName";
+import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 
 const getFlagUrl = (code) =>
   code ? `https://flagcdn.com/w40/${code.toLowerCase()}.png` : null;
@@ -157,6 +158,11 @@ const AccountSettings = () => {
           outerData.countryName ||
           savedProfile.countryName ||
           null,
+        timezone:
+          userNode.timezone ||
+          outerData.timezone ||
+          savedProfile.timezone ||
+          null,
         id: outerData.id || userNode.id,
       });
 
@@ -225,6 +231,20 @@ const AccountSettings = () => {
   const handleSaveStudentAcademic = async (payload) => {
     await updateStudent(activeStudent.id, payload);
     await afterSave(false);
+  };
+  const handleTimezoneUpdated = (updatedTimezone) => {
+    setParent((prev) => {
+      const next = { ...prev, ...updatedTimezone };
+      try {
+        const raw = localStorage.getItem("parentProfile");
+        const saved = raw ? JSON.parse(raw) : {};
+        localStorage.setItem(
+          "parentProfile",
+          JSON.stringify({ ...saved, ...updatedTimezone }),
+        );
+      } catch {}
+      return next;
+    });
   };
 
   const activeStudent =
@@ -316,6 +336,10 @@ const AccountSettings = () => {
             countries={countries}
             loadingCountries={loadingCountries}
             onSave={handleSaveParentInfo}
+          />
+          <TimezoneSettingsCard
+            timezone={parent.timezone}
+            onUpdated={handleTimezoneUpdated}
           />
         </>
       )}

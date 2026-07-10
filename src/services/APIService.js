@@ -124,6 +124,9 @@ export const updateStudent = (studentId, payload) =>
 // ─── User Profile ─────────────────────────────────────────────────────────────
 export const getMyProfile = () => API.get("/users/me");
 export const updateMyProfile = (payload) => API.patch("/users/me", payload);
+export const getUserTimezones = () => API.get("/users/timezones");
+export const updateMyTimezone = (payload) =>
+  API.patch("/users/me/timezone", payload);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Subscriptions

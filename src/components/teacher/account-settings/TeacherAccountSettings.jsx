@@ -10,6 +10,7 @@ import {
   getSubjects,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
+import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 
 const LANG = "ar"; // change to dynamic locale if you support i18n switching
 
@@ -930,6 +931,15 @@ const TeacherAccountSettings = () => {
       .finally(() => setLoadingCountries(false));
   }, []);
 
+  const handleTimezoneUpdated = (updatedTimezone) => {
+    setTeacher((prev) => {
+      const next = { ...prev, ...updatedTimezone };
+      localStorage.setItem("user", JSON.stringify(next));
+      updateUser?.(next);
+      return next;
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20" dir="rtl">
@@ -978,6 +988,10 @@ const TeacherAccountSettings = () => {
         countryOptions={countryOptions}
         loadingCountries={loadingCountries}
         onSaved={fetchProfile}
+      />
+      <TimezoneSettingsCard
+        timezone={teacher.timezone}
+        onUpdated={handleTimezoneUpdated}
       />
       <TeacherProfessionalCard teacher={teacher} onSaved={fetchProfile} />
     </div>
