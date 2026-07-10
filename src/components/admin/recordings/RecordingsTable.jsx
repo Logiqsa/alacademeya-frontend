@@ -1,12 +1,3 @@
-import { MoreVertical } from "lucide-react";
-
-// ─── Actions button (placeholder — wire up dropdown as needed) ────────────────
-const ActionsBtn = () => (
-  <button className="p-1.5 rounded-lg hover:bg-[#F3F4F6] text-[#9CA3AF] hover:text-[#1F2937] transition-colors">
-    <MoreVertical size={18} />
-  </button>
-);
-
 // ─── Desktop Table Row ────────────────────────────────────────────────────────
 const TableRow = ({ r }) => (
   <tr className="border-b border-[#E5E5E5] last:border-b-0 hover:bg-[#F9FAFA] transition-colors bg-white">
@@ -16,17 +7,15 @@ const TableRow = ({ r }) => (
     <td className="px-4 py-4 text-[14px] text-[#575F69] whitespace-nowrap">{r.teacher}</td>
     <td className="px-4 py-4 text-[14px] text-[#575F69] whitespace-nowrap" dir="ltr" style={{ textAlign: "right" }}>{r.duration}</td>
     <td className="px-4 py-4 text-[14px] text-[#575F69] whitespace-nowrap" dir="ltr" style={{ textAlign: "right" }}>{r.uploadDate}</td>
-    <td className="px-4 py-4"><ActionsBtn /></td>
   </tr>
 );
 
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
 const MobileCard = ({ r }) => (
   <div className="bg-white border border-[#E5E5E5] rounded-2xl p-4 font-['IBM_Plex_Sans_Arabic'] shadow-sm" dir="rtl">
-    {/* Title + actions */}
-    <div className="flex items-start justify-between gap-2 mb-3">
+    {/* Title */}
+    <div className="mb-3">
       <p className="text-[14px] font-medium text-[#1F2937] leading-snug flex-1">{r.title}</p>
-      <ActionsBtn />
     </div>
 
     {/* Details */}
@@ -74,7 +63,7 @@ const RecordingsTable = ({ recordings = [] }) => {
           <table className="w-full border-collapse text-right" style={{ minWidth: "700px" }}>
             <thead>
               <tr className="bg-[#F9FAFA] border-b border-[#E5E5E5]">
-                {["التسجيل", "المجموعة", "الحصة", "المعلم", "المدة", "تاريخ الرفع", "الإجراءات"].map((h) => (
+                {["التسجيل", "المجموعة", "الحصة", "المعلم", "المدة", "تاريخ الرفع"].map((h) => (
                   <th key={h} className="px-4 py-3 text-right text-[13px] font-medium text-[#575F69] whitespace-nowrap">
                     {h}
                   </th>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type }) => {
@@ -31,12 +31,21 @@ const SubmissionCount = ({ value }) => {
   );
 };
 
+const assetUrl = (url) => {
+  if (!url) return "";
+  return /^https?:\/\//i.test(url)
+    ? url
+    : `https://api.alacademeya.com/${url.replace(/^\//, "")}`;
+};
+
 // ─── Correction Modal ─────────────────────────────────────────────────────────
-const CorrectionModal = ({ student, onClose, onSubmit }) => {
-  const [grade, setGrade] = useState("");
+const CorrectionModal = ({ student, type, onClose, onSubmit }) => {
+  const [grade, setGrade] = useState(student.score ?? "");
+  const [feedback, setFeedback] = useState(student.feedback ?? "");
+  const submissionFileUrl = assetUrl(student.fileUrl);
 
   const handleSubmit = () => {
-    onSubmit?.({ student, grade });
+    onSubmit?.({ student, grade, feedback, type });
     onClose();
   };
 
@@ -146,12 +155,23 @@ const CorrectionModal = ({ student, onClose, onSubmit }) => {
               </div>
             </div>
 
-            <button
-              className="border border-gray-200 rounded-xl px-5 py-2 text-sm font-medium text-[#575F69] hover:bg-gray-50 transition-colors shrink-0 w-full sm:w-auto"
+            <a
+              href={submissionFileUrl || undefined}
+              target="_blank"
+              rel="noreferrer"
+              aria-disabled={!submissionFileUrl}
+              onClick={(e) => {
+                if (!submissionFileUrl) e.preventDefault();
+              }}
+              className={`border border-gray-200 rounded-xl px-5 py-2 text-sm font-medium transition-colors shrink-0 w-full sm:w-auto text-center ${
+                submissionFileUrl
+                  ? "text-[#575F69] hover:bg-gray-50"
+                  : "text-[#9CA3AF] cursor-not-allowed"
+              }`}
               style={{ fontFamily: "Tajawal, sans-serif" }}
             >
-              تحميل
-            </button>
+              عرض
+            </a>
           </div>
 
           {/* Grade input */}
@@ -165,16 +185,41 @@ const CorrectionModal = ({ student, onClose, onSubmit }) => {
                 color: "#575F69",
               }}
             >
-              الدرجة (من 20)
+              الدرجة (من {student.totalScore ?? 20})
             </label>
             <input
               type="number"
               min="0"
-              max="20"
-              placeholder="0 - 20"
+              max={student.totalScore ?? 20}
+              placeholder={`0 - ${student.totalScore ?? 20}`}
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-right text-[#575F69] bg-gray-50 outline-none focus:border-[#123C91] focus:bg-white transition-colors"
+              style={{
+                fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                fontSize: "14px",
+              }}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block text-right mb-2"
+              style={{
+                fontFamily: "Tajawal, sans-serif",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#575F69",
+              }}
+            >
+              ملاحظات للطالب
+            </label>
+            <textarea
+              rows={4}
+              placeholder="اكتب ملاحظاتك على الحل"
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-right text-[#575F69] bg-gray-50 outline-none focus:border-[#123C91] focus:bg-white transition-colors resize-none"
               style={{
                 fontFamily: "IBM Plex Sans Arabic, sans-serif",
                 fontSize: "14px",
@@ -208,7 +253,7 @@ const CorrectionModal = ({ student, onClose, onSubmit }) => {
                 lineHeight: "1.5",
               }}
             >
-              قم بتنزيل ملف إجابة الطالب ومراجعة الحل بعناية قبل إدخال التقييم.
+              افتح ملف إجابة الطالب وراجع الحل بعناية قبل إدخال التقييم.
             </p>
           </div>
         </div>
@@ -306,13 +351,20 @@ const StudentRow = ({ student, onCorrect, onEdit }) => {
  */
 const StudentSubmissionsTable = ({ students = [], onAction }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [modalType, setModalType] = useState("تصحيح");
 
   const handleCorrect = (student) => {
+    setModalType("تصحيح");
     setSelectedStudent(student);
   };
 
-  const handleModalSubmit = ({ student, grade }) => {
-    onAction?.({ student, grade, type: "تصحيح" });
+  const handleEdit = (student) => {
+    setModalType("تعديل");
+    setSelectedStudent(student);
+  };
+
+  const handleModalSubmit = ({ student, grade, feedback, type }) => {
+    onAction?.({ student, grade, feedback, type });
   };
 
   if (students.length === 0) {
@@ -334,7 +386,7 @@ const StudentSubmissionsTable = ({ students = [], onAction }) => {
             key={student.id}
             student={student}
             onCorrect={handleCorrect}
-            onEdit={(s) => onAction?.({ student: s, type: "تعديل" })}
+            onEdit={handleEdit}
           />
         ))}
       </div>
@@ -342,6 +394,7 @@ const StudentSubmissionsTable = ({ students = [], onAction }) => {
       {selectedStudent && (
         <CorrectionModal
           student={selectedStudent}
+          type={modalType}
           onClose={() => setSelectedStudent(null)}
           onSubmit={handleModalSubmit}
         />

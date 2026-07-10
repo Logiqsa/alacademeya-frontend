@@ -9,6 +9,11 @@ import { getClassrooms, getClassroomSessions, getSessionRecording } from "../../
 
 const PAGE_SIZE = 6;
 
+const formatSessionDuration = (duration) => {
+  if (duration === null || duration === undefined || duration === "") return "—";
+  return typeof duration === "number" ? `${duration} دقيقة` : duration;
+};
+
 const RecordingsPages = () => {
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState("جميع المجموعات");
@@ -36,7 +41,7 @@ const RecordingsPages = () => {
             group: classroom.name,
             lesson: session.title,
             teacher: classroom.teacher?.user?.fullName || classroom.teacher?.name || "—",
-            duration: recording.duration || "—",
+            duration: formatSessionDuration(session.duration),
             uploadDate: recording.createdAt ? new Date(recording.createdAt).toLocaleDateString("en-CA") : "—",
           } : null;
         } catch { return null; }

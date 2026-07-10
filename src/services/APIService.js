@@ -185,6 +185,8 @@ export const getClassroom = (id) => API.get(`/classrooms/${id}`);
 export const createClassroom = (payload) => API.post("/classrooms/", payload);
 export const updateClassroom = (id, payload) =>
   API.patch(`/classrooms/${id}`, payload);
+export const updateClassroomSubstituteTeacher = (id, substituteTeacher) =>
+  API.patch(`/classrooms/${id}/substitute-teacher`, { substituteTeacher });
 export const deleteClassroom = (id) => API.delete(`/classrooms/${id}`);
 export const getAvailableClassrooms = (params) =>
   // params: { teacher, subject, type }
@@ -289,10 +291,8 @@ export const getSessionRecording = (sessionId) =>
 export const getAssignmentSubmissions = (assignmentId) =>
   API.get(`/assignments/${assignmentId}/submissions`);
 
-// TODO: تأكيد الـ URL والـ body بالظبط من Postman (Grade/Review Submission).
-// افتراض مؤقت: PATCH /submissions/:submissionId  body: { score, feedback }
 export const gradeSubmission = (submissionId, payload) =>
-  API.patch(`/submissions/${submissionId}`, payload);
+  API.patch(`/assignments/submissions/${submissionId}/grade`, payload);
 
 
 

@@ -1,11 +1,12 @@
-import React, { useState, useContext } from "react";
+import { useState, useContext } from "react";
 import logo from "../../assets/icons/logo.svg";
 import { Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import { isAdminRole } from "../../utils/roles";
 
 // ── الـ role بيحدد الداشبورد ──────────────────────────────────────────────
-// admin    → /admin-dashboard
+// admin / super-admin → /admin-dashboard
 // teacher  → لو isActive=true يروح /teacher-dashboard، غير كده /account-state
 // student  → لو isActive=true يروح /student-dashboard، غير كده /register/success
 // parent   → /parent-dashboard (default)
@@ -16,7 +17,7 @@ import { AuthContext } from "../../context/AuthContext";
 const goToDashboard = (user, navigate) => {
   const role = user?.role;
 
-  if (role === "admin") {
+  if (isAdminRole(role)) {
     navigate("/admin-dashboard");
     return;
   }

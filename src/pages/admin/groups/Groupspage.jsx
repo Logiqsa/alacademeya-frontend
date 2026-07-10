@@ -90,12 +90,19 @@ const GroupsPage = () => {
       // بدل object فيه fullName، فبنجيب اسم كل معلم فريد عن طريق /users/{id}
       const uniqueTeacherIds = [
         ...new Set(
-          rawClassrooms
-            .map((c) =>
+          rawClassrooms.flatMap((c) => {
+            const teacherId =
               typeof c.teacher === "string"
                 ? c.teacher
-                : c.teacher?.id || c.teacher?._id,
-            )
+                : c.teacher?.id || c.teacher?._id || c.teacher?.user?.id;
+            const substituteTeacherId =
+              typeof c.substituteTeacher === "string"
+                ? c.substituteTeacher
+                : c.substituteTeacher?.id ||
+                  c.substituteTeacher?._id ||
+                  c.substituteTeacher?.user?.id;
+            return [teacherId, substituteTeacherId];
+          })
             .filter(Boolean),
         ),
       ];
@@ -125,14 +132,27 @@ const GroupsPage = () => {
         const teacherId =
           typeof c.teacher === "string"
             ? c.teacher
-            : c.teacher?.id || c.teacher?._id;
+            : c.teacher?.id || c.teacher?._id || c.teacher?.user?.id;
+        const substituteTeacherId =
+          typeof c.substituteTeacher === "string"
+            ? c.substituteTeacher
+            : c.substituteTeacher?.id ||
+              c.substituteTeacher?._id ||
+              c.substituteTeacher?.user?.id;
         return {
           id: c.id,
           name: resolveName(c.name),
+          teacherId,
           teacher:
             c.teacher?.user?.fullName ||
             c.teacher?.fullName ||
             teacherMap[teacherId] ||
+            null,
+          substituteTeacherId,
+          substituteTeacher:
+            c.substituteTeacher?.user?.fullName ||
+            c.substituteTeacher?.fullName ||
+            teacherMap[substituteTeacherId] ||
             null,
           // fallback: لو الماده/الصف مش لاقيينها في الـ map، نجرب نجيبها من بيانات المعلم نفسه
           subject:
@@ -242,7 +262,7 @@ const GroupsPage = () => {
           ) : error ? (
             <div className="text-center py-10 text-red-500">{error}</div>
           ) : (
-            <GroupTable groups={paginatedGroups} />
+            <GroupTable groups={paginatedGroups} onChanged={fetchGroups} />
           )}
         </div>
 

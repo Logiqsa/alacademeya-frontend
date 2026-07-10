@@ -1,9 +1,10 @@
-import React, { useState, useContext } from "react";
+import { useState, useContext } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import { AuthContext } from "../../context/AuthContext";
+import { isAdminRole } from "../../utils/roles";
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +33,7 @@ const LoginForm = () => {
         navigate(isApproved ? "/student-dashboard" : "/register/success");
       } else if (role === "parent") {
         navigate("/parent-dashboard");
-      } else if (role === "admin") {
+      } else if (isAdminRole(role)) {
         navigate("/admin-dashboard");
       } else {
         navigate("/");

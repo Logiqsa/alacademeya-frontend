@@ -38,10 +38,15 @@ const MobileField = ({ label, children }) => (
 
 // ⚠️ لازم يتمرر groupId من الصفحة الأب (GroupLessonsPage) عشان الـ navigate
 // يبني الرابط الصح ويوصل صفحة التفاصيل بالـ groupId + lessonId الاتنين
-const LessonsTable = ({ lessons = [], groupId }) => {
+const LessonsTable = ({ lessons = [], groupId, role = "teacher" }) => {
   const navigate = useNavigate();
 
   const handleView = (lessonId) => {
+    if (role === "admin") {
+      navigate(`/admin/classrooms/${groupId}/sessions/${lessonId}`);
+      return;
+    }
+
     navigate(`/teacher/groups/${groupId}/lessons/${lessonId}`);
   };
 

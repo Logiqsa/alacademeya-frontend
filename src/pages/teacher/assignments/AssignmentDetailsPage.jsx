@@ -10,8 +10,8 @@ import {
   getAssignment,
   getAssignmentSubmissions,
   getClassroomStudents,
-  gradeSubmission, // TODO: عدّل الاستدعاء في handleAction لما تأكدلي شكل الـ endpoint
-} from "../../../services/APIService"; // عدّل المسار حسب مكان api.js عندك
+  gradeSubmission,
+} from "../../../services/APIService";
 
 const PAGE_SIZE = 5;
 
@@ -43,16 +43,26 @@ const buildAssignmentDetails = (assignmentRaw, submissionsRaw, rosterRaw) => {
     }
 
     const graded = sub.status === "graded";
+    const attachment = sub.attachments?.[0];
     return {
       ...base,
       submitted: true,
       submissionId: sub.id,
+      score: sub.score,
+      feedback: sub.feedback || "",
+      totalScore: assignmentRaw.totalScore,
       submittedCount: graded
         ? `${sub.score}/${assignmentRaw.totalScore}`
         : undefined,
       correctionStatus: graded ? "تم التصحيح" : "قيد التصحيح",
-      fileName: sub.attachments?.[0]?.originalName,
-      fileSize: formatBytes(sub.attachments?.[0]?.size) ?? undefined,
+      fileName: attachment?.originalName,
+      fileSize: formatBytes(attachment?.size) ?? undefined,
+      fileUrl:
+        attachment?.url ||
+        attachment?.secureUrl ||
+        attachment?.secure_url ||
+        attachment?.fileUrl ||
+        attachment?.path,
     };
   });
 
@@ -117,12 +127,14 @@ const AssignmentDetailsPage = () => {
     fetchAssignment();
   }, [fetchAssignment]);
 
-  // TODO: أظبط الـ payload لما تأكدلي شكل الـ Grade/Review Submission endpoint
-  const handleAction = async ({ student, type, grade }) => {
+  const handleAction = async ({ student, type, grade, feedback }) => {
     if (type === "تصحيح" || type === "تعديل") {
       if (!student.submissionId) return;
       try {
-        await gradeSubmission(student.submissionId, { score: Number(grade) });
+        await gradeSubmission(student.submissionId, {
+          score: Number(grade),
+          feedback,
+        });
         fetchAssignment(); // إعادة تحميل عشان نعرض الدرجة والحالة الجديدة
       } catch (err) {
         setErrorMsg(err?.response?.data?.message || "حدث خطأ أثناء حفظ الدرجة");

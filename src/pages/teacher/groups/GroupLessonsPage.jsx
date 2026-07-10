@@ -5,6 +5,7 @@ import { CheckCircle2, X, AlertTriangle } from "lucide-react";
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
+import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 import Pagination from "../../../components/teacher/groups/lessons/Paginationn";
 import {
@@ -79,10 +80,12 @@ const EndSessionModal = ({ open, lesson, loading, error, onConfirm, onClose }) =
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-const GroupLessonsPage = () => {
+const GroupLessonsPage = ({ role = "teacher" }) => {
   const { groupId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const isAdmin = role === "admin";
+  const Layout = isAdmin ? AdminLayout : TeacherLayout;
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
@@ -282,7 +285,7 @@ const GroupLessonsPage = () => {
   };
 
   return (
-    <TeacherLayout>
+    <Layout>
       <div
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right relative"
         dir="rtl"
@@ -314,22 +317,24 @@ const GroupLessonsPage = () => {
               مكان واحد.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
-            <button
-              onClick={() =>
-                navigate(`/teacher/groups/${groupId}/lessons/schedule/new`)
-              }
-              className="w-full sm:w-40 h-12 rounded-lg bg-white border border-[#E5E5E5] text-[#1A1A1A] flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
-            >
-              {hasSchedule ? "تعديل الجدول" : "إنشاء جدول"}
-            </button>
-            <button
-              onClick={() => navigate(`/teacher/groups/${groupId}/lessons/new`)}
-              className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
-            >
-              إنشاء حصة جديدة
-            </button>
-          </div>
+          {!isAdmin && (
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
+              <button
+                onClick={() =>
+                  navigate(`/teacher/groups/${groupId}/lessons/schedule/new`)
+                }
+                className="w-full sm:w-40 h-12 rounded-lg bg-white border border-[#E5E5E5] text-[#1A1A1A] flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
+              >
+                {hasSchedule ? "تعديل الجدول" : "إنشاء جدول"}
+              </button>
+              <button
+                onClick={() => navigate(`/teacher/groups/${groupId}/lessons/new`)}
+                className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
+              >
+                إنشاء حصة جديدة
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Stats */}
@@ -374,6 +379,7 @@ const GroupLessonsPage = () => {
             <LessonsTable
               lessons={paginatedLessons}
               groupId={groupId}
+              role={role}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onEndSession={handleEndRequest}
@@ -400,7 +406,7 @@ const GroupLessonsPage = () => {
         onConfirm={handleConfirmEnd}
         onClose={closeEndModal}
       />
-    </TeacherLayout>
+    </Layout>
   );
 };
 

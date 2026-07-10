@@ -159,6 +159,7 @@ function App() {
         <Route path="/admin/notifications" element={user ? <AdminNotificationss /> : <Navigate to="/login" replace />} />
         <Route path="/admin/users" element={user ? <UsersPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/groups" element={user ? <GroupsPages /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/groups/:groupId/lessons" element={user ? <GroupLessonsPage role="admin" /> : <Navigate to="/login" replace />} />
         <Route path="/admin/schedule" element={user ? <AdminSchedulePage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/classrooms/:classroomId/sessions/:sessionId" element={user ? <SessionDetailsPage role="admin" /> : <Navigate to="/login" replace />} />
         <Route path="/admin/groups/:groupId/attendance" element={user ? <AttendancePage /> : <Navigate to="/login" replace />} />
