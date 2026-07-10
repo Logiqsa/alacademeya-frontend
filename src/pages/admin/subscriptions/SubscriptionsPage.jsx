@@ -20,14 +20,11 @@ const SubscriptionsPage = () => {
   const tabBtnLabel = {
     packages: "إضافة باقة",
     discounts: "إنشاء كود",
-    subscriptions: "طلبات الاشتراك",
   };
 
   const handleHeaderBtn = () => {
     if (activeTab === "packages") setShowAddPackage(true);
     if (activeTab === "discounts") setShowAddDiscount(true);
-    if (activeTab === "subscriptions")
-      navigate("/admin/subscriptions/requests");
   };
 
   return (
@@ -46,12 +43,30 @@ const SubscriptionsPage = () => {
               الباقات ورموز الخصم والاشتراكات
             </p>
           </div>
-          <button
-            onClick={handleHeaderBtn}
-            className="w-full sm:w-auto shrink-0 px-5 py-2.5 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] active:bg-[#0c285f] transition-colors whitespace-nowrap"
-          >
-            {tabBtnLabel[activeTab]}
-          </button>
+
+          {activeTab === "subscriptions" ? (
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <button
+                onClick={() => navigate("/admin/subscriptions/requests")}
+                className="flex-1 sm:flex-none px-5 py-2.5 border border-[#E5E7EB] text-[#374151] rounded-xl font-medium text-[14px] hover:bg-gray-50 active:bg-gray-100 transition-colors whitespace-nowrap"
+              >
+                طلبات الاشتراك
+              </button>
+              <button
+                onClick={() => navigate("/admin/subscriptions/add")}
+                className="flex-1 sm:flex-none px-5 py-2.5 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] active:bg-[#0c285f] transition-colors whitespace-nowrap"
+              >
+                إضافة اشتراك
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleHeaderBtn}
+              className="w-full sm:w-auto shrink-0 px-5 py-2.5 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] active:bg-[#0c285f] transition-colors whitespace-nowrap"
+            >
+              {tabBtnLabel[activeTab]}
+            </button>
+          )}
         </div>
 
         {/* Tabs */}
