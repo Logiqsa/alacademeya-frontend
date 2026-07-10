@@ -5,8 +5,8 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 
 import {
   getStudent,
-  getAllStudents, 
-  getAllSubjects, 
+  getAllStudents, // ⚠️ تأكدي من الاسم عن طريق Postman - افترضته زي getAllPackages/getAllDiscounts
+  getAllSubjects, // ⚠️ تأكدي من الاسم عن طريق Postman
   getAvailableTeachers,
   getAvailableClassrooms,
   getAllPackages,
