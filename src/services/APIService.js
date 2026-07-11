@@ -136,6 +136,8 @@ export const createSubscription = (payload) =>
 export const getAllSubscriptions = (params) =>
   API.get("/subscriptions/", { params });
 export const getSubscription = (id) => API.get(`/subscriptions/${id}`);
+export const renewSubscription = (id, payload) =>
+  API.post(`/subscriptions/${id}/renew`, payload);
 export const getStudentSubscriptionOptions = (studentId) =>
   API.get(`/subscriptions/students/${studentId}/subscription-options`);
 export const getPendingSubscriptionRequests = () =>

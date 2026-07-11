@@ -5,21 +5,10 @@ import {
   ChevronRight,
   Clock,
   Info,
-  UserRound,
   Video,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getMonthlySchedule } from "../../services/APIService";
-
-const DAY_NAMES = {
-  saturday: "السبت",
-  sunday: "الأحد",
-  monday: "الاثنين",
-  tuesday: "الثلاثاء",
-  wednesday: "الأربعاء",
-  thursday: "الخميس",
-  friday: "الجمعة",
-};
 
 // نفس ترتيب DAY_NAMES بالظبط، بيتماشى مع weekdayIndex تحت (السبت = أول عمود)
 const WEEKDAY_HEADERS = [
@@ -40,6 +29,39 @@ const STATUS_LABELS = {
   active: "نشطة",
   missed: "فائتة",
 };
+
+const OPENABLE_STATUSES = new Set([
+  "active",
+  "completed",
+  "ended",
+  "finished",
+  "in_progress",
+  "live",
+  "running",
+  "جار الآن",
+  "جاري الآن",
+  "جارٍ الآن",
+  "تُعقد الآن",
+  "تعقد الآن",
+  "نشطة",
+  "شغالة",
+  "شغاله",
+  "مباشر الآن",
+  "مكتمل",
+  "مكتملة",
+  "منتهي",
+  "منتهية",
+]);
+
+const normalizeStatus = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const canOpenDetails = (lesson) =>
+  [lesson.status, lesson.rawStatus, lesson.statusKey, lesson.displayStatus].some(
+    (status) => OPENABLE_STATUSES.has(normalizeStatus(status)),
+  );
 
 const badgeClass = (lesson) => {
   if (lesson.isVirtual || lesson.status === "scheduled")
@@ -194,15 +216,22 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
 
   const openDetails = (lesson) => {
     const classroomId =
-      lesson.classroom?.id || lesson.classroom?._id || lesson.classroom;
+      lesson.classroom?.id ||
+      lesson.classroom?._id ||
+      lesson.classroom ||
+      lesson.classroomId;
+    const lessonId = lesson.id || lesson._id;
+
+    if (!classroomId || !lessonId) return;
+
     if (role === "teacher")
-      navigate(`/teacher/groups/${classroomId}/lessons/${lesson.id}`);
+      navigate(`/teacher/groups/${classroomId}/lessons/${lessonId}`);
     if (role === "student")
-      navigate(`/student/groups/${classroomId}/lessons/${lesson.id}`);
+      navigate(`/student/groups/${classroomId}/lessons/${lessonId}`);
     if (role === "admin")
-      navigate(`/admin/classrooms/${classroomId}/sessions/${lesson.id}`);
+      navigate(`/admin/classrooms/${classroomId}/sessions/${lessonId}`);
     if (role === "parent")
-      navigate(`/parent/classrooms/${classroomId}/sessions/${lesson.id}`);
+      navigate(`/parent/classrooms/${classroomId}/sessions/${lessonId}`);
   };
 
   return (
@@ -328,6 +357,7 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
                   const lesson = withDisplayStatus(rawLesson, selectedDay.date);
                   const duration = getDurationMinutes(lesson);
                   const isLive = ["live", "active"].includes(lesson.status);
+                  const isOpenable = canOpenDetails(lesson);
 
                   return (
                     <article
@@ -335,7 +365,12 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
                         lesson.id ||
                         `${lesson.classroom}-${lesson.startTime}-${index}`
                       }
-                      className="bg-white border border-[#E5E5E5] rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border-r-4 border-r-[#123C91] p-4"
+                      onClick={() => {
+                        if (isOpenable) openDetails(lesson);
+                      }}
+                      className={`bg-white border border-[#E5E5E5] rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border-r-4 border-r-[#123C91] p-4 ${
+                        isOpenable ? "cursor-pointer" : ""
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <h4 className="text-[#1F2937] font-semibold text-[15px] leading-6 flex-1">
@@ -382,6 +417,7 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
                               href={lesson.meetingLink}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={(event) => event.stopPropagation()}
                               aria-label="انضم للحصة"
                               className="w-7 h-7 flex items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f2f73] transition-colors"
                             >
@@ -390,7 +426,10 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
                           ) : (
                             <button
                               type="button"
-                              onClick={() => openDetails(lesson)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openDetails(lesson);
+                              }}
                               aria-label="تفاصيل الحصة"
                               className="w-7 h-7 flex items-center justify-center rounded-full text-[#8C9198] hover:text-[#123C91] hover:bg-[#F0F4FF] transition-colors"
                             >

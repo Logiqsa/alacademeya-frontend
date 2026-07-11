@@ -85,6 +85,8 @@ const StudentGroupLessonsPage = () => {
           return {
             id: s.id ?? s._id,
             title: s.title || "حصة",
+            rawStatus: s.status,
+            statusKey: status,
             date: date.toLocaleDateString("ar-EG", {
               weekday: "long",
               year: "numeric",
@@ -113,6 +115,7 @@ const StudentGroupLessonsPage = () => {
   }, [groupId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 

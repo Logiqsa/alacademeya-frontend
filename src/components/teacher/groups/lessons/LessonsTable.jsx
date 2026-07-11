@@ -36,6 +36,35 @@ const MobileField = ({ label, children }) => (
   </div>
 );
 
+const OPENABLE_STATUSES = new Set([
+  "active",
+  "completed",
+  "ended",
+  "finished",
+  "in_progress",
+  "live",
+  "running",
+  "جار الآن",
+  "جاري الآن",
+  "جارٍ الآن",
+  "شغالة",
+  "شغاله",
+  "مباشر الآن",
+  "مكتمل",
+  "منتهي",
+  "منتهية",
+]);
+
+const normalizeStatus = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const canOpenFromRow = (lesson) =>
+  [lesson.rawStatus, lesson.status, lesson.displayStatus, lesson.statusKey].some(
+    (status) => OPENABLE_STATUSES.has(normalizeStatus(status)),
+  );
+
 // ⚠️ لازم يتمرر groupId من الصفحة الأب (GroupLessonsPage) عشان الـ navigate
 // يبني الرابط الصح ويوصل صفحة التفاصيل بالـ groupId + lessonId الاتنين
 const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession }) => {
@@ -91,8 +120,19 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {lessons.map((lesson) => (
-                <tr key={lesson.id} className="hover:bg-gray-50/80 transition-colors">
+              {lessons.map((lesson) => {
+                const isRowOpenable = canOpenFromRow(lesson);
+
+                return (
+                <tr
+                  key={lesson.id}
+                  onClick={() => {
+                    if (isRowOpenable) handleView(lesson.id);
+                  }}
+                  className={`hover:bg-gray-50/80 transition-colors ${
+                    isRowOpenable ? "cursor-pointer" : ""
+                  }`}
+                >
                   {/* عنوان الحصة */}
                   <td
                     className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69]"
@@ -135,7 +175,10 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
                       </ActionButton>
                       {role !== "admin" && lesson.rawStatus === "live" && (
                         <ActionButton
-                          onClick={() => onEndSession?.(lesson)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onEndSession?.(lesson);
+                          }}
                           colorClass="text-[#575F69] hover:text-red-600"
                         >
                           <HiOutlineStop size={18} />
@@ -156,7 +199,8 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -164,8 +208,19 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
 
       {/* ── Mobile cards (below md) ───────────────────────────────────────── */}
       <div className="md:hidden space-y-3">
-        {lessons.map((lesson) => (
-          <div key={lesson.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+        {lessons.map((lesson) => {
+          const isRowOpenable = canOpenFromRow(lesson);
+
+          return (
+          <div
+            key={lesson.id}
+            onClick={() => {
+              if (isRowOpenable) handleView(lesson.id);
+            }}
+            className={`bg-white rounded-2xl border border-gray-200 shadow-sm p-4 ${
+              isRowOpenable ? "cursor-pointer" : ""
+            }`}
+          >
             <div className="flex items-center justify-between mb-2">
               <h4
                 className="text-[#1A1A1A] font-semibold text-[16px]"
@@ -193,7 +248,10 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
               </ActionButton>
               {role !== "admin" && lesson.rawStatus === "live" && (
                 <ActionButton
-                  onClick={() => onEndSession?.(lesson)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEndSession?.(lesson);
+                  }}
                   colorClass="text-[#575F69] hover:text-red-600 bg-gray-50 flex-1 justify-center"
                 >
                   <HiOutlineStop size={18} />
@@ -213,7 +271,8 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
               </ActionButton> */}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
