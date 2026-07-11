@@ -90,7 +90,7 @@ const StudentHome = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5 sm:mb-6">
           <div className="lg:col-span-2">
-            <GroupsCard />
+            <GroupsCard showViewAll />
           </div>
           <div className="lg:col-span-1">
             <SubscriptionsCard />
