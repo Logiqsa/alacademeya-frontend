@@ -30,6 +30,8 @@ const SubscriptionsCard = () => {
     const fetchSubscriptions = async () => {
       try {
         setLoading(true);
+        // بنجيب الاشتراكات من /subscriptions/ (مفيش endpoint اسمه /subscriptions/my
+        // في الـ Postman collection، فرجعنا لـ getAllSubscriptions)
         const { data } = await getAllSubscriptions();
 
         // الشكل المتوقع: { success, results, data: [ subscription1, subscription2, ... ] }
