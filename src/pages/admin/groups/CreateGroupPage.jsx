@@ -9,8 +9,18 @@ import {
   getCurriculumStages,
   getStageGrades,
   getSubjects, // بنستخدم النسخة اللي بتاخد params عشان نفلتر المواد حسب الصف
-  getAvailableTeachers,
+  getTeachers,
 } from "../../../services/APIService";
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                              */
+/* ------------------------------------------------------------------ */
+
+const idOf = (obj) => {
+  if (!obj) return "";
+  if (typeof obj === "string") return obj;
+  return obj.id || obj._id || "";
+};
 
 /* ------------------------------------------------------------------ */
 /* Static Data                                                          */
@@ -179,7 +189,10 @@ const CreateGroupPages = () => {
   }, [data.grade]);
 
   /* ---------------------------------------------------------------- */
-  /* المعلمين — النشطين والموثّقين بس، مستقلين عن باقي السلسلة           */
+  /* المعلمين — بنجيب كل المعلمين (GET /teachers) ونفلتر محليًا حسب     */
+  /* المنهج/الصف/المادة المختارين + النشطين والموثّقين بس                */
+  /* ⚠️ endpoint /teachers/available كان بيرجع فاضي دايمًا، فرجعنا      */
+  /* لنفس endpoint /teachers المؤكد شغّال من الـ Postman                */
   /* ---------------------------------------------------------------- */
   useEffect(() => {
     const canLoadTeachers =
@@ -192,12 +205,7 @@ const CreateGroupPages = () => {
 
     setLoadingTeachers(true);
 
-    getAvailableTeachers({
-      curriculum: data.curriculum,
-      stage: data.stage,
-      grade: data.grade,
-      subject: data.subject,
-    })
+    getTeachers()
       .then((res) => {
         const raw = res.data?.data;
 
@@ -209,15 +217,34 @@ const CreateGroupPages = () => {
               ? raw.results
               : [];
 
-        const normalizedTeachers = list.map((teacher) => ({
-          id: teacher.teacherId || teacher.id || teacher._id,
-          userId: teacher.userId || teacher.user?._id,
-          fullName:
-            teacher.fullName || teacher.user?.fullName || "معلم بدون اسم",
-          username: teacher.username || teacher.user?.username,
-          rating: teacher.rating,
-          totalReviews: teacher.totalReviews,
-        }));
+        const normalizedTeachers = list
+          .map((teacher) => {
+            const user = teacher.user || {};
+            return {
+              id: teacher.id || teacher._id,
+              userId: user.id || user._id,
+              fullName: user.fullName || "معلم بدون اسم",
+              username: user.username,
+              rating: teacher.rating,
+              totalReviews: teacher.totalReviews,
+              isActive: user.isActive,
+              registrationStatus: user.registrationStatus,
+              isDeleted: teacher.isDeleted ?? user.isDeleted ?? false,
+              subjectIds: (teacher.subjects || []).map(idOf),
+              gradeIds: (teacher.grades || []).map(idOf),
+              curriculumIds: (teacher.curriculums || []).map(idOf),
+            };
+          })
+          .filter(
+            (teacher) =>
+              teacher.id &&
+              teacher.isActive === true &&
+              teacher.registrationStatus === "active" &&
+              teacher.isDeleted !== true &&
+              teacher.subjectIds.includes(data.subject) &&
+              teacher.gradeIds.includes(data.grade) &&
+              teacher.curriculumIds.includes(data.curriculum),
+          );
 
         setTeachers(normalizedTeachers);
       })
@@ -392,7 +419,7 @@ const CreateGroupPages = () => {
             error={errors.subject}
           />
 
-          {/* 5. المعلم — مستقل، لكن نعرض النشطين والموثّقين بس */}
+          {/* 5. المعلم — يعتمد على المنهج/المرحلة/الصف/المادة */}
           <SelectField
             label="المعلم"
             value={data.teacher || ""}
