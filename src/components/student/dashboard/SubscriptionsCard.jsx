@@ -1,21 +1,48 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { getAllSubscriptions } from "../../../services/APIService"; // عدّل المسار حسب مكانه عندك
+import { getMySubscriptions } from "../../../services/APIService"; // عدّل المسار حسب مكانه عندك
 
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "";
 
-const buildGroupsFromItems = (items = []) =>
-  items.map((item) => {
-    const total = item.package?.sessions ?? 0;
-    const done = item.usedSessions ?? 0;
-    const subjectName = resolveName(item.subject?.name);
-    const teacherName = item.teacher?.user?.fullName ?? "";
+const numberOrZero = (value) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : 0;
+};
+
+const buildGroupsFromSubscriptions = (subscriptions = []) =>
+  subscriptions.map((subscription) => {
+    const items = subscription.items ?? subscription.subjectSubscriptions ?? [];
+    const subjects = items
+      .map((item) => resolveName(item.subject?.name))
+      .filter(Boolean);
+    const total = items.reduce(
+      (sum, item) =>
+        sum + numberOrZero(item.totalSessions ?? item.package?.sessions),
+      0,
+    );
+    const remaining = items.reduce(
+      (sum, item) => sum + numberOrZero(item.remainingSessions),
+      0,
+    );
+    const done = items.reduce((sum, item) => {
+      if (item.usedSessions != null)
+        return sum + numberOrZero(item.usedSessions);
+      if (item.consumedSessions != null)
+        return sum + numberOrZero(item.consumedSessions);
+      const itemTotal = numberOrZero(
+        item.totalSessions ?? item.package?.sessions,
+      );
+      const itemRemaining = numberOrZero(item.remainingSessions);
+      return sum + Math.max(itemTotal - itemRemaining, 0);
+    }, 0);
+
     return {
-      id: item._id,
-      name: teacherName ? `${subjectName} - أ/ ${teacherName}` : subjectName,
+      id: subscription.id ?? subscription._id,
+      name: subjects.length > 0 ? subjects.join("، ") : "اشتراكك الحالي",
       done,
       total,
+      remaining,
     };
   });
 
@@ -30,16 +57,18 @@ const SubscriptionsCard = () => {
     const fetchSubscriptions = async () => {
       try {
         setLoading(true);
-        // بنجيب الاشتراكات من /subscriptions/ (مفيش endpoint اسمه /subscriptions/my
-        // في الـ Postman collection، فرجعنا لـ getAllSubscriptions)
         const { data } = await getAllSubscriptions();
 
-        // الشكل المتوقع: { success, results, data: [ subscription1, subscription2, ... ] }
-        // كل subscription فيه items[] زي اللي شفناها في GET /subscriptions/:id
-        const subscriptions = data?.data ?? [];
-        const allItems = subscriptions.flatMap((sub) => sub.items ?? []);
+        const raw = data?.data ?? data;
+        const subscriptions = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.subscriptions)
+            ? raw.subscriptions
+            : raw
+              ? [raw]
+              : [];
 
-        if (!cancelled) setItems(allItems);
+        if (!cancelled) setItems(subscriptions);
       } catch (err) {
         if (!cancelled) setError(err);
       } finally {
@@ -53,10 +82,17 @@ const SubscriptionsCard = () => {
     };
   }, []);
 
-  const groups = buildGroupsFromItems(items);
+  const groups = buildGroupsFromSubscriptions(items);
   const totalLessons = groups.reduce((sum, g) => sum + g.total, 0);
   const completedLessons = groups.reduce((sum, g) => sum + g.done, 0);
-  const remainingLessons = Math.max(totalLessons - completedLessons, 0);
+  const explicitRemainingLessons = groups.reduce(
+    (sum, g) => sum + g.remaining,
+    0,
+  );
+  const remainingLessons =
+    explicitRemainingLessons > 0
+      ? explicitRemainingLessons
+      : Math.max(totalLessons - completedLessons, 0);
 
   const miniStats = [
     { label: "حصص متبقية", value: remainingLessons },

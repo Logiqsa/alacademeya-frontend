@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Clock, GraduationCap, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, GraduationCap, Loader2 } from "lucide-react";
 import {
   getMyClassrooms,
   getClassroomSessions,
@@ -15,7 +15,6 @@ const GroupCard = ({
   nextLesson,
   done,
   total,
-  remaining,
   onClick,
 }) => {
   const isGroup = statusType === "group";
@@ -65,18 +64,10 @@ const GroupCard = ({
         <span className="truncate">{nextLesson}</span>
       </div>
 
-      <div className="flex items-center justify-between gap-2 mt-auto flex-wrap">
+      <div className="flex items-center justify-start gap-2 mt-auto">
         <span className="flex items-center gap-1 text-[#6B7280] text-[11.5px] sm:text-[12px] shrink-0">
           <GraduationCap size={14} className="text-[#9CA3AF]" />
           {done}/{total} حصص
-        </span>
-        <span
-          className={`
-            px-2 sm:px-2.5 py-1 rounded-md text-[10.5px] sm:text-[11px] font-medium whitespace-nowrap
-            ${remaining <= 2 ? "bg-[#FEEAEA] text-[#E54848]" : "bg-[#00A63E1A] text-[#00A63E]"}
-          `}
-        >
-          متبقى {remaining} حصص
         </span>
       </div>
     </div>
@@ -124,9 +115,6 @@ const formatNextLesson = (sessions = []) => {
 
 const buildGroupCardData = (classroom, sessions = []) => {
   const done = sessions.filter((s) => s.status === "completed").length;
-  const remaining = sessions.filter(
-    (s) => s.status !== "completed" && s.status !== "cancelled",
-  ).length;
   const total = sessions.filter((s) => s.status !== "cancelled").length;
   const type = classroom.type ?? "group";
 
@@ -142,11 +130,15 @@ const buildGroupCardData = (classroom, sessions = []) => {
     nextLesson: formatNextLesson(sessions),
     done,
     total,
-    remaining,
   };
 };
 
-const GroupsCard = () => {
+const GroupsCard = ({
+  title = "مجموعاتك",
+  subtitle = "المواد والمجموعات المشترك بها",
+  showViewAll = false,
+  className = "",
+}) => {
   const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -191,21 +183,34 @@ const GroupsCard = () => {
   return (
     <div
       dir="rtl"
-      className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-4 sm:p-5 h-full"
+      className={`bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-4 sm:p-5 h-full ${className}`}
     >
-      <div className="mb-4">
-        <h3
-          className="text-[#1F2937] font-semibold text-[15px] sm:text-[16px]"
-          style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-        >
-          مجموعاتك
-        </h3>
-        <p
-          className="text-[#9CA3AF] text-[11.5px] sm:text-[12px] mt-1"
-          style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-        >
-          المواد والمجموعات المشترك بها
-        </p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h3
+            className="text-[#1F2937] font-semibold text-[15px] sm:text-[16px]"
+            style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
+          >
+            {title}
+          </h3>
+          <p
+            className="text-[#9CA3AF] text-[11.5px] sm:text-[12px] mt-1"
+            style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
+          >
+            {subtitle}
+          </p>
+        </div>
+
+        {showViewAll && (
+          <button
+            type="button"
+            onClick={() => navigate("/student/groups")}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E7EB] px-3 py-2 text-[12px] font-medium text-[#123C91] hover:border-[#123C91] hover:bg-[#F8FAFF] transition-colors shrink-0"
+          >
+            عرض الكل
+            <ArrowLeft size={14} />
+          </button>
+        )}
       </div>
 
       {loading && (
