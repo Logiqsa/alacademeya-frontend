@@ -1,4 +1,4 @@
-import { Copy, ExternalLink, Video } from "lucide-react";
+import { Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 const LiveLessonLink = ({ lessonUrl, status }) => {
@@ -12,18 +12,48 @@ const LiveLessonLink = ({ lessonUrl, status }) => {
   };
 
   return (
-    <div className="flex w-full flex-col items-start justify-between gap-4 rounded-2xl bg-[#1F2937] px-5 py-4 text-white sm:flex-row sm:items-center" dir="rtl">
-      <div>
-        <h3 className="mb-2 flex items-center gap-2 text-base font-semibold"><Video size={18} />{isLive ? "الحصة بدأت الآن" : stateText}</h3>
-        <p className="text-sm text-gray-400">{isLive ? lessonUrl ? "يمكنك الدخول باستخدام رابط المجموعة" : "لا يوجد رابط لقاء محفوظ لهذه المجموعة" : stateText}</p>
+    <div
+      className="w-full rounded-2xl bg-[#1F2937] text-white px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+      dir="rtl"
+    >
+      <div className="flex-1">
+        <h3
+          className="text-[16px] font-semibold mb-2"
+          style={{ fontFamily: "Tajawal, sans-serif" }}
+        >
+          رابط الحصة المباشرة
+        </h3>
+        <p
+          className="text-[14px] text-gray-400"
+          style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
+        >
+          {isLive
+            ? lessonUrl
+              ? "الحصة مباشرة الآن، انضم وتفاعل مع طلابك."
+              : "لا يوجد رابط لقاء محفوظ لهذه المجموعة"
+            : stateText}
+        </p>
       </div>
 
       {isLive && lessonUrl && (
-        <div className="flex items-center gap-2">
-          <a href={lessonUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl bg-white px-6 py-2.5 font-semibold text-[#1F2937] hover:bg-gray-100">
-            <ExternalLink size={17} />دخول الحصة
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={lessonUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 px-7 py-2.5 rounded-xl !bg-white !text-[#1F2937] text-[16px] font-semibold hover:!bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
+          >
+            الانضمام للحصة
           </a>
-          <button type="button" onClick={copyLink} className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20" aria-label="نسخ رابط الحصة"><Copy size={18} /></button>
+          <button
+            type="button"
+            onClick={copyLink}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-all"
+            aria-label="مشاركة الرابط"
+          >
+            <Share2 size={18} />
+          </button>
         </div>
       )}
     </div>

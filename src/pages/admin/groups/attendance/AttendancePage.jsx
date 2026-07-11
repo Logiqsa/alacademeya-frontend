@@ -87,6 +87,8 @@ const AttendancePage = () => {
             studentName: name,
             attendanceCount: 0,
             absenceCount: 0,
+            lateCount: 0,
+            excusedCount: 0,
           };
           // بنسجل نفس الطالب تحت المعرفين الاتنين (id بتاع سجل الطالب، وid بتاع المستخدم)
           // عشان أيًا كان اللي هيرجع في سجل الحضور، الربط يظبط
@@ -122,12 +124,22 @@ const AttendancePage = () => {
               studentName: resolveStudentName(rec.student) || "طالب",
               attendanceCount: 0,
               absenceCount: 0,
+              lateCount: 0,
+              excusedCount: 0,
             });
           }
 
           const entry = studentMap.get(studentId);
           if (rec.status === "present") entry.attendanceCount += 1;
           else if (rec.status === "absent") entry.absenceCount += 1;
+          else if (rec.status === "late") {
+            entry.attendanceCount += 1;
+            entry.lateCount += 1;
+          }
+          else if (rec.status === "excused") {
+            entry.absenceCount += 1;
+            entry.excusedCount += 1;
+          }
         });
       });
 
@@ -154,6 +166,8 @@ const AttendancePage = () => {
   const stats = {
     absences: records.reduce((sum, r) => sum + r.absenceCount, 0),
     attendances: records.reduce((sum, r) => sum + r.attendanceCount, 0),
+    late: records.reduce((sum, r) => sum + r.lateCount, 0),
+    excused: records.reduce((sum, r) => sum + r.excusedCount, 0),
     students: records.length,
     sessions: sessionsCount,
   };

@@ -1,6 +1,6 @@
 import { Search, ChevronDown } from "lucide-react";
 
-const STATUS_OPTIONS = ["جميع الحالات", "حاضر", "غائب"];
+const STATUS_OPTIONS = ["جميع الحالات", "حاضر", "غائب", "متأخر", "بعذر"];
 const SORT_OPTIONS = ["تاريخ الإنضمام", "الحضور", "الدرجة"];
 
 const StudentLessonFilters = ({

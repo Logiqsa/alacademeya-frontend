@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getClassroomStudents,
@@ -7,7 +7,14 @@ import {
 } from "../../../services/APIService"; 
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 
-// ─── Radio صغير مخصص (حاضر / غائب) ─────────────────────────────────────────────
+const ATTENDANCE_OPTIONS = [
+  { value: "present", label: "حاضر", color: "#00A63E" },
+  { value: "absent", label: "غائب", color: "#D32F2F" },
+  { value: "late", label: "متأخر", color: "#FF8A00" },
+  { value: "excused", label: "بعذر", color: "#123C91" },
+];
+
+// ─── Radio صغير مخصص ─────────────────────────────────────────────────────────
 const StatusRadio = ({ checked, onChange, color }) => (
   <button
     type="button"
@@ -36,7 +43,7 @@ const AttendanceRegistrationPage = () => {
   const navigate = useNavigate();
 
   const [students, setStudents] = useState([]);
-  const [statusMap, setStatusMap] = useState({}); // { studentId: "present" | "absent" }
+  const [statusMap, setStatusMap] = useState({}); // { studentId: "present" | "absent" | "late" | "excused" }
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -167,12 +174,14 @@ useEffect(() => {
                       <th className="text-[14px] font-medium text-[#1F2937] text-right pb-4">
                         الطالب
                       </th>
-                      <th className="text-[14px] font-medium text-[#1F2937] text-center pb-4">
-                        حاضر
-                      </th>
-                      <th className="text-[14px] font-medium text-[#1F2937] text-center pb-4">
-                        غائب
-                      </th>
+                      {ATTENDANCE_OPTIONS.map((option) => (
+                        <th
+                          key={option.value}
+                          className="text-[14px] font-medium text-[#1F2937] text-center pb-4"
+                        >
+                          {option.label}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -184,20 +193,15 @@ useEffect(() => {
                         >
                           {s.fullName}
                         </td>
-                        <td className="py-3">
-                          <StatusRadio
-                            checked={statusMap[s.id] === "present"}
-                            onChange={() => setStatus(s.id, "present")}
-                            color="#00A63E"
-                          />
-                        </td>
-                        <td className="py-3">
-                          <StatusRadio
-                            checked={statusMap[s.id] === "absent"}
-                            onChange={() => setStatus(s.id, "absent")}
-                            color="#D32F2F"
-                          />
-                        </td>
+                        {ATTENDANCE_OPTIONS.map((option) => (
+                          <td key={option.value} className="py-3">
+                            <StatusRadio
+                              checked={statusMap[s.id] === option.value}
+                              onChange={() => setStatus(s.id, option.value)}
+                              color={option.color}
+                            />
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>

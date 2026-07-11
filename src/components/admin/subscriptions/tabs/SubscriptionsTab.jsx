@@ -34,6 +34,16 @@ const RowActions = ({ onView }) => (
   </button>
 );
 
+const valueOrDash = (value) => (value == null || value === "" ? "--" : value);
+
+const sessionValue = (...values) => {
+  const value = values.find((item) => item != null && item !== "");
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+};
+
+const sessionDisplay = (value) => (value == null ? "--" : `${value} حصة`);
+
 // ─── Pagination ───────────────────────────────────────────────────────────────
 const Pagination = ({ page, total, totalPages, onChange }) => (
   <div
@@ -94,6 +104,14 @@ const SubCard = ({ s, onView }) => (
       <span className="text-[#575F69]">{s.discount}</span>
     </div>
     <div className="flex items-center justify-between text-[13px]">
+      <span className="text-[#9CA3AF]">المستهلك</span>
+      <span className="text-[#575F69]">{s.usedSessions}</span>
+    </div>
+    <div className="flex items-center justify-between text-[13px]">
+      <span className="text-[#9CA3AF]">المتبقي</span>
+      <span className="font-medium text-[#123C91]">{s.remainingSessions}</span>
+    </div>
+    <div className="flex items-center justify-between text-[13px]">
       <span className="text-[#9CA3AF]">الحالة</span>
       <StatusBadge status={s.status} />
     </div>
@@ -108,6 +126,25 @@ const flattenSubscriptions = (subscriptions) => {
   for (const sub of subscriptions) {
     const studentName = sub.student?.user?.fullName ?? "--";
     for (const [index, item] of (sub.items ?? []).entries()) {
+      const totalSessions = sessionValue(
+        item.totalSessions,
+        item.package?.sessions,
+        item.packageSessions,
+      );
+      const remainingSessions = sessionValue(
+        item.remainingSessions,
+        item.sessionsRemaining,
+        item.remaining,
+      );
+      const usedSessions = sessionValue(
+        item.usedSessions,
+        item.consumedSessions,
+        item.sessionsUsed,
+        totalSessions != null && remainingSessions != null
+          ? totalSessions - remainingSessions
+          : null,
+      );
+
       rows.push({
         rowId: item.id ?? item._id ?? `${sub.id || sub._id}-${index}`,
         subscriptionId: sub.id || sub._id,
@@ -115,6 +152,8 @@ const flattenSubscriptions = (subscriptions) => {
         subject: item.subject?.name?.ar ?? item.subject?.name?.en ?? "--",
         package: item.package?.name ?? "--",
         discount: item.discount ? `${item.discount} جنيه` : "--",
+        usedSessions: sessionDisplay(usedSessions),
+        remainingSessions: sessionDisplay(remainingSessions),
         status: item.status ?? sub.status,
       });
     }
@@ -215,6 +254,8 @@ const SubscriptionsTab = () => {
                       "المادة",
                       "الباقة",
                       "الخصم",
+                      "المستهلك",
+                      "المتبقي",
                       "الحالة",
                       "الإجراءات",
                     ].map((h) => (
@@ -243,7 +284,13 @@ const SubscriptionsTab = () => {
                         {s.package}
                       </td>
                       <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
-                        {s.discount}
+                        {valueOrDash(s.discount)}
+                      </td>
+                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
+                        {s.usedSessions}
+                      </td>
+                      <td className="px-5 py-3.5 text-[14px] font-medium text-[#123C91] whitespace-nowrap">
+                        {s.remainingSessions}
                       </td>
                       <td className="px-5 py-3.5">
                         <StatusBadge status={s.status} />

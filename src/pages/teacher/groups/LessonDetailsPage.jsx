@@ -7,14 +7,17 @@ import LessonAssignments from "../../../components/teacher/groups/lessons/Lesson
 import LessonFiles from "../../../components/teacher/groups/lessons/LessonFiles";
 import LiveLessonLink from "../../../components/teacher/groups/lessons/LiveLessonLink";
 import LessonStats from "../../../components/teacher/groups/lessons/LessonStats";
+import EndSessionDetailsModal from "../../../components/teacher/groups/lessons/EndSessionDetailsModal";
 import {
   getClassroom,
+  getMyClassrooms,
   getClassroomSessions,
   getSessionAttendance,
   getAssignmentsByClassroom,
   getSessionRecording,
   startSession,
   endSession,
+  updateClassroomSession,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const resolveName = (val) =>
@@ -33,6 +36,7 @@ const ATTENDANCE_STATUS_LABELS = {
   present: "حاضر",
   absent: "غائب",
   late: "متأخر",
+  excused: "بعذر",
 };
 
 // ─── Status Badge (حالة الحصة) ─────────────────────────────────────────────────
@@ -60,6 +64,7 @@ const AttendanceBadge = ({ status }) => {
     حاضر: "bg-[#E6F9EE] text-[#00A63E]",
     غائب: "bg-[#FDECEA] text-[#D32F2F]",
     متأخر: "bg-[#FFF6E5] text-[#B45309]",
+    بعذر: "bg-[#EAF4FF] text-[#123C91]",
   };
   return (
     <span
@@ -206,6 +211,8 @@ const LessonDetailsPage = () => {
   const [assignments, setAssignments] = useState([]);
   const [recording, setRecording] = useState(null);
   const [lifecycleLoading, setLifecycleLoading] = useState(false);
+  const [endDetailsOpen, setEndDetailsOpen] = useState(false);
+  const [endDetailsError, setEndDetailsError] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const loadData = async ({ silent } = {}) => {
@@ -216,8 +223,9 @@ const LessonDetailsPage = () => {
     }
 
     // بنجيب الـ classroom والـ sessions الأول عشان نعرف الحصة المطلوبة موجودة
-    const [classroomResult, sessionsResult] = await Promise.allSettled([
+    const [classroomResult, myClassroomsResult, sessionsResult] = await Promise.allSettled([
       getClassroom(groupId),
+      getMyClassrooms(),
       getClassroomSessions(groupId),
     ]);
 
@@ -230,12 +238,20 @@ const LessonDetailsPage = () => {
       return;
     }
 
-    const classroom =
+    let classroom =
       classroomResult.status === "fulfilled"
         ? classroomResult.value.data?.data || {}
         : {};
     if (classroomResult.status === "rejected") {
       console.error("getClassroom failed:", classroomResult.reason);
+    }
+    if (myClassroomsResult.status === "fulfilled") {
+      const classrooms = myClassroomsResult.value.data?.data ?? [];
+      classroom =
+        classrooms.find((c) => (c.id ?? c._id) === groupId) ??
+        classroom;
+    } else {
+      console.error("getMyClassrooms failed:", myClassroomsResult.reason);
     }
 
     const sessions = sessionsResult.value.data?.data || [];
@@ -267,8 +283,8 @@ const LessonDetailsPage = () => {
       console.error("getSessionAttendance failed:", err);
     }
 
-    const presentCount = records.filter((r) => r.status === "present").length;
-    const absentCount = records.filter((r) => r.status === "absent").length;
+    const presentCount = records.filter((r) => r.status === "present" || r.status === "late").length;
+    const absentCount = records.filter((r) => r.status === "absent" || r.status === "excused").length;
 
     const [assignmentsResult, recordingResult] = await Promise.allSettled([
       getAssignmentsByClassroom(groupId),
@@ -314,9 +330,10 @@ const LessonDetailsPage = () => {
       totalStudents: records.length || classroom.students?.length || 0,
       attendance: presentCount,
       absence: absentCount,
-      lessonUrl: s.meetingLink || classroom.meetingLink || "",
+      lessonUrl: classroom.meetingLink || "",
       rawStatus: s.status,
       startedAt: s.startedAt || s.startAt,
+      description: s.description || "",
       attachments: s.attachments || [],
     });
     setLoading(false);
@@ -350,19 +367,64 @@ const LessonDetailsPage = () => {
     .map((part) => String(part).padStart(2, "0")).join(":");
 
   const handleLifecycle = async () => {
+    if (lesson.rawStatus === "live") {
+      setEndDetailsError(null);
+      setEndDetailsOpen(true);
+      return;
+    }
+
     setLifecycleLoading(true);
     try {
-      const response = lesson.rawStatus === "live" ? await endSession(lessonId) : await startSession(lessonId);
+      const response = await startSession(lessonId);
       const updated = response.data?.data || {};
       setLesson((current) => ({
         ...current,
-        rawStatus: updated.status || (current.rawStatus === "live" ? "completed" : "live"),
-        displayStatus: updated.status || (current.rawStatus === "live" ? "completed" : "live"),
-        status: STATUS_LABELS[updated.status || (current.rawStatus === "live" ? "completed" : "live")],
+        rawStatus: updated.status || "live",
+        displayStatus: updated.status || "live",
+        status: STATUS_LABELS[updated.status || "live"],
         startedAt: updated.startedAt || updated.startAt || current.startedAt || new Date().toISOString(),
       }));
     } catch (err) {
       setError(err.response?.data?.message || "تعذر تحديث حالة الحصة");
+    } finally {
+      setLifecycleLoading(false);
+    }
+  };
+
+  const closeEndDetails = () => {
+    if (lifecycleLoading) return;
+    setEndDetailsOpen(false);
+    setEndDetailsError(null);
+  };
+
+  const handleConfirmEnd = async ({ title, description, files }) => {
+    setLifecycleLoading(true);
+    setEndDetailsError(null);
+    try {
+      const payload = new FormData();
+      payload.append("title", title);
+      payload.append("description", description || "");
+      files.forEach((file) => payload.append("attachments", file));
+
+      const updateResponse = await updateClassroomSession(lessonId, payload);
+      const endResponse = await endSession(lessonId);
+      const updatedDetails = updateResponse.data?.data || {};
+      const ended = endResponse.data?.data || {};
+      const nextStatus = ended.status || "completed";
+
+      setLesson((current) => ({
+        ...current,
+        title: updatedDetails.title || title,
+        description: updatedDetails.description ?? description,
+        attachments: updatedDetails.attachments || current.attachments,
+        rawStatus: nextStatus,
+        displayStatus: nextStatus,
+        status: STATUS_LABELS[nextStatus] || nextStatus,
+      }));
+      setEndDetailsOpen(false);
+    } catch (err) {
+      console.error("endSession details failed:", err.response?.data || err);
+      setEndDetailsError(err.response?.data?.message || "تعذر حفظ تفاصيل الحصة وإنهاؤها");
     } finally {
       setLifecycleLoading(false);
     }
@@ -423,6 +485,16 @@ const LessonDetailsPage = () => {
           <LessonRecordings recording={recording} />
         </div>
       </div>
+      {endDetailsOpen && (
+        <EndSessionDetailsModal
+          open
+          lesson={lesson}
+          loading={lifecycleLoading}
+          error={endDetailsError}
+          onConfirm={handleConfirmEnd}
+          onClose={closeEndDetails}
+        />
+      )}
     </TeacherLayout>
   );
 };

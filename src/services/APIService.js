@@ -243,6 +243,10 @@ export const createClassroomSession = (formData) =>
   API.post("/sessions/", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+export const updateClassroomSession = (sessionId, formData) =>
+  API.patch(`/sessions/${sessionId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 export const startSession = (sessionId) => API.patch(`/sessions/${sessionId}/start`);
 export const endSession = (sessionId) => API.patch(`/sessions/${sessionId}/end`);
 export const getNextSessions = () => API.get("/sessions/next");

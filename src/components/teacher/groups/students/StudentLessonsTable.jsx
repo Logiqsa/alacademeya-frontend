@@ -1,11 +1,10 @@
-import React from "react";
-
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type }) => {
   const map = {
     green: "bg-[#00A63E26] text-[#00A63E]",
     red: "bg-[#D32F2F26] text-[#D32F2F]",
     orange: "bg-[#FF8A0026] text-[#FF8A00]",
+    blue: "bg-[#EAF4FF] text-[#123C91]",
     gray: "bg-gray-100 text-gray-500",
   };
   return (
@@ -19,7 +18,12 @@ const Badge = ({ label, type }) => {
   );
 };
 
-const attendanceBadge = (v) => (v === "حاضر" ? <Badge label={v} type="green" /> : <Badge label={v} type="red" />);
+const attendanceBadge = (v) => {
+  if (v === "حاضر") return <Badge label={v} type="green" />;
+  if (v === "متأخر") return <Badge label={v} type="orange" />;
+  if (v === "بعذر") return <Badge label={v} type="blue" />;
+  return <Badge label={v} type="red" />;
+};
 
 const homeworkBadge = (v) => {
   if (v === "تم التسليم" || v === "تم تسليم") return <Badge label={v} type="green" />;

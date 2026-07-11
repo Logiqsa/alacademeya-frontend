@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
-import LessonStats from "../../../components/student/groupLesson/Lessonstats";
 import LiveLessonLink from "../../../components/student/groupLesson/Livelessonlink";
 import LessonAssignments from "../../../components/teacher/groups/lessons/LessonAssignments";
 import LessonRecordings from "../../../components/teacher/groups/lessons/LessonRecordings";
@@ -127,8 +126,8 @@ const StudentLessonDetailsPage = () => {
         const attendanceRes = await getSessionAttendance(lessonId);
         const records = attendanceRes.data?.data || [];
         totalRecords = records.length;
-        presentCount = records.filter((r) => r.status === "present").length;
-        absentCount = records.filter((r) => r.status === "absent").length;
+        presentCount = records.filter((r) => r.status === "present" || r.status === "late").length;
+        absentCount = records.filter((r) => r.status === "absent" || r.status === "excused").length;
       } catch (err) {
         console.error("getSessionAttendance failed:", err);
       }
@@ -212,12 +211,6 @@ const StudentLessonDetailsPage = () => {
       >
         <div className="mx-auto space-y-5">
           <PageHeader lesson={lesson} />
-
-          <LessonStats
-            totalStudents={lesson.totalStudents}
-            attendance={lesson.attendance}
-            absence={lesson.absence}
-          />
 
           <LiveLessonLink
             lessonUrl={lesson.lessonUrl}

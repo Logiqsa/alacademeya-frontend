@@ -1,4 +1,4 @@
-import { HiOutlineEye } from "react-icons/hi";
+import { HiOutlineEye, HiOutlineStop } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 
 const StatusBadge = ({ status }) => {
@@ -38,7 +38,7 @@ const MobileField = ({ label, children }) => (
 
 // ⚠️ لازم يتمرر groupId من الصفحة الأب (GroupLessonsPage) عشان الـ navigate
 // يبني الرابط الصح ويوصل صفحة التفاصيل بالـ groupId + lessonId الاتنين
-const LessonsTable = ({ lessons = [], groupId, role = "teacher" }) => {
+const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession }) => {
   const navigate = useNavigate();
 
   const handleView = (lessonId) => {
@@ -133,6 +133,14 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher" }) => {
                       >
                         <HiOutlineEye size={18} />
                       </ActionButton>
+                      {role !== "admin" && lesson.rawStatus === "live" && (
+                        <ActionButton
+                          onClick={() => onEndSession?.(lesson)}
+                          colorClass="text-[#575F69] hover:text-red-600"
+                        >
+                          <HiOutlineStop size={18} />
+                        </ActionButton>
+                      )}
                       {/* <ActionButton
                         onClick={() => onEdit?.(lesson.id)}
                         colorClass="text-[#575F69] hover:text-amber-600"
@@ -183,6 +191,14 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher" }) => {
               >
                 <HiOutlineEye size={18} />
               </ActionButton>
+              {role !== "admin" && lesson.rawStatus === "live" && (
+                <ActionButton
+                  onClick={() => onEndSession?.(lesson)}
+                  colorClass="text-[#575F69] hover:text-red-600 bg-gray-50 flex-1 justify-center"
+                >
+                  <HiOutlineStop size={18} />
+                </ActionButton>
+              )}
               {/* <ActionButton
                 onClick={() => onEdit?.(lesson.id)}
                 colorClass="text-[#575F69] hover:text-amber-600 bg-gray-50 flex-1 justify-center"

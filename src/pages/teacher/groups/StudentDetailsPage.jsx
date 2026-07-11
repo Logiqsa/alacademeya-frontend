@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import StudentStatsCards from "../../../components/teacher/groups/students/StudentStatsCards";
 import StudentLessonFilters from "../../../components/teacher/groups/students/StudentLessonFilters";
@@ -21,12 +21,12 @@ const ATTENDANCE_STATUS_LABELS = {
   present: "حاضر",
   absent: "غائب",
   late: "متأخر",
+  excused: "بعذر",
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const StudentDetailsPage = () => {
   const { groupId, studentId } = useParams();
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [sortBy, setSortBy] = useState("تاريخ الإنضمام");
@@ -151,8 +151,8 @@ const StudentDetailsPage = () => {
   );
 
   // إحصائيات الحضور/الغياب الحقيقية — محسوبة من نتيجة كل الحصص بعد الربط بالـ attendance
-  const attendanceCount = lessons.filter((l) => l.attendance === "حاضر").length;
-  const absenceCount = lessons.filter((l) => l.attendance === "غائب").length;
+  const attendanceCount = lessons.filter((l) => l.attendance === "حاضر" || l.attendance === "متأخر").length;
+  const absenceCount = lessons.filter((l) => l.attendance === "غائب" || l.attendance === "بعذر").length;
 
   if (loading) {
     return (

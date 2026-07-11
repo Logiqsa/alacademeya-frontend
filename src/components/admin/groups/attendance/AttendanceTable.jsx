@@ -33,7 +33,7 @@ const AttendanceTable = ({ records = [] }) => {
                   fontFamily: "IBM Plex Sans Arabic, sans-serif",
                 }}
               >
-                {["اسم الطالب", "عدد الحضور", "عدد الغياب"].map((header) => (
+                {["اسم الطالب", "عدد الحضور", "عدد الغياب", "عدد التأخير", "بعذر"].map((header) => (
                   <th
                     key={header}
                     className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[13px] lg:text-[14px] font-medium text-right uppercase tracking-wider whitespace-nowrap"
@@ -78,6 +78,32 @@ const AttendanceTable = ({ records = [] }) => {
                   >
                     {r.absenceCount}
                   </td>
+
+                  <td
+                    className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap"
+                    style={{
+                      fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                      fontWeight: 500,
+                      fontSize: "14px",
+                      lineHeight: "24px",
+                      color: r.lateCount > 0 ? "#B45309" : "#575F69",
+                    }}
+                  >
+                    {r.lateCount}
+                  </td>
+
+                  <td
+                    className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap"
+                    style={{
+                      fontFamily: "IBM Plex Sans Arabic, sans-serif",
+                      fontWeight: 500,
+                      fontSize: "14px",
+                      lineHeight: "24px",
+                      color: r.excusedCount > 0 ? "#123C91" : "#575F69",
+                    }}
+                  >
+                    {r.excusedCount}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -97,6 +123,10 @@ const AttendanceTable = ({ records = [] }) => {
               <MobileField label="عدد الغياب" highlight={r.absenceCount > 0}>
                 {r.absenceCount}
               </MobileField>
+              <MobileField label="عدد التأخير" highlight={r.lateCount > 0}>
+                {r.lateCount}
+              </MobileField>
+              <MobileField label="بعذر">{r.excusedCount}</MobileField>
             </div>
           </div>
         ))}

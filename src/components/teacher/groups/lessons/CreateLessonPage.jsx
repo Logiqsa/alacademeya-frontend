@@ -1,14 +1,15 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  Paperclip,
   ArrowRight,
-  X,
-  FileText,
   AlertTriangle,
 } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
-import { createClassroomSession, getClassroomSchedule } from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
+import {
+  createClassroomSession,
+  getClassroom,
+  getClassroomSchedule,
+} from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const DAY_LABELS = {
   saturday: "السبت",
@@ -35,17 +36,11 @@ const CreateLessonPage = () => {
   const navigate = useNavigate();
   const { groupId } = useParams();
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-  });
-  const [attachmentsEnabled, setAttachmentsEnabled] = useState(false);
-  const [files, setFiles] = useState([]);
+  const [groupName, setGroupName] = useState("مجموعة");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [scheduledToday, setScheduledToday] = useState(true);
   const [checkingSchedule, setCheckingSchedule] = useState(true);
-  const fileInputRef = useRef(null);
 
   const todayKey = TODAY_KEY_BY_JS_DAY[new Date().getDay()];
 
@@ -70,43 +65,31 @@ const CreateLessonPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleFilesSelected = (e) => {
-    const newFiles = Array.from(e.target.files || []);
-    setFiles((prev) => [...prev, ...newFiles]);
-    e.target.value = ""; // يسمح باختيار نفس الملف تاني لو اتشال بالغلط
-  };
-
-  const removeFile = (index) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const validate = () => {
-    if (!form.title.trim()) return "من فضلك أدخل عنوان الحصة";
-    return null;
-  };
+  useEffect(() => {
+    let active = true;
+    getClassroom(groupId)
+      .then((response) => {
+        if (!active) return;
+        const name = response.data?.data?.name;
+        setGroupName(typeof name === "string" ? name : name?.ar || name?.en || "مجموعة");
+      })
+      .catch((err) => {
+        console.error("getClassroom failed:", err);
+      });
+    return () => {
+      active = false;
+    };
+  }, [groupId]);
 
   const handleSubmit = async () => {
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
     setError(null);
     setSubmitting(true);
 
     try {
       const payload = new FormData();
       payload.append("classroom", groupId);
-      payload.append("title", form.title.trim());
-      payload.append("description", form.description || "");
-
-      if (attachmentsEnabled) {
-        files.forEach((file) => payload.append("attachments", file));
-      }
+      payload.append("title", `حصة ${groupName || "مجموعة"}`);
+      payload.append("description", "");
 
       await createClassroomSession(payload);
 
@@ -137,12 +120,6 @@ const CreateLessonPage = () => {
   const inputClass =
     "w-full h-12 border border-[#E5E5E5] rounded-[8px] px-4 py-3 text-sm text-[#1A1A1A] focus:border-[#123C91] focus:ring-1 focus:ring-[#123C91] outline-none transition-all bg-[#F9FAFA] appearance-none placeholder:text-[#8C9198]";
   const labelClass = "block text-sm font-semibold text-gray-700 mb-2";
-
-  const formatSize = (bytes) => {
-    if (bytes < 1024) return `${bytes} بايت`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} كيلوبايت`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} ميجابايت`;
-  };
 
   return (
     <TeacherLayout>
@@ -182,119 +159,18 @@ const CreateLessonPage = () => {
         </div>
 
         <div className="space-y-5 sm:space-y-6 pt-5 sm:pt-6">
-          {/* عنوان الحصة */}
           <div>
-            <label className={labelClass}>عنوان الحصة</label>
+            <label className={labelClass}>اسم الحصة عند الإنشاء</label>
             <input
               type="text"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="مثال: مراجعة الفصل الأول"
+              value={`حصة ${groupName || "مجموعة"}`}
               className={inputClass}
+              readOnly
             />
-            <p className="mt-2 text-xs text-[#8C9198]">تاريخ ووقت الحصة يُحددان تلقائياً من جدول المجموعة لليوم.</p>
+            <p className="mt-2 text-xs text-[#8C9198]">
+              تاريخ ووقت الحصة يُحددان تلقائياً من جدول المجموعة لليوم، وبعد الإنهاء هتقدر تدخل الاسم الفعلي والوصف والمرفقات.
+            </p>
           </div>
-
-          {/* وصف الحصة */}
-          <div>
-            <label className={labelClass}>وصف الحصة (اختياري)</label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="رياضيات - الصف الثانى الثانوى...."
-              rows={3}
-              className={`${inputClass} h-auto py-3 resize-none`}
-            />
-          </div>
-        </div>
-
-        {/* مرفقات الحصة */}
-        <div className="mt-6 pt-6 border-t border-gray-100">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-start gap-2">
-              <Paperclip className="text-[#1A1A1A] mt-0.5 shrink-0" size={18} />
-              <div>
-                <p className="text-sm font-semibold text-[#1A1A1A]">
-                  مرفقات الحصة
-                </p>
-                <p className="text-xs text-[#8C9198] mt-1">
-                  أضف الملفات أو المستندات التي يحتاجها الطلاب أثناء الحصة.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              role="switch"
-              aria-checked={attachmentsEnabled}
-              onClick={() => setAttachmentsEnabled((prev) => !prev)}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                attachmentsEnabled ? "bg-[#123C91] text-white [&_svg]:text-white" : "bg-gray-200"
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                  attachmentsEnabled ? "-translate-x-0.5" : "-translate-x-5"
-                }`}
-              />
-            </button>
-          </div>
-
-          {attachmentsEnabled && (
-            <div className="mt-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={handleFilesSelected}
-                className="hidden"
-              />
-
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-[#E5E5E5] rounded-lg py-6 flex flex-col items-center justify-center gap-2 text-[#8C9198] hover:border-[#123C91] hover:text-[#123C91] transition-colors"
-              >
-                <Paperclip size={20} />
-                <span className="text-sm font-medium">
-                  اضغط لاختيار الملفات
-                </span>
-              </button>
-
-              {files.length > 0 && (
-                <ul className="mt-3 space-y-2">
-                  {files.map((file, index) => (
-                    <li
-                      key={`${file.name}-${index}`}
-                      className="flex items-center justify-between gap-3 bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-3 py-2"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FileText
-                          size={16}
-                          className="text-[#575F69] shrink-0"
-                        />
-                        <span className="text-sm text-[#1A1A1A] truncate">
-                          {file.name}
-                        </span>
-                        <span className="text-xs text-[#8C9198] shrink-0">
-                          {formatSize(file.size)}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(index)}
-                        className="text-[#8C9198] hover:text-red-500 shrink-0"
-                      >
-                        <X size={16} />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
         </div>
 
         {error && <p className="text-sm text-red-500 mt-4">{error}</p>}
