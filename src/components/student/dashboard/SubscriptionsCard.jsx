@@ -57,7 +57,7 @@ const SubscriptionsCard = () => {
     const fetchSubscriptions = async () => {
       try {
         setLoading(true);
-        const { data } = await getAllSubscriptions();
+        const { data } = await getMySubscriptions();
 
         const raw = data?.data ?? data;
         const subscriptions = Array.isArray(raw)
