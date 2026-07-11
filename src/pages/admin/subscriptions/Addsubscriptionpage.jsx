@@ -5,9 +5,9 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 
 import {
   getStudent,
-  getAllStudents, // ⚠️ تأكدي من الاسم عن طريق Postman - افترضته زي getAllPackages/getAllDiscounts
-  getAllSubjects, // ⚠️ تأكدي من الاسم عن طريق Postman
-  getAvailableTeachers,
+  getAllStudents,
+  getAllSubjects,
+  getTeachers, // بيرجع كل المعلمين من GET /api/teachers/
   getAvailableClassrooms,
   getAllPackages,
   getAllDiscounts,
@@ -307,7 +307,7 @@ const AddSubscriptionPage = () => {
   const [studentsError, setStudentsError] = useState("");
 
   const [selectedStudentId, setSelectedStudentId] = useState("");
-  const [studentProfile, setStudentProfile] = useState(null); // فيه curriculum/stage/grade
+  const [studentProfile, setStudentProfile] = useState(null); // فيه curriculum/grade
   const [studentLoading, setStudentLoading] = useState(false);
   const [studentError, setStudentError] = useState("");
 
@@ -367,7 +367,16 @@ const AddSubscriptionPage = () => {
       setSubjectsLoading(true);
       setSubjectsError("");
       try {
-        const res = await getAllSubjects();
+        const curriculum = idOf(studentProfile?.curriculum);
+        const grade = idOf(studentProfile?.grade);
+        // ⚠️ بنبعت الفلترة كـ query params للسيرفر (زي getAvailableClassrooms) بدل
+        // ما نخمّن شكل حقول الـ subject نفسه. تأكدي من أسماء الـ params دي (curriculum/grade)
+        // عن طريق Postman لو النتيجة رجعت فاضية أو مش متفلترة.
+        const params = {};
+        if (curriculum) params.curriculum = curriculum;
+        if (grade) params.grade = grade;
+
+        const res = await getAllSubjects(params);
         setAllSubjects(extractList(res.data));
       } catch (err) {
         setSubjectsError(
@@ -378,7 +387,7 @@ const AddSubscriptionPage = () => {
       }
     };
     fetchSubjects();
-  }, []);
+  }, [studentProfile]);
 
   const subjectOptions = useMemo(
     () =>
@@ -387,6 +396,11 @@ const AddSubscriptionPage = () => {
         .filter((s) => s.id),
     [allSubjects],
   );
+
+  // لما الطالب يتغيّر، شيلي المواد المختارة اللي كانت خاصة بطالب سابق
+  useEffect(() => {
+    setSelectedSubjectIds([]);
+  }, [selectedStudentId]);
 
   // كل ما تتغير المواد المختارة، بنبني قائمة "subjects" اللي هتتعرض كـ accordion
   const subjects = useMemo(
@@ -431,6 +445,60 @@ const AddSubscriptionPage = () => {
     fetchMeta();
   }, []);
 
+  // ─── كل المعلمين (بتوصل مرة واحدة، والفلترة حسب المادة بتتم محليًا) ───────────
+  const [allTeachers, setAllTeachers] = useState([]);
+  const [allTeachersLoading, setAllTeachersLoading] = useState(true);
+  const [allTeachersError, setAllTeachersError] = useState("");
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      setAllTeachersLoading(true);
+      setAllTeachersError("");
+      try {
+        const res = await getTeachers();
+        const list = extractList(res.data);
+
+        // بنطبع كل معلم بشكل موحّد مرة واحدة، وبنسيب subjectIds/gradeIds/curriculumIds
+        // عشان نفلتر عليهم بعدين لكل مادة من غير ما نعيد النداء على الـ API
+        const normalized = list
+          .map((teacher) => {
+            const teacherIdValue = teacher.id || teacher._id;
+            const user = teacher.user || {};
+            return {
+              id: teacherIdValue,
+              userId: user.id || user._id || teacherIdValue,
+              fullName: user.fullName || "معلم بدون اسم",
+              username: user.username,
+              rating: teacher.rating,
+              totalReviews: teacher.totalReviews,
+              isActive: user.isActive,
+              registrationStatus: user.registrationStatus,
+              isDeleted: teacher.isDeleted ?? user.isDeleted ?? false,
+              subjectIds: (teacher.subjects || []).map(idOf),
+              gradeIds: (teacher.grades || []).map(idOf),
+              curriculumIds: (teacher.curriculums || []).map(idOf),
+            };
+          })
+          .filter(
+            (teacher) =>
+              teacher.id &&
+              teacher.isActive === true &&
+              teacher.registrationStatus === "active" &&
+              teacher.isDeleted !== true,
+          );
+
+        setAllTeachers(normalized);
+      } catch (err) {
+        setAllTeachersError(
+          err?.response?.data?.message || "تعذر تحميل قائمة المعلمين",
+        );
+      } finally {
+        setAllTeachersLoading(false);
+      }
+    };
+    fetchTeachers();
+  }, []);
+
   // ─── بيانات كل مادة (معلم / مجموعة / باقة / خصم / زيادة) ────────────────────
   const [subjectData, setSubjectData] = useState({});
   const [openSubject, setOpenSubject] = useState("");
@@ -467,72 +535,30 @@ const AddSubscriptionPage = () => {
     }));
   };
 
-  const loadAvailableTeachers = async (subjectId) => {
+  // بيفلتر المعلمين اللي بيدرّسوا المادة دي من ضمن allTeachers اللي اتحملوا مرة واحدة
+  const loadAvailableTeachers = (subjectId) => {
+    if (!subjectId) return;
+
+    if (allTeachersLoading) {
+      patchSubject(subjectId, { loadingTeachers: true, teachersLoaded: false });
+      return;
+    }
+
     const curriculum = idOf(studentProfile?.curriculum);
-    const stage = idOf(studentProfile?.stage);
     const grade = idOf(studentProfile?.grade);
 
-    if (!curriculum || !stage || !grade || !subjectId) return;
+    const filtered = allTeachers.filter(
+      (teacher) =>
+        teacher.subjectIds.includes(subjectId) &&
+        (!grade || teacher.gradeIds.includes(grade)) &&
+        (!curriculum || teacher.curriculumIds.includes(curriculum)),
+    );
 
     patchSubject(subjectId, {
-      loadingTeachers: true,
-      teachers: [],
-      teachersLoaded: false,
+      teachers: filtered,
+      loadingTeachers: false,
+      teachersLoaded: true,
     });
-
-    try {
-      const res = await getAvailableTeachers({
-        curriculum,
-        stage,
-        grade,
-        subject: subjectId,
-      });
-
-      const list = extractList(res.data);
-
-      const normalizedTeachers = list
-        .map((teacher) => {
-          const teacherIdValue = teacher.id || teacher._id || teacher.teacherId;
-          const isActive = teacher.isActive ?? teacher.user?.isActive;
-          const registrationStatus =
-            teacher.registrationStatus ?? teacher.user?.registrationStatus;
-          const isDeleted =
-            teacher.isDeleted ?? teacher.user?.isDeleted ?? false;
-
-          return {
-            id: teacherIdValue,
-            userId: teacher.userId || teacher.user?._id || teacherIdValue,
-            fullName:
-              teacher.fullName || teacher.user?.fullName || "معلم بدون اسم",
-            username: teacher.username || teacher.user?.username,
-            rating: teacher.rating,
-            totalReviews: teacher.totalReviews,
-            isActive,
-            registrationStatus,
-            isDeleted,
-          };
-        })
-        .filter(
-          (teacher) =>
-            teacher.id &&
-            teacher.isActive === true &&
-            teacher.registrationStatus === "active" &&
-            teacher.isDeleted !== true,
-        );
-
-      patchSubject(subjectId, {
-        teachers: normalizedTeachers,
-        loadingTeachers: false,
-        teachersLoaded: true,
-      });
-    } catch (err) {
-      console.error("فشل تحميل المعلمين المتاحين:", err);
-      patchSubject(subjectId, {
-        teachers: [],
-        loadingTeachers: false,
-        teachersLoaded: true,
-      });
-    }
   };
 
   const handleFieldChange = (subjectId, patch) =>
@@ -565,7 +591,7 @@ const AddSubscriptionPage = () => {
     }
   };
 
-  const handleToggleSubject = async (subjectId) => {
+  const handleToggleSubject = (subjectId) => {
     const next = openSubject === subjectId ? "" : subjectId;
     setOpenSubject(next);
 
@@ -579,17 +605,12 @@ const AddSubscriptionPage = () => {
     }
   };
 
+  // لو allTeachers أو بيانات الطالب اتغيرت وفيه مادة مفتوحة، أعيد الفلترة
   useEffect(() => {
     if (!openSubject) return;
-    const current = subjectData[openSubject];
-    if (!current) return;
-
-    if (!current.teachersLoaded && !current.loadingTeachers) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      loadAvailableTeachers(openSubject);
-    }
+    loadAvailableTeachers(openSubject);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openSubject, subjectData]);
+  }, [openSubject, allTeachers, allTeachersLoading, studentProfile]);
 
   // ─── إضافة الاشتراك ───────────────────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false);
@@ -682,10 +703,12 @@ const AddSubscriptionPage = () => {
             اختر الطالب، ثم حدد المواد التي تريد إضافتها للاشتراك
           </p>
 
-          {(studentsError || subjectsError || metaError) && (
+          {(studentsError || subjectsError || metaError || allTeachersError) && (
             <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-[13px]">
               <AlertCircle size={15} />
-              <span>{studentsError || subjectsError || metaError}</span>
+              <span>
+                {studentsError || subjectsError || metaError || allTeachersError}
+              </span>
             </div>
           )}
 
@@ -735,6 +758,12 @@ const AddSubscriptionPage = () => {
             <div className="bg-white border border-gray-200 rounded-2xl py-14 px-4 text-center">
               <p className="text-[14px] text-[#9CA3AF]">
                 اختر طالبًا لعرض المواد المتاحة
+              </p>
+            </div>
+          ) : !subjectsLoading && subjectOptions.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-2xl py-14 px-4 text-center">
+              <p className="text-[14px] text-[#9CA3AF]">
+                لا توجد مواد متاحة لصف/منهج هذا الطالب
               </p>
             </div>
           ) : subjects.length === 0 ? (
