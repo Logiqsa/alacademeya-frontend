@@ -154,6 +154,9 @@ const GroupsPage = () => {
             c.substituteTeacher?.fullName ||
             teacherMap[substituteTeacherId] ||
             null,
+          // subjectId خام لازم نبعته لما نضيف طالب/اشتراك للمجموعة دي (items array)
+          subjectId: c.subject,
+          classroomType: ["private", "group"].includes(c.type) ? c.type : "group",
           // fallback: لو الماده/الصف مش لاقيينها في الـ map، نجرب نجيبها من بيانات المعلم نفسه
           subject:
             subjectMap[c.subject] ||

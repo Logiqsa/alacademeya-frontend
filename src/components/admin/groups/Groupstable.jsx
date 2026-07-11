@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList, BookOpen } from "lucide-react";
 import {
-  getAvailableTeachers,
+  getTeachers,
   getAllStudents,
   getClassroomStudents,
   getAllPackages,
@@ -20,6 +20,16 @@ const resolvePersonName = (p) =>
   p?.user?.fullName || p?.fullName || p?.name || resolveName(p?.name) || "--";
 
 const resolvePersonId = (p) => p?.teacherId || p?.id || p?._id || p?.user?.id;
+
+// بترجع بس المعلمين النشطين والموثّقين، بنفس شرط باقي الصفحات (AddSubscriptionPage/CreateGroupPages)
+const filterActiveTeachers = (list) =>
+  (list || []).filter((t) => {
+    const user = t.user || {};
+    const isActive = t.isActive ?? user.isActive;
+    const registrationStatus = t.registrationStatus ?? user.registrationStatus;
+    const isDeleted = t.isDeleted ?? user.isDeleted ?? false;
+    return isActive === true && registrationStatus === "active" && isDeleted !== true;
+  });
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type }) => {
@@ -147,15 +157,27 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       setError("من فضلك اختر الباقة");
       return;
     }
+    if (!group.subjectId || !group.teacherId) {
+      setError("لا يمكن الإضافة: المجموعة دي لسه مالهاش مادة أو معلم معيّن");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      // ⚠️ افتراض: مفيش POST /classrooms/:id/students مؤكد، فاستخدمنا createSubscription
-      // بـ body: { student, classroom, package } — لسه محتاج تأكيد شكل الـ body من بوستمان
+      // شكل الـ body المطلوب فعلاً (زي صفحة "إضافة اشتراك"): items array
+      // فيه subject/teacher/classroom/package لكل عنصر، مش body مسطح
       await createSubscription({
         student: selectedStudent,
-        classroom: group.id,
-        package: selectedPackage,
+        items: [
+          {
+            subject: group.subjectId,
+            teacher: group.teacherId,
+            classroom: group.id,
+            package: selectedPackage,
+            type: group.classroomType || "group",
+            discount: 0,
+          },
+        ],
       });
       onChanged?.();
       onClose();
@@ -205,10 +227,11 @@ const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
     setError(null);
     setLoading(true);
 
-    getAvailableTeachers()
-      .then((res) => setTeachers(res.data?.data || []))
+    // ⚠️ endpoint /teachers/available كان بيرجع فاضي، رجعنا لـ /teachers المؤكد شغّال
+    getTeachers()
+      .then((res) => setTeachers(filterActiveTeachers(res.data?.data || [])))
       .catch((err) => {
-        console.error("getAvailableTeachers failed:", err);
+        console.error("getTeachers failed:", err);
         setError("تعذر تحميل قائمة المعلمين");
       })
       .finally(() => setLoading(false));
@@ -264,10 +287,11 @@ const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
     setError(null);
     setLoading(true);
 
-    getAvailableTeachers()
-      .then((res) => setTeachers(res.data?.data || []))
+    // ⚠️ endpoint /teachers/available كان بيرجع فاضي، رجعنا لـ /teachers المؤكد شغّال
+    getTeachers()
+      .then((res) => setTeachers(filterActiveTeachers(res.data?.data || [])))
       .catch((err) => {
-        console.error("getAvailableTeachers failed:", err);
+        console.error("getTeachers failed:", err);
         setError("تعذر تحميل قائمة المعلمين");
       })
       .finally(() => setLoading(false));
