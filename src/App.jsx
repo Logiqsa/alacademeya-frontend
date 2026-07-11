@@ -25,6 +25,7 @@ import { AuthContext } from "./context/AuthContext";
 import RegisterSuccessPage from "./pages/auth/RegisterSuccessPage";
 import TeacherHome from "./pages/teacher/TeacherHome";
 import StudentHome from "./pages/student/StudentHome";
+import StudentGroupsPage from "./pages/student/StudentGroupsPage";
 import StudentSchedulePage from "./pages/student/SchedulePage";
 import StudentDetailsPages from "./pages/auth/StudentDetailsPages";
 import StudentSubjectsPages from "./pages/auth/StudentSubjectsPages";
@@ -126,6 +127,7 @@ function App() {
         <Route path="/student/messages" element={<StudentGuard><StudentMessagess /></StudentGuard>} />
         <Route path="/student/assignments" element={<StudentGuard><StudentAssignmentsPage /></StudentGuard>} />
         <Route path="/student/schedule" element={<StudentGuard><StudentSchedulePage /></StudentGuard>} />
+        <Route path="/student/groups" element={<StudentGuard><StudentGroupsPage /></StudentGuard>} />
         <Route path="/student/groups/:groupId/lessons" element={<StudentGuard><StudentGroupLessonsPage /></StudentGuard>} />
         <Route path="/student/groups/:groupId/lessons/:lessonId" element={<StudentGuard><StudentLessonDetailsPage /></StudentGuard>} />
         <Route path="/student/groups/:groupId/lessons/:lessonId/files" element={<StudentGuard><LessonFilesPage /></StudentGuard>} />

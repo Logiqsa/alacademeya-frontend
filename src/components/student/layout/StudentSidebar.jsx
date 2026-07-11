@@ -28,6 +28,11 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       path: "/student/assignments",
     },
     {
+      title: "مجموعاتي",
+      icon: assignmentsIcon,
+      path: "/student/groups",
+    },
+    {
       title: "الجدول",
       icon: scheduleIcon,
       path: "/student/schedule",

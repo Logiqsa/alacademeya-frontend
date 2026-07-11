@@ -26,9 +26,13 @@ const buildGroupsFromSubscriptions = (subscriptions = []) =>
       0,
     );
     const done = items.reduce((sum, item) => {
-      if (item.usedSessions != null) return sum + numberOrZero(item.usedSessions);
-      if (item.consumedSessions != null) return sum + numberOrZero(item.consumedSessions);
-      const itemTotal = numberOrZero(item.totalSessions ?? item.package?.sessions);
+      if (item.usedSessions != null)
+        return sum + numberOrZero(item.usedSessions);
+      if (item.consumedSessions != null)
+        return sum + numberOrZero(item.consumedSessions);
+      const itemTotal = numberOrZero(
+        item.totalSessions ?? item.package?.sessions,
+      );
       const itemRemaining = numberOrZero(item.remainingSessions);
       return sum + Math.max(itemTotal - itemRemaining, 0);
     }, 0);
@@ -81,7 +85,10 @@ const SubscriptionsCard = () => {
   const groups = buildGroupsFromSubscriptions(items);
   const totalLessons = groups.reduce((sum, g) => sum + g.total, 0);
   const completedLessons = groups.reduce((sum, g) => sum + g.done, 0);
-  const explicitRemainingLessons = groups.reduce((sum, g) => sum + g.remaining, 0);
+  const explicitRemainingLessons = groups.reduce(
+    (sum, g) => sum + g.remaining,
+    0,
+  );
   const remainingLessons =
     explicitRemainingLessons > 0
       ? explicitRemainingLessons
