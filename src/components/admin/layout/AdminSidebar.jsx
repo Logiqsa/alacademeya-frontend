@@ -79,8 +79,12 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    // ⚠️ DEBUG TEMP — امسحي الـ console.log دول بعد ما نلاقي المشكلة
+    console.log("🔴 LOGOUT CLICKED - starting, current path:", window.location.pathname);
+    navigate("/", { replace: true });
+    console.log("🔴 navigate('/') called, path now:", window.location.pathname);
     logout();
-    navigate("/login", { replace: true });
+    console.log("🔴 logout() called - done, path now:", window.location.pathname);
   };
 
 
