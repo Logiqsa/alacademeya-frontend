@@ -56,8 +56,10 @@ const SessionDetailsPage = ({ role }) => {
 
       // خريطة id → اسم طالب، مصدر موثوق لو getSessionAttendance رجّع student كـ id نص بس
       const studentNameMap = new Map();
+      let classroomStudentsCount = 0;
       if (studentsResult.status === "fulfilled") {
         const classroomStudents = studentsResult.value.data?.data || [];
+        classroomStudentsCount = classroomStudents.length;
         classroomStudents.forEach((s) => {
           const name = resolveStudentNameFromObject(s);
           if (s.id) studentNameMap.set(s.id, name);
@@ -79,7 +81,7 @@ const SessionDetailsPage = ({ role }) => {
       const absenceList = namedRecords.filter((r) => r.status === "absent" || r.status === "excused");
 
       const attendanceStats = {
-        totalStudents: attendanceRecords.length || classroom.students?.length || 0,
+        totalStudents: classroomStudentsCount || attendanceRecords.length || 0,
         attendance: attendanceList.length,
         absence: absenceList.length,
         attendanceList,
