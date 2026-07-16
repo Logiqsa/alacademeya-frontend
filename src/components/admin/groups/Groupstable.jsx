@@ -661,7 +661,7 @@ const MobileField = ({ label, children }) => (
 );
 
 // ─── Main Table ───────────────────────────────────────────────────────────────
-const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
+const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged }) => {
   const navigate = useNavigate();
   const [modal, setModal] = useState(null);
 
@@ -677,6 +677,20 @@ const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
     navigate(`/admin/groups/${group.id}/lessons`, {
       state: { groupName: group.name },
     });
+  };
+
+  // ✅ لينك اسم المجموعة -> صفحة التفاصيل.
+  // مفيش صفحة "تفاصيل مجموعة" منفصلة في الراوتس حالياً، فبنستخدم صفحة الحصص
+  // (اللي موجودة أصلاً وشغالة). لو عندك صفحة تفاصيل تانية، مرر onOpenDetails
+  // كـ prop من الصفحة الأب أو غيّر المسار هنا.
+  const handleOpenDetails = (group) => {
+    if (onOpenDetails) {
+      onOpenDetails(group);
+    } else {
+      navigate(`/admin/groups/${group.id}/lessons`, {
+        state: { groupName: group.name },
+      });
+    }
   };
 
   const openAction = (type, group) => setModal({ type, group });
@@ -707,7 +721,15 @@ const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
               <tbody className="divide-y divide-gray-100">
                 {groups.map((g) => (
                   <tr key={g.id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] font-['Tajawal'] font-medium text-[15px]">{g.name}</td>
+                    <td className="px-4 lg:px-6 py-3 lg:py-4 font-['Tajawal'] font-medium text-[15px]">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetails(g)}
+                        className="text-[#123C91] hover:underline text-right transition-colors"
+                      >
+                        {g.name}
+                      </button>
+                    </td>
                     {[g.teacher, g.substituteTeacher, g.subject, g.stage, g.grade].map((v, i) => (
                       <td key={i} className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[14px] whitespace-nowrap">{v ?? "--"}</td>
                     ))}
@@ -728,7 +750,13 @@ const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
           {groups.map((g) => (
             <div key={g.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-[#1A1A1A] font-semibold text-[16px] font-['Tajawal']">{g.name}</h4>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDetails(g)}
+                  className="text-[#123C91] font-semibold text-[16px] font-['Tajawal'] hover:underline text-right"
+                >
+                  {g.name}
+                </button>
                 <ActionsDropdown group={g} onAction={openAction} onOpenAttendance={handleOpenAttendance} onOpenLessons={handleOpenLessons} />
               </div>
               <div className="flex items-center gap-2 mb-3">{statusBadge(g.status)}</div>
