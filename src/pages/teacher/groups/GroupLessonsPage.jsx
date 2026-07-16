@@ -46,7 +46,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const [filterTime, setFilterTime] = useState("جميع الاوقات");
   const [page, setPage] = useState(1);
 
-  const [groupName, setGroupName] = useState("");
+  const [groupName, setGroupName] = useState(location.state?.groupName || "");
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -92,12 +92,23 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     );
 
     if (classroomResult.status === "fulfilled") {
-      setGroupName(
-        resolveName(classroomResult.value.data?.data?.name) || "مجموعة",
-      );
+      const classroomData = classroomResult.value.data?.data ?? classroomResult.value.data ?? {};
+
+      // ⚠️ مؤقت: بنطبع الـ response الخام هنا عشان تتأكد من شكل الحقل الفعلي لاسم
+      // المجموعة من الـ Network tab/Console، وبعدين نقدر نشيل السطر ده
+      console.log("Classroom API response:", classroomData);
+
+      const candidates = [classroomData.name, classroomData.title, classroomData.groupName];
+      const resolved = candidates
+        .map(resolveName)
+        .find((n) => n && n !== "--");
+
+      // لو الـ API رجّع اسم فعلي بنستخدمه، غير كده بنسيب اللي جالنا من صفحة الجدول (location.state)
+      // أو نرجع لـ "مجموعة" بس لو مفيش أي مصدر تاني للاسم
+      setGroupName((prev) => resolved || prev || "مجموعة");
     } else {
       console.error("getClassroom failed:", classroomResult.reason);
-      setGroupName("مجموعة");
+      setGroupName((prev) => prev || "مجموعة");
     }
 
     if (sessionsResult.status === "rejected") {
@@ -165,6 +176,8 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           attendance,
           absence,
           status: isMissed ? "فائتة" : STATUS_LABELS[s.status] || s.status || "--",
+          // بيستخدم بس لحساب "أقرب حصة قادمة" في العنوان، مش بيتعرض في الجدول
+          _sortDate: new Date(s.scheduledDate || s.startAt || 0),
         };
       });
 
@@ -199,6 +212,24 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     completed: lessons.filter((l) => l.status === "منتهية").length,
     cancelled: lessons.filter((l) => l.status === "ملغية").length,
   };
+
+  // العنوان بيفضّل عرض اسم حصة محددة بدل اسم المجموعة:
+  // الأولوية للحصة اللي شغالة live دلوقتي، وبعدين أقرب حصة قادمة.
+  // لو مفيش أي حصة live ولا قادمة، بيرجع يعرض اسم المجموعة كـ fallback.
+  const liveLesson = lessons.find((l) => l.status === STATUS_LABELS.live);
+  const nextUpcomingLesson = lessons
+    .filter((l) => l.status === "قادمة")
+    .sort((a, b) => a._sortDate - b._sortDate)[0];
+  const highlightedLesson = liveLesson || nextUpcomingLesson || null;
+
+  // ⚠️ افتراض: راوت عرض الحصة الواحدة مش متعرّف في الملف ده أصلاً — بنيت المسار
+  // على نفس نمط باقي الروابط هنا (/teacher/groups/:id/lessons/... و/admin/groups/:id/lessons/...)
+  // لازم تتأكد إن الراوت ده معرّف فعلاً في الـ router بتاعك.
+  const highlightedLessonPath = highlightedLesson
+    ? isAdmin
+      ? `/admin/groups/${groupId}/lessons/${highlightedLesson.id}`
+      : `/teacher/groups/${groupId}/lessons/${highlightedLesson.id}`
+    : null;
 
   // ⚠️ مفيش endpoint لحذف/تعديل حصة منفردة في api.js الحالي (مفيش deleteSession/updateSession)
   // فالأزرار دي مؤقتًا بتعمل log بس لحد ما الـ endpoints دي تتضاف
@@ -269,9 +300,19 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div>
-            <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
-              {groupName || "مجموعة"}
-            </h3>
+            {highlightedLesson ? (
+              <button
+                type="button"
+                onClick={() => navigate(highlightedLessonPath)}
+                className="block text-right text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3 hover:underline"
+              >
+                {highlightedLesson.title}
+              </button>
+            ) : (
+              <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
+                {groupName || "مجموعة"}
+              </h3>
+            )}
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في
               مكان واحد.

@@ -600,7 +600,7 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons }) =
   const handleClick = (item) => {
     setOpen(false);
     if (item.nav === "lessons") {
-      onOpenLessons(group.id);
+      onOpenLessons(group);
     } else if (item.isNav) {
       onOpenAttendance(group.id);
     } else {
@@ -673,8 +673,10 @@ const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
     }
   };
 
-  const handleOpenLessons = (groupId) => {
-    navigate(`/admin/groups/${groupId}/lessons`);
+  const handleOpenLessons = (group) => {
+    navigate(`/admin/groups/${group.id}/lessons`, {
+      state: { groupName: group.name },
+    });
   };
 
   const openAction = (type, group) => setModal({ type, group });
