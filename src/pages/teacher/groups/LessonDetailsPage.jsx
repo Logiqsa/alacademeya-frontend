@@ -12,6 +12,7 @@ import {
   getClassroom,
   getMyClassrooms,
   getClassroomSessions,
+  getClassroomStudents,
   getSessionAttendance,
   getAssignmentsByClassroom,
   getSessionRecording,
@@ -22,6 +23,16 @@ import {
 
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
+
+// بعض الـ APIs بترجع student كـ object كامل، وبعضها بيرجعه id نص بس — بنغطي الحالتين
+const resolveStudentId = (student) =>
+  typeof student === "string" ? student : student?.id || student?._id;
+
+// شكل عنصر getClassroomStudents: { user: { fullName, ..., id }, curriculum, stage, grade, id }
+const resolveStudentNameFromObject = (student) => {
+  if (typeof student !== "object" || !student) return null;
+  return student.user?.fullName || student.fullName || student.name || resolveName(student.name) || null;
+};
 
 const STATUS_LABELS = {
   scheduled: "قادمة",
@@ -265,26 +276,57 @@ const LessonDetailsPage = () => {
       return;
     }
 
+    // ─── خريطة أسماء طلاب المجموعة (مصدر موثوق للاسم) ───────────────────────
+    // بنستخدمها عشان لو getSessionAttendance رجّع student كـ id نص بس (بدون اسم)
+    const studentNameMap = new Map();
+    const studentGradeMap = new Map();
+    try {
+      const studentsRes = await getClassroomStudents(groupId);
+      const classroomStudents = studentsRes.data?.data || [];
+      classroomStudents.forEach((s) => {
+        const name = resolveStudentNameFromObject(s);
+        const grade = resolveName(s.grade?.name ?? s.grade);
+        if (s.id) { studentNameMap.set(s.id, name); studentGradeMap.set(s.id, grade); }
+        if (s.user?.id) { studentNameMap.set(s.user.id, name); studentGradeMap.set(s.user.id, grade); }
+      });
+    } catch (err) {
+      console.error("getClassroomStudents failed:", err);
+    }
+
     // ─── حضور وغياب الحصة دي — من GET /sessions/:id/attendance ─────────────
     let records = [];
     try {
       const attendanceRes = await getSessionAttendance(lessonId);
       const rawAttendance = attendanceRes.data?.data || [];
-      records = rawAttendance.map((a) => ({
-        id: a.id,
-        studentName: a.student?.user?.fullName || "--",
-        gradeName: resolveName(a.student?.grade?.name),
-        status: a.status,
-        statusLabel: ATTENDANCE_STATUS_LABELS[a.status] || a.status || "--",
-        notes: a.notes,
-      }));
+
+      records = rawAttendance.map((a) => {
+        const studentId = resolveStudentId(a.student);
+        const nameFromObject = resolveStudentNameFromObject(a.student);
+        const studentName = nameFromObject || studentNameMap.get(studentId) || "طالب";
+        const gradeName = resolveName(a.student?.grade?.name) || studentGradeMap.get(studentId) || "--";
+        return {
+          id: a.id,
+          studentId,
+          studentName,
+          gradeName,
+          status: a.status,
+          statusLabel: ATTENDANCE_STATUS_LABELS[a.status] || a.status || "--",
+          notes: a.notes,
+        };
+      });
     } catch (err) {
       // مش هنوقف الصفحة كلها لو الحضور فشل، بس هنسيب القوائم فاضية
       console.error("getSessionAttendance failed:", err);
     }
 
-    const presentCount = records.filter((r) => r.status === "present" || r.status === "late").length;
-    const absentCount = records.filter((r) => r.status === "absent" || r.status === "excused").length;
+    const presentRecords = records.filter((r) => r.status === "present" || r.status === "late");
+    const absentRecords = records.filter((r) => r.status === "absent" || r.status === "excused");
+    const presentCount = presentRecords.length;
+    const absentCount = absentRecords.length;
+
+    // قوايم الأسماء اللي هتتبعت للـ LessonStats عشان الموديال يعرضها
+    const attendanceList = presentRecords.map((r) => ({ id: r.studentId ?? r.id, name: r.studentName }));
+    const absenceList = absentRecords.map((r) => ({ id: r.studentId ?? r.id, name: r.studentName }));
 
     const [assignmentsResult, recordingResult] = await Promise.allSettled([
       getAssignmentsByClassroom(groupId),
@@ -330,6 +372,8 @@ const LessonDetailsPage = () => {
       totalStudents: records.length || classroom.students?.length || 0,
       attendance: presentCount,
       absence: absentCount,
+      attendanceList,
+      absenceList,
       lessonUrl: classroom.meetingLink || "",
       rawStatus: s.status,
       startedAt: s.startedAt || s.startAt,
@@ -469,6 +513,8 @@ const LessonDetailsPage = () => {
             totalStudents={lesson.totalStudents}
             attendance={lesson.attendance}
             absence={lesson.absence}
+            attendanceList={lesson.attendanceList}
+            absenceList={lesson.absenceList}
           />
 
           <LiveLessonLink

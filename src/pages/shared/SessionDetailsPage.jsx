@@ -10,11 +10,25 @@ import {
   getAssignmentsByClassroom,
   getClassroom,
   getClassroomSessions,
+  getClassroomStudents,
   getSessionAttendance,
   getSessionRecording,
 } from "../../services/APIService";
 
 const nameOf = (value) => typeof value === "string" ? value : value?.ar || value?.en || "المجموعة";
+
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "--";
+
+// بعض الـ APIs بترجع student كـ object كامل، وبعضها بيرجعه id نص بس — بنغطي الحالتين
+const resolveStudentId = (student) =>
+  typeof student === "string" ? student : student?.id || student?._id;
+
+// شكل عنصر getClassroomStudents المؤكد: { user: { fullName, ..., id }, curriculum, stage, grade, id }
+const resolveStudentNameFromObject = (student) => {
+  if (typeof student !== "object" || !student) return null;
+  return student.user?.fullName || student.fullName || student.name || resolveName(student.name) || null;
+};
 
 const SessionDetailsPage = ({ role }) => {
   const { classroomId, sessionId } = useParams();
@@ -28,21 +42,48 @@ const SessionDetailsPage = ({ role }) => {
     Promise.allSettled([
       getClassroom(classroomId),
       getClassroomSessions(classroomId),
+      getClassroomStudents(classroomId),
       getSessionAttendance(sessionId),
       getAssignmentsByClassroom(classroomId),
       getSessionRecording(sessionId),
-    ]).then(([classroomResult, sessionsResult, attendanceResult, assignmentsResult, recordingResult]) => {
+    ]).then(([classroomResult, sessionsResult, studentsResult, attendanceResult, assignmentsResult, recordingResult]) => {
       if (!active) return;
       if (sessionsResult.status === "rejected") throw sessionsResult.reason;
       const classroom = classroomResult.status === "fulfilled" ? classroomResult.value.data?.data || {} : {};
       const sessions = sessionsResult.value.data?.data || [];
       const session = sessions.find((item) => (item.id || item._id) === sessionId);
       if (!session) throw new Error("لم يتم العثور على الحصة");
+
+      // خريطة id → اسم طالب، مصدر موثوق لو getSessionAttendance رجّع student كـ id نص بس
+      const studentNameMap = new Map();
+      if (studentsResult.status === "fulfilled") {
+        const classroomStudents = studentsResult.value.data?.data || [];
+        classroomStudents.forEach((s) => {
+          const name = resolveStudentNameFromObject(s);
+          if (s.id) studentNameMap.set(s.id, name);
+          if (s.user?.id) studentNameMap.set(s.user.id, name);
+        });
+      } else {
+        console.error("getClassroomStudents failed:", studentsResult.reason);
+      }
+
       const attendanceRecords = attendanceResult.status === "fulfilled" ? attendanceResult.value.data?.data || [] : [];
+
+      const namedRecords = attendanceRecords.map((record) => {
+        const studentId = resolveStudentId(record.student);
+        const name = resolveStudentNameFromObject(record.student) || studentNameMap.get(studentId) || "طالب";
+        return { id: studentId ?? record.id, name, status: record.status };
+      });
+
+      const attendanceList = namedRecords.filter((r) => r.status === "present" || r.status === "late");
+      const absenceList = namedRecords.filter((r) => r.status === "absent" || r.status === "excused");
+
       const attendanceStats = {
         totalStudents: attendanceRecords.length || classroom.students?.length || 0,
-        attendance: attendanceRecords.filter((record) => record.status === "present" || record.status === "late").length,
-        absence: attendanceRecords.filter((record) => record.status === "absent" || record.status === "excused").length,
+        attendance: attendanceList.length,
+        absence: absenceList.length,
+        attendanceList,
+        absenceList,
       };
       const assignments = assignmentsResult.status === "fulfilled" ? (assignmentsResult.value.data?.data || []).filter((assignment) => {
         const linkedSession = assignment.session?.id || assignment.session?._id || assignment.session;
