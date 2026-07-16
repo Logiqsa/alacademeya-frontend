@@ -97,23 +97,73 @@ const SelectField = ({ label, options, placeholder, value, onChange, disabled, a
   </div>
 );
 
-// ─── Search Field ─────────────────────────────────────────────────────────────
-const SearchField = ({ label, value, onChange, placeholder, disabled }) => (
-  <div className="mb-3">
-    <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">{label}</label>
-    <div className="relative">
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
-        className="w-full h-11 pr-10 pl-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] text-right text-[#1F2937] disabled:opacity-60"
-      />
-      <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
+// ─── Student Combobox ─────────────────────────────────────────────────────────
+// خانة بحث بالاسم بتفتح قايمة نتائج، ولما تختار طالب اسمه بيظهر جوه الخانة نفسها
+// بدل السيليكت المنفصل.
+const StudentCombobox = ({ label, search, onSearchChange, options, selectedId, onSelect, placeholder, disabled, emptyLabel }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [isOpen]);
+
+  const handleChange = (e) => {
+    onSearchChange(e.target.value);
+    if (selectedId) onSelect(null); // تعديل النص يعني إلغاء الاختيار السابق
+    setIsOpen(true);
+  };
+
+  const handlePick = (option) => {
+    onSelect(option);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="mb-3" ref={containerRef}>
+      <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">{label}</label>
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={handleChange}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoComplete="off"
+          className="w-full h-11 pr-10 pl-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] text-right text-[#1F2937] disabled:opacity-60"
+        />
+        <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
+
+        {isOpen && !disabled && (
+          <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-[#E5E5E5] rounded-lg shadow-lg">
+            {options.length === 0 ? (
+              <div className="px-4 py-2.5 text-[13px] text-[#9CA3AF] font-['IBM_Plex_Sans_Arabic'] text-right">{emptyLabel}</div>
+            ) : (
+              options.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => handlePick(o)}
+                  className={`w-full text-right px-4 py-2.5 text-[13px] font-['IBM_Plex_Sans_Arabic'] hover:bg-[#F3F4F6] transition-colors ${o.value === selectedId ? "bg-[#EAF4FF] text-[#123C91]" : "text-[#1F2937]"}`}
+                >
+                  {o.label}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const Modal = ({ open, onClose, title, children }) => {
@@ -227,14 +277,6 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
     });
   }, [students, search, stageFilter, gradeFilter]);
 
-  // لو الطالب المختار اتشال من نتيجة الفلترة، بنمسح الاختيار عشان منبعتش حاجة مخفية عن المستخدم
-  useEffect(() => {
-    if (selectedStudent && !filteredStudents.some((s) => resolvePersonId(s) === selectedStudent)) {
-      setSelectedStudent("");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredStudents]);
-
   const handleSubmit = async () => {
     if (!selectedStudent) {
       setError("من فضلك اختر الطالب");
@@ -278,13 +320,6 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
 
   return (
     <Modal open={open} onClose={onClose} title="إضافة طالب للمجموعة">
-      <SearchField
-        label="بحث عن طالب"
-        value={search}
-        onChange={setSearch}
-        placeholder="اكتب اسم الطالب..."
-        disabled={loading}
-      />
       <SelectField
         label="المرحلة"
         placeholder="كل المراحل"
@@ -303,13 +338,20 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         disabled={loading || gradeOptions.length === 0}
         allowClear
       />
-      <SelectField
+      <StudentCombobox
         label="الطالب"
-        placeholder={loading ? "جاري التحميل..." : filteredStudents.length === 0 ? "لا يوجد طلاب مطابقين" : "اختر الطالب"}
+        search={search}
+        onSearchChange={setSearch}
         options={filteredStudents.map((s) => ({ value: resolvePersonId(s), label: resolvePersonName(s) }))}
-        value={selectedStudent}
-        onChange={setSelectedStudent}
-        disabled={loading || filteredStudents.length === 0}
+        selectedId={selectedStudent}
+        onSelect={(option) => {
+          setSelectedStudent(option?.value || "");
+          if (!option) return; // مسحنا الاختيار، النص هيفضل زي ما كتبه المستخدم
+          setSearch(option.label);
+        }}
+        placeholder={loading ? "جاري التحميل..." : "اكتب اسم الطالب..."}
+        disabled={loading}
+        emptyLabel="لا يوجد طلاب مطابقين"
       />
       <SelectField
         label="الباقة"
