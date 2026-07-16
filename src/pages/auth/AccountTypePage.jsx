@@ -28,7 +28,12 @@ export const AccountTypePage = () => {
     return (
         <AuthLayout>
             <div className="flex flex-col w-full max-w-150 mx-auto p-8" dir="rtl">
-                <img src={logo} alt="logo" className="w-44 h-8 mb-6 cursor-pointer" />
+                <img
+                    src={logo}
+                    alt="logo"
+                    className="w-44 h-8 mb-6 cursor-pointer"
+                    onClick={() => navigate("/")}
+                />
                 <h2
                     className="font-bold text-[24px] text-[#1F2937] mb-1"
                     style={{ fontFamily: "Tajawal, sans-serif" }}
