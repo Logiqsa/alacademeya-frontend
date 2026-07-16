@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList, BookOpen } from "lucide-react";
+import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList, BookOpen, Search } from "lucide-react";
 import {
   getTeachers,
   getAllStudents,
@@ -20,6 +20,26 @@ const resolvePersonName = (p) =>
   p?.user?.fullName || p?.fullName || p?.name || resolveName(p?.name) || "--";
 
 const resolvePersonId = (p) => p?.teacherId || p?.id || p?._id || p?.user?.id;
+
+// ⚠️ افتراض: الطالب فيه حقل "stage" و"grade" مباشر أو جوه object فيه name/ar/en —
+// لسه محتاج تأكيد من بوستمان/Network tab لشكل الـ student object الراجع من getAllStudents()
+const resolveStageName = (s) => {
+  const stage = s?.stage ?? s?.stageId;
+  if (!stage) return null;
+  if (typeof stage === "string") return stage;
+  const nested = stage.name ?? stage;
+  const resolved = resolveName(nested);
+  return resolved !== "--" ? resolved : null;
+};
+
+const resolveGradeName = (s) => {
+  const grade = s?.grade ?? s?.gradeId;
+  if (!grade) return null;
+  if (typeof grade === "string") return grade;
+  const nested = grade.name ?? grade;
+  const resolved = resolveName(nested);
+  return resolved !== "--" ? resolved : null;
+};
 
 // بترجع بس المعلمين النشطين والموثّقين، بنفس شرط باقي الصفحات (AddSubscriptionPage/CreateGroupPages)
 const filterActiveTeachers = (list) =>
@@ -56,7 +76,8 @@ const statusBadge = (status) => {
 };
 
 // ─── Select Field ─────────────────────────────────────────────────────────────
-const SelectField = ({ label, options, placeholder, value, onChange, disabled }) => (
+// allowClear: لو true، أول اختيار (الـ placeholder) بيبقى قابل للاختيار (بيتستخدم كـ "مسح الفلتر")
+const SelectField = ({ label, options, placeholder, value, onChange, disabled, allowClear }) => (
   <div className="mb-3">
     <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">{label}</label>
     <div className="relative">
@@ -66,12 +87,30 @@ const SelectField = ({ label, options, placeholder, value, onChange, disabled })
         disabled={disabled}
         className="w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] appearance-none text-right text-[#1F2937] disabled:opacity-60"
       >
-        <option value="" disabled>{placeholder}</option>
+        <option value="" disabled={!allowClear}>{placeholder}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
       <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
+    </div>
+  </div>
+);
+
+// ─── Search Field ─────────────────────────────────────────────────────────────
+const SearchField = ({ label, value, onChange, placeholder, disabled }) => (
+  <div className="mb-3">
+    <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">{label}</label>
+    <div className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="w-full h-11 pr-10 pl-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] text-right text-[#1F2937] disabled:opacity-60"
+      />
+      <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
     </div>
   </div>
 );
@@ -122,10 +161,18 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  // فلاتر البحث
+  const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState("");
+  const [gradeFilter, setGradeFilter] = useState("");
+
   useEffect(() => {
     if (!open || !group) return;
     setSelectedStudent("");
     setSelectedPackage("");
+    setSearch("");
+    setStageFilter("");
+    setGradeFilter("");
     setError(null);
     setLoading(true);
 
@@ -147,6 +194,46 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       })
       .finally(() => setLoading(false));
   }, [open, group]);
+
+  // خيارات فلتر "المرحلة" مستخرجة من قايمة الطلاب اللي وصلت فعلاً (مفيش استدعاء API إضافي)
+  const stageOptions = useMemo(() => {
+    const names = new Set(students.map(resolveStageName).filter(Boolean));
+    return Array.from(names).map((name) => ({ value: name, label: name }));
+  }, [students]);
+
+  // خيارات فلتر "الصف"، لو فيه مرحلة مختارة بيفلتر الصفوف اللي تبعها بس
+  const gradeOptions = useMemo(() => {
+    const relevant = stageFilter
+      ? students.filter((s) => resolveStageName(s) === stageFilter)
+      : students;
+    const names = new Set(relevant.map(resolveGradeName).filter(Boolean));
+    return Array.from(names).map((name) => ({ value: name, label: name }));
+  }, [students, stageFilter]);
+
+  // لو الصف المختار بقى مش موجود ضمن خيارات الصف الجديدة (بعد تغيير المرحلة)، بنمسحه
+  useEffect(() => {
+    if (gradeFilter && !gradeOptions.some((o) => o.value === gradeFilter)) {
+      setGradeFilter("");
+    }
+  }, [gradeOptions, gradeFilter]);
+
+  const filteredStudents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return students.filter((s) => {
+      const matchesSearch = !q || resolvePersonName(s).toLowerCase().includes(q);
+      const matchesStage = !stageFilter || resolveStageName(s) === stageFilter;
+      const matchesGrade = !gradeFilter || resolveGradeName(s) === gradeFilter;
+      return matchesSearch && matchesStage && matchesGrade;
+    });
+  }, [students, search, stageFilter, gradeFilter]);
+
+  // لو الطالب المختار اتشال من نتيجة الفلترة، بنمسح الاختيار عشان منبعتش حاجة مخفية عن المستخدم
+  useEffect(() => {
+    if (selectedStudent && !filteredStudents.some((s) => resolvePersonId(s) === selectedStudent)) {
+      setSelectedStudent("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredStudents]);
 
   const handleSubmit = async () => {
     if (!selectedStudent) {
@@ -191,13 +278,38 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
 
   return (
     <Modal open={open} onClose={onClose} title="إضافة طالب للمجموعة">
+      <SearchField
+        label="بحث عن طالب"
+        value={search}
+        onChange={setSearch}
+        placeholder="اكتب اسم الطالب..."
+        disabled={loading}
+      />
+      <SelectField
+        label="المرحلة"
+        placeholder="كل المراحل"
+        options={stageOptions}
+        value={stageFilter}
+        onChange={setStageFilter}
+        disabled={loading || stageOptions.length === 0}
+        allowClear
+      />
+      <SelectField
+        label="الصف"
+        placeholder="كل الصفوف"
+        options={gradeOptions}
+        value={gradeFilter}
+        onChange={setGradeFilter}
+        disabled={loading || gradeOptions.length === 0}
+        allowClear
+      />
       <SelectField
         label="الطالب"
-        placeholder={loading ? "جاري التحميل..." : "اختر الطالب"}
-        options={students.map((s) => ({ value: resolvePersonId(s), label: resolvePersonName(s) }))}
+        placeholder={loading ? "جاري التحميل..." : filteredStudents.length === 0 ? "لا يوجد طلاب مطابقين" : "اختر الطالب"}
+        options={filteredStudents.map((s) => ({ value: resolvePersonId(s), label: resolvePersonName(s) }))}
         value={selectedStudent}
         onChange={setSelectedStudent}
-        disabled={loading}
+        disabled={loading || filteredStudents.length === 0}
       />
       <SelectField
         label="الباقة"
