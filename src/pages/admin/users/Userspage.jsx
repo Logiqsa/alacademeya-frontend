@@ -21,11 +21,14 @@ const PAGE_SIZE = 6;
 const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
 
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
+// ⚠️ "مشرف" = supervisor (صلاحيات محدودة)، "مشرف عام" = admin (صلاحيات كاملة)
+// لو الـ rawRole القادم من الباك إند مختلف عن دول، عدّل المفاتيح هنا بس
 const ROLE_MAP = {
   student: "طالب",
   teacher: "معلم",
   parent: "ولي أمر",
-  admin: "مشرف",
+  supervisor: "مشرف",
+  admin: "مشرف عام",
 };
 
 const statusOf = (u) => {
@@ -140,7 +143,8 @@ const UsersPage = () => {
   // من الصفحة المعروضة بس، وكل رول بياخد عدّاده الصح
   const stats = {
     parents: visibleUsers.filter((u) => u.role === "ولي أمر").length,
-    admins: visibleUsers.filter((u) => u.role === "مشرف").length,
+    admins: visibleUsers.filter((u) => u.role === "مشرف عام").length,
+    supervisors: visibleUsers.filter((u) => u.role === "مشرف").length,
     teachers: visibleUsers.filter((u) => u.role === "معلم").length,
     students: visibleUsers.filter((u) => u.role === "طالب").length,
     total: visibleUsers.length,
