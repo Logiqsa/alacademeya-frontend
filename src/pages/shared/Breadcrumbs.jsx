@@ -52,7 +52,7 @@ const DYNAMIC_LABELS = {
   studentId: "تفاصيل الطالب",
   assignmentId: "تفاصيل الواجب",
   classroomId: "الفصل",
-  sessionId: "الجلسة",
+  sessionId: "تفاصيل الحصة",
   id: "التفاصيل",
   productId: "تفاصيل العنصر",
 };
@@ -63,7 +63,7 @@ const HIDDEN_SEGMENTS = new Set(["admin"]);
 // زي HIDDEN_SEGMENTS بس لأجزاء المسار الديناميكية (زي :lessonId)، لأن قيمتها
 // بتتغير كل مرة فمينفعش تتحط في HIDDEN_SEGMENTS اللي بتشتغل بالقيمة الثابتة.
 // المفتاح هنا = اسم الـ param نفسه.
-const HIDDEN_PARAM_KEYS = new Set(["lessonId", "groupId"]);
+const HIDDEN_PARAM_KEYS = new Set(["lessonId", "groupId", "classroomId"]);
 
 // ⚠️ مهم: بعض الصفحات مسارها الحقيقي في App.jsx مش نفس شكل الـ URL الحالي
 // (مثال: صفحة القايمة الأساسية مسارها /admin/subscription بالمفرد، لكن باقي
@@ -81,6 +81,19 @@ const PATH_OVERRIDES = {
 // المفتاح = اسم الـ param، القيمة = الجزء اللي بيتضاف بعد الـ id في اللينك.
 const DYNAMIC_LINK_SUFFIX = {
   groupId: "/lessons",
+};
+
+// ⚠️ خاص بصفحة SessionDetailsPage اللي بتتشارك بين الأدمن والـ parent على
+// مسار /*/classrooms/:classroomId/sessions/:sessionId. الأدمن أصلاً بيسمي
+// المجموعات "المجموعات" مش "الفصول" وبيديرها من /admin/groups مش /admin/classrooms،
+// فبنعمل استثناء يبدّل اللابل واللينك بتوع segment "classrooms" و"sessions" لو
+// الشخص أدمن، بدل ما نستخدم SEGMENT_LABELS العادي.
+const ADMIN_CLASSROOMS_SESSIONS_OVERRIDES = {
+  classrooms: { label: "المجموعات", path: () => "/admin/groups" },
+  sessions: {
+    label: "الحصص",
+    path: (params) => `/admin/groups/${params.classroomId}/lessons`,
+  },
 };
 
 export default function Breadcrumbs({ homeTo = "/" }) {
@@ -119,6 +132,13 @@ export default function Breadcrumbs({ homeTo = "/" }) {
         }
       } else {
         label = SEGMENT_LABELS[segment] || segment;
+
+        const isAdminPath = location.pathname.startsWith("/admin/");
+        const override = isAdminPath && ADMIN_CLASSROOMS_SESSIONS_OVERRIDES[segment];
+        if (override) {
+          label = override.label;
+          linkPath = override.path(params);
+        }
       }
 
       return {
