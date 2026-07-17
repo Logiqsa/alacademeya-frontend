@@ -465,7 +465,7 @@ const StudentPersonalCard = ({
           saving={saving}
           onCancel={handleCancel}
           error={error}
-          confirmLabel="تعديل البيانات"
+          confirmLabel="حفظ البيانات"
         />
       )}
     </form>
@@ -662,7 +662,7 @@ const StudentAcademicCard = ({ student, onUpdated }) => {
           saving={saving}
           onCancel={handleCancel}
           error={error}
-          confirmLabel="تعديل البيانات"
+          confirmLabel="حفظ البيانات"
         />
       )}
     </form>
