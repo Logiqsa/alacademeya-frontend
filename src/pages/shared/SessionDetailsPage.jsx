@@ -14,6 +14,7 @@ import {
   getSessionAttendance,
   getSessionRecording,
 } from "../../services/APIService";
+import Breadcrumbs from "./Breadcrumbs";
 
 const nameOf = (value) => typeof value === "string" ? value : value?.ar || value?.en || "المجموعة";
 
@@ -97,7 +98,9 @@ const SessionDetailsPage = ({ role }) => {
     return () => { active = false; };
   }, [classroomId, sessionId]);
 
-  return <Layout><div className="mx-auto max-w-7xl space-y-5 p-2" dir="rtl">
+  return <Layout>
+      <Breadcrumbs homeTo={role === "admin" ? "/admin-dashboard" : "/parent-dashboard"} />
+      <div className="mx-auto max-w-7xl space-y-5 p-2" dir="rtl">
     {loading ? <p className="py-16 text-center text-[#575F69]">جاري تحميل تفاصيل الحصة...</p> : error || !data ? <p className="py-16 text-center text-red-500">{error}</p> : <>
       <div className="rounded-2xl border bg-white p-5"><div className="flex items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold text-[#123C91]">{data.session.title}</h1><p className="mt-2 text-base font-bold text-[#575F69]">{nameOf(data.classroom.name)} • {new Date(data.session.scheduledDate).toLocaleString("ar-EG", { hour12: true })}</p></div><span className="rounded-lg bg-red-100 px-3 py-1 text-sm text-red-600">مكتملة</span></div>{data.session.description && <p className="mt-4 text-sm text-[#575F69]">{data.session.description}</p>}</div>
       {role === "admin" && <LessonStats {...data.attendanceStats} />}
