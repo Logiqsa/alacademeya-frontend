@@ -58,7 +58,19 @@ const DYNAMIC_LABELS = {
 };
 
 // أي segment عايزة تتجاهله تماما من العرض (زي أرقام أو IDs من غير مسمى واضح)
-const HIDDEN_SEGMENTS = new Set(["admin", "curriculum", "teacher"]);
+const HIDDEN_SEGMENTS = new Set([
+  "admin",
+  "curriculum",
+  "teacher",
+  "parent",
+  // الـ *-dashboard segments دي بالفعل بتترجم لـ "الرئيسية" في SEGMENT_LABELS،
+  // بس الكومبوننت أصلاً بيعرض لينك "الرئيسية" ثابت في الأول (homeTo)، فلو
+  // سيبناها هتتكرر ("الرئيسية / الرئيسية"). بنشيلها هنا خالص.
+  "parent-dashboard",
+  "teacher-dashboard",
+  "student-dashboard",
+  "admin-dashboard",
+]);
 
 // زي HIDDEN_SEGMENTS بس لأجزاء المسار الديناميكية (زي :lessonId)، لأن قيمتها
 // بتتغير كل مرة فمينفعش تتحط في HIDDEN_SEGMENTS اللي بتشتغل بالقيمة الثابتة.
