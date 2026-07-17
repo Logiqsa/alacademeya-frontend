@@ -12,6 +12,7 @@ import {
   getClassroomSessions,
   getSessionAttendance,
 } from "../../../../services/APIService";
+import Breadcrumbs from "../../../shared/Breadcrumbs";
 
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
@@ -174,6 +175,7 @@ const AttendancePage = () => {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
         {/* Header */}
         <div className="mb-4">
