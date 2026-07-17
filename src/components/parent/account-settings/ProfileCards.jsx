@@ -494,7 +494,7 @@ export const ParentProfileCard = ({
             saving={saving}
             onCancel={handleCancel}
             error={error}
-            confirmLabel="تعديل البيانات"
+            confirmLabel="حفظ البيانات"
           />
         </>
       )}
