@@ -14,6 +14,7 @@ import {
   getStage,
   getUser,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const PAGE_SIZE = 6;
 
@@ -210,6 +211,7 @@ const GroupsPage = () => {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"
