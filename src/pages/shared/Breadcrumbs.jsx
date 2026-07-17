@@ -116,6 +116,11 @@ export default function Breadcrumbs({ homeTo = "/" }) {
     .map((segment) => {
       accumulatedPath += `/${segment}`;
       if (HIDDEN_SEGMENTS.has(segment)) return null;
+      // "schedule" segment: بيتشال بس لما يكون جوه lessons/schedule/new (مسار إنشاء/تعديل
+      // الجدول بتاع مجموعة)، وبيفضل ظاهر لو هو نفسه صفحة مستقلة زي /parent/schedule
+      if (segment === "schedule" && accumulatedPath.endsWith("/lessons/schedule")) {
+        return null;
+      }
 
       let label;
       let isDynamic = false;
