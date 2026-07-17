@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import { getPackage, getSubscription } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const idOf = (value) => {
   if (!value) return "";
@@ -139,6 +140,7 @@ const SubscriptionDetailsPage = () => {
 
   return (
     <AdminLayout>
+       <Breadcrumbs homeTo="/admin-dashboard" />
       <div dir="rtl" className="w-full max-w-full p-3 sm:p-4 md:p-6 font-['IBM_Plex_Sans_Arabic']">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
