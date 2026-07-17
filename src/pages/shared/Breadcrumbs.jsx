@@ -58,7 +58,7 @@ const DYNAMIC_LABELS = {
 };
 
 // أي segment عايزة تتجاهله تماما من العرض (زي أرقام أو IDs من غير مسمى واضح)
-const HIDDEN_SEGMENTS = new Set(["admin"]);
+const HIDDEN_SEGMENTS = new Set(["admin", "curriculum"]);
 
 // زي HIDDEN_SEGMENTS بس لأجزاء المسار الديناميكية (زي :lessonId)، لأن قيمتها
 // بتتغير كل مرة فمينفعش تتحط في HIDDEN_SEGMENTS اللي بتشتغل بالقيمة الثابتة.
