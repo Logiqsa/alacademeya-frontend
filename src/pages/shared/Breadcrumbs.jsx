@@ -73,6 +73,7 @@ const HIDDEN_PARAM_KEYS = new Set(["lessonId", "groupId", "classroomId"]);
 // المفتاح هنا = المسار اللي اتبني تلقائيًا (accumulated path)، والقيمة = المسار الصح.
 const PATH_OVERRIDES = {
   "/admin/subscriptions": "/admin/subscription",
+  "/teacher/assignments": "/teacher/tasks",
 };
 
 // بعض الـ id الديناميكي (زي :groupId) فعليًا ليها صفحة "تفاصيل" حقيقية بس مسارها
