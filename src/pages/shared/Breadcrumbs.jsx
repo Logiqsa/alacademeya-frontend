@@ -11,7 +11,6 @@ const SEGMENT_LABELS = {
   parent: "ولي الأمر",
   teacher: "المعلم",
   student: "الطالب",
-  admin: "الإدارة",
 
   "add-child": "إضافة طفل",
   schedule: "الجدول",
@@ -59,7 +58,7 @@ const DYNAMIC_LABELS = {
 };
 
 // أي segment عايزة تتجاهله تماما من العرض (زي أرقام أو IDs من غير مسمى واضح)
-const HIDDEN_SEGMENTS = new Set([]);
+const HIDDEN_SEGMENTS = new Set(["admin"]);
 
 export default function Breadcrumbs({ homeTo = "/" }) {
   const location = useLocation();
