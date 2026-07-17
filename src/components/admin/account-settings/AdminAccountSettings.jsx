@@ -474,7 +474,7 @@ const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged })
             saving={saving}
             onCancel={handleCancel}
             error={error}
-            confirmLabel="تعديل البيانات"
+            confirmLabel="حفظ التعديلات "
           />
         </>
       )}
