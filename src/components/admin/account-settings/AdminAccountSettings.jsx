@@ -6,6 +6,7 @@ import { getContactSettings, getCountries, getMyProfile, updateContactSettings, 
 import { AuthContext } from "../../../context/AuthContext"; // عدّل المسار حسب مشروعك
 import { countryOption, getArabicCountryName } from "../../../utils/countryName";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
+import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -671,6 +672,7 @@ const AdminAccountSettings = () => {
 
   return (
     <div className="space-y-5" dir="rtl">
+       <Breadcrumbs homeTo="/admin-dashboard" />
       {/* Page title */}
       <div
         className="max-w-7xl mx-auto p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
