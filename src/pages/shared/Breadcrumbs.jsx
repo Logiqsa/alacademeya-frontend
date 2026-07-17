@@ -63,6 +63,7 @@ const HIDDEN_SEGMENTS = new Set([
   "curriculum",
   "teacher",
   "parent",
+  "student",
   // الـ *-dashboard segments دي بالفعل بتترجم لـ "الرئيسية" في SEGMENT_LABELS،
   // بس الكومبوننت أصلاً بيعرض لينك "الرئيسية" ثابت في الأول (homeTo)، فلو
   // سيبناها هتتكرر ("الرئيسية / الرئيسية"). بنشيلها هنا خالص.
