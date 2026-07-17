@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, Loader2, AlertCircle, Inbox, Calendar } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import { getPendingSubscriptionRequests } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const PAGE_SIZE = 8;
 
@@ -134,6 +135,8 @@ const SubscriptionRequestsPage = () => {
 
   return (
     <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
+
       <div dir="rtl" className="w-full p-2 sm:p-4 font-['IBM_Plex_Sans_Arabic']">
         <div className="mb-5">
           <h2 className="font-['IBM_Plex_Sans_Arabic'] font-semibold text-[20px] sm:text-[24px] text-[#123C91] mb-1">
