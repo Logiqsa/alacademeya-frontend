@@ -111,6 +111,7 @@ const SubscriptionDetailsPage = () => {
   if (loading) {
     return (
       <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
         <div className="flex items-center justify-center gap-2 py-24 text-[#8C9198]" dir="rtl">
           <Loader2 size={20} className="animate-spin" />
           <span className="text-[14px]">جاري تحميل تفاصيل الاشتراك...</span>
@@ -122,6 +123,7 @@ const SubscriptionDetailsPage = () => {
   if (error || !subscription) {
     return (
       <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
         <div className="flex flex-col items-center justify-center gap-3 py-24" dir="rtl">
           <AlertCircle size={22} className="text-red-500" />
           <p className="text-[14px] text-red-600">{error || "الاشتراك غير موجود"}</p>
