@@ -8,6 +8,7 @@ import AddSupervisorModal from "../../../components/admin/supervisors/AddSupervi
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import { getUsers, updateUser, deleteUser } from "../../../services/APIService";
 import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const PAGE_SIZE = 6;
 const SUPERVISOR_ROLES = ["admin", "super-admin"];
@@ -146,6 +147,7 @@ const SupervisorsPage = () => {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"
