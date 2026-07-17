@@ -60,6 +60,16 @@ const DYNAMIC_LABELS = {
 // أي segment عايزة تتجاهله تماما من العرض (زي أرقام أو IDs من غير مسمى واضح)
 const HIDDEN_SEGMENTS = new Set(["admin"]);
 
+// ⚠️ مهم: بعض الصفحات مسارها الحقيقي في App.jsx مش نفس شكل الـ URL الحالي
+// (مثال: صفحة القايمة الأساسية مسارها /admin/subscription بالمفرد، لكن باقي
+// الصفحات التابعة ليها زي /admin/subscriptions/requests بالجمع). في الحالة دي
+// الـ breadcrumb المبني تلقائيًا من الـ URL هيولّد لينك غلط (/admin/subscriptions)
+// مش موجود في الـ Routes، فبيقع في الـ fallback ويرجّع لـ "/".
+// المفتاح هنا = المسار اللي اتبني تلقائيًا (accumulated path)، والقيمة = المسار الصح.
+const PATH_OVERRIDES = {
+  "/admin/subscriptions": "/admin/subscription",
+};
+
 export default function Breadcrumbs({ homeTo = "/" }) {
   const location = useLocation();
   const params = useParams();
@@ -88,7 +98,7 @@ export default function Breadcrumbs({ homeTo = "/" }) {
         label = SEGMENT_LABELS[segment] || segment;
       }
 
-      return { path: accumulatedPath, label };
+      return { path: PATH_OVERRIDES[accumulatedPath] || accumulatedPath, label };
     })
     .filter(Boolean);
 
