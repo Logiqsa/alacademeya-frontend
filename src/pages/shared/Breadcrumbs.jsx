@@ -60,6 +60,11 @@ const DYNAMIC_LABELS = {
 // أي segment عايزة تتجاهله تماما من العرض (زي أرقام أو IDs من غير مسمى واضح)
 const HIDDEN_SEGMENTS = new Set(["admin"]);
 
+// زي HIDDEN_SEGMENTS بس لأجزاء المسار الديناميكية (زي :lessonId)، لأن قيمتها
+// بتتغير كل مرة فمينفعش تتحط في HIDDEN_SEGMENTS اللي بتشتغل بالقيمة الثابتة.
+// المفتاح هنا = اسم الـ param نفسه.
+const HIDDEN_PARAM_KEYS = new Set(["lessonId", "groupId"]);
+
 // ⚠️ مهم: بعض الصفحات مسارها الحقيقي في App.jsx مش نفس شكل الـ URL الحالي
 // (مثال: صفحة القايمة الأساسية مسارها /admin/subscription بالمفرد، لكن باقي
 // الصفحات التابعة ليها زي /admin/subscriptions/requests بالجمع). في الحالة دي
@@ -68,6 +73,14 @@ const HIDDEN_SEGMENTS = new Set(["admin"]);
 // المفتاح هنا = المسار اللي اتبني تلقائيًا (accumulated path)، والقيمة = المسار الصح.
 const PATH_OVERRIDES = {
   "/admin/subscriptions": "/admin/subscription",
+};
+
+// بعض الـ id الديناميكي (زي :groupId) فعليًا ليها صفحة "تفاصيل" حقيقية بس مسارها
+// محتاج جزء إضافي بعد الـ id (زي /lessons). هنا بنحدد الجزء الإضافي ده لكل
+// paramKey عشان يبقى قابل للضغط ويودي لمسار صح، بدل ما يفضل نص غير قابل للضغط.
+// المفتاح = اسم الـ param، القيمة = الجزء اللي بيتضاف بعد الـ id في اللينك.
+const DYNAMIC_LINK_SUFFIX = {
+  groupId: "/lessons",
 };
 
 export default function Breadcrumbs({ homeTo = "/" }) {
@@ -91,14 +104,30 @@ export default function Breadcrumbs({ homeTo = "/" }) {
       if (HIDDEN_SEGMENTS.has(segment)) return null;
 
       let label;
+      let isDynamic = false;
+      let linkPath = accumulatedPath;
       if (paramValues.has(segment)) {
         const paramKey = paramKeysByValue[segment];
+        if (HIDDEN_PARAM_KEYS.has(paramKey)) return null;
         label = DYNAMIC_LABELS[paramKey] || segment;
+        isDynamic = true;
+
+        const suffix = DYNAMIC_LINK_SUFFIX[paramKey];
+        if (suffix) {
+          linkPath = `${accumulatedPath}${suffix}`;
+          isDynamic = false; // بقى ليه مسار صح ومعروف، يبقى قابل للضغط
+        }
       } else {
         label = SEGMENT_LABELS[segment] || segment;
       }
 
-      return { path: PATH_OVERRIDES[accumulatedPath] || accumulatedPath, label };
+      return {
+        path: PATH_OVERRIDES[linkPath] || linkPath,
+        label,
+        // الـ id لوحده غالبًا مش صفحة موجودة فعليًا (زي /admin/groups/:groupId من
+        // غير /lessons بعده)، فمنخليهوش قابل للضغط عشان مايرجعش لمسار غلط
+        clickable: !isDynamic,
+      };
     })
     .filter(Boolean);
 
@@ -116,8 +145,15 @@ export default function Breadcrumbs({ homeTo = "/" }) {
           return (
             <li key={crumb.path} className="flex items-center gap-2">
               <span className="text-gray-400">/</span>
-              {isLast ? (
-                <span className="font-medium text-[#123C91]" aria-current="page">
+              {isLast || !crumb.clickable ? (
+                <span
+                  className={
+                    isLast
+                      ? "font-medium text-[#123C91]"
+                      : "text-gray-500 cursor-default"
+                  }
+                  aria-current={isLast ? "page" : undefined}
+                >
                   {crumb.label}
                 </span>
               ) : (

@@ -17,6 +17,7 @@ import {
   endSession,
   updateClassroomSession,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -277,6 +278,8 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
 
   return (
     <Layout>
+            <Breadcrumbs homeTo={isAdmin ? "/admin-dashboard" : "/teacher-dashboard"} />
+
       <div
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right relative"
         dir="rtl"
