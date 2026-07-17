@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Calendar, BookOpen, Phone, User, GraduationCap, UserCheck, UserX } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const MOCK_REQUESTS = Array.from({ length: 12 }, (_, i) => ({
   id: i + 1,
@@ -89,6 +90,7 @@ const RequestDetailsPage = () => {
 
   return (
     <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
       <div dir="rtl" className="w-full p-2 sm:p-4 font-['IBM_Plex_Sans_Arabic']">
 
         {/* Header */}
