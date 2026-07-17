@@ -36,7 +36,7 @@ const SEGMENT_LABELS = {
   requests: "الطلبات",
   activate: "تفعيل",
   curriculum: "المنهج",
-  create: "إنشاء",
+  create:  " إنشاء منهج",
   add: "إضافة",
 
   classrooms: "الفصول",
