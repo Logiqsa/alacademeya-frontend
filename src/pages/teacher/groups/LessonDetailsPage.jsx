@@ -20,7 +20,7 @@ import {
   endSession,
   updateClassroomSession,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
-import Breadcrumbs from "../../shared/Breadcrumbs";
+// import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
@@ -478,7 +478,7 @@ const LessonDetailsPage = () => {
   if (loading) {
     return (
       <TeacherLayout>
-        <Breadcrumbs homeTo="/teacher-dashboard" />
+        {/* <Breadcrumbs homeTo="/teacher-dashboard" /> */}
         <div className="text-center py-16 text-[#575F69]">جاري التحميل...</div>
       </TeacherLayout>
     );
@@ -487,7 +487,7 @@ const LessonDetailsPage = () => {
   if (error || !lesson) {
     return (
       <TeacherLayout>
-        <Breadcrumbs homeTo="/teacher-dashboard" />
+        {/* <Breadcrumbs homeTo="/teacher-dashboard" /> */}
         <div className="text-center py-16 text-red-500">
           {error || "لم يتم العثور على الحصة"}
         </div>
@@ -497,7 +497,7 @@ const LessonDetailsPage = () => {
 
   return (
     <TeacherLayout>
-      <Breadcrumbs homeTo="/teacher-dashboard" />
+      {/* <Breadcrumbs homeTo="/teacher-dashboard" /> */}
       <div
         className="w-full p-1 font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"
