@@ -3,6 +3,7 @@ import StatsCardds from "../../../components/admin/notifications/StatsCards";
 import NotificationsSection from "../../../components/admin/notifications/NotificationsSection";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import { getNotifications } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const extractList = (resData) => {
   if (!resData) return [];
@@ -39,6 +40,7 @@ const AdminNotificationss = () => {
         className="max-w-7xl mx-auto p-2 space-y-6 font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"
       >
+         <Breadcrumbs homeTo="/admin-dashboard" />
         <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">
           الإشعارات
         </h1>
