@@ -6,6 +6,7 @@ import RecordingsTable from "../../../components/admin/recordings/RecordingsTabl
 import AddRecordingModal from "../../../components/admin/recordings/AddRecordingModal";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import { getClassrooms, getClassroomSessions, getSessionRecording } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const PAGE_SIZE = 6;
 
@@ -66,6 +67,7 @@ const RecordingsPages = () => {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
 
         {/* Header */}
