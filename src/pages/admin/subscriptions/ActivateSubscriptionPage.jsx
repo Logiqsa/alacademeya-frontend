@@ -11,6 +11,7 @@ import {
   getAllDiscounts,
   createSubscription,
 } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const idOf = (obj) => {
   if (!obj) return "";
@@ -601,6 +602,7 @@ const ActivateSubscriptionPage = () => {
 
   return (
     <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
       <div
         dir="rtl"
         className="w-full max-w-full p-3 sm:p-4 md:p-6 font-['IBM_Plex_Sans_Arabic'] overflow-x-hidden"
