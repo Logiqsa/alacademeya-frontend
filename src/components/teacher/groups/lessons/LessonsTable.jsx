@@ -103,7 +103,12 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
                       lineHeight: "20px",
                     }}
                   >
-                    {lesson.title}
+                    <button
+                      onClick={() => handleView(lesson.id)}
+                      className="hover:text-[#123C91] hover:underline transition-colors text-right"
+                    >
+                      {lesson.title}
+                    </button>
                   </td>
 
                   {[lesson.date, lesson.time, lesson.duration, attendanceValue(lesson), absenceValue(lesson)].map(
@@ -167,12 +172,13 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
         {lessons.map((lesson) => (
           <div key={lesson.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <h4
-                className="text-[#1A1A1A] font-semibold text-[16px]"
+              <button
+                onClick={() => handleView(lesson.id)}
+                className="text-[#1A1A1A] font-semibold text-[16px] hover:text-[#123C91] hover:underline transition-colors text-right"
                 style={{ fontFamily: "Tajawal, sans-serif" }}
               >
                 {lesson.title}
-              </h4>
+              </button>
               <StatusBadge status={lesson.status} />
             </div>
 
