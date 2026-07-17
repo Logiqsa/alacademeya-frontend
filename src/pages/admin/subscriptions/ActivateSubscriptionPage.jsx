@@ -567,6 +567,7 @@ const ActivateSubscriptionPage = () => {
   if (requestLoading) {
     return (
       <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
         <div
           className="flex items-center justify-center py-24 text-[#8C9198]"
           dir="rtl"
@@ -581,6 +582,7 @@ const ActivateSubscriptionPage = () => {
   if (requestError || !request) {
     return (
       <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
         <div
           dir="rtl"
           className="flex flex-col items-center justify-center py-24 gap-3 text-center"
