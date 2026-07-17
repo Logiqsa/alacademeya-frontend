@@ -16,6 +16,7 @@ import {
   updateStudentProfile,
   updateTeacherProfile,
 } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const PAGE_SIZE = 6;
 const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
@@ -244,6 +245,7 @@ const UsersPage = () => {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"
