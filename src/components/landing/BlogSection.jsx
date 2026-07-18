@@ -2,8 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Megaphone, Sigma } from "lucide-react";
 
-// ⚠️ بيانات افتراضية — استبدلها بـ useState + useEffect لجلب المقالات من الـ API
-// ⚠️ تأكد من أسماء الحقول الحقيقية القادمة من الباك اند (id, title, excerpt, category, date, image...) عبر Network tab / Postman قبل الربط الفعلي
+
 const blogPosts = [
     {
         id: 1,
@@ -13,7 +12,7 @@ const blogPosts = [
         category: "إعلانات",
         date: "2025-01-08",
         readTime: "10 دقائق",
-        variant: "announcement", // ⚠️ اسم تقريبي — عدّله حسب القيمة الحقيقية القادمة من الـ API لو موجودة
+        variant: "announcement",
     },
     {
         id: 2,
@@ -37,7 +36,6 @@ const blogPosts = [
     },
 ];
 
-// صور مولّدة بالكود (SVG) بدل صور حقيقية — كل "variant" له خلفية وأيقونة مختلفة
 const CoverImage = ({ variant }) => {
     if (variant === "math") {
         return (
