@@ -131,7 +131,7 @@ const CreateLessonPage = () => {
         className="mx-auto p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm mt-6 sm:mt-8"
         dir="rtl"
       >
-        {!checkingSchedule && !scheduledToday && (
+        {/* {!checkingSchedule && !scheduledToday && (
           <div className="mb-5 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
             <AlertTriangle size={18} className="text-amber-500 mt-0.5 shrink-0" />
             <div className="flex-1">
@@ -150,7 +150,7 @@ const CreateLessonPage = () => {
               </button>
             </div>
           </div>
-        )}
+        )} */}
 
         <div className="pb-5 sm:pb-6 border-b border-gray-100">
           <p className="text-sm font-semibold text-[#1A1A1A]">
