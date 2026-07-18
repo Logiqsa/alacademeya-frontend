@@ -303,7 +303,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div>
-            {highlightedLesson ? (
+            {/* {highlightedLesson ? (
               <button
                 type="button"
                 onClick={() => navigate(highlightedLessonPath)}
@@ -315,7 +315,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
               <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
                 {groupName || "مجموعة"}
               </h3>
-            )}
+            )} */}
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في
               مكان واحد.
