@@ -12,11 +12,14 @@ export default function Landing() {
     <>
       <Hero />
       <Marquee />
-      <BlogSection />
-      <Features />
-      <Services />
       <Pricing />
       <Stats />
+      <Features />
+      <BlogSection />
+
+      <Services />
+
+
       <FAQ />
     </>
   );
