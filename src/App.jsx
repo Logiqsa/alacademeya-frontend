@@ -77,6 +77,7 @@ import CreateSchedulePage from "./components/teacher/groups/lessons/CreateSchedu
 import AttendanceRegistrationPage from "./pages/teacher/groups/AttendanceRegistrationPage";
 import SessionDetailsPage from "./pages/shared/SessionDetailsPage";
 import AddSubscriptionPage from "./pages/admin/subscriptions/Addsubscriptionpage";
+import AllBlogsPage from "./components/landing/AllBlogsPage";
 
 
 function App() {
@@ -94,6 +95,8 @@ function App() {
         {/* Landing */}
         <Route element={<HomeLayout />}>
           <Route index element={<Landing />} />
+          <Route path="/blogs" element={<AllBlogsPage />} />
+          {/* <Route path="/blog/:id" element={<SingleBlogPage />} /> */}
         </Route>
 
         {/* Auth */}
