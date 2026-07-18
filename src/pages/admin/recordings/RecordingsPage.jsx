@@ -15,6 +15,11 @@ const formatSessionDuration = (duration) => {
   return typeof duration === "number" ? `${duration} دقيقة` : duration;
 };
 
+// ⚠️ زي resolveName/nameOf المستخدمة في باقي الصفحات — بعض الحقول (زي name) بترجع
+// كـ object { ar, en } مش string مباشر
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "—";
+
 const RecordingsPages = () => {
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState("جميع المجموعات");
@@ -39,7 +44,10 @@ const RecordingsPages = () => {
           return recording ? {
             id: recording.id || recording._id,
             title: recording.title,
-            group: classroom.name,
+            // ⚠️ groupId و lessonId ضروريين عشان لينكات "المجموعة"/"الحصة" في RecordingsTable تشتغل صح
+            groupId: classroom.id || classroom._id,
+            lessonId: session.id || session._id,
+            group: resolveName(classroom.name),
             lesson: session.title,
             teacher: classroom.teacher?.user?.fullName || classroom.teacher?.name || "—",
             duration: formatSessionDuration(session.duration),
@@ -96,7 +104,7 @@ const RecordingsPages = () => {
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             filterGroup={filterGroup}
             onFilterGroupChange={(v) => { setFilterGroup(v); setPage(1); }}
-            groupOptions={["جميع المجموعات", ...groups.map((g) => g.name)]}
+            groupOptions={["جميع المجموعات", ...groups.map((g) => resolveName(g.name))]}
           />
         </div>
 
