@@ -2,7 +2,11 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
-import { Megaphone, Image as ImageIcon, Undo, Redo, Bold, Italic, Underline, Strikethrough, Highlighter, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Link as LinkIcon, Maximize2 } from "lucide-react";
+import { Megaphone } from "lucide-react";
+
+// استدعاء مكتبة Quill الأساسية
+import Quill from "quill";
+import "quill/dist/quill.snow.css";
 
 import {
   getBlogPost,
@@ -45,6 +49,10 @@ const BlogFormPage = () => {
   const [errorMsg, setErrorMsg] = useState("");
   
   const fileInputRef = useRef(null);
+  
+  // مراجع خاصة بمحرر Quill الحديث
+  const quillRef = useRef(null);
+  const quillInstanceRef = useRef(null);
 
   useEffect(() => {
     getBlogCategories()
@@ -63,7 +71,7 @@ const BlogFormPage = () => {
           coverUrl = p.coverImage.startsWith("http") ? p.coverImage : `https://api.alacademeya.com/${p.coverImage}`;
         }
         setData({
-          coverColor: p.coverColor || BLOG_COLORS[3].hex, // جلب اللون من الـ API إن وجد وإلا فالافتراضي
+          coverColor: p.coverColor || BLOG_COLORS[3].hex,
           coverImageFile: null,
           coverImageUrl: coverUrl,
           title: p.title || "",
@@ -77,6 +85,41 @@ const BlogFormPage = () => {
       .catch(() => setErrorMsg("تعذر تحميل بيانات المقال"))
       .finally(() => setLoading(false));
   }, [id, isEditMode]);
+
+  // إعداد وتفعيل محرر Quill مرة واحدة عند التحميل مع جعله يمين (RTL)
+  useEffect(() => {
+    if (!quillRef.current || quillInstanceRef.current) return;
+
+    quillInstanceRef.current = new Quill(quillRef.current, {
+      theme: "snow",
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ["bold", "italic", "underline", "strike"],
+          [{ color: [] }, { background: [] }],
+          [{ align: [] }],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["link", "image"],
+          ["clean"],
+        ],
+      },
+    });
+
+    // ضبط اتجاه الكتابة الافتراضي ومحاذاة السطر لليمين
+    quillInstanceRef.current.format("direction", "rtl");
+    quillInstanceRef.current.format("align", "right");
+
+    // تعيين القيمة الابتدائية لو وجدت
+    if (data.content) {
+      quillInstanceRef.current.root.innerHTML = data.content;
+    }
+
+    // تحديث الحالة عند الكتابة
+    quillInstanceRef.current.on("text-change", () => {
+      const html = quillRef.current.querySelector(".ql-editor").innerHTML;
+      setData((prev) => ({ ...prev, content: html }));
+    });
+  }, []);
 
   const handleField = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
@@ -121,8 +164,14 @@ const BlogFormPage = () => {
       fd.append("status", status);
       fd.append("readingTime", data.readingTime || 0);
       fd.append("isFeatured", data.isFeatured);
-      fd.append("coverColor", data.coverColor); // إرسال لون الغلاف للباك إند
-      if (data.coverImageFile) fd.append("coverImage", data.coverImageFile);
+      fd.append("coverColor", data.coverColor);
+      
+      fd.append("seoTitle", data.title);
+      fd.append("seoDescription", data.description);
+
+      if (data.coverImageFile) {
+        fd.append("coverImage", data.coverImageFile);
+      }
 
       if (isEditMode) {
         await updateBlogPost(id, fd);
@@ -153,7 +202,7 @@ const BlogFormPage = () => {
   return (
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
-      <div className="mx-auto  p-4 font-['IBM_Plex_Sans_Arabic']" dir="rtl">
+      <div className="mx-auto p-4 font-['IBM_Plex_Sans_Arabic']" dir="rtl">
         
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-[20px] font-bold text-[#123C91] font-['Tajawal']">
@@ -189,7 +238,7 @@ const BlogFormPage = () => {
             </div>
           </div>
 
-          {/* 2. صورة الغلاف وتتأثر بلون الغلاف المختار */}
+          {/* 2. صورة الغلاف */}
           <div>
             <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
               صورة الغلاف
@@ -208,7 +257,7 @@ const BlogFormPage = () => {
             <div
               onClick={() => fileInputRef.current?.click()}
               className="h-44 rounded-xl relative flex flex-col items-center justify-center cursor-pointer overflow-hidden border border-dashed border-gray-300 transition-all hover:opacity-95"
-              style={{ backgroundColor: data.coverColor }} // يتغير لون الخلفية فوراً حسب اللون المختار
+              style={{ backgroundColor: data.coverColor }}
             >
               {currentCoverPreview ? (
                 <img src={currentCoverPreview} alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover z-10" />
@@ -306,47 +355,13 @@ const BlogFormPage = () => {
             />
           </div>
 
-          {/* 7. محتوى المقال */}
+          {/* 7. محتوى المقال (محرر Quill الحديث مع توجيه المؤشر يمين) */}
           <div>
             <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
               محتوى المقال
             </label>
-            <div className="border border-[#E5E5E5] rounded-xl overflow-hidden">
-              <div className="bg-gray-50 border-b border-[#E5E5E5] px-3 py-2 flex flex-wrap items-center gap-2 text-gray-600">
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><Undo size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><Redo size={15} /></button>
-                <span className="w-[1px] h-5 bg-gray-300 mx-1"></span>
-                <span className="text-xs text-gray-500 flex items-center gap-1">inter <span className="text-[10px]">▼</span></span>
-                <span className="text-xs text-gray-500 flex items-center gap-1">16 <span className="text-[10px]">▼</span></span>
-                <span className="w-[1px] h-5 bg-gray-300 mx-1"></span>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded font-bold"><Bold size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded italic"><Italic size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded underline"><Underline size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded line-through"><Strikethrough size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded text-yellow-600"><Highlighter size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded text-amber-700 font-bold">A</button>
-                <span className="w-[1px] h-5 bg-gray-300 mx-1"></span>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><AlignLeft size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><AlignCenter size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><AlignRight size={15} /></button>
-                <span className="w-[1px] h-5 bg-gray-300 mx-1"></span>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><List size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><ListOrdered size={15} /></button>
-                <span className="w-[1px] h-5 bg-gray-300 mx-1"></span>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><LinkIcon size={15} /></button>
-                <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><ImageIcon size={15} /></button>
-                <div className="mr-auto">
-                  <button type="button" className="p-1.5 hover:bg-gray-200 rounded"><Maximize2 size={15} /></button>
-                </div>
-              </div>
-
-              <textarea
-                rows={6}
-                placeholder="اكتب محتوى المقال هنا..."
-                value={data.content}
-                onChange={(e) => handleField("content", e.target.value)}
-                className="w-full p-4 text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none resize-y"
-              />
+            <div className="border border-[#E5E5E5] rounded-xl overflow-hidden bg-white" dir="rtl">
+              <div ref={quillRef} style={{ minHeight: "200px", direction: "rtl", textAlign: "right" }} />
             </div>
           </div>
 

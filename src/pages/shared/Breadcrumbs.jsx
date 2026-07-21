@@ -43,6 +43,7 @@ const SEGMENT_LABELS = {
   sessions: "الجلسات",
   files: "الملفات",
   blogs: "المدونه", 
+  edit:"تعديل",
 };
 
 // segments دي بتاعت الـ id الديناميكي (زي :groupId) عايزين نعرض قيمتها الحقيقية
