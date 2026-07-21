@@ -22,7 +22,7 @@ const BlogsFilters = ({
           type="text"
           value={search}
           onChange={(e) => onSearchChange?.(e.target.value)}
-          placeholder="ابحث في المقالات..."
+          placeholder="ابحث في المقالات...."
           className="w-full h-full pr-10 pl-4 bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg text-sm outline-none focus:border-[#123C91] transition-colors font-['IBM_Plex_Sans_Arabic']"
         />
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" size={18} />
