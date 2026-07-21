@@ -10,8 +10,6 @@ const statusBadge = (status, className = "") => (
   </span>
 );
 
-// Vivid fallback colors per category, so the placeholder cover always looks
-// intentional and saturated instead of always falling back to one dull blue.
 const CATEGORY_COLORS = {
   "إعلانات": "#123C91",
   "تعليمي": "#A3195B",
@@ -20,10 +18,6 @@ const DEFAULT_COVER_COLOR = "#1F2937";
 
 const coverColorFor = (post) => post.coverColor || CATEGORY_COLORS[post.categoryName] || DEFAULT_COVER_COLOR;
 
-// variant "card" shows both the category badge and the status badge on the image
-// (list view). variant "modal" shows only the category badge on the image, since
-// the preview modal repeats the status just below in the meta row — showing it
-// twice on top of each other is what was overlapping.
 const CoverImage = ({ post, variant = "card" }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -37,7 +31,7 @@ const CoverImage = ({ post, variant = "card" }) => {
           src={post.coverImageUrl}
           alt={post.title}
           className="absolute inset-0 w-full h-full object-cover"
-          onError={() => setImgError(true)} // في حال حدث خطأ في تحميل الرابط يتم التبديل للشكل الاحتياطي
+          onError={() => setImgError(true)}
         />
       ) : (
         <Megaphone className="text-white/60" size={40} />
@@ -99,21 +93,22 @@ const BlogCard = ({ post, onEdit, onDelete }) => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
           onClick={() => setShowPreview(false)}
         >
-          <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <p className="text-white text-sm mb-2 text-right">معاينة</p>
-
-            <div className="bg-white rounded-2xl overflow-hidden relative" dir="rtl">
+          <div className="w-full max-w-md relative" onClick={(e) => e.stopPropagation()}>
+            
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl relative" dir="rtl">
+              
+              {/* زر الإغلاق (X) أصبح داخل الصندوق في الأعلى جهة الشمال تماماً */}
               <button
                 onClick={() => setShowPreview(false)}
-                className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-[#EA5A6B] text-white flex items-center justify-center hover:bg-[#d94b5c] transition-colors"
+                className="absolute top-3 left-3 z-30 w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all"
                 aria-label="إغلاق"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
 
               <CoverImage post={post} variant="modal" />
 
-              <div className="p-4 text-right">
+              <div className="p-5 text-right">
                 <div className="flex flex-nowrap items-center justify-between gap-2 text-[12px] text-gray-400 mb-3">
                   {statusBadge(post.status)}
                   <span className="flex items-center gap-1 whitespace-nowrap">
@@ -123,19 +118,19 @@ const BlogCard = ({ post, onEdit, onDelete }) => {
                   <span className="whitespace-nowrap">{post.date}</span>
                 </div>
 
-                <h3 className="font-bold text-[16px] text-[#1F2937] mb-2">{post.title}</h3>
-                <p className="text-[13px] text-gray-600 mb-3 leading-relaxed">{post.description}</p>
+                <h3 className="font-bold text-[18px] text-[#1F2937] mb-2">{post.title}</h3>
+                <p className="text-[14px] text-gray-600 mb-4 leading-relaxed">{post.description}</p>
 
                 {post.content && (
-                  <div className="bg-[#EAF4FF] text-[#123C91] text-[13px] rounded-lg px-3 py-2 mb-4 leading-relaxed">
+                  <div className="bg-[#EAF4FF] text-[#123C91] text-[13px] rounded-xl px-4 py-3 mb-5 leading-relaxed border border-[#d2e6ff]">
                     {post.content}
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setShowPreview(false)}
-                    className="flex-1 py-2 rounded-lg border border-[#E5E5E5] text-[#575F69] text-[13px] font-medium hover:bg-gray-50 transition-colors"
+                    className="flex-1 py-2.5 rounded-xl border border-[#E5E5E5] text-[#575F69] text-[14px] font-medium hover:bg-gray-50 transition-colors"
                   >
                     إغلاق
                   </button>
@@ -144,8 +139,9 @@ const BlogCard = ({ post, onEdit, onDelete }) => {
                       setShowPreview(false);
                       onEdit(post.id);
                     }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-[#123C91] text-[#123C91] text-[13px] font-medium hover:bg-[#EAF4FF] transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[#123C91] bg-[#123C91] text-white text-[14px] font-medium hover:bg-[#0f3278] transition-colors"
                   >
+                    <Pencil size={14} />
                     تعديل
                   </button>
                 </div>
