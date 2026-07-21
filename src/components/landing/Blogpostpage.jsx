@@ -1,11 +1,89 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Megaphone } from "lucide-react";
+import {
+    ArrowLeft,
+    ArrowRight,
+    Megaphone,
+    Calendar,
+    Clock,
+    Eye,
+    Share2,
+    Link2,
+    GraduationCap,
+    Check,
+    BookOpen,
+    ChevronLeft,
+    ChevronRight,
+} from "lucide-react";
 import {
     getPublicBlogPostBySlug,
     getPublicBlogPostsByCategory,
     getAssetUrl,
-} from "../../services/APIService";
+} from "../../services/APIService"; // ⚠️ عدّل المسار حسب مكان الملف عندك
+
+import featuredImage from "../../assets/featured-exams.svg";
+
+// ─── الجزء الثابت الخاص بالسلايدر العلوي ──────────────────────────────────
+const featuredPosts = [
+    {
+        id: 0,
+        title: "كيف تستعد لامتحانات نهاية العام بكفاءة عالية من خلال منصتنا التعليمية المتكاملة من منزلك؟",
+        excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم لتحقيق أعلى الدرجات.",
+        category: "تعليمي",
+        date: "2025-01-08",
+        readTime: "10 دقائق",
+        image: featuredImage,
+    },
+];
+
+const FeaturedPost = ({ post, onPrev, onNext }) => (
+    <div className="relative mb-10">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <div className="flex flex-col md:flex-row-reverse gap-8 items-center">
+                <div className="md:w-1/2 w-full h-56 md:h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-[#0284c7] to-[#123C91]">
+                    <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+                </div>
+                <div className="md:w-1/2 flex flex-col justify-center text-right">
+                    <div className="flex items-center justify-start gap-4 text-[13px] text-gray-400 mb-4">
+                        <span className="bg-[#E0F2FE] text-[#0369A1] px-3.5 py-1 rounded-full text-[12px] font-semibold">
+                            {post.category}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-gray-500">
+                            {post.readTime}
+                            <Clock size={14} />
+                        </span>
+                        <span className="text-gray-500">{post.date}</span>
+                    </div>
+
+                    <h2 className="font-bold text-[20px] md:text-[22px] text-[#1F2937] mb-6 leading-relaxed">
+                        {post.title}
+                    </h2>
+
+                    <Link
+                        to={`/blog/${post.id}`}
+                        className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit hover:underline"
+                    >
+                        اقرأ المزيد <ArrowLeft size={16} />
+                    </Link>
+                </div>
+            </div>
+        </div>
+
+        <button
+            onClick={onPrev}
+            className="flex absolute top-1/2 -translate-y-1/2 -left-5 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
+        >
+            <ChevronLeft size={20} />
+        </button>
+        <button
+            onClick={onNext}
+            className="flex absolute top-1/2 -translate-y-1/2 -right-5 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
+        >
+            <ChevronRight size={20} />
+        </button>
+    </div>
+);
+// ──────────────────────────────────────────────────────────────────────────────
 
 const formatDate = (isoDate) => {
     if (!isoDate) return "";
@@ -28,10 +106,17 @@ const FallbackCover = () => (
     </div>
 );
 
-const CoverImage = ({ post }) => {
+const CoverImage = ({ post, small }) => {
     const url = getAssetUrl(post.coverImage);
     if (!url) return <FallbackCover />;
-    return <img src={url} alt={post.title} className="w-full h-full object-cover" />;
+    return (
+        <img
+            src={url}
+            alt={post.title}
+            className="w-full h-full object-cover"
+            loading={small ? "lazy" : undefined}
+        />
+    );
 };
 
 const RelatedCard = ({ post }) => (
@@ -40,7 +125,7 @@ const RelatedCard = ({ post }) => (
         className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
     >
         <div className="h-32 relative">
-            <CoverImage post={post} />
+            <CoverImage post={post} small />
         </div>
         <div className="p-4 text-right">
             <h4 className="font-bold text-[15px] text-[#1F2937] mb-2 group-hover:text-[#123C91] transition-colors line-clamp-2">
@@ -53,6 +138,107 @@ const RelatedCard = ({ post }) => (
     </Link>
 );
 
+const TeamCard = () => (
+    <div className="bg-[#123C91] text-white rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
+                <GraduationCap className="w-6 h-6 text-white" strokeWidth={1.5} />
+            </div>
+            <div>
+                <p className="font-bold text-[16px] text-white">فريق الأكاديمية</p>
+                <p className="text-[13px] text-blue-100">أ. محمد مشرف إداري</p>
+            </div>
+        </div>
+    </div>
+);
+
+const ArticleInfoCard = ({ post }) => (
+    <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+        <ul className="space-y-4 text-[14px]">
+            <li className="flex items-center justify-between text-gray-500">
+                <span className="flex items-center gap-2">
+                    <Clock size={16} className="text-[#123C91]" />
+                    مدة القراءة
+                </span>
+                <span className="text-[#1F2937] font-medium">{post.readingTime || 10} دقائق</span>
+            </li>
+            <li className="flex items-center justify-between text-gray-500">
+                <span className="flex items-center gap-2">
+                    <Calendar size={16} className="text-[#123C91]" />
+                    آخر تحديث
+                </span>
+                <span className="text-[#1F2937] font-medium">{formatDate(post.publishedAt)}</span>
+            </li>
+            {typeof post.views === "number" && (
+                <li className="flex items-center justify-between text-gray-500">
+                    <span className="flex items-center gap-2">
+                        <Eye size={16} className="text-[#123C91]" />
+                        المشاهدات
+                    </span>
+                    <span className="text-[#1F2937] font-medium">
+                        {post.views.toLocaleString("ar-EG")} قارئ
+                    </span>
+                </li>
+            )}
+        </ul>
+
+        <div className="mt-6 pt-6 border-t border-gray-100">
+            <p className="text-[14px] font-bold text-[#1F2937] mb-3">تصنيفات المقال</p>
+            <div className="flex flex-wrap gap-2">
+                <span className="bg-[#E0F2FE] text-[#0369A1] px-3.5 py-1.5 rounded-full text-[12px] font-semibold">
+                    {post.category?.name || "تعليمي"}
+                </span>
+            </div>
+        </div>
+    </div>
+);
+
+const ShareCard = () => {
+    const [copied, setCopied] = useState(false);
+
+    const handleShare = async () => {
+        const url = window.location.href;
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: document.title, url });
+                return;
+            } catch {
+                /* المستخدم لغى المشاركة */
+            }
+        }
+        handleCopy();
+    };
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            /* تجاهل */
+        }
+    };
+
+    return (
+        <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm flex flex-col gap-2">
+            <button
+                onClick={handleShare}
+                className="w-full flex items-center justify-center gap-2 bg-[#123C91] text-white font-bold text-[14px] py-3 rounded-2xl hover:bg-[#0d2e73] transition-colors shadow-sm"
+            >
+                <Share2 size={16} />
+                مشاركة المقال
+            </button>
+            <button
+                onClick={handleCopy}
+                className="w-full flex items-center justify-center gap-2 text-gray-600 font-medium text-[13px] py-2.5 rounded-2xl hover:bg-gray-50 transition-colors"
+            >
+                {copied ? <Check size={14} className="text-green-600" /> : <Link2 size={14} />}
+                {copied ? "تم نسخ الرابط" : "نسخ رابط المقال"}
+            </button>
+        </div>
+    );
+};
+
 const BlogPostPage = () => {
     const { slug } = useParams();
 
@@ -60,6 +246,13 @@ const BlogPostPage = () => {
     const [relatedPosts, setRelatedPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
+
+    // حالات السلايدر العلوي
+    const [featuredIndex, setFeaturedIndex] = useState(0);
+    const handlePrevFeatured = () =>
+        setFeaturedIndex((prev) => (prev === 0 ? featuredPosts.length - 1 : prev - 1));
+    const handleNextFeatured = () =>
+        setFeaturedIndex((prev) => (prev === featuredPosts.length - 1 ? 0 : prev + 1));
 
     useEffect(() => {
         let isMounted = true;
@@ -75,7 +268,6 @@ const BlogPostPage = () => {
                 if (!data) throw new Error("not found");
                 if (isMounted) setPost(data);
 
-                // مقالات ذات صلة من نفس القسم
                 if (data.category?.slug) {
                     try {
                         const relatedRes = await getPublicBlogPostsByCategory(data.category.slug);
@@ -104,12 +296,11 @@ const BlogPostPage = () => {
     if (loading) {
         return (
             <div className="py-12 bg-gray-50 font-sans min-h-[60vh]" dir="rtl">
-                <div className="max-w-3xl mx-auto px-4 animate-pulse">
-                    <div className="h-6 w-32 bg-gray-200 rounded mb-8" />
-                    <div className="h-72 bg-gray-200 rounded-2xl mb-8" />
+                <div className="max-w-6xl mx-auto px-4 animate-pulse">
+                    <div className="h-4 w-48 bg-gray-200 rounded mb-8" />
+                    <div className="h-72 bg-gray-200 rounded-3xl mb-8" />
                     <div className="h-8 w-3/4 bg-gray-200 rounded mb-4" />
-                    <div className="h-4 w-full bg-gray-200 rounded mb-2" />
-                    <div className="h-4 w-5/6 bg-gray-200 rounded" />
+                    <div className="h-24 w-full bg-gray-200 rounded-3xl" />
                 </div>
             </div>
         );
@@ -128,47 +319,64 @@ const BlogPostPage = () => {
 
     return (
         <article className="py-12 bg-gray-50 font-sans" dir="rtl">
-            <div className="max-w-3xl mx-auto px-4">
-                <Link
-                    to="/blogs"
-                    className="inline-flex items-center gap-1 text-[#575F69] text-[14px] font-medium mb-8 hover:text-[#123C91] transition-colors"
-                >
-                    <ArrowRight size={16} /> رجوع للمدونة
-                </Link>
+            <div className="max-w-6xl mx-auto px-4">
+                {/* Breadcrumb المتوافق مع التصميم */}
+                <nav className="flex items-center gap-2 text-[13px] text-gray-500 mb-8 font-['IBM_Plex_Sans_Arabic']">
+                    <Link to="/" className="hover:text-[#123C91] transition-colors">
+                        الرئيسية
+                    </Link>
+                    <span className="text-gray-300">›</span>
+                    <Link to="/blogs" className="hover:text-[#123C91] transition-colors">
+                        المدونة
+                    </Link>
+                    <span className="text-gray-300">›</span>
+                    <span className="text-gray-400 truncate max-w-[280px]">{post.title}</span>
+                </nav>
 
-                <div className="h-72 md:h-96 rounded-2xl overflow-hidden mb-8">
-                    <CoverImage post={post} />
-                </div>
-
-                <div className="flex items-center justify-start gap-4 text-[13px] text-gray-500 mb-4 flex-wrap">
-                    <span className="bg-blue-50 text-[#123C91] px-3 py-1 rounded-full text-[12px] font-semibold">
-                        {post.category?.name}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        {post.readingTime} دقائق
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="9" />
-                            <path d="M12 7v5l3 3" />
-                        </svg>
-                    </span>
-                    <span>{formatDate(post.publishedAt)}</span>
-                </div>
-
-                <h1 className="font-['Tajawal'] font-bold text-[32px] md:text-[38px] text-[#123C91] mb-4 leading-tight">
-                    {post.title}
-                </h1>
-
-                <p className="font-['IBM_Plex_Sans_Arabic'] text-[18px] text-[#1F2937B2] mb-10 leading-relaxed">
-                    {post.description}
-                </p>
-
-                {/* محتوى المقال — لو الـ content جاي HTML من محرر نصوص (rich text editor) */}
-                <div
-                    className="prose prose-lg max-w-none font-['IBM_Plex_Sans_Arabic'] text-[#1F2937] leading-loose
-                               prose-headings:font-['Tajawal'] prose-headings:text-[#123C91]
-                               prose-a:text-[#123C91] prose-img:rounded-2xl"
-                    dangerouslySetInnerHTML={{ __html: post.content || "" }}
+                {/* السلايدر العلوي */}
+                <FeaturedPost
+                    post={featuredPosts[featuredIndex]}
+                    onPrev={handlePrevFeatured}
+                    onNext={handleNextFeatured}
                 />
+
+                <div className="grid lg:grid-cols-3 gap-8 items-start">
+                    {/* محتوى المقال يمتد على عمودين */}
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* بطاقة ملخص المقال */}
+                        {post.description && (
+                            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+                                <h3 className="font-['Tajawal'] font-bold text-[18px] text-[#1F2937] mb-2">
+                                    ملخص المقال
+                                </h3>
+                                <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-gray-500 leading-relaxed">
+                                    {post.description}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* جسم المقال */}
+                        <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+                            <h1 className="font-['Tajawal'] font-bold text-[24px] md:text-[28px] text-[#1F2937] mb-6 leading-tight">
+                                {post.title}
+                            </h1>
+
+                            <div
+                                className="prose prose-lg max-w-none font-['IBM_Plex_Sans_Arabic'] text-[#374151] leading-loose
+                                           prose-headings:font-['Tajawal'] prose-headings:text-[#123C91] prose-headings:font-bold
+                                           prose-a:text-[#123C91] prose-img:rounded-2xl space-y-4"
+                                dangerouslySetInnerHTML={{ __html: post.content || "" }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* السايدبار الجانبي */}
+                    <aside className="lg:sticky lg:top-6 flex flex-col gap-6">
+                        <TeamCard />
+                        <ArticleInfoCard post={post} />
+                        <ShareCard />
+                    </aside>
+                </div>
             </div>
 
             {relatedPosts.length > 0 && (

@@ -166,17 +166,18 @@ const BlogFormPage = () => {
     try {
       const fd = new FormData();
       fd.append("title", data.title);
-      fd.append("description", data.description);
-      fd.append("content", data.content);
+      fd.append("description", data.description || "");
+      fd.append("content", data.content || "");
       fd.append("category", data.category);
       fd.append("status", status);
       fd.append("readingTime", data.readingTime || 0);
-      fd.append("isFeatured", data.isFeatured);
-      fd.append("coverColor", data.coverColor);
+      fd.append("isFeatured", String(data.isFeatured));
+      fd.append("coverColor", data.coverColor || BLOG_COLORS[3].hex);
 
       fd.append("seoTitle", data.title);
-      fd.append("seoDescription", data.description);
+      fd.append("seoDescription", data.description || "");
 
+      // إرسال ملف الصورة فقط إذا قام المستخدم بتحديثه أو إضافته
       if (data.coverImageFile) {
         fd.append("coverImage", data.coverImageFile);
       }
@@ -416,8 +417,6 @@ const BlogFormPage = () => {
           >
             إلغاء
           </button>
-
-
         </div>
 
       </div>
