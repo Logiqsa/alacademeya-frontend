@@ -47,9 +47,9 @@ const BlogFormPage = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
-  
+
   const fileInputRef = useRef(null);
-  
+
   // مراجع خاصة بمحرر Quill الحديث
   const quillRef = useRef(null);
   const quillInstanceRef = useRef(null);
@@ -173,7 +173,7 @@ const BlogFormPage = () => {
       fd.append("readingTime", data.readingTime || 0);
       fd.append("isFeatured", data.isFeatured);
       fd.append("coverColor", data.coverColor);
-      
+
       fd.append("seoTitle", data.title);
       fd.append("seoDescription", data.description);
 
@@ -189,7 +189,7 @@ const BlogFormPage = () => {
         await createBlogPost(fd);
         successMessage = "تم إضافة المقال بنجاح";
       }
-      
+
       navigate("/admin/blogs", { state: { toastMessage: successMessage } });
     } catch (err) {
       toast.error(err?.response?.data?.message || "عذراً، حدث خطأ أثناء حفظ المقال. يرجى المحاولة مرة أخرى.");
@@ -199,8 +199,8 @@ const BlogFormPage = () => {
     }
   };
 
-  const currentCoverPreview = data.coverImageFile 
-    ? URL.createObjectURL(data.coverImageFile) 
+  const currentCoverPreview = data.coverImageFile
+    ? URL.createObjectURL(data.coverImageFile)
     : data.coverImageUrl;
 
   if (loading) {
@@ -215,7 +215,7 @@ const BlogFormPage = () => {
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
       <div className="mx-auto p-4 font-['IBM_Plex_Sans_Arabic'] relative" dir="rtl">
-        
+
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-[20px] font-bold text-[#123C91] font-['Tajawal']">
             {isEditMode ? "تعديل مقال" : "إضافة مقال جديد"}
@@ -223,7 +223,7 @@ const BlogFormPage = () => {
         </div>
 
         <div className="bg-white border border-[#E5E5E5] rounded-2xl p-6 shadow-sm space-y-6">
-          
+
           {/* 1. لون الغلاف */}
           <div>
             <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
@@ -235,9 +235,8 @@ const BlogFormPage = () => {
                   key={color.hex}
                   type="button"
                   onClick={() => handleField("coverColor", color.hex)}
-                  className={`w-8 h-8 rounded-lg transition-transform ${
-                    data.coverColor === color.hex ? "ring-2 ring-offset-2 ring-[#123C91] scale-105" : ""
-                  }`}
+                  className={`w-8 h-8 rounded-lg transition-transform ${data.coverColor === color.hex ? "ring-2 ring-offset-2 ring-[#123C91] scale-105" : ""
+                    }`}
                   style={{ backgroundColor: color.hex }}
                 />
               ))}
@@ -394,12 +393,13 @@ const BlogFormPage = () => {
         <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
           <button
             type="button"
-            onClick={() => navigate("/admin/blogs")}
+            onClick={() => handleSave("published")}
             disabled={saving}
-            className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium text-[14px] hover:bg-gray-50 transition-colors disabled:opacity-60"
+            className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0d2d6d] transition-colors disabled:opacity-60"
           >
-            إلغاء
+            {saving ? "جارٍ الحفظ..." : isEditMode ? "حفظ التعديلات" : "نشر المقال"}
           </button>
+
           <button
             type="button"
             onClick={() => handleSave("draft")}
@@ -410,12 +410,14 @@ const BlogFormPage = () => {
           </button>
           <button
             type="button"
-            onClick={() => handleSave("published")}
+            onClick={() => navigate("/admin/blogs")}
             disabled={saving}
-            className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0d2d6d] transition-colors disabled:opacity-60"
+            className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium text-[14px] hover:bg-gray-50 transition-colors disabled:opacity-60"
           >
-            {saving ? "جارٍ الحفظ..." : isEditMode ? "حفظ التعديلات" : "نشر المقال"}
+            إلغاء
           </button>
+
+
         </div>
 
       </div>
