@@ -42,6 +42,7 @@ const SEGMENT_LABELS = {
   classrooms: "الفصول",
   sessions: "الجلسات",
   files: "الملفات",
+  blogs: "المدونه", 
 };
 
 // segments دي بتاعت الـ id الديناميكي (زي :groupId) عايزين نعرض قيمتها الحقيقية
