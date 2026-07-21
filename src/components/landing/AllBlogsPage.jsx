@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, ChevronLeft, ChevronRight, ArrowLeft, Megaphone, Sigma } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ArrowLeft, Megaphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
     getBlogCategories,
     getPublicBlogPosts,
     getPublicBlogPostsByCategory,
     getAssetUrl,
-} from "../../services/api"; // ⚠️ عدّل المسار حسب مكان الملف عندك
+} from "../../services/APIService";
 
 const ALL_CATEGORY = { _id: "all", name: "كل المقالات", slug: "all" };
 const POSTS_PER_PAGE = 6;
@@ -70,44 +70,6 @@ const BlogCard = ({ post }) => (
             >
                 اقرأ المزيد <ArrowLeft size={16} />
             </Link>
-        </div>
-    </div>
-);
-
-const FeaturedPost = ({ post }) => (
-    <div className="relative mb-10">
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <div className="flex flex-col md:flex-row-reverse gap-18 items-center">
-                <div className="md:w-1/2 w-full h-56 md:h-64 rounded-2xl overflow-hidden">
-                    <CoverImage post={post} />
-                </div>
-                <div className="md:w-1/2 flex flex-col justify-center text-right">
-                    <div className="flex items-center justify-start gap-4 text-[13px] text-gray-400 mb-4">
-                        <span className="bg-blue-50 text-[#123C91] px-3 py-1 rounded-full text-[12px] font-semibold">
-                            {post.category?.name}
-                        </span>
-                        <span className="flex items-center gap-1">
-                            {post.readingTime} دقائق
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="9" />
-                                <path d="M12 7v5l3 3" />
-                            </svg>
-                        </span>
-                        <span>{formatDate(post.publishedAt)}</span>
-                    </div>
-
-                    <h2 className="font-bold text-[22px] text-[#1F2937] mb-4 leading-relaxed">
-                        {post.title}
-                    </h2>
-
-                    <Link
-                        to={`/blog/${post.slug}`}
-                        className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit"
-                    >
-                        اقرأ المزيد <ArrowLeft size={16} />
-                    </Link>
-                </div>
-            </div>
         </div>
     </div>
 );
@@ -176,11 +138,6 @@ const AllBlogsPage = () => {
         };
     }, [activeCategory]);
 
-    const featuredPost = useMemo(
-        () => posts.find((p) => p.isFeatured) ?? posts[0] ?? null,
-        [posts]
-    );
-
     const filteredPosts = useMemo(() => {
         const term = searchTerm.trim();
         if (!term) return posts;
@@ -221,12 +178,6 @@ const AllBlogsPage = () => {
                     مقالات ونصائح تعليمية من خبراء تساعدك على تحقيق أعلى النتائج
                 </p>
 
-                {loading && (
-                    <div className="h-64 rounded-3xl bg-white border border-gray-100 animate-pulse mb-10" />
-                )}
-
-                {!loading && featuredPost && <FeaturedPost post={featuredPost} />}
-
                 <div className="mb-10">
                     <div className="relative mb-6">
                         <input
@@ -255,6 +206,17 @@ const AllBlogsPage = () => {
                         ))}
                     </div>
                 </div>
+
+                {loading && (
+                    <div className="grid md:grid-cols-3 gap-6 mb-12">
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                            <div
+                                key={i}
+                                className="h-72 rounded-2xl bg-white border border-gray-200 animate-pulse"
+                            />
+                        ))}
+                    </div>
+                )}
 
                 {!loading && error && (
                     <p className="text-center text-red-400 mb-12">{error}</p>

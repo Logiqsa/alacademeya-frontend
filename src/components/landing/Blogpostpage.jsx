@@ -5,7 +5,7 @@ import {
     getPublicBlogPostBySlug,
     getPublicBlogPostsByCategory,
     getAssetUrl,
-} from "../../services/api"; // ⚠️ عدّل المسار حسب مكان الملف عندك
+} from "../../services/APIService";
 
 const formatDate = (isoDate) => {
     if (!isoDate) return "";

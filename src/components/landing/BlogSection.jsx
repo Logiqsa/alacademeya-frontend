@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Megaphone, Sigma } from "lucide-react";
-import { getPublicBlogPosts, getAssetUrl } from "../../services/api"; // ⚠️ عدّل المسار حسب مكان الملف عندك
+import { getPublicBlogPosts, getAssetUrl } from "../../services/APIService"; // ⚠️ عدّل المسار حسب مكان الملف عندك
 
 const FALLBACK_VARIANTS = ["announcement", "math"];
 
