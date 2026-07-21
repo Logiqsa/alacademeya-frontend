@@ -11,19 +11,29 @@ import { getBlogPosts, getBlogCategories, deleteBlogPost } from "../../../servic
 
 const PAGE_SIZE = 6;
 
-// ⚠️ الأسماء دي مؤكدة من الـ response الحقيقي (Image 4): title, description, coverImage,
-// category: { _id, name, slug }, status, readingTime, isFeatured, createdAt, publishedAt
-const mapPost = (p) => ({
-  id: p._id,
-  title: p.title,
-  description: p.description,
-  status: p.status, // "published" | "draft"
-  categoryName: p.category?.name || "—",
-  // ⚠️ p.coverImage بيرجع مسار نسبي زي "uploads/blogs/xxx.jpg" — تأكدي هل محتاج يتلحق بـ base URL الملفات
-  coverImageUrl: p.coverImage ? `https://api.alacademeya.com/${p.coverImage}` : null,
-  readingTime: p.readingTime ?? "—",
-  date: p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-CA") : "—",
-});
+const mapPost = (p) => {
+  let coverUrl = null;
+  if (p.coverImage) {
+    if (p.coverImage.startsWith("http://") || p.coverImage.startsWith("https://")) {
+      coverUrl = p.coverImage;
+    } else {
+      const cleanPath = p.coverImage.startsWith("/") ? p.coverImage : `/${p.coverImage}`;
+      coverUrl = `https://api.alacademeya.com${cleanPath}`;
+    }
+  }
+
+  return {
+    id: p._id,
+    title: p.title,
+    description: p.description,
+    status: p.status,
+    categoryName: p.category?.name || "—",
+    coverImageUrl: coverUrl,
+    readingTime: p.readingTime ?? "—",
+    date: p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-CA") : "—",
+  };
+};
+
 
 const BlogsPage = () => {
   const navigate = useNavigate();
