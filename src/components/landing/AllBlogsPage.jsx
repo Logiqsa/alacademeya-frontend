@@ -1,131 +1,71 @@
-import React, { useState, useMemo } from "react";
-import { Search, ChevronLeft, ChevronRight, ArrowLeft, Megaphone, Sigma, User, GraduationCap } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Search, ChevronLeft, ChevronRight, ArrowLeft, Megaphone, Sigma } from "lucide-react";
 import { Link } from "react-router-dom";
+import {
+    getBlogCategories,
+    getPublicBlogPosts,
+    getPublicBlogPostsByCategory,
+    getAssetUrl,
+} from "../../services/api"; // ⚠️ عدّل المسار حسب مكان الملف عندك
 
-import featuredImage from "../../assets/featured-exams.svg";
-
-const categories = ["كل المقالات", "تعليمي", "فتح باب التسجيل", "كورسات", "إعلانات"];
-
-const featuredPosts = [
-    {
-        id: 0,
-        title: "كيف تستعد لامتحانات نهاية العام بكفاءة عالية من خلال منصتنا التعليمية المتكاملة من منزلك؟",
-        excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم لتحقيق أعلى الدرجات.",
-        category: "تعليمي",
-        date: "2025-01-08",
-        readTime: "10 دقائق",
-        image: featuredImage,
-    },
-];
-
-const blogPosts = [
-    { id: 1, title: "كيف تستعد للامتحانات؟", category: "تعليمي", date: "2025-01-08", readTime: "10 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "announcement" },
-    { id: 2, title: "كيف تستعد للامتحانات؟", category: "تعليمي", date: "2025-01-08", readTime: "10 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "math" },
-    { id: 3, title: "كيف تستعد للامتحانات؟", category: "تعليمي", date: "2025-01-08", readTime: "10 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "avatar" },
-    { id: 4, title: "كيف تستعد للامتحانات؟", category: "تعليمي", date: "2025-01-08", readTime: "10 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "pinkAnnouncement" },
-    { id: 5, title: "كيف تستعد للامتحانات؟", category: "تعليمي", date: "2025-01-08", readTime: "10 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "avatarGray" },
-    { id: 6, title: "كيف تستعد للامتحانات؟", category: "تعليمي", date: "2025-01-08", readTime: "10 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "math" },
-    { id: 7, title: "كيف تستعد للامتحانات؟", category: "كورسات", date: "2025-01-08", readTime: "10 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "academy" },
-    { id: 8, title: "كيف تستعد للامتحانات؟", category: "تعليمي", date: "2025-01-08", readTime: "10 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "math" },
-    { id: 9, title: "كيف تستعد للامتحانات؟", category: "إعلانات", date: "2025-01-08", readTime: "10 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "pinkAnnouncement" },
-    { id: 10, title: "كيف تستعد للامتحانات؟", category: "فتح باب التسجيل", date: "2025-01-08", readTime: "8 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "avatar" },
-    { id: 11, title: "كيف تستعد للامتحانات؟", category: "كورسات", date: "2025-01-08", readTime: "6 دقائق", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "academy" },
-    { id: 12, title: "كيف تستعد للامتحانات؟", category: "تعليمي", date: "2025-01-08", readTime: "12 دقيقة", excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم.", variant: "math" },
-];
-
+const ALL_CATEGORY = { _id: "all", name: "كل المقالات", slug: "all" };
 const POSTS_PER_PAGE = 6;
 
-const CoverImage = ({ variant, small }) => {
-    const iconSize = small ? "w-10 h-10" : "w-14 h-14";
-
-    switch (variant) {
-        case "academy":
-            return (
-                <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-[#0F766E] to-[#0C4A6E]">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-9 h-9 rounded-lg bg-white/90 flex items-center justify-center">
-                            <GraduationCap className="w-5 h-5 text-[#0F766E]" strokeWidth={2} />
-                        </div>
-                    </div>
-                </div>
-            );
-
-        case "math":
-            return (
-                <div className="w-full h-full relative overflow-hidden bg-[#1F2937]">
-                    <svg className="absolute inset-0 w-full h-full opacity-70" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="400" height="200" fill="#1F2937" />
-                        <text x="20" y="40" fill="#9CA3AF" fontSize="18" fontFamily="serif">(a-b)²</text>
-                        <text x="20" y="80" fill="#9CA3AF" fontSize="16" fontFamily="serif">y = ax + b</text>
-                        <line x1="20" y1="88" x2="110" y2="88" stroke="#6B7280" strokeWidth="1" />
-                        <text x="24" y="108" fill="#9CA3AF" fontSize="14" fontFamily="serif">Δy / Δx</text>
-                        <text x="230" y="55" fill="#9CA3AF" fontSize="16" fontFamily="serif">a² + b²</text>
-                        <text x="230" y="125" fill="#9CA3AF" fontSize="14" fontFamily="serif">= c²</text>
-                        <line x1="0" y1="0" x2="400" y2="200" stroke="#374151" strokeWidth="2" opacity="0.4" />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Sigma className={`${iconSize} text-white/20`} strokeWidth={1.5} />
-                    </div>
-                </div>
-            );
-
-        case "pinkAnnouncement":
-            return (
-                <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-[#9D174D] to-[#6D28D9]">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Megaphone className={`${iconSize} text-white/25`} strokeWidth={1.5} />
-                    </div>
-                </div>
-            );
-
-        case "avatar":
-            return (
-                <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-white shadow-inner flex items-center justify-center">
-                        <User className="w-8 h-8 text-gray-300" strokeWidth={1.5} />
-                    </div>
-                </div>
-            );
-
-        case "avatarGray":
-            return (
-                <div className="w-full h-full relative overflow-hidden bg-gray-100 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center">
-                        <User className="w-8 h-8 text-gray-100" strokeWidth={1.5} />
-                    </div>
-                </div>
-            );
-
-        case "announcement":
-        default:
-            return (
-                <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-[#123C91] to-[#5B21B6]">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Megaphone className={`${iconSize} text-white/25`} strokeWidth={1.5} />
-                    </div>
-                </div>
-            );
+const formatDate = (isoDate) => {
+    if (!isoDate) return "";
+    try {
+        return new Date(isoDate).toLocaleDateString("ar-EG", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    } catch {
+        return isoDate;
     }
+};
+
+// بيتعرض لما البوست معندوش coverImage
+const FallbackCover = ({ small }) => {
+    const iconSize = small ? "w-10 h-10" : "w-14 h-14";
+    return (
+        <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-[#123C91] to-[#5B21B6]">
+            <div className="absolute inset-0 flex items-center justify-center">
+                <Megaphone className={`${iconSize} text-white/25`} strokeWidth={1.5} />
+            </div>
+        </div>
+    );
+};
+
+const CoverImage = ({ post, small }) => {
+    const url = getAssetUrl(post.coverImage);
+    if (!url) return <FallbackCover small={small} />;
+    return (
+        <img
+            src={url}
+            alt={post.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+        />
+    );
 };
 
 const BlogCard = ({ post }) => (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
         <div className="h-40 relative">
-            <CoverImage variant={post.variant} small />
+            <CoverImage post={post} small />
             <span className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded border border-white/30">
-                {post.category}
+                {post.category?.name}
             </span>
         </div>
         <div className="p-4 text-right">
             <div className="flex items-center justify-between text-[14px] text-gray-400 mb-2">
-                <span>{post.readTime}</span>
-                <span>{post.date}</span>
-               
+                <span>{post.readingTime} دقائق</span>
+                <span>{formatDate(post.publishedAt)}</span>
             </div>
             <h3 className="font-bold text-[16px] text-[#1F2937] mb-2">{post.title}</h3>
-            <p className="text-[14px] text-gray-500 mb-4 line-clamp-2">{post.excerpt}</p>
+            <p className="text-[14px] text-gray-500 mb-4 line-clamp-2">{post.description}</p>
             <Link
-                to={`/blog/${post.id}`}
+                to={`/blog/${post.slug}`}
                 className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit"
             >
                 اقرأ المزيد <ArrowLeft size={16} />
@@ -134,28 +74,26 @@ const BlogCard = ({ post }) => (
     </div>
 );
 
-const FeaturedPost = ({ post, onPrev, onNext }) => (
+const FeaturedPost = ({ post }) => (
     <div className="relative mb-10">
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
             <div className="flex flex-col md:flex-row-reverse gap-18 items-center">
                 <div className="md:w-1/2 w-full h-56 md:h-64 rounded-2xl overflow-hidden">
-                    <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+                    <CoverImage post={post} />
                 </div>
                 <div className="md:w-1/2 flex flex-col justify-center text-right">
                     <div className="flex items-center justify-start gap-4 text-[13px] text-gray-400 mb-4">
                         <span className="bg-blue-50 text-[#123C91] px-3 py-1 rounded-full text-[12px] font-semibold">
-                            {post.category}
+                            {post.category?.name}
                         </span>
                         <span className="flex items-center gap-1">
-                            {post.readTime}
+                            {post.readingTime} دقائق
                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <circle cx="12" cy="12" r="9" />
                                 <path d="M12 7v5l3 3" />
                             </svg>
                         </span>
-                        <span>{post.date}</span>
-
-
+                        <span>{formatDate(post.publishedAt)}</span>
                     </div>
 
                     <h2 className="font-bold text-[22px] text-[#1F2937] mb-4 leading-relaxed">
@@ -163,46 +101,93 @@ const FeaturedPost = ({ post, onPrev, onNext }) => (
                     </h2>
 
                     <Link
-                        to={`/blog/${post.id}`}
+                        to={`/blog/${post.slug}`}
                         className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit"
                     >
                         اقرأ المزيد <ArrowLeft size={16} />
                     </Link>
                 </div>
-
-
             </div>
         </div>
-
-        <button
-            onClick={onPrev}
-            className="flex absolute top-1/2 -translate-y-1/2 -left-6 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
-        >
-            <ChevronLeft size={20} />
-        </button>
-        <button
-            onClick={onNext}
-            className="flex absolute top-1/2 -translate-y-1/2 -right-6 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
-        >
-            <ChevronRight size={20} />
-        </button>
     </div>
 );
 
 const AllBlogsPage = () => {
-    const [activeCategory, setActiveCategory] = useState("كل المقالات");
+    const [categories, setCategories] = useState([ALL_CATEGORY]);
+    const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
     const [searchTerm, setSearchTerm] = useState("");
-    const [featuredIndex, setFeaturedIndex] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
 
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // تحميل الأقسام مرة واحدة
+    useEffect(() => {
+        let isMounted = true;
+        getBlogCategories()
+            .then((res) => {
+                if (!isMounted) return;
+                const cats = res?.data?.data ?? [];
+                setCategories([ALL_CATEGORY, ...cats]);
+            })
+            .catch(() => {
+                /* لو فشل تحميل الأقسام، هنفضل شغالين بـ "كل المقالات" بس */
+            });
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // تحميل البوستات كل ما القسم المختار يتغير
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadPosts = async () => {
+            try {
+                setLoading(true);
+                const res =
+                    activeCategory.slug === "all"
+                        ? await getPublicBlogPosts()
+                        : await getPublicBlogPostsByCategory(activeCategory.slug);
+
+                const data =
+                    activeCategory.slug === "all"
+                        ? res?.data?.data ?? []
+                        : res?.data?.data?.blogPosts ?? [];
+
+                if (isMounted) {
+                    setPosts(data);
+                    setError(null);
+                }
+            } catch (err) {
+                if (isMounted) {
+                    setPosts([]);
+                    setError("تعذر تحميل المقالات حاليًا");
+                }
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        loadPosts();
+        return () => {
+            isMounted = false;
+        };
+    }, [activeCategory]);
+
+    const featuredPost = useMemo(
+        () => posts.find((p) => p.isFeatured) ?? posts[0] ?? null,
+        [posts]
+    );
+
     const filteredPosts = useMemo(() => {
-        return blogPosts.filter((post) => {
-            const matchesCategory =
-                activeCategory === "كل المقالات" || post.category === activeCategory;
-            const matchesSearch = post.title.includes(searchTerm) || post.excerpt.includes(searchTerm);
-            return matchesCategory && matchesSearch;
-        });
-    }, [activeCategory, searchTerm]);
+        const term = searchTerm.trim();
+        if (!term) return posts;
+        return posts.filter(
+            (post) => post.title?.includes(term) || post.description?.includes(term)
+        );
+    }, [posts, searchTerm]);
 
     const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
     const safePage = currentPage > totalPages ? 1 : currentPage;
@@ -214,6 +199,7 @@ const AllBlogsPage = () => {
 
     const handleCategoryChange = (cat) => {
         setActiveCategory(cat);
+        setSearchTerm("");
         setCurrentPage(1);
     };
 
@@ -221,11 +207,6 @@ const AllBlogsPage = () => {
         setSearchTerm(e.target.value);
         setCurrentPage(1);
     };
-
-    const handlePrevFeatured = () =>
-        setFeaturedIndex((prev) => (prev === 0 ? featuredPosts.length - 1 : prev - 1));
-    const handleNextFeatured = () =>
-        setFeaturedIndex((prev) => (prev === featuredPosts.length - 1 ? 0 : prev + 1));
 
     const goToPage = (page) => {
         if (page < 1 || page > totalPages) return;
@@ -240,11 +221,11 @@ const AllBlogsPage = () => {
                     مقالات ونصائح تعليمية من خبراء تساعدك على تحقيق أعلى النتائج
                 </p>
 
-                <FeaturedPost
-                    post={featuredPosts[featuredIndex]}
-                    onPrev={handlePrevFeatured}
-                    onNext={handleNextFeatured}
-                />
+                {loading && (
+                    <div className="h-64 rounded-3xl bg-white border border-gray-100 animate-pulse mb-10" />
+                )}
+
+                {!loading && featuredPost && <FeaturedPost post={featuredPost} />}
 
                 <div className="mb-10">
                     <div className="relative mb-6">
@@ -261,30 +242,37 @@ const AllBlogsPage = () => {
                     <div className="flex justify-start gap-2 flex-wrap">
                         {categories.map((cat) => (
                             <button
-                                key={cat}
+                                key={cat._id}
                                 onClick={() => handleCategoryChange(cat)}
-                                className={`px-5 py-2 rounded-full text-[13px] font-medium transition-colors ${activeCategory === cat
-                                    ? "bg-[#123C91] text-white"
-                                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
-                                    }`}
+                                className={`px-5 py-2 rounded-full text-[13px] font-medium transition-colors ${
+                                    activeCategory._id === cat._id
+                                        ? "bg-[#123C91] text-white"
+                                        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
+                                }`}
                             >
-                                {cat}
+                                {cat.name}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {paginatedPosts.length > 0 ? (
+                {!loading && error && (
+                    <p className="text-center text-red-400 mb-12">{error}</p>
+                )}
+
+                {!loading && !error && paginatedPosts.length > 0 && (
                     <div className="grid md:grid-cols-3 gap-6 mb-12">
                         {paginatedPosts.map((post) => (
-                            <BlogCard key={post.id} post={post} />
+                            <BlogCard key={post._id} post={post} />
                         ))}
                     </div>
-                ) : (
+                )}
+
+                {!loading && !error && paginatedPosts.length === 0 && (
                     <p className="text-center text-gray-400 mb-12">مفيش مقالات مطابقة للبحث</p>
                 )}
 
-                {totalPages > 1 && (
+                {!loading && totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2">
                         <button
                             onClick={() => goToPage(safePage - 1)}
@@ -297,8 +285,9 @@ const AllBlogsPage = () => {
                             <button
                                 key={page}
                                 onClick={() => goToPage(page)}
-                                className={`w-8 h-8 rounded-lg ${page === safePage ? "bg-[#123C91] text-white" : "bg-white border"
-                                    }`}
+                                className={`w-8 h-8 rounded-lg ${
+                                    page === safePage ? "bg-[#123C91] text-white" : "bg-white border"
+                                }`}
                             >
                                 {page}
                             </button>
