@@ -316,6 +316,27 @@ export const submitAssignment = (assignmentId, formData) =>
     },
   });
 
+
+
+
+export const getBlogCategories = () => API.get("/blog-categories/");
+export const createBlogCategory = (payload) =>
+  API.post("/blog-categories/", payload); // body: { name }
+
+
+export const getBlogPosts = (params) => API.get("/blog-posts/", { params });
+export const getBlogPost = (id) => API.get(`/blog-posts/${id}`);
+
+
+export const createBlogPost = (formData) =>
+  API.post("/blog-posts/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const updateBlogPost = (id, formData) =>
+  API.patch(`/blog-posts/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const deleteBlogPost = (id) => API.delete(`/blog-posts/${id}`);
  
 
  

@@ -1,92 +1,92 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
+import {
+  LayoutDashboard,
+  Users,
+  UsersRound,
+  CalendarClock,
+  ShieldCheck,
+  Video,
+  MessageSquare,
+  CreditCard,
+  Bell,
+  Newspaper,
+  Settings,
+  LogOut,
+} from "lucide-react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
 
 import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
 
-import dashboardIcon from "../../../assets/icons/dashboard.png";
-import childrenIcon from "../../../assets/icons/children.png";
-import scheduleIcon from "../../../assets/icons/schedule.png";
-import messagesIcon from "../../../assets/icons/messages.png";
-import subscriptionIcon from "../../../assets/icons/subscription.png";
-import notificationsIcon from "../../../assets/icons/notifications.png";
-import settingsIcon from "../../../assets/icons/settings.png";
-import logoutIcon from "../../../assets/icons/logout.png";
-
-
 const AdminSidebar = ({ isOpen, setIsOpen }) => {
   const unread = useSidebarUnread();
   const menu = [
     {
       title: "لوحة التحكم",
-      icon: dashboardIcon,
+      icon: LayoutDashboard,
       path: "/admin-dashboard",
     },
     {
       title: "المستخدمين",
-      icon: childrenIcon,
+      icon: Users,
       path: "/admin/users",
     },
     {
       title: "المجموعات",
-      icon: scheduleIcon,
+      icon: UsersRound,
       path: "/admin/groups",
     },
     {
       title: "جدول الحصص",
-      icon: scheduleIcon,
+      icon: CalendarClock,
       path: "/admin/schedule",
     },
-
     {
       title: "المشرفين",
-      icon: childrenIcon,
+      icon: ShieldCheck,
       path: "/admin/supervisors",
     },
     {
       title: "التسجيلات",
-      icon: childrenIcon,
+      icon: Video,
       path: "/admin/records",
     },
-
-   
     {
       title: "الرسائل",
-      icon: messagesIcon,
+      icon: MessageSquare,
       path: "/admin/messages",
     },
     {
       title: "الإشتراك",
-      icon: subscriptionIcon,
+      icon: CreditCard,
       path: "/admin/subscription",
     },
     {
       title: "الإشعارات",
-      icon: notificationsIcon,
+      icon: Bell,
       path: "/admin/notifications",
     },
     {
+      title: "المدونه",
+      icon: Newspaper,
+      path: "/admin/blogs",
+    },
+    {
       title: "الإعدادات",
-      icon: settingsIcon,
+      icon: Settings,
       path: "/admin/settings",
     },
   ];
-
 
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // ⚠️ DEBUG TEMP — امسحي الـ console.log دول بعد ما نلاقي المشكلة
-    console.log("🔴 LOGOUT CLICKED - starting, current path:", window.location.pathname);
     navigate("/", { replace: true });
-    console.log("🔴 navigate('/') called, path now:", window.location.pathname);
     logout();
-    console.log("🔴 logout() called - done, path now:", window.location.pathname);
   };
-
 
   return (
     <aside
@@ -140,79 +140,53 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
 
       {/* Menu */}
       <div className="flex-1 px-3 mt-4">
-        {menu.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end
-            className={({ isActive }) => `
-              flex
-              items-center
-              ${isOpen
-                ? "gap-2 px-3 justify-start"
-                : "justify-center"
-              }
-              py-2
-              mb-1
-              rounded-lg
-              transition-all
-              font-['IBM_Plex_Sans_Arabic']
-              font-medium
-              text-[16px]
-              ${isActive
-                ? "bg-[#FFFFFF] text-primary border-r-4 border-[#12C6B0] shadow-sm"
-                : "text-white hover:bg-white/10"
-              }
-            `}
-          >
-            {({ isActive }) => (
-              <>
-                <span className="relative shrink-0">
-                <img
-                  src={item.icon}
-                  alt={item.title}
-                  className={`block w-5 h-5 transition-all duration-200 ${isActive
-                    ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
-                    : ""
-                    }`}
-                  style={
-                    isActive
-                      ? {
-                        filter:
-                          "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
-                      }
-                      : {}
-                  }
-                />
-                {((item.path === "/admin/messages" && unread.messages) ||
-                  (item.path === "/admin/notifications" && unread.notifications)) && (
-                  <span className="absolute -left-1 -top-1 h-3 w-3 rounded-full border-2 border-[#1F2937] bg-red-500" />
-                )}
-                </span>
+        {menu.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end
+              className={({ isActive }) => `
+                flex
+                items-center
+                ${isOpen
+                  ? "gap-2 px-3 justify-start"
+                  : "justify-center"
+                }
+                py-2
+                mb-1
+                rounded-lg
+                transition-all
+                font-['IBM_Plex_Sans_Arabic']
+                font-medium
+                text-[16px]
+                ${isActive
+                  ? "bg-[#FFFFFF] text-primary border-r-4 border-[#12C6B0] shadow-sm"
+                  : "text-white hover:bg-white/10"
+                }
+              `}
+            >
+              {({ isActive }) => (
+                <>
+                  <span className="relative shrink-0">
+                    <Icon
+                      size={20}
+                      className={isActive ? "text-[#123C91]" : "text-white"}
+                    />
+                    {((item.path === "/admin/messages" && unread.messages) ||
+                      (item.path === "/admin/notifications" && unread.notifications)) && (
+                      <span className="absolute -left-1 -top-1 h-3 w-3 rounded-full border-2 border-[#1F2937] bg-red-500" />
+                    )}
+                  </span>
 
-                {isOpen && <span>{item.title}</span>}
-              </>
-            )}
-          </NavLink>
-        ))}
+                  {isOpen && <span>{item.title}</span>}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
       </div>
-
-      {/* Footer Links */}
-      {/* {isOpen && (
-        <div className="px-4 py-3 mx-3 mb-3 space-y-2 rounded-lg">
-          <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
-            روابط مهمة
-          </p>
-
-          <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
-            المدرسة الرئيسية
-          </p>
-
-          <p className="text-[#FFFFFF] font-['IBM_Plex_Sans_Arabic'] text-[14px] font-normal text-right cursor-pointer hover:text-[#12C6B0]">
-            المجموعات
-          </p>
-        </div>
-      )} */}
 
       {/* Logout */}
       <div className="p-3 border-t border-[#FFFFFF14]">
@@ -221,7 +195,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
           className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${isOpen ? "gap-3 justify-start" : "justify-center"
             }`}
         >
-          <img src={logoutIcon} alt="logout" className="w-5 h-5" />
+          <LogOut size={20} className="text-white" />
 
           {isOpen && <span className="text-sm">تسجيل الخروج</span>}
         </button>
