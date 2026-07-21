@@ -1,42 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Megaphone, Sigma } from "lucide-react";
+import { getPublicBlogPosts, getAssetUrl } from "../../services/api"; // ⚠️ عدّل المسار حسب مكان الملف عندك
 
+const FALLBACK_VARIANTS = ["announcement", "math"];
 
-const blogPosts = [
-    {
-        id: 1,
-        title: "كيف تستعد لامتحانات نهاية العام بكفاءة عالية؟",
-        excerpt:
-            "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم لتحقيق أعلى الدرجات في امتحاناتك.",
-        category: "إعلانات",
-        date: "2025-01-08",
-        readTime: "10 دقائق",
-        variant: "announcement",
-    },
-    {
-        id: 2,
-        title: "كيف تستعد لامتحانات نهاية العام بكفاءة عالية؟",
-        excerpt:
-            "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم لتحقيق أعلى الدرجات في امتحاناتك.",
-        category: "تعليمي",
-        date: "2025-01-08",
-        readTime: "10 دقائق",
-        variant: "math",
-    },
-    {
-        id: 3,
-        title: "كيف تستعد لامتحانات نهاية العام بكفاءة عالية؟",
-        excerpt:
-            "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم لتحقيق أعلى الدرجات في امتحاناتك.",
-        category: "تعليمي",
-        date: "2025-01-08",
-        readTime: "10 دقائق",
-        variant: "announcement",
-    },
-];
-
-const CoverImage = ({ variant }) => {
+// بيتعرض لما البوست معندوش coverImage جاي من الباك إند
+const FallbackCover = ({ variant }) => {
     if (variant === "math") {
         return (
             <div className="w-full h-full relative overflow-hidden bg-[#1F2937]">
@@ -71,7 +41,6 @@ const CoverImage = ({ variant }) => {
         );
     }
 
-    // variant = "announcement"
     return (
         <div className="w-full h-full relative overflow-hidden bg-linear-to-br from-[#123C91] to-[#5B21B6]">
             <div className="absolute inset-0 flex items-center justify-center">
@@ -81,7 +50,68 @@ const CoverImage = ({ variant }) => {
     );
 };
 
+const CoverImage = ({ post, fallbackVariant }) => {
+    const url = getAssetUrl(post.coverImage);
+
+    if (!url) return <FallbackCover variant={fallbackVariant} />;
+
+    return (
+        <img
+            src={url}
+            alt={post.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={(e) => {
+                // لو اللينك اتكسر لأي سبب، ارجع للـ fallback بدل ما تفضل صورة مكسورة
+                e.currentTarget.style.display = "none";
+            }}
+        />
+    );
+};
+
+const formatDate = (isoDate) => {
+    if (!isoDate) return "";
+    try {
+        return new Date(isoDate).toLocaleDateString("ar-EG", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    } catch {
+        return isoDate;
+    }
+};
+
 const BlogSection = () => {
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadPosts = async () => {
+            try {
+                setLoading(true);
+                const res = await getPublicBlogPosts({ limit: 3 });
+                const data = res?.data?.data ?? [];
+                if (isMounted) {
+                    setPosts(data.slice(0, 3));
+                    setError(null);
+                }
+            } catch (err) {
+                if (isMounted) setError("تعذر تحميل المقالات حاليًا");
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        loadPosts();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
     return (
         <section className="py-20 font-sans bg-gray-50" dir="rtl" id="blog">
             <div className="max-w-6xl mx-auto px-4">
@@ -102,53 +132,78 @@ const BlogSection = () => {
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-6">
-                    {blogPosts.map((post) => (
-                        <Link
-                            key={post.id}
-                            to={`/blog/${post.id}`}
-                            className="group bg-white rounded-2xl border border-[#1F293733] overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
-                        >
-                            <div className="h-48 relative">
-                                <CoverImage variant={post.variant} />
-                                <span className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white text-[12px] px-3 py-1 rounded-full border border-white/30">
-                                    {post.category}
-                                </span>
-                            </div>
+                {loading && (
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {[0, 1, 2].map((i) => (
+                            <div
+                                key={i}
+                                className="h-[380px] rounded-2xl bg-white border border-[#1F293733] animate-pulse"
+                            />
+                        ))}
+                    </div>
+                )}
 
-                            <div className="p-6 flex flex-col grow">
-                                <div className="flex items-center justify-between text-[12px] text-gray-500 mb-2 font-['IBM_Plex_Sans_Arabic'] ">
-                                    <span className="flex items-center gap-1">
-                                        {post.readTime}
-                                        <svg
-                                            className="w-3.5 h-3.5"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                        >
-                                            <circle cx="12" cy="12" r="9" />
-                                            <path d="M12 7v5l3 3" />
-                                        </svg>
+                {!loading && error && (
+                    <p className="text-center text-gray-400 font-['IBM_Plex_Sans_Arabic']">{error}</p>
+                )}
+
+                {!loading && !error && posts.length === 0 && (
+                    <p className="text-center text-gray-400 font-['IBM_Plex_Sans_Arabic']">
+                        لسه مفيش مقالات منشورة
+                    </p>
+                )}
+
+                {!loading && !error && posts.length > 0 && (
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {posts.map((post, index) => (
+                            <Link
+                                key={post._id}
+                                to={`/blog/${post.slug}`}
+                                className="group bg-white rounded-2xl border border-[#1F293733] overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
+                            >
+                                <div className="h-48 relative">
+                                    <CoverImage
+                                        post={post}
+                                        fallbackVariant={FALLBACK_VARIANTS[index % FALLBACK_VARIANTS.length]}
+                                    />
+                                    <span className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white text-[12px] px-3 py-1 rounded-full border border-white/30">
+                                        {post.category?.name}
                                     </span>
-                                    <span>{post.date}</span>
-
                                 </div>
 
-                                <h3 className="font-['Tajawal'] font-bold text-[20px] text-[#1F2937] mb-3 group-hover:text-[#123C91] transition-colors">
-                                    {post.title}
-                                </h3>
-                                <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#1F2937B2] mb-6 grow">
-                                    {post.excerpt}
-                                </p>
+                                <div className="p-6 flex flex-col grow">
+                                    <div className="flex items-center justify-between text-[12px] text-gray-500 mb-2 font-['IBM_Plex_Sans_Arabic'] ">
+                                        <span className="flex items-center gap-1">
+                                            {post.readingTime} دقائق
+                                            <svg
+                                                className="w-3.5 h-3.5"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                            >
+                                                <circle cx="12" cy="12" r="9" />
+                                                <path d="M12 7v5l3 3" />
+                                            </svg>
+                                        </span>
+                                        <span>{formatDate(post.publishedAt)}</span>
+                                    </div>
 
-                                <span className="text-[#123C91] font-bold text-[14px] flex items-center gap-1">
-                                    اقرأ المزيد <ArrowLeft size={16} />
-                                </span>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
+                                    <h3 className="font-['Tajawal'] font-bold text-[20px] text-[#1F2937] mb-3 group-hover:text-[#123C91] transition-colors">
+                                        {post.title}
+                                    </h3>
+                                    <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#1F2937B2] mb-6 grow line-clamp-3">
+                                        {post.description}
+                                    </p>
+
+                                    <span className="text-[#123C91] font-bold text-[14px] flex items-center gap-1">
+                                        اقرأ المزيد <ArrowLeft size={16} />
+                                    </span>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                )}
 
                 <div className="text-center mt-12">
                     <Link

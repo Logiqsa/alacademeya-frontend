@@ -339,4 +339,35 @@ export const updateBlogPost = (id, formData) =>
 export const deleteBlogPost = (id) => API.delete(`/blog-posts/${id}`);
  
 
+// ════════════════════════════════════════════════════════════════════════════
+// ضيف الكود ده في آخر ملف src/services/api.js (تحت الجزء بتاع Blog اللي موجود)
+// دول الـ endpoints العامة (من غير حاجة لتسجيل دخول) اللي بترجع البوستات
+// المنشورة بس (status: "published") — نفس اللي شايفينه في Postman
+// ════════════════════════════════════════════════════════════════════════════
+
+// GET /blog-posts/public              → { success, results, data: [ ...posts ] }
+export const getPublicBlogPosts = (params) =>
+  API.get("/blog-posts/public", { params });
+
+// GET /blog-posts/public/:slug        → { success, data: { blogPost: {...} } }
+export const getPublicBlogPostBySlug = (slug) =>
+  API.get(`/blog-posts/public/${encodeURIComponent(slug)}`);
+
+// GET /blog-posts/public/category/:categorySlug
+//                                     → { success, results, data: { category, blogPosts: [...] } }
+export const getPublicBlogPostsByCategory = (categorySlug, params) =>
+  API.get(`/blog-posts/public/category/${encodeURIComponent(categorySlug)}`, {
+    params,
+  });
+
+// الصور بترجع من الـ API كـ path نسبي زي:
+//   "uploads/blogs/1784333423241-f52df43d-3ce4-4aba-bb9d-4d857f35236a.jpg"
+// لازم نضيف عليه الـ origin بتاع السيرفر (من غير /api) عشان تتعرض صح في <img>
+export const ASSET_BASE_URL = "https://api.alacademeya.com";
+
+export const getAssetUrl = (path) => {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path; // لو خلاص لينك كامل
+  return `${ASSET_BASE_URL}/${String(path).replace(/^\/+/, "")}`;
+};
  
