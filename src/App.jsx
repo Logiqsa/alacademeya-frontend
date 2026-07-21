@@ -99,7 +99,7 @@ function App() {
         <Route element={<HomeLayout />}>
           <Route index element={<Landing />} />
           <Route path="/blogs" element={<AllBlogsPage />} />
-          <Route path="/blog/:id" element={<BlogPostPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
         </Route>
 
         {/* Auth */}

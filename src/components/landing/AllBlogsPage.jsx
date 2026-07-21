@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, ChevronLeft, ChevronRight, ArrowLeft, Megaphone } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ArrowLeft, Megaphone, Sigma, User, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
     getBlogCategories,
@@ -8,7 +8,34 @@ import {
     getAssetUrl,
 } from "../../services/APIService";
 
-const ALL_CATEGORY = { _id: "all", name: "كل المقالات", slug: "all" };
+import featuredImage from "../../assets/featured-exams.svg";
+
+// ─── الجزء ده فاضل ثابت زي ما هو بالظبط (مش متربط بالـ API) ──────────────────
+const featuredPosts = [
+    {
+        id: 0,
+        title: "كيف تستعد لامتحانات نهاية العام بكفاءة عالية من خلال منصتنا التعليمية المتكاملة من منزلك؟",
+        excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم لتحقيق أعلى الدرجات.",
+        category: "تعليمي",
+        date: "2025-01-08",
+        readTime: "10 دقائق",
+        image: featuredImage,
+    },
+];
+// ──────────────────────────────────────────────────────────────────────────────
+
+const ALL_CATEGORY_LABEL = "كل المقالات";
+
+// الـ variants الأصلية بتتلف بالدور على البوستات اللي معندهاش coverImage من الباك إند
+const FALLBACK_VARIANTS = [
+    "announcement",
+    "math",
+    "avatar",
+    "pinkAnnouncement",
+    "avatarGray",
+    "academy",
+];
+
 const POSTS_PER_PAGE = 6;
 
 const formatDate = (isoDate) => {
@@ -24,21 +51,83 @@ const formatDate = (isoDate) => {
     }
 };
 
-// بيتعرض لما البوست معندوش coverImage
-const FallbackCover = ({ small }) => {
+const VariantCover = ({ variant, small }) => {
     const iconSize = small ? "w-10 h-10" : "w-14 h-14";
-    return (
-        <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-[#123C91] to-[#5B21B6]">
-            <div className="absolute inset-0 flex items-center justify-center">
-                <Megaphone className={`${iconSize} text-white/25`} strokeWidth={1.5} />
-            </div>
-        </div>
-    );
+
+    switch (variant) {
+        case "academy":
+            return (
+                <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-[#0F766E] to-[#0C4A6E]">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-lg bg-white/90 flex items-center justify-center">
+                            <GraduationCap className="w-5 h-5 text-[#0F766E]" strokeWidth={2} />
+                        </div>
+                    </div>
+                </div>
+            );
+
+        case "math":
+            return (
+                <div className="w-full h-full relative overflow-hidden bg-[#1F2937]">
+                    <svg className="absolute inset-0 w-full h-full opacity-70" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="400" height="200" fill="#1F2937" />
+                        <text x="20" y="40" fill="#9CA3AF" fontSize="18" fontFamily="serif">(a-b)²</text>
+                        <text x="20" y="80" fill="#9CA3AF" fontSize="16" fontFamily="serif">y = ax + b</text>
+                        <line x1="20" y1="88" x2="110" y2="88" stroke="#6B7280" strokeWidth="1" />
+                        <text x="24" y="108" fill="#9CA3AF" fontSize="14" fontFamily="serif">Δy / Δx</text>
+                        <text x="230" y="55" fill="#9CA3AF" fontSize="16" fontFamily="serif">a² + b²</text>
+                        <text x="230" y="125" fill="#9CA3AF" fontSize="14" fontFamily="serif">= c²</text>
+                        <line x1="0" y1="0" x2="400" y2="200" stroke="#374151" strokeWidth="2" opacity="0.4" />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Sigma className={`${iconSize} text-white/20`} strokeWidth={1.5} />
+                    </div>
+                </div>
+            );
+
+        case "pinkAnnouncement":
+            return (
+                <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-[#9D174D] to-[#6D28D9]">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Megaphone className={`${iconSize} text-white/25`} strokeWidth={1.5} />
+                    </div>
+                </div>
+            );
+
+        case "avatar":
+            return (
+                <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-white shadow-inner flex items-center justify-center">
+                        <User className="w-8 h-8 text-gray-300" strokeWidth={1.5} />
+                    </div>
+                </div>
+            );
+
+        case "avatarGray":
+            return (
+                <div className="w-full h-full relative overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center">
+                        <User className="w-8 h-8 text-gray-100" strokeWidth={1.5} />
+                    </div>
+                </div>
+            );
+
+        case "announcement":
+        default:
+            return (
+                <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-[#123C91] to-[#5B21B6]">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Megaphone className={`${iconSize} text-white/25`} strokeWidth={1.5} />
+                    </div>
+                </div>
+            );
+    }
 };
 
-const CoverImage = ({ post, small }) => {
-    const url = getAssetUrl(post.coverImage);
-    if (!url) return <FallbackCover small={small} />;
+// بيعرض صورة الغلاف الحقيقية من الباك إند لو موجودة، وإلا يرجع لنفس الـ variants الأصلية
+const CoverImage = ({ post, variant, small }) => {
+    const url = getAssetUrl(post?.coverImage);
+    if (!url) return <VariantCover variant={variant} small={small} />;
     return (
         <img
             src={url}
@@ -49,10 +138,10 @@ const CoverImage = ({ post, small }) => {
     );
 };
 
-const BlogCard = ({ post }) => (
+const BlogCard = ({ post, variant }) => (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
         <div className="h-40 relative">
-            <CoverImage post={post} small />
+            <CoverImage post={post} variant={variant} small />
             <span className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded border border-white/30">
                 {post.category?.name}
             </span>
@@ -74,9 +163,72 @@ const BlogCard = ({ post }) => (
     </div>
 );
 
+// ─── نفس الـ FeaturedPost الأصلي، شغال على الداتا الثابتة فوق من غير أي تعديل ─
+const FeaturedPost = ({ post, onPrev, onNext }) => (
+    <div className="relative mb-10">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+            <div className="flex flex-col md:flex-row-reverse gap-18 items-center">
+                <div className="md:w-1/2 w-full h-56 md:h-64 rounded-2xl overflow-hidden">
+                    <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+                </div>
+                <div className="md:w-1/2 flex flex-col justify-center text-right">
+                    <div className="flex items-center justify-start gap-4 text-[13px] text-gray-400 mb-4">
+                        <span className="bg-blue-50 text-[#123C91] px-3 py-1 rounded-full text-[12px] font-semibold">
+                            {post.category}
+                        </span>
+                        <span className="flex items-center gap-1">
+                            {post.readTime}
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="9" />
+                                <path d="M12 7v5l3 3" />
+                            </svg>
+                        </span>
+                        <span>{post.date}</span>
+                    </div>
+
+                    <h2 className="font-bold text-[22px] text-[#1F2937] mb-4 leading-relaxed">
+                        {post.title}
+                    </h2>
+
+                    <Link
+                        to={`/blog/${post.id}`}
+                        className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit"
+                    >
+                        اقرأ المزيد <ArrowLeft size={16} />
+                    </Link>
+                </div>
+            </div>
+        </div>
+
+        <button
+            onClick={onPrev}
+            className="flex absolute top-1/2 -translate-y-1/2 -left-6 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
+        >
+            <ChevronLeft size={20} />
+        </button>
+        <button
+            onClick={onNext}
+            className="flex absolute top-1/2 -translate-y-1/2 -right-6 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
+        >
+            <ChevronRight size={20} />
+        </button>
+    </div>
+);
+// ──────────────────────────────────────────────────────────────────────────────
+
 const AllBlogsPage = () => {
-    const [categories, setCategories] = useState([ALL_CATEGORY]);
-    const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
+    // ─── الجزء الثابت فوق ───────────────────────────────────────────────────
+    const [featuredIndex, setFeaturedIndex] = useState(0);
+
+    const handlePrevFeatured = () =>
+        setFeaturedIndex((prev) => (prev === 0 ? featuredPosts.length - 1 : prev - 1));
+    const handleNextFeatured = () =>
+        setFeaturedIndex((prev) => (prev === featuredPosts.length - 1 ? 0 : prev + 1));
+    // ────────────────────────────────────────────────────────────────────────
+
+    // ─── الجزء اللي تحت، متربط بالـ API ─────────────────────────────────────
+    const [categories, setCategories] = useState([{ _id: "all", name: ALL_CATEGORY_LABEL, slug: "all" }]);
+    const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY_LABEL);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -91,30 +243,32 @@ const AllBlogsPage = () => {
             .then((res) => {
                 if (!isMounted) return;
                 const cats = res?.data?.data ?? [];
-                setCategories([ALL_CATEGORY, ...cats]);
+                setCategories([{ _id: "all", name: ALL_CATEGORY_LABEL, slug: "all" }, ...cats]);
             })
             .catch(() => {
-                /* لو فشل تحميل الأقسام، هنفضل شغالين بـ "كل المقالات" بس */
+                /* لو فشل تحميل الأقسام هنفضل شغالين بـ "كل المقالات" بس */
             });
         return () => {
             isMounted = false;
         };
     }, []);
 
-    // تحميل البوستات كل ما القسم المختار يتغير
+    // تحميل المقالات: كل المقالات، أو مقالات القسم المختار
     useEffect(() => {
         let isMounted = true;
+        const activeCategoryObj = categories.find((c) => c.name === activeCategory);
+        const categorySlug = activeCategoryObj?.slug ?? "all";
 
         const loadPosts = async () => {
             try {
                 setLoading(true);
                 const res =
-                    activeCategory.slug === "all"
+                    categorySlug === "all"
                         ? await getPublicBlogPosts()
-                        : await getPublicBlogPostsByCategory(activeCategory.slug);
+                        : await getPublicBlogPostsByCategory(categorySlug);
 
                 const data =
-                    activeCategory.slug === "all"
+                    categorySlug === "all"
                         ? res?.data?.data ?? []
                         : res?.data?.data?.blogPosts ?? [];
 
@@ -136,7 +290,8 @@ const AllBlogsPage = () => {
         return () => {
             isMounted = false;
         };
-    }, [activeCategory]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeCategory, categories.length]);
 
     const filteredPosts = useMemo(() => {
         const term = searchTerm.trim();
@@ -154,8 +309,8 @@ const AllBlogsPage = () => {
         safePage * POSTS_PER_PAGE
     );
 
-    const handleCategoryChange = (cat) => {
-        setActiveCategory(cat);
+    const handleCategoryChange = (catName) => {
+        setActiveCategory(catName);
         setSearchTerm("");
         setCurrentPage(1);
     };
@@ -169,6 +324,7 @@ const AllBlogsPage = () => {
         if (page < 1 || page > totalPages) return;
         setCurrentPage(page);
     };
+    // ────────────────────────────────────────────────────────────────────────
 
     return (
         <div className="py-12 bg-gray-50 font-sans" dir="rtl">
@@ -177,6 +333,12 @@ const AllBlogsPage = () => {
                 <p className="text-center text-gray-500 mb-10">
                     مقالات ونصائح تعليمية من خبراء تساعدك على تحقيق أعلى النتائج
                 </p>
+
+                <FeaturedPost
+                    post={featuredPosts[featuredIndex]}
+                    onPrev={handlePrevFeatured}
+                    onNext={handleNextFeatured}
+                />
 
                 <div className="mb-10">
                     <div className="relative mb-6">
@@ -194,12 +356,11 @@ const AllBlogsPage = () => {
                         {categories.map((cat) => (
                             <button
                                 key={cat._id}
-                                onClick={() => handleCategoryChange(cat)}
-                                className={`px-5 py-2 rounded-full text-[13px] font-medium transition-colors ${
-                                    activeCategory._id === cat._id
-                                        ? "bg-[#123C91] text-white"
-                                        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
-                                }`}
+                                onClick={() => handleCategoryChange(cat.name)}
+                                className={`px-5 py-2 rounded-full text-[13px] font-medium transition-colors ${activeCategory === cat.name
+                                    ? "bg-[#123C91] text-white"
+                                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-100"
+                                    }`}
                             >
                                 {cat.name}
                             </button>
@@ -210,10 +371,7 @@ const AllBlogsPage = () => {
                 {loading && (
                     <div className="grid md:grid-cols-3 gap-6 mb-12">
                         {[0, 1, 2, 3, 4, 5].map((i) => (
-                            <div
-                                key={i}
-                                className="h-72 rounded-2xl bg-white border border-gray-200 animate-pulse"
-                            />
+                            <div key={i} className="h-72 rounded-2xl bg-white border border-gray-200 animate-pulse" />
                         ))}
                     </div>
                 )}
@@ -224,8 +382,12 @@ const AllBlogsPage = () => {
 
                 {!loading && !error && paginatedPosts.length > 0 && (
                     <div className="grid md:grid-cols-3 gap-6 mb-12">
-                        {paginatedPosts.map((post) => (
-                            <BlogCard key={post._id} post={post} />
+                        {paginatedPosts.map((post, index) => (
+                            <BlogCard
+                                key={post._id}
+                                post={post}
+                                variant={FALLBACK_VARIANTS[index % FALLBACK_VARIANTS.length]}
+                            />
                         ))}
                     </div>
                 )}
@@ -247,9 +409,8 @@ const AllBlogsPage = () => {
                             <button
                                 key={page}
                                 onClick={() => goToPage(page)}
-                                className={`w-8 h-8 rounded-lg ${
-                                    page === safePage ? "bg-[#123C91] text-white" : "bg-white border"
-                                }`}
+                                className={`w-8 h-8 rounded-lg ${page === safePage ? "bg-[#123C91] text-white" : "bg-white border"
+                                    }`}
                             >
                                 {page}
                             </button>
