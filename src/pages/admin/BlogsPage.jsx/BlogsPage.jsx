@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, AlertTriangle, X } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import BlogsStatsBar from "../../../components/admin/blogs/BlogsStatsBar";
@@ -34,7 +34,6 @@ const mapPost = (p) => {
   };
 };
 
-
 const BlogsPage = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
@@ -46,6 +45,11 @@ const BlogsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [filterCategory, setFilterCategory] = useState("جميع التصنيفات");
   const [page, setPage] = useState(1);
+
+  // حالات نافذة تأكيد الحذف الاحترافية (Delete Modal)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -66,13 +70,26 @@ const BlogsPage = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleDelete = async (post) => {
-    if (!window.confirm(`هل أنت متأكد من حذف "${post.title}"؟`)) return;
+  // فتح نافذة الحذف بدلاً من الـ alert
+  const handleDeleteClick = (post) => {
+    setPostToDelete(post);
+    setDeleteModalOpen(true);
+  };
+
+  // تنفيذ الحذف الفعلي بعد التأكيد من الـ Modal
+  const confirmDelete = async () => {
+    if (!postToDelete) return;
+    setIsDeleting(true);
     try {
-      await deleteBlogPost(post.id);
-      setPosts((prev) => prev.filter((p) => p.id !== post.id));
+      await deleteBlogPost(postToDelete.id);
+      setPosts((prev) => prev.filter((p) => p.id !== postToDelete.id));
+      setDeleteModalOpen(false);
+      setPostToDelete(null);
     } catch (err) {
-      alert(err?.response?.data?.message || "حدث خطأ أثناء حذف المقال");
+      setErrorMsg(err?.response?.data?.message || "حدث خطأ أثناء حذف المقال");
+      setDeleteModalOpen(false);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -119,7 +136,10 @@ const BlogsPage = () => {
         </div>
 
         {errorMsg && (
-          <div className="mb-4 bg-[#FFE9E9] text-[#D32F2F] text-sm rounded-lg px-4 py-3">{errorMsg}</div>
+          <div className="mb-4 bg-[#FFE9E9] text-[#D32F2F] text-sm rounded-lg px-4 py-3 flex justify-between items-center">
+            <span>{errorMsg}</span>
+            <button onClick={() => setErrorMsg("")}><X size={16} /></button>
+          </div>
         )}
 
         <div className="mb-6">
@@ -150,7 +170,7 @@ const BlogsPage = () => {
                 key={post.id}
                 post={post}
                 onEdit={(id) => navigate(`/admin/blogs/${id}/edit`)}
-                onDelete={handleDelete}
+                onDelete={() => handleDeleteClick(post)}
               />
             ))}
           </div>
@@ -166,6 +186,53 @@ const BlogsPage = () => {
           displayedCount={paginated.length}
           unitLabel="مقال"
         />
+
+        {/* نافذة تأكيد الحذف الاحترافية (Professional Delete Modal) */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-right transform transition-all">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#FFE9E9] text-[#D32F2F] mx-auto mb-4">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-[#1F2937] text-center mb-2 font-['Tajawal']">
+                حذف المقال
+              </h3>
+              <p className="text-sm text-[#575F69] text-center mb-6">
+                هل أنت متأكد من رغبتك في حذف المقال{" "}
+                <span className="font-semibold text-gray-800">
+                  &ldquo;{postToDelete?.title}&rdquo;
+                </span>
+                ؟ لا يمكن التراجع عن هذا الإجراء بعد إتمامه.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteModalOpen(false)}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-[#E5E5E5] text-[#575F69] font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#D32F2F] text-white font-medium text-sm hover:bg-[#b52525] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      جاري الحذف...
+                    </>
+                  ) : (
+                    "نعم، حذف المقال"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </AdminLayout>
   );
