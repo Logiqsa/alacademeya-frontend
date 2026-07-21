@@ -80,6 +80,7 @@ import AddSubscriptionPage from "./pages/admin/subscriptions/Addsubscriptionpage
 import AllBlogsPage from "./components/landing/AllBlogsPage";
 import BlogsPage from "./pages/admin/BlogsPage.jsx/BlogsPage";
 import BlogFormPage from "./pages/admin/BlogsPage.jsx/BlogFormPage";
+import BlogPostPage from "./components/landing/Blogpostpage";
 
 
 function App() {
@@ -98,7 +99,7 @@ function App() {
         <Route element={<HomeLayout />}>
           <Route index element={<Landing />} />
           <Route path="/blogs" element={<AllBlogsPage />} />
-          {/* <Route path="/blog/:id" element={<SingleBlogPage />} /> */}
+          <Route path="/blog/:id" element={<BlogPostPage />} />
         </Route>
 
         {/* Auth */}
