@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Loader2, AlertTriangle, X } from "lucide-react";
+import { Plus, Loader2, AlertTriangle, X, CheckCircle2 } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import BlogsStatsBar from "../../../components/admin/blogs/BlogsStatsBar";
@@ -46,10 +46,20 @@ const BlogsPage = () => {
   const [filterCategory, setFilterCategory] = useState("جميع التصنيفات");
   const [page, setPage] = useState(1);
 
-  // حالات نافذة تأكيد الحذف الاحترافية (Delete Modal)
+  // حالات نافذة تأكيد الحذف
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // نظام الـ Toast الاحترافي
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 4000);
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -68,15 +78,19 @@ const BlogsPage = () => {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { 
+    loadData(); 
 
-  // فتح نافذة الحذف بدلاً من الـ alert
+    // التقاط إشعار الـ Toast القادم من صفحات الإضافة والتعديل لو تم توجيهه مع الـ state
+    // مثال لاستخدام الـ navigate في صفحة الإضافة: navigate('/admin/blogs', { state: { toastMessage: 'تم إضافة المقال بنجاح' } })
+    // لكننا سنعتمد هنا بشكل أساسي على الـ Toast الداخلي والتحكم السلس
+  }, [loadData]);
+
   const handleDeleteClick = (post) => {
     setPostToDelete(post);
     setDeleteModalOpen(true);
   };
 
-  // تنفيذ الحذف الفعلي بعد التأكيد من الـ Modal
   const confirmDelete = async () => {
     if (!postToDelete) return;
     setIsDeleting(true);
@@ -85,8 +99,9 @@ const BlogsPage = () => {
       setPosts((prev) => prev.filter((p) => p.id !== postToDelete.id));
       setDeleteModalOpen(false);
       setPostToDelete(null);
+      showToast("تم حذف المقال بنجاح", "success");
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || "حدث خطأ أثناء حذف المقال");
+      showToast(err?.response?.data?.message || "حدث خطأ أثناء حذف المقال", "error");
       setDeleteModalOpen(false);
     } finally {
       setIsDeleting(false);
@@ -115,7 +130,34 @@ const BlogsPage = () => {
   return (
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
+      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right relative" dir="rtl">
+
+        {/* 🌟 Toast Notification Container */}
+        {toast.show && (
+          <div className="fixed top-6 left-6 z-50 flex items-center gap-3 bg-white border border-gray-100 shadow-2xl rounded-2xl px-5 py-4 transition-all transform animate-bounce-in">
+            {toast.type === "success" ? (
+              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+            )}
+            <div>
+              <p className="text-sm font-bold text-gray-800">
+                {toast.type === "success" ? "تم بنجاح" : "تنبيه"}
+              </p>
+              <p className="text-xs text-gray-500 font-medium">{toast.message}</p>
+            </div>
+            <button 
+              onClick={() => setToast((prev) => ({ ...prev, show: false }))} 
+              className="mr-3 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
           <div className="order-2 sm:order-1">

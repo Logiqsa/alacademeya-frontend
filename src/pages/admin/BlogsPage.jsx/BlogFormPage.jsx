@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import { Megaphone } from "lucide-react";
@@ -46,7 +47,6 @@ const BlogFormPage = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
   
   const fileInputRef = useRef(null);
   
@@ -81,8 +81,13 @@ const BlogFormPage = () => {
           readingTime: p.readingTime ?? "",
           isFeatured: Boolean(p.isFeatured),
         });
+        if (quillInstanceRef.current && p.content) {
+          quillInstanceRef.current.root.innerHTML = p.content;
+          quillInstanceRef.current.format("direction", "rtl");
+          quillInstanceRef.current.format("align", "right");
+        }
       })
-      .catch(() => setErrorMsg("تعذر تحميل بيانات المقال"))
+      .catch(() => toast.error("عذراً، تعذر تحميل بيانات المقال بنجاح."))
       .finally(() => setLoading(false));
   }, [id, isEditMode]);
 
@@ -124,7 +129,10 @@ const BlogFormPage = () => {
   const handleField = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) return;
+    if (!newCategoryName.trim()) {
+      toast.error("يرجى إدخال اسم التصنيف الجديد.");
+      return;
+    }
     setCreatingCategory(true);
     try {
       const res = await createBlogCategory({ name: newCategoryName.trim() });
@@ -134,9 +142,10 @@ const BlogFormPage = () => {
         setCategories((prev) => [...prev, mapped]);
         handleField("category", mapped.id);
         setNewCategoryName("");
+        toast.success("تم إضافة التصنيف الجديد بنجاح.");
       }
     } catch (err) {
-      alert(err?.response?.data?.message || "حدث خطأ أثناء إضافة التصنيف");
+      toast.error(err?.response?.data?.message || "عذراً، حدث خطأ أثناء إضافة التصنيف.");
     } finally {
       setCreatingCategory(false);
     }
@@ -144,17 +153,16 @@ const BlogFormPage = () => {
 
   const handleSave = async (status) => {
     if (!data.title.trim()) {
-      setErrorMsg("عنوان المقال مطلوب");
+      toast.error("الحقل المطلوب: يرجى إدخال عنوان المقال.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     if (!data.category) {
-      setErrorMsg("يرجى اختيار تصنيف للمقال");
+      toast.error("الحقل المطلوب: يرجى اختيار التصنيف الخاص بالمقال.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     setSaving(true);
-    setErrorMsg("");
     try {
       const fd = new FormData();
       fd.append("title", data.title);
@@ -173,14 +181,18 @@ const BlogFormPage = () => {
         fd.append("coverImage", data.coverImageFile);
       }
 
+      let successMessage = "";
       if (isEditMode) {
         await updateBlogPost(id, fd);
+        successMessage = "تم تعديل المقال بنجاح";
       } else {
         await createBlogPost(fd);
+        successMessage = "تم إضافة المقال بنجاح";
       }
-      navigate("/admin/blogs");
+      
+      navigate("/admin/blogs", { state: { toastMessage: successMessage } });
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || "حدث خطأ أثناء حفظ المقال");
+      toast.error(err?.response?.data?.message || "عذراً، حدث خطأ أثناء حفظ المقال. يرجى المحاولة مرة أخرى.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSaving(false);
@@ -202,19 +214,13 @@ const BlogFormPage = () => {
   return (
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
-      <div className="mx-auto p-4 font-['IBM_Plex_Sans_Arabic']" dir="rtl">
+      <div className="mx-auto p-4 font-['IBM_Plex_Sans_Arabic'] relative" dir="rtl">
         
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-[20px] font-bold text-[#123C91] font-['Tajawal']">
             {isEditMode ? "تعديل مقال" : "إضافة مقال جديد"}
           </h3>
         </div>
-
-        {errorMsg && (
-          <div className="mb-4 bg-[#FFE9E9] text-[#D32F2F] text-sm rounded-lg px-4 py-3 border border-red-200">
-            {errorMsg}
-          </div>
-        )}
 
         <div className="bg-white border border-[#E5E5E5] rounded-2xl p-6 shadow-sm space-y-6">
           
@@ -272,7 +278,7 @@ const BlogFormPage = () => {
           {/* 3. عنوان المقال */}
           <div>
             <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
-              عنوان المقال
+              عنوان المقال <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -287,7 +293,7 @@ const BlogFormPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
-                التصنيف
+                التصنيف <span className="text-red-500">*</span>
               </label>
               <select
                 value={data.category}
@@ -355,7 +361,7 @@ const BlogFormPage = () => {
             />
           </div>
 
-          {/* 7. محتوى المقال (محرر Quill الحديث مع توجيه المؤشر يمين) */}
+          {/* 7. محتوى المقال */}
           <div>
             <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
               محتوى المقال

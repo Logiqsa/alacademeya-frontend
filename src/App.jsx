@@ -179,9 +179,9 @@ function App() {
         <Route path="/admin/subscriptions/:id" element={user ? <SubscriptionDetailsPage /> : <Navigate to="/login" replace />} />
 
         <Route path="/admin/blogs" element={user ? <BlogsPage /> : <Navigate to="/login" replace />} />
-<Route path="/admin/blogs/add" element={user ? <BlogFormPage /> : <Navigate to="/login" replace />} />
-<Route path="/admin/blogs/:id/edit" element={user ? <BlogFormPage /> : <Navigate to="/login" replace />} />
-        
+        <Route path="/admin/blogs/add" element={user ? <BlogFormPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/blogs/:id/edit" element={user ? <BlogFormPage /> : <Navigate to="/login" replace />} />
+
         {/* <Route path="/admin/subscriptions/requests/:id" element={user ? <RequestDetailsPage  /> : <Navigate to="/login" replace />} />     */}
         <Route path="/admin/subscriptions/requests/:id/activate" element={user ? <ActivateSubscriptionPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/curriculum/create" element={user ? <CreateCurriculumPage /> : <Navigate to="/login" replace />} />
