@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, ChevronLeft, ChevronRight, ArrowLeft, Megaphone, Sigma, User, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -7,22 +7,6 @@ import {
     getPublicBlogPostsByCategory,
     getAssetUrl,
 } from "../../services/APIService";
-
-import featuredImage from "../../assets/featured-exams.svg";
-
-// ─── الجزء ده فاضل ثابت زي ما هو بالظبط (مش متربط بالـ API) ──────────────────
-const featuredPosts = [
-    {
-        id: 0,
-        title: "كيف تستعد لامتحانات نهاية العام بكفاءة عالية من خلال منصتنا التعليمية المتكاملة من منزلك؟",
-        excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم لتحقيق أعلى الدرجات.",
-        category: "تعليمي",
-        date: "2025-01-08",
-        readTime: "10 دقائق",
-        image: featuredImage,
-    },
-];
-// ──────────────────────────────────────────────────────────────────────────────
 
 const ALL_CATEGORY_LABEL = "كل المقالات";
 
@@ -49,6 +33,18 @@ const formatDate = (isoDate) => {
     } catch {
         return isoDate;
     }
+};
+
+const getPostExcerpt = (post, maxLength = 120) => {
+    const source = post?.description || post?.content || "";
+    const plainText = source
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (plainText.length <= maxLength) return plainText;
+    return `${plainText.slice(0, maxLength).trim()}...`;
 };
 
 const VariantCover = ({ variant, small }) => {
@@ -155,7 +151,9 @@ const BlogCard = ({ post, variant }) => (
                 <span>{formatDate(post.publishedAt)}</span>
             </div>
             <h3 className="font-bold text-[16px] text-[#1F2937] mb-2">{post.title}</h3>
-            <p className="text-[14px] text-gray-500 mb-4 line-clamp-2">{post.description}</p>
+            <p className="text-[14px] leading-6 text-gray-500 mb-4 min-h-12 line-clamp-2">
+                {getPostExcerpt(post)}
+            </p>
             <Link
                 to={`/blog/${post.slug}`}
                 className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit"
@@ -166,69 +164,7 @@ const BlogCard = ({ post, variant }) => (
     </div>
 );
 
-// ─── نفس الـ FeaturedPost الأصلي، شغال على الداتا الثابتة فوق من غير أي تعديل ─
-const FeaturedPost = ({ post, onPrev, onNext }) => (
-    <div className="relative mb-10">
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <div className="flex flex-col md:flex-row-reverse gap-18 items-center">
-                <div className="md:w-1/2 w-full h-56 md:h-64 rounded-2xl overflow-hidden">
-                    <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
-                </div>
-                <div className="md:w-1/2 flex flex-col justify-center text-right">
-                    <div className="flex items-center justify-start gap-4 text-[13px] text-gray-400 mb-4">
-                        <span className="bg-blue-50 text-[#123C91] px-3 py-1 rounded-full text-[12px] font-semibold">
-                            {post.category}
-                        </span>
-                        <span className="flex items-center gap-1">
-                            {post.readTime}
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="9" />
-                                <path d="M12 7v5l3 3" />
-                            </svg>
-                        </span>
-                        <span>{post.date}</span>
-                    </div>
-
-                    <h2 className="font-bold text-[22px] text-[#1F2937] mb-4 leading-relaxed">
-                        {post.title}
-                    </h2>
-
-                    <Link
-                        to={`/blog/${post.id}`}
-                        className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit"
-                    >
-                        اقرأ المزيد <ArrowLeft size={16} />
-                    </Link>
-                </div>
-            </div>
-        </div>
-
-        <button
-            onClick={onPrev}
-            className="flex absolute top-1/2 -translate-y-1/2 -left-6 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
-        >
-            <ChevronLeft size={20} />
-        </button>
-        <button
-            onClick={onNext}
-            className="flex absolute top-1/2 -translate-y-1/2 -right-6 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
-        >
-            <ChevronRight size={20} />
-        </button>
-    </div>
-);
-// ──────────────────────────────────────────────────────────────────────────────
-
 const AllBlogsPage = () => {
-    // ─── الجزء الثابت فوق ───────────────────────────────────────────────────
-    const [featuredIndex, setFeaturedIndex] = useState(0);
-
-    const handlePrevFeatured = () =>
-        setFeaturedIndex((prev) => (prev === 0 ? featuredPosts.length - 1 : prev - 1));
-    const handleNextFeatured = () =>
-        setFeaturedIndex((prev) => (prev === featuredPosts.length - 1 ? 0 : prev + 1));
-    // ────────────────────────────────────────────────────────────────────────
-
     // ─── الجزء اللي تحت، متربط بالـ API ─────────────────────────────────────
     const [categories, setCategories] = useState([{ _id: "all", name: ALL_CATEGORY_LABEL, slug: "all" }]);
     const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY_LABEL);
@@ -279,7 +215,7 @@ const AllBlogsPage = () => {
                     setPosts(data);
                     setError(null);
                 }
-            } catch (err) {
+            } catch {
                 if (isMounted) {
                     setPosts([]);
                     setError("تعذر تحميل المقالات حاليًا");
@@ -336,12 +272,6 @@ const AllBlogsPage = () => {
                 <p className="text-center text-gray-500 mb-10">
                     مقالات ونصائح تعليمية من خبراء تساعدك على تحقيق أعلى النتائج
                 </p>
-
-                <FeaturedPost
-                    post={featuredPosts[featuredIndex]}
-                    onPrev={handlePrevFeatured}
-                    onNext={handleNextFeatured}
-                />
 
                 <div className="mb-10">
                     <div className="relative mb-6">

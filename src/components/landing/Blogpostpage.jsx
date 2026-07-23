@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
     ArrowLeft,
@@ -11,79 +11,12 @@ import {
     Link2,
     GraduationCap,
     Check,
-    BookOpen,
-    ChevronLeft,
-    ChevronRight,
 } from "lucide-react";
 import {
     getPublicBlogPostBySlug,
     getPublicBlogPostsByCategory,
     getAssetUrl,
 } from "../../services/APIService"; // ⚠️ عدّل المسار حسب مكان الملف عندك
-
-import featuredImage from "../../assets/featured-exams.svg";
-
-// ─── الجزء الثابت الخاص بالسلايدر العلوي ──────────────────────────────────
-const featuredPosts = [
-    {
-        id: 0,
-        title: "كيف تستعد لامتحانات نهاية العام بكفاءة عالية من خلال منصتنا التعليمية المتكاملة من منزلك؟",
-        excerpt: "اكتشف أفضل استراتيجيات المذاكرة التي يوصي بها خبراء التعليم لتحقيق أعلى الدرجات.",
-        category: "تعليمي",
-        date: "2025-01-08",
-        readTime: "10 دقائق",
-        image: featuredImage,
-    },
-];
-
-const FeaturedPost = ({ post, onPrev, onNext }) => (
-    <div className="relative mb-10">
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <div className="flex flex-col md:flex-row-reverse gap-8 items-center">
-                <div className="md:w-1/2 w-full h-56 md:h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-[#0284c7] to-[#123C91]">
-                    <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
-                </div>
-                <div className="md:w-1/2 flex flex-col justify-center text-right">
-                    <div className="flex items-center justify-start gap-4 text-[13px] text-gray-400 mb-4">
-                        <span className="bg-[#E0F2FE] text-[#0369A1] px-3.5 py-1 rounded-full text-[12px] font-semibold">
-                            {post.category}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-gray-500">
-                            {post.readTime}
-                            <Clock size={14} />
-                        </span>
-                        <span className="text-gray-500">{post.date}</span>
-                    </div>
-
-                    <h2 className="font-bold text-[20px] md:text-[22px] text-[#1F2937] mb-6 leading-relaxed">
-                        {post.title}
-                    </h2>
-
-                    <Link
-                        to={`/blog/${post.id}`}
-                        className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit hover:underline"
-                    >
-                        اقرأ المزيد <ArrowLeft size={16} />
-                    </Link>
-                </div>
-            </div>
-        </div>
-
-        <button
-            onClick={onPrev}
-            className="flex absolute top-1/2 -translate-y-1/2 -left-5 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
-        >
-            <ChevronLeft size={20} />
-        </button>
-        <button
-            onClick={onNext}
-            className="flex absolute top-1/2 -translate-y-1/2 -right-5 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-400 hover:text-[#123C91] hover:border-[#123C91] transition-colors"
-        >
-            <ChevronRight size={20} />
-        </button>
-    </div>
-);
-// ──────────────────────────────────────────────────────────────────────────────
 
 const formatDate = (isoDate) => {
     if (!isoDate) return "";
@@ -249,13 +182,6 @@ const BlogPostPage = () => {
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
 
-    // حالات السلايدر العلوي
-    const [featuredIndex, setFeaturedIndex] = useState(0);
-    const handlePrevFeatured = () =>
-        setFeaturedIndex((prev) => (prev === 0 ? featuredPosts.length - 1 : prev - 1));
-    const handleNextFeatured = () =>
-        setFeaturedIndex((prev) => (prev === featuredPosts.length - 1 ? 0 : prev + 1));
-
     useEffect(() => {
         let isMounted = true;
 
@@ -281,7 +207,7 @@ const BlogPostPage = () => {
                         if (isMounted) setRelatedPosts([]);
                     }
                 }
-            } catch (err) {
+            } catch {
                 if (isMounted) setNotFound(true);
             } finally {
                 if (isMounted) setLoading(false);
@@ -334,13 +260,6 @@ const BlogPostPage = () => {
                     <span className="text-gray-300">›</span>
                     <span className="text-gray-400 truncate max-w-[280px]">{post.title}</span>
                 </nav>
-
-                {/* السلايدر العلوي */}
-                <FeaturedPost
-                    post={featuredPosts[featuredIndex]}
-                    onPrev={handlePrevFeatured}
-                    onNext={handleNextFeatured}
-                />
 
                 <div className="grid lg:grid-cols-3 gap-8 items-start">
                     {/* محتوى المقال يمتد على عمودين */}

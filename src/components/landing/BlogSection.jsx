@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Megaphone, Sigma } from "lucide-react";
 import { getPublicBlogPosts, getAssetUrl } from "../../services/APIService"; // ⚠️ عدّل المسار حسب مكان الملف عندك
@@ -84,6 +84,18 @@ const formatDate = (isoDate) => {
     }
 };
 
+const getPostExcerpt = (post, maxLength = 150) => {
+    const source = post?.description || post?.content || "";
+    const plainText = source
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (plainText.length <= maxLength) return plainText;
+    return `${plainText.slice(0, maxLength).trim()}...`;
+};
+
 const BlogSection = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -101,7 +113,7 @@ const BlogSection = () => {
                     setPosts(data.slice(0, 3));
                     setError(null);
                 }
-            } catch (err) {
+            } catch {
                 if (isMounted) setError("تعذر تحميل المقالات حاليًا");
             } finally {
                 if (isMounted) setLoading(false);
@@ -194,8 +206,8 @@ const BlogSection = () => {
                                     <h3 className="font-['Tajawal'] font-bold text-[20px] text-[#1F2937] mb-3 group-hover:text-[#123C91] transition-colors">
                                         {post.title}
                                     </h3>
-                                    <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#1F2937B2] mb-6 grow line-clamp-3">
-                                        {post.description}
+                                    <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] leading-7 text-[#1F2937B2] mb-6 grow min-h-[84px] line-clamp-3">
+                                        {getPostExcerpt(post)}
                                     </p>
 
                                     <span className="text-[#123C91] font-bold text-[14px] flex items-center gap-1">
