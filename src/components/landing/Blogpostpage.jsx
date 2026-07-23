@@ -73,19 +73,19 @@ const RelatedCard = ({ post }) => (
     </Link>
 );
 
-const TeamCard = () => (
-    <div className="bg-[#123C91] text-white rounded-3xl p-6 shadow-sm">
-        <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
-                <GraduationCap className="w-6 h-6 text-white" strokeWidth={1.5} />
-            </div>
-            <div>
-                <p className="font-bold text-[16px] text-white">فريق الأكاديمية</p>
-                <p className="text-[13px] text-blue-100">أ. محمد مشرف إداري</p>
-            </div>
-        </div>
-    </div>
-);
+// const TeamCard = () => (
+//     <div className="bg-[#123C91] text-white rounded-3xl p-6 shadow-sm">
+//         <div className="flex items-center gap-4">
+//             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
+//                 <GraduationCap className="w-6 h-6 text-white" strokeWidth={1.5} />
+//             </div>
+//             <div>
+//                 <p className="font-bold text-[16px] text-white">فريق الأكاديمية</p>
+//                 <p className="text-[13px] text-blue-100">أ. محمد مشرف إداري</p>
+//             </div>
+//         </div>
+//     </div>
+// );
 
 const ArticleInfoCard = ({ post }) => (
     <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
@@ -249,7 +249,7 @@ const BlogPostPage = () => {
         <article className="py-12 bg-gray-50 font-sans" dir="rtl">
             <div className="max-w-6xl mx-auto px-4">
                 {/* Breadcrumb المتوافق مع التصميم */}
-                <nav className="flex items-center gap-2 text-[13px] text-gray-500 mb-8 font-['IBM_Plex_Sans_Arabic']">
+                <nav className="flex items-center gap-2 text-[15px] md:text-[16px] text-gray-500 mb-8 font-['IBM_Plex_Sans_Arabic']">
                     <Link to="/" className="hover:text-[#123C91] transition-colors">
                         الرئيسية
                     </Link>
@@ -258,7 +258,7 @@ const BlogPostPage = () => {
                         المدونة
                     </Link>
                     <span className="text-gray-300">›</span>
-                    <span className="text-gray-400 truncate max-w-[280px]">{post.title}</span>
+                    <span className="text-gray-400 truncate max-w-[320px] md:max-w-[480px]">{post.title}</span>
                 </nav>
 
                 <div className="grid lg:grid-cols-3 gap-8 items-start">
@@ -270,7 +270,7 @@ const BlogPostPage = () => {
                                 <h3 className="font-['Tajawal'] font-bold text-[18px] text-[#1F2937] mb-2">
                                     ملخص المقال
                                 </h3>
-                                <p className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-gray-500 leading-relaxed">
+                                <p className="font-['IBM_Plex_Sans_Arabic'] text-[15px] text-gray-500 leading-relaxed">
                                     {post.description}
                                 </p>
                             </div>
@@ -293,7 +293,7 @@ const BlogPostPage = () => {
 
                     {/* السايدبار الجانبي */}
                     <aside className="lg:sticky lg:top-6 flex flex-col gap-6">
-                        <TeamCard />
+                        {/* <TeamCard /> */}
                         <ArticleInfoCard post={post} />
                         <ShareCard />
                     </aside>
