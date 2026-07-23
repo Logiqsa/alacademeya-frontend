@@ -337,7 +337,7 @@ const AllBlogsPage = () => {
                 )}
 
                 {!loading && !error && paginatedPosts.length === 0 && (
-                    <p className="text-center text-gray-400 mb-12">مفيش مقالات مطابقة للبحث</p>
+                    <p className="text-center text-gray-400 mb-12">لا يوجد مقالات مطابقة للبحث</p>
                 )}
 
                 {!loading && totalPages > 1 && (
