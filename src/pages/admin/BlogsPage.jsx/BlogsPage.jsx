@@ -7,28 +7,23 @@ import BlogsStatsBar from "../../../components/admin/blogs/BlogsStatsBar";
 import BlogsFilters from "../../../components/admin/blogs/BlogsFilters";
 import BlogCard from "../../../components/admin/blogs/BlogCard";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-import { getBlogPosts, getBlogCategories, deleteBlogPost } from "../../../services/APIService";
+import {
+  getBlogPosts,
+  getBlogCategories,
+  deleteBlogPost,
+  getAssetUrl,
+} from "../../../services/APIService";
 
 const PAGE_SIZE = 6;
 
 const mapPost = (p) => {
-  let coverUrl = null;
-  if (p.coverImage) {
-    if (p.coverImage.startsWith("http://") || p.coverImage.startsWith("https://")) {
-      coverUrl = p.coverImage;
-    } else {
-      const cleanPath = p.coverImage.startsWith("/") ? p.coverImage : `/${p.coverImage}`;
-      coverUrl = `https://api.alacademeya.com${cleanPath}`;
-    }
-  }
-
   return {
     id: p._id,
     title: p.title,
     description: p.description,
     status: p.status,
     categoryName: p.category?.name || "—",
-    coverImageUrl: coverUrl,
+    coverImageUrl: getAssetUrl(p.coverImage),
     readingTime: p.readingTime ?? "—",
     date: p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-CA") : "—",
   };

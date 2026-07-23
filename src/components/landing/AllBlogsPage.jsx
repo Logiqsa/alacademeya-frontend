@@ -130,6 +130,7 @@ const CoverImage = ({ post, variant, small }) => {
     if (!url) return <VariantCover variant={variant} small={small} />;
     return (
         <img
+            key={`${post._id}-${url}`}
             src={url}
             alt={post.title}
             className="w-full h-full object-cover"

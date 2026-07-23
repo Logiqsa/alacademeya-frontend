@@ -61,6 +61,7 @@ const CoverImage = ({ post, fallbackVariant }) => {
     
     return (
         <img
+            key={`${post._id}-${url}`}
             src={url}
             alt={post.title}
             className="w-full h-full object-cover"

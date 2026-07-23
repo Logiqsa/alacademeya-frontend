@@ -358,10 +358,15 @@ export const getPublicBlogPostsByCategory = (categorySlug, params) =>
     params,
   });
 
-export const ASSET_BASE_URL = "https://api.alacademeya.com";
+export const ASSET_BASE_URL = "https://api.alacademeya.com/api";
 
 export const getAssetUrl = (path) => {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path; // لو خلاص لينك كامل
-  return `${ASSET_BASE_URL}/${String(path).replace(/^\/+/, "")}`;
+
+  const cleanPath = String(path)
+    .replace(/^\/+/, "")
+    .replace(/^api\//, "");
+
+  return `${ASSET_BASE_URL}/${cleanPath}`;
 };

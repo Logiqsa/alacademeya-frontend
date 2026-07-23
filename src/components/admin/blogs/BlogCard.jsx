@@ -28,6 +28,7 @@ const CoverImage = ({ post, variant = "card" }) => {
     >
       {post.coverImageUrl && !imgError ? (
         <img
+          key={`${post.id}-${post.coverImageUrl}`}
           src={post.coverImageUrl}
           alt={post.title}
           className="absolute inset-0 w-full h-full object-cover"

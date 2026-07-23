@@ -15,6 +15,7 @@ import {
   updateBlogPost,
   getBlogCategories,
   createBlogCategory,
+  getAssetUrl,
 } from "../../../services/APIService";
 
 const BLOG_COLORS = [
@@ -66,14 +67,10 @@ const BlogFormPage = () => {
     getBlogPost(id)
       .then((res) => {
         const p = res.data?.data || {};
-        let coverUrl = null;
-        if (p.coverImage) {
-          coverUrl = p.coverImage.startsWith("http") ? p.coverImage : `https://api.alacademeya.com/${p.coverImage}`;
-        }
         setData({
           coverColor: p.coverColor || BLOG_COLORS[3].hex,
           coverImageFile: null,
-          coverImageUrl: coverUrl,
+          coverImageUrl: getAssetUrl(p.coverImage),
           title: p.title || "",
           description: p.description || "",
           content: p.content || "",
