@@ -23,6 +23,7 @@ const mapPost = (p) => {
     description: p.description,
     status: p.status,
     categoryName: p.category?.name || "—",
+    coverColor: p.coverColor,
     coverImageUrl: getAssetUrl(p.coverImage),
     readingTime: p.readingTime ?? "—",
     date: p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-CA") : "—",

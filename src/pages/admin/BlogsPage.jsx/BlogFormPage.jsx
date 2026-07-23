@@ -37,6 +37,31 @@ const EMPTY_FORM = {
   isFeatured: false,
 };
 
+const createColorCoverFile = (color) =>
+  new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = 630;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      reject(new Error("Canvas is not supported"));
+      return;
+    }
+
+    context.fillStyle = color;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Could not create cover image"));
+        return;
+      }
+
+      resolve(new File([blob], `blog-cover-${Date.now()}.png`, { type: "image/png" }));
+    }, "image/png");
+  });
+
 const BlogFormPage = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
@@ -124,6 +149,21 @@ const BlogFormPage = () => {
   }, []);
 
   const handleField = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
+
+  const handleCoverColorChange = async (color) => {
+    try {
+      const colorCoverFile = await createColorCoverFile(color);
+      setData((prev) => ({
+        ...prev,
+        coverColor: color,
+        coverImageFile: colorCoverFile,
+        coverImageUrl: null,
+      }));
+    } catch {
+      handleField("coverColor", color);
+      toast.error("تعذر تجهيز لون الغلاف للحفظ، يرجى المحاولة مرة أخرى.");
+    }
+  };
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) {
@@ -232,7 +272,9 @@ const BlogFormPage = () => {
                 <button
                   key={color.hex}
                   type="button"
-                  onClick={() => handleField("coverColor", color.hex)}
+                  onClick={() => handleCoverColorChange(color.hex)}
+                  title={color.name}
+                  aria-label={`اختيار لون الغلاف ${color.name}`}
                   className={`w-8 h-8 rounded-lg transition-transform ${data.coverColor === color.hex ? "ring-2 ring-offset-2 ring-[#123C91] scale-105" : ""
                     }`}
                   style={{ backgroundColor: color.hex }}
@@ -263,9 +305,13 @@ const BlogFormPage = () => {
               style={{ backgroundColor: data.coverColor }}
             >
               {currentCoverPreview ? (
-                <img src={currentCoverPreview} alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover z-10" />
+                <img
+                  src={currentCoverPreview}
+                  alt="Cover Preview"
+                  className="absolute inset-0 w-full h-full object-cover z-10 opacity-70 mix-blend-luminosity"
+                />
               ) : null}
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-0">
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
                 <Megaphone className="text-white/80 mb-2" size={36} />
               </div>
             </div>

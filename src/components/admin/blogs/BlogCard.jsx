@@ -24,14 +24,14 @@ const CoverImage = ({ post, variant = "card" }) => {
   return (
     <div
       className="h-40 relative flex items-center justify-center overflow-hidden"
-      style={{ backgroundColor: !post.coverImageUrl || imgError ? coverColorFor(post) : undefined }}
+      style={{ backgroundColor: coverColorFor(post) }}
     >
       {post.coverImageUrl && !imgError ? (
         <img
           key={`${post.id}-${post.coverImageUrl}`}
           src={post.coverImageUrl}
           alt={post.title}
-          className="absolute inset-0 w-full h-full object-cover"
+          className={`absolute inset-0 w-full h-full object-cover ${post.coverColor ? "opacity-70 mix-blend-luminosity" : ""}`}
           onError={() => setImgError(true)}
         />
       ) : (

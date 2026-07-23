@@ -127,15 +127,30 @@ const VariantCover = ({ variant, small }) => {
 // بيعرض صورة الغلاف الحقيقية من الباك إند لو موجودة، وإلا يرجع لنفس الـ variants الأصلية
 const CoverImage = ({ post, variant, small }) => {
     const url = getAssetUrl(post?.coverImage);
+    if (!url && post?.coverColor) {
+        return (
+            <div
+                className="w-full h-full flex items-center justify-center"
+                style={{ backgroundColor: post.coverColor }}
+            >
+                <Megaphone className={`${small ? "w-10 h-10" : "w-14 h-14"} text-white/25`} strokeWidth={1.5} />
+            </div>
+        );
+    }
     if (!url) return <VariantCover variant={variant} small={small} />;
     return (
-        <img
-            key={`${post._id}-${url}`}
-            src={url}
-            alt={post.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-        />
+        <div
+            className="w-full h-full"
+            style={post.coverColor ? { backgroundColor: post.coverColor } : undefined}
+        >
+            <img
+                key={`${post._id}-${url}`}
+                src={url}
+                alt={post.title}
+                className={`w-full h-full object-cover ${post.coverColor ? "opacity-70 mix-blend-luminosity" : ""}`}
+                loading="lazy"
+            />
+        </div>
     );
 };
 
