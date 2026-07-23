@@ -55,6 +55,10 @@ const CoverImage = ({ post, fallbackVariant }) => {
 
     if (!url) return <FallbackCover variant={fallbackVariant} />;
 
+
+
+    console.log(url);
+    
     return (
         <img
             src={url}

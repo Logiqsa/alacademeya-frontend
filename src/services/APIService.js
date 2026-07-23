@@ -337,12 +337,10 @@ export const updateBlogPost = (id, formData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 export const deleteBlogPost = (id) => API.delete(`/blog-posts/${id}`);
- 
+
 
 // ════════════════════════════════════════════════════════════════════════════
-// ضيف الكود ده في آخر ملف src/services/api.js (تحت الجزء بتاع Blog اللي موجود)
-// دول الـ endpoints العامة (من غير حاجة لتسجيل دخول) اللي بترجع البوستات
-// المنشورة بس (status: "published") — نفس اللي شايفينه في Postman
+// Public blog endpoints (no auth required) — published posts only
 // ════════════════════════════════════════════════════════════════════════════
 
 // GET /blog-posts/public              → { success, results, data: [ ...posts ] }
@@ -360,9 +358,6 @@ export const getPublicBlogPostsByCategory = (categorySlug, params) =>
     params,
   });
 
-// الصور بترجع من الـ API كـ path نسبي زي:
-//   "uploads/blogs/1784333423241-f52df43d-3ce4-4aba-bb9d-4d857f35236a.jpg"
-// لازم نضيف عليه الـ origin بتاع السيرفر (من غير /api) عشان تتعرض صح في <img>
 export const ASSET_BASE_URL = "https://api.alacademeya.com";
 
 export const getAssetUrl = (path) => {
@@ -370,4 +365,3 @@ export const getAssetUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path; // لو خلاص لينك كامل
   return `${ASSET_BASE_URL}/${String(path).replace(/^\/+/, "")}`;
 };
- 
