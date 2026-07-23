@@ -138,7 +138,10 @@ const CoverImage = ({ post, variant, small }) => {
 };
 
 const BlogCard = ({ post, variant }) => (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+    <Link
+        to={`/blog/${post.slug}`}
+        className="block bg-white rounded-2xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#123C91]/30"
+    >
         <div className="h-40 relative">
             <CoverImage post={post} variant={variant} small />
             <span className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded border border-white/30">
@@ -154,14 +157,11 @@ const BlogCard = ({ post, variant }) => (
             <p className="text-[14px] leading-6 text-gray-500 mb-4 min-h-12 line-clamp-2">
                 {getPostExcerpt(post)}
             </p>
-            <Link
-                to={`/blog/${post.slug}`}
-                className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit"
-            >
+            <span className="text-[#123C91] font-bold text-[14px] flex items-center gap-1 w-fit">
                 اقرأ المزيد <ArrowLeft size={16} />
-            </Link>
+            </span>
         </div>
-    </div>
+    </Link>
 );
 
 const AllBlogsPage = () => {
@@ -268,6 +268,17 @@ const AllBlogsPage = () => {
     return (
         <div className="py-12 bg-gray-50 font-sans" dir="rtl">
             <div className="max-w-6xl mx-auto px-4">
+                <nav
+                    aria-label="مسار التنقل"
+                    className="flex items-center gap-2 text-[15px] md:text-[16px] text-gray-500 mb-8 font-['IBM_Plex_Sans_Arabic']"
+                >
+                    <Link to="/" className="hover:text-[#123C91] transition-colors">
+                        الرئيسية
+                    </Link>
+                    <span className="text-gray-300">›</span>
+                    <span className="text-gray-400">المدونة</span>
+                </nav>
+
                 <h1 className="text-center font-bold text-[40px] text-[#123C91] mb-2">المدونة</h1>
                 <p className="text-center text-gray-500 mb-10">
                     مقالات ونصائح تعليمية من خبراء تساعدك على تحقيق أعلى النتائج
