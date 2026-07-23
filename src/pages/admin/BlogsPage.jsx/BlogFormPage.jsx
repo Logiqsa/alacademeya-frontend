@@ -81,11 +81,6 @@ const BlogFormPage = () => {
           readingTime: p.readingTime ?? "",
           isFeatured: Boolean(p.isFeatured),
         });
-        if (quillInstanceRef.current && p.content) {
-          quillInstanceRef.current.root.innerHTML = p.content;
-          quillInstanceRef.current.format("direction", "rtl");
-          quillInstanceRef.current.format("align", "right");
-        }
       })
       .catch(() => toast.error("عذراً، تعذر تحميل بيانات المقال بنجاح."))
       .finally(() => setLoading(false));
@@ -93,7 +88,8 @@ const BlogFormPage = () => {
 
   // إعداد وتفعيل محرر Quill مرة واحدة عند التحميل مع جعله يمين (RTL)
   useEffect(() => {
-    if (!quillRef.current || quillInstanceRef.current) return;
+    // In edit mode the editor is mounted only after the post finishes loading.
+    if (loading || !quillRef.current || quillInstanceRef.current) return;
 
     quillInstanceRef.current = new Quill(quillRef.current, {
       theme: "snow",
@@ -124,7 +120,7 @@ const BlogFormPage = () => {
       const html = quillRef.current.querySelector(".ql-editor").innerHTML;
       setData((prev) => ({ ...prev, content: html }));
     });
-  }, []);
+  }, [loading]);
 
   const handleField = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
@@ -152,6 +148,7 @@ const BlogFormPage = () => {
   };
 
   const handleSave = async (status) => {
+    const editorContent = quillInstanceRef.current?.root.innerHTML ?? data.content ?? "";
     if (!data.title.trim()) {
       toast.error("الحقل المطلوب: يرجى إدخال عنوان المقال.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -172,7 +169,7 @@ const BlogFormPage = () => {
       const fd = new FormData();
       fd.append("title", data.title);
       fd.append("description", data.description || "");
-      fd.append("content", data.content || "");
+      fd.append("content", editorContent);
       fd.append("category", data.category);
       fd.append("status", status);
       fd.append("readingTime", data.readingTime || 0);
