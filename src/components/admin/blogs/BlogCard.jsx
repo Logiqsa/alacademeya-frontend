@@ -16,7 +16,7 @@ const CATEGORY_COLORS = {
 };
 const DEFAULT_COVER_COLOR = "#1F2937";
 
-const coverColorFor = (post) => post.coverColor || CATEGORY_COLORS[post.categoryName] || DEFAULT_COVER_COLOR;
+const coverColorFor = (post) => CATEGORY_COLORS[post.categoryName] || DEFAULT_COVER_COLOR;
 
 const CoverImage = ({ post, variant = "card" }) => {
   const [imgError, setImgError] = useState(false);
@@ -31,7 +31,7 @@ const CoverImage = ({ post, variant = "card" }) => {
           key={`${post.id}-${post.coverImageUrl}`}
           src={post.coverImageUrl}
           alt={post.title}
-          className={`absolute inset-0 w-full h-full object-cover ${post.coverColor ? "opacity-70 mix-blend-luminosity" : ""}`}
+          className="absolute inset-0 w-full h-full object-cover"
           onError={() => setImgError(true)}
         />
       ) : (

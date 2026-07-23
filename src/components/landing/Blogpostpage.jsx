@@ -98,11 +98,8 @@ const formatDate = (isoDate) => {
     }
 };
 
-const FallbackCover = ({ color }) => (
-    <div
-        className={`w-full h-full relative overflow-hidden ${color ? "" : "bg-gradient-to-br from-[#123C91] to-[#5B21B6]"}`}
-        style={color ? { backgroundColor: color } : undefined}
-    >
+const FallbackCover = () => (
+    <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-[#123C91] to-[#5B21B6]">
         <div className="absolute inset-0 flex items-center justify-center">
             <Megaphone className="w-16 h-16 text-white/25" strokeWidth={1.5} />
         </div>
@@ -111,16 +108,13 @@ const FallbackCover = ({ color }) => (
 
 const CoverImage = ({ post, small }) => {
     const url = getAssetUrl(post.coverImage);
-    if (!url) return <FallbackCover color={post.coverColor} />;
+    if (!url) return <FallbackCover />;
     return (
-        <div
-            className="w-full h-full"
-            style={post.coverColor ? { backgroundColor: post.coverColor } : undefined}
-        >
+        <div className="w-full h-full relative">
             <img
                 src={url}
                 alt={post.title}
-                className={`w-full h-full object-cover ${post.coverColor ? "opacity-70 mix-blend-luminosity" : ""}`}
+                className="w-full h-full object-cover"
                 loading={small ? "lazy" : undefined}
             />
         </div>

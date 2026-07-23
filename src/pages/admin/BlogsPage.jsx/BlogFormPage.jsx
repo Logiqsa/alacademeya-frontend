@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
-import { Megaphone } from "lucide-react";
 
 // استدعاء مكتبة Quill الأساسية
 import Quill from "quill";
@@ -15,20 +14,9 @@ import {
   updateBlogPost,
   getBlogCategories,
   createBlogCategory,
-  getAssetUrl,
 } from "../../../services/APIService";
 
-const BLOG_COLORS = [
-  { name: "أصفر داكن", hex: "#B48B4C" },
-  { name: "تركواز", hex: "#38B6AB" },
-  { name: "موف", hex: "#9C27B0" },
-  { name: "أزرق", hex: "#3F51B5" },
-];
-
 const EMPTY_FORM = {
-  coverColor: BLOG_COLORS[3].hex,
-  coverImageFile: null,
-  coverImageUrl: null,
   title: "",
   description: "",
   content: "",
@@ -36,31 +24,6 @@ const EMPTY_FORM = {
   readingTime: "",
   isFeatured: false,
 };
-
-const createColorCoverFile = (color) =>
-  new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1200;
-    canvas.height = 630;
-
-    const context = canvas.getContext("2d");
-    if (!context) {
-      reject(new Error("Canvas is not supported"));
-      return;
-    }
-
-    context.fillStyle = color;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error("Could not create cover image"));
-        return;
-      }
-
-      resolve(new File([blob], `blog-cover-${Date.now()}.png`, { type: "image/png" }));
-    }, "image/png");
-  });
 
 const BlogFormPage = () => {
   const { id } = useParams();
@@ -73,8 +36,6 @@ const BlogFormPage = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
-
-  const fileInputRef = useRef(null);
 
   // مراجع خاصة بمحرر Quill الحديث
   const quillRef = useRef(null);
@@ -91,15 +52,13 @@ const BlogFormPage = () => {
     setLoading(true);
     getBlogPost(id)
       .then((res) => {
-        const p = res.data?.data || {};
+        const responseData = res.data?.data;
+        const p = responseData?.blogPost || responseData || {};
         setData({
-          coverColor: p.coverColor || BLOG_COLORS[3].hex,
-          coverImageFile: null,
-          coverImageUrl: getAssetUrl(p.coverImage),
           title: p.title || "",
           description: p.description || "",
           content: p.content || "",
-          category: p.category?._id || "",
+          category: p.category?._id || p.category || "",
           readingTime: p.readingTime ?? "",
           isFeatured: Boolean(p.isFeatured),
         });
@@ -150,21 +109,6 @@ const BlogFormPage = () => {
 
   const handleField = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
-  const handleCoverColorChange = async (color) => {
-    try {
-      const colorCoverFile = await createColorCoverFile(color);
-      setData((prev) => ({
-        ...prev,
-        coverColor: color,
-        coverImageFile: colorCoverFile,
-        coverImageUrl: null,
-      }));
-    } catch {
-      handleField("coverColor", color);
-      toast.error("تعذر تجهيز لون الغلاف للحفظ، يرجى المحاولة مرة أخرى.");
-    }
-  };
-
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) {
       toast.error("يرجى إدخال اسم التصنيف الجديد.");
@@ -209,15 +153,8 @@ const BlogFormPage = () => {
       fd.append("status", status);
       fd.append("readingTime", data.readingTime || 0);
       fd.append("isFeatured", String(data.isFeatured));
-      fd.append("coverColor", data.coverColor || BLOG_COLORS[3].hex);
-
       fd.append("seoTitle", data.title);
       fd.append("seoDescription", data.description || "");
-
-      // إرسال ملف الصورة فقط إذا قام المستخدم بتحديثه أو إضافته
-      if (data.coverImageFile) {
-        fd.append("coverImage", data.coverImageFile);
-      }
 
       let successMessage = "";
       if (isEditMode) {
@@ -236,10 +173,6 @@ const BlogFormPage = () => {
       setSaving(false);
     }
   };
-
-  const currentCoverPreview = data.coverImageFile
-    ? URL.createObjectURL(data.coverImageFile)
-    : data.coverImageUrl;
 
   if (loading) {
     return (
@@ -261,62 +194,6 @@ const BlogFormPage = () => {
         </div>
 
         <div className="bg-white border border-[#E5E5E5] rounded-2xl p-6 shadow-sm space-y-6">
-
-          {/* 1. لون الغلاف */}
-          <div>
-            <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
-              لون الغلاف
-            </label>
-            <div className="flex gap-2.5">
-              {BLOG_COLORS.map((color) => (
-                <button
-                  key={color.hex}
-                  type="button"
-                  onClick={() => handleCoverColorChange(color.hex)}
-                  title={color.name}
-                  aria-label={`اختيار لون الغلاف ${color.name}`}
-                  className={`w-8 h-8 rounded-lg transition-transform ${data.coverColor === color.hex ? "ring-2 ring-offset-2 ring-[#123C91] scale-105" : ""
-                    }`}
-                  style={{ backgroundColor: color.hex }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* 2. صورة الغلاف */}
-          <div>
-            <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
-              صورة الغلاف
-            </label>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={(e) => {
-                if (e.target.files[0]) {
-                  handleField("coverImageFile", e.target.files[0]);
-                }
-              }}
-            />
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="h-44 rounded-xl relative flex flex-col items-center justify-center cursor-pointer overflow-hidden border border-dashed border-gray-300 transition-all hover:opacity-95"
-              style={{ backgroundColor: data.coverColor }}
-            >
-              {currentCoverPreview ? (
-                <img
-                  src={currentCoverPreview}
-                  alt="Cover Preview"
-                  className="absolute inset-0 w-full h-full object-cover z-10 opacity-70 mix-blend-luminosity"
-                />
-              ) : null}
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
-                <Megaphone className="text-white/80 mb-2" size={36} />
-              </div>
-            </div>
-            <p className="text-center text-[12px] text-gray-400 mt-2">اضغط لإضافة صورة غلاف مميزة</p>
-          </div>
 
           {/* 3. عنوان المقال */}
           <div>

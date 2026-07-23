@@ -53,28 +53,15 @@ const FallbackCover = ({ variant }) => {
 const CoverImage = ({ post, fallbackVariant }) => {
     const url = getAssetUrl(post.coverImage);
 
-    if (!url && post.coverColor) {
-        return (
-            <div
-                className="w-full h-full flex items-center justify-center"
-                style={{ backgroundColor: post.coverColor }}
-            >
-                <Megaphone className="w-14 h-14 text-white/25" strokeWidth={1.5} />
-            </div>
-        );
-    }
     if (!url) return <FallbackCover variant={fallbackVariant} />;
     
     return (
-        <div
-            className="w-full h-full"
-            style={post.coverColor ? { backgroundColor: post.coverColor } : undefined}
-        >
+        <div className="w-full h-full relative">
             <img
                 key={`${post._id}-${url}`}
                 src={url}
                 alt={post.title}
-                className={`w-full h-full object-cover ${post.coverColor ? "opacity-70 mix-blend-luminosity" : ""}`}
+                className="w-full h-full object-cover"
                 loading="lazy"
                 onError={(e) => {
                     e.currentTarget.style.display = "none";
