@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import {
   getSubjects,
-  completeStudentProfile,
-  getAccountState,
 } from "../../services/APIService";
 
 const normalizeSubjects = (raw) => {
@@ -17,33 +15,11 @@ const normalizeSubjects = (raw) => {
   }));
 };
 
-// ── Adjust these two to match your actual router/backend contract ──
-const DASHBOARD_ROUTE = "/student-dashboard";
-const PENDING_ROUTE = "/register/success";
-
-// Reads the approval status out of an /auth/account-state response.
-const extractStatus = (res) => {
-  const raw =
-    res?.data?.status ??
-    res?.data?.data?.status ??
-    res?.data?.registrationStatus ??
-    res?.data?.data?.registrationStatus ??
-    "";
-  return String(raw).toLowerCase();
-};
-
-const isApprovedStatus = (status) =>
-  ["approved", "active", "accepted"].includes(status);
-
 const StudentSubjectsPages = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
 
   const {
-    email,
-    role,
-    academicLevel,
-    countryId,
     curriculumId,
     stageId,
     gradeId,
@@ -55,7 +31,6 @@ const StudentSubjectsPages = () => {
   const [birthDate, setBirthDate] = useState("");
   const [studyLanguage, setStudyLanguage] = useState("ar");
   const [loadingSubjects, setLoadingSubjects] = useState(true);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!gradeId || !stageId || !curriculumId) {
@@ -97,50 +72,20 @@ const StudentSubjectsPages = () => {
       return;
     }
 
-    setLoading(true);
-    try {
-      // studentType جاية من المرحلة الدراسية اللي اخترها المستخدم في
-      // أول خطوة بالتسجيل (RegisterForm)، مش زرار منفصل.
-      await completeStudentProfile({
+    const selectedSubjects = subjects.filter((subject) =>
+      selected.includes(subject.id),
+    );
+
+    navigate("/register/packages", {
+      state: {
+        ...(state || {}),
         birthDate,
         studyLanguage,
-        curriculum: curriculumId,
-        stage: stageId,
-        grade: gradeId,
-        studentType: studentType || "school",
         preferredSubjects: selected,
-      });
-
-      // نتأكد بعد كده هل الحساب متوافق عليه ولا لسه pending.
-      let approved = false;
-      try {
-        const stateRes = await getAccountState();
-        approved = isApprovedStatus(extractStatus(stateRes));
-      } catch (err) {
-        console.log(
-          "account-state error:",
-          err.response?.status,
-          err.response?.data,
-        );
-      }
-
-      toast.success("تم إنشاء الحساب بنجاح!");
-
-      if (approved) {
-        navigate(DASHBOARD_ROUTE);
-      } else {
-        navigate(PENDING_ROUTE, { state: { role: "student" } });
-      }
-    } catch (err) {
-      console.log(
-        "completeStudentProfile error:",
-        err.response?.status,
-        err.response?.data,
-      );
-      toast.error(err.response?.data?.message || "حدث خطأ أثناء حفظ البيانات");
-    } finally {
-      setLoading(false);
-    }
+        selectedSubjects,
+        studentType: studentType || "school",
+      },
+    });
   };
 
   return (
@@ -233,11 +178,11 @@ const StudentSubjectsPages = () => {
 
         <button
           onClick={handleSubmit}
-          disabled={loading || loadingSubjects}
+          disabled={loadingSubjects}
           className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
-          {loading ? "جاري إنشاء الحساب..." : "إنشاء الحساب"}
+          التالي
         </button>
 
         <div className="flex items-center justify-center gap-1 pt-4">

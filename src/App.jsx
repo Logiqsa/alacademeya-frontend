@@ -29,6 +29,8 @@ import StudentGroupsPage from "./pages/student/StudentGroupsPage";
 import StudentSchedulePage from "./pages/student/SchedulePage";
 import StudentDetailsPages from "./pages/auth/StudentDetailsPages";
 import StudentSubjectsPages from "./pages/auth/StudentSubjectsPages";
+import StudentPackagesPage from "./pages/auth/StudentPackagesPage";
+import StudentOrderSummaryPage from "./pages/auth/StudentOrderSummaryPage";
 import GroupsPage from "./pages/teacher/groups/GroupsPage";
 import GroupLessonsPage from "./pages/teacher/groups/GroupLessonsPage";
 import GroupStudentsPage from "./pages/teacher/groups/GroupStudentsPage";
@@ -110,6 +112,8 @@ function App() {
         <Route path="/verify-otp" element={<OtpPage />} />
         <Route path="/register/student-details" element={<StudentDetailsPages />} />
         <Route path="/register/subjects" element={<StudentSubjectsPages />} />
+        <Route path="/register/packages" element={<StudentPackagesPage />} />
+        <Route path="/register/order-summary" element={<StudentOrderSummaryPage />} />
         <Route path="/register/success" element={<RegisterSuccessPage />} />
         <Route path="/register/teacher-details" element={<TeacherDetailsPage />} />
         <Route path="/pending" element={<PendingPage />} />
