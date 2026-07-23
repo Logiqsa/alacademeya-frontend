@@ -52,7 +52,9 @@ const LoginForm = () => {
   return (
     <div className="w-full max-w-2xl mx-auto p-8 flex flex-col items-center" dir="rtl">
       <div className="w-full max-w-150 flex flex-col items-start mb-10">
-        <img src={logo} alt="logo" className="cursor-pointer mb-4" style={{ width: "176px", height: "32px" }} />
+        <Link to="/" className="mb-4">
+          <img src={logo} alt="logo" className="cursor-pointer" style={{ width: "176px", height: "32px" }} />
+        </Link>
         <h2 className="font-bold text-[24px] text-[#1F2937]" style={{ fontFamily: "Tajawal, sans-serif" }}>
           مرحباً بك...
         </h2>

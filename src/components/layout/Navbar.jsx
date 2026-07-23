@@ -58,9 +58,10 @@ const Navbar = () => {
 
   const links = [
     { title: "الرئيسية", id: "home" },
+    { title: "الباقات", id: "pricing" },
     { title: "عن الأكاديمية", id: "features" },
     { title: "المميزات", id: "services" },
-    { title: "الباقات", id: "pricing" },
+    { title: "المدونه", id: "blog" },
     { title: "الأسئلة الشائعة", id: "faq" },
   ];
 

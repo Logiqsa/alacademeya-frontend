@@ -4,6 +4,7 @@ import PackagesTab from "../../../components/admin/subscriptions/tabs/PackagesTa
 import DiscountCodesTab from "../../../components/admin/subscriptions/tabs/DiscountCodesTab";
 import SubscriptionsTab from "../../../components/admin/subscriptions/tabs/SubscriptionsTab";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const TABS = [
   { key: "packages", label: "الباقات" },
@@ -29,6 +30,7 @@ const SubscriptionsPage = () => {
 
   return (
     <AdminLayout>
+       <Breadcrumbs homeTo="/admin-dashboard" />
       <div
         dir="rtl"
         className="w-full max-w-full p-3 sm:p-4 md:p-6 font-['IBM_Plex_Sans_Arabic'] overflow-x-hidden"

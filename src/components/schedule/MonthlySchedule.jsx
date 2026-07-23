@@ -5,10 +5,22 @@ import {
   ChevronRight,
   Clock,
   Info,
+  UserRound,
   Video,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { getMonthlySchedule } from "../../services/APIService";
+
+const DAY_NAMES = {
+  saturday: "السبت",
+  sunday: "الأحد",
+  monday: "الاثنين",
+  tuesday: "الثلاثاء",
+  wednesday: "الأربعاء",
+  thursday: "الخميس",
+  friday: "الجمعة",
+};
 
 // نفس ترتيب DAY_NAMES بالظبط، بيتماشى مع weekdayIndex تحت (السبت = أول عمود)
 const WEEKDAY_HEADERS = [
@@ -29,39 +41,6 @@ const STATUS_LABELS = {
   active: "نشطة",
   missed: "فائتة",
 };
-
-const OPENABLE_STATUSES = new Set([
-  "active",
-  "completed",
-  "ended",
-  "finished",
-  "in_progress",
-  "live",
-  "running",
-  "جار الآن",
-  "جاري الآن",
-  "جارٍ الآن",
-  "تُعقد الآن",
-  "تعقد الآن",
-  "نشطة",
-  "شغالة",
-  "شغاله",
-  "مباشر الآن",
-  "مكتمل",
-  "مكتملة",
-  "منتهي",
-  "منتهية",
-]);
-
-const normalizeStatus = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase();
-
-const canOpenDetails = (lesson) =>
-  [lesson.status, lesson.rawStatus, lesson.statusKey, lesson.displayStatus].some(
-    (status) => OPENABLE_STATUSES.has(normalizeStatus(status)),
-  );
 
 const badgeClass = (lesson) => {
   if (lesson.isVirtual || lesson.status === "scheduled")
@@ -104,6 +83,12 @@ const getStudentLabel = (lesson) => {
     "—"
   );
 };
+
+// شكل عنصر الحصة القادم من getMonthlySchedule مش مؤكد 100% إن فيه حقل "id" دايمًا،
+// فبنجرب كل الاحتمالات الشائعة بدل ما نعتمد على lesson.id لوحده (وده كان بيرجع
+// undefined ويودي على /sessions/null)
+const resolveLessonId = (lesson) =>
+  lesson.id || lesson._id || lesson.sessionId || lesson.session?.id || lesson.session?._id || lesson.session;
 
 const withDisplayStatus = (lesson, date) => {
   if (lesson.status !== "scheduled") return lesson;
@@ -216,14 +201,12 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
 
   const openDetails = (lesson) => {
     const classroomId =
-      lesson.classroom?.id ||
-      lesson.classroom?._id ||
-      lesson.classroom ||
-      lesson.classroomId;
-    const lessonId = lesson.id || lesson._id;
-
-    if (!classroomId || !lessonId) return;
-
+      lesson.classroom?.id || lesson.classroom?._id || lesson.classroom;
+    const lessonId = resolveLessonId(lesson);
+    if (!lessonId) {
+      console.error("resolveLessonId failed for lesson:", lesson);
+      return;
+    }
     if (role === "teacher")
       navigate(`/teacher/groups/${classroomId}/lessons/${lessonId}`);
     if (role === "student")
@@ -232,6 +215,22 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
       navigate(`/admin/classrooms/${classroomId}/sessions/${lessonId}`);
     if (role === "parent")
       navigate(`/parent/classrooms/${classroomId}/sessions/${lessonId}`);
+  };
+
+  // بيوديك للينك المناسب للحصة نفسها: لو شغالة دلوقتي (live) بيفتح لينك الاجتماع
+  // في تاب جديد، لو لسه قادمة (مفيش تفاصيل مفيدة نعرضها لسه) بيطلع toast،
+  // وإلا (منتهية/فائتة/ملغاة) بيوديك لصفحة تفاصيل الحصة
+  const openLessonLink = (lesson) => {
+    const isLive = ["live", "active"].includes(lesson.status);
+    if (isLive && lesson.meetingLink) {
+      window.open(lesson.meetingLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (lesson.status === "scheduled") {
+      toast("لم تبدأ الحصة بعد، يرجى الدخول في الموعد المحدد لها.", { icon: "⏰" });
+      return;
+    }
+    openDetails(lesson);
   };
 
   return (
@@ -357,20 +356,23 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
                   const lesson = withDisplayStatus(rawLesson, selectedDay.date);
                   const duration = getDurationMinutes(lesson);
                   const isLive = ["live", "active"].includes(lesson.status);
-                  const isOpenable = canOpenDetails(lesson);
 
                   return (
                     <article
                       key={
-                        lesson.id ||
+                        resolveLessonId(lesson) ||
                         `${lesson.classroom}-${lesson.startTime}-${index}`
                       }
-                      onClick={() => {
-                        if (isOpenable) openDetails(lesson);
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openLessonLink(lesson)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openLessonLink(lesson);
+                        }
                       }}
-                      className={`bg-white border border-[#E5E5E5] rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border-r-4 border-r-[#123C91] p-4 ${
-                        isOpenable ? "cursor-pointer" : ""
-                      }`}
+                      className="bg-white border border-[#E5E5E5] rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border-r-4 border-r-[#123C91] p-4 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91]"
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <h4 className="text-[#1F2937] font-semibold text-[15px] leading-6 flex-1">
@@ -413,28 +415,19 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
                           </span>
 
                           {isLive && lesson.meetingLink ? (
-                            <a
-                              href={lesson.meetingLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(event) => event.stopPropagation()}
-                              aria-label="انضم للحصة"
-                              className="w-7 h-7 flex items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f2f73] transition-colors"
+                            <span
+                              aria-hidden="true"
+                              className="w-7 h-7 flex items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white"
                             >
                               <Video size={14} />
-                            </a>
+                            </span>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                openDetails(lesson);
-                              }}
-                              aria-label="تفاصيل الحصة"
-                              className="w-7 h-7 flex items-center justify-center rounded-full text-[#8C9198] hover:text-[#123C91] hover:bg-[#F0F4FF] transition-colors"
+                            <span
+                              aria-hidden="true"
+                              className="w-7 h-7 flex items-center justify-center rounded-full text-[#8C9198]"
                             >
                               <Info size={15} />
-                            </button>
+                            </span>
                           )}
                         </div>
                       </div>

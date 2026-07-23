@@ -4,6 +4,7 @@ import ConversationsList from "../../../components/admin/messages/Conversationsl
 import ChatBox from "../../../components/admin/messages/Chatbox";
 import { useChatRooms } from "../../../api/useChatRooms"; // تأكد من المسار الصحيح
 import { AuthContext } from "../../../context/AuthContext";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 export default function AdminMessages() {
   const { user } = useContext(AuthContext);
@@ -55,6 +56,7 @@ export default function AdminMessages() {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div className="w-full pb-4 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
         {/* Header */}
         <div className="mb-4 sm:mb-6">

@@ -551,7 +551,7 @@ const TeacherPersonalCard = ({
             saving={saving}
             onCancel={handleCancel}
             error={error}
-            confirmLabel="تعديل البيانات"
+            confirmLabel="حفظ البيانات"
           />
         </>
       )}

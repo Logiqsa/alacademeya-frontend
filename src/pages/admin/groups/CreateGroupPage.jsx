@@ -11,6 +11,7 @@ import {
   getSubjects, // بنستخدم النسخة اللي بتاخد params عشان نفلتر المواد حسب الصف
   getTeachers,
 } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -330,6 +331,7 @@ const CreateGroupPages = () => {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div
         dir="rtl"
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right mx-auto space-y-5"

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ParentSidebar from "./ParentSidebar";
+import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -26,7 +27,7 @@ const ParentLayout = ({ children }) => {
   }, []);
 
   return (
-    <div className="flex h-[100dvh] bg-[#F5F7FB] overflow-hidden">
+    <div className="flex h-dvh bg-[#F5F7FB] overflow-hidden">
       <div className="h-full shrink-0">
         <ParentSidebar
           isOpen={isOpen}
@@ -35,6 +36,7 @@ const ParentLayout = ({ children }) => {
       </div>
 
       <main className="flex-1 h-full overflow-y-auto p-4 md:p-6">
+         <Breadcrumbs homeTo="/parent-dashboard" />
         {children}
       </main>
 

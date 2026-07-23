@@ -1,6 +1,6 @@
 import { Search, ChevronDown } from "lucide-react";
 
-const ROLE_OPTIONS = ["جميع المستخدمين", "معلم", "طالب", "ولي أمر"];
+const ROLE_OPTIONS = ["جميع المستخدمين", "معلم", "طالب", "ولي أمر", "مشرف", "مشرف عام"];
 const STATUS_OPTIONS = ["جميع الحالات", "نشط", "معلق", "موقوف"];
 
 const UsersFilters = ({

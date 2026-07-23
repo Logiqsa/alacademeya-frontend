@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList, BookOpen } from "lucide-react";
+import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList, BookOpen, Search } from "lucide-react";
 import {
   getTeachers,
   getAllStudents,
@@ -20,6 +20,26 @@ const resolvePersonName = (p) =>
   p?.user?.fullName || p?.fullName || p?.name || resolveName(p?.name) || "--";
 
 const resolvePersonId = (p) => p?.teacherId || p?.id || p?._id || p?.user?.id;
+
+// ⚠️ افتراض: الطالب فيه حقل "stage" و"grade" مباشر أو جوه object فيه name/ar/en —
+// لسه محتاج تأكيد من بوستمان/Network tab لشكل الـ student object الراجع من getAllStudents()
+const resolveStageName = (s) => {
+  const stage = s?.stage ?? s?.stageId;
+  if (!stage) return null;
+  if (typeof stage === "string") return stage;
+  const nested = stage.name ?? stage;
+  const resolved = resolveName(nested);
+  return resolved !== "--" ? resolved : null;
+};
+
+const resolveGradeName = (s) => {
+  const grade = s?.grade ?? s?.gradeId;
+  if (!grade) return null;
+  if (typeof grade === "string") return grade;
+  const nested = grade.name ?? grade;
+  const resolved = resolveName(nested);
+  return resolved !== "--" ? resolved : null;
+};
 
 // بترجع بس المعلمين النشطين والموثّقين، بنفس شرط باقي الصفحات (AddSubscriptionPage/CreateGroupPages)
 const filterActiveTeachers = (list) =>
@@ -56,7 +76,8 @@ const statusBadge = (status) => {
 };
 
 // ─── Select Field ─────────────────────────────────────────────────────────────
-const SelectField = ({ label, options, placeholder, value, onChange, disabled }) => (
+// allowClear: لو true، أول اختيار (الـ placeholder) بيبقى قابل للاختيار (بيتستخدم كـ "مسح الفلتر")
+const SelectField = ({ label, options, placeholder, value, onChange, disabled, allowClear }) => (
   <div className="mb-3">
     <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">{label}</label>
     <div className="relative">
@@ -66,7 +87,7 @@ const SelectField = ({ label, options, placeholder, value, onChange, disabled })
         disabled={disabled}
         className="w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] appearance-none text-right text-[#1F2937] disabled:opacity-60"
       >
-        <option value="" disabled>{placeholder}</option>
+        <option value="" disabled={!allowClear}>{placeholder}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
@@ -75,6 +96,74 @@ const SelectField = ({ label, options, placeholder, value, onChange, disabled })
     </div>
   </div>
 );
+
+// ─── Student Combobox ─────────────────────────────────────────────────────────
+// خانة بحث بالاسم بتفتح قايمة نتائج، ولما تختار طالب اسمه بيظهر جوه الخانة نفسها
+// بدل السيليكت المنفصل.
+const StudentCombobox = ({ label, search, onSearchChange, options, selectedId, onSelect, placeholder, disabled, emptyLabel }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [isOpen]);
+
+  const handleChange = (e) => {
+    onSearchChange(e.target.value);
+    if (selectedId) onSelect(null); // تعديل النص يعني إلغاء الاختيار السابق
+    setIsOpen(true);
+  };
+
+  const handlePick = (option) => {
+    onSelect(option);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="mb-3" ref={containerRef}>
+      <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">{label}</label>
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={handleChange}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoComplete="off"
+          className="w-full h-11 pr-10 pl-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] text-right text-[#1F2937] disabled:opacity-60"
+        />
+        <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
+
+        {isOpen && !disabled && (
+          <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-[#E5E5E5] rounded-lg shadow-lg">
+            {options.length === 0 ? (
+              <div className="px-4 py-2.5 text-[13px] text-[#9CA3AF] font-['IBM_Plex_Sans_Arabic'] text-right">{emptyLabel}</div>
+            ) : (
+              options.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => handlePick(o)}
+                  className={`w-full text-right px-4 py-2.5 text-[13px] font-['IBM_Plex_Sans_Arabic'] hover:bg-[#F3F4F6] transition-colors ${o.value === selectedId ? "bg-[#EAF4FF] text-[#123C91]" : "text-[#1F2937]"}`}
+                >
+                  {o.label}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const Modal = ({ open, onClose, title, children }) => {
@@ -122,10 +211,18 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  // فلاتر البحث
+  const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState("");
+  const [gradeFilter, setGradeFilter] = useState("");
+
   useEffect(() => {
     if (!open || !group) return;
     setSelectedStudent("");
     setSelectedPackage("");
+    setSearch("");
+    setStageFilter("");
+    setGradeFilter("");
     setError(null);
     setLoading(true);
 
@@ -147,6 +244,38 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       })
       .finally(() => setLoading(false));
   }, [open, group]);
+
+  // خيارات فلتر "المرحلة" مستخرجة من قايمة الطلاب اللي وصلت فعلاً (مفيش استدعاء API إضافي)
+  const stageOptions = useMemo(() => {
+    const names = new Set(students.map(resolveStageName).filter(Boolean));
+    return Array.from(names).map((name) => ({ value: name, label: name }));
+  }, [students]);
+
+  // خيارات فلتر "الصف"، لو فيه مرحلة مختارة بيفلتر الصفوف اللي تبعها بس
+  const gradeOptions = useMemo(() => {
+    const relevant = stageFilter
+      ? students.filter((s) => resolveStageName(s) === stageFilter)
+      : students;
+    const names = new Set(relevant.map(resolveGradeName).filter(Boolean));
+    return Array.from(names).map((name) => ({ value: name, label: name }));
+  }, [students, stageFilter]);
+
+  // لو الصف المختار بقى مش موجود ضمن خيارات الصف الجديدة (بعد تغيير المرحلة)، بنمسحه
+  useEffect(() => {
+    if (gradeFilter && !gradeOptions.some((o) => o.value === gradeFilter)) {
+      setGradeFilter("");
+    }
+  }, [gradeOptions, gradeFilter]);
+
+  const filteredStudents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return students.filter((s) => {
+      const matchesSearch = !q || resolvePersonName(s).toLowerCase().includes(q);
+      const matchesStage = !stageFilter || resolveStageName(s) === stageFilter;
+      const matchesGrade = !gradeFilter || resolveGradeName(s) === gradeFilter;
+      return matchesSearch && matchesStage && matchesGrade;
+    });
+  }, [students, search, stageFilter, gradeFilter]);
 
   const handleSubmit = async () => {
     if (!selectedStudent) {
@@ -192,12 +321,37 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
   return (
     <Modal open={open} onClose={onClose} title="إضافة طالب للمجموعة">
       <SelectField
+        label="المرحلة"
+        placeholder="كل المراحل"
+        options={stageOptions}
+        value={stageFilter}
+        onChange={setStageFilter}
+        disabled={loading || stageOptions.length === 0}
+        allowClear
+      />
+      <SelectField
+        label="الصف"
+        placeholder="كل الصفوف"
+        options={gradeOptions}
+        value={gradeFilter}
+        onChange={setGradeFilter}
+        disabled={loading || gradeOptions.length === 0}
+        allowClear
+      />
+      <StudentCombobox
         label="الطالب"
-        placeholder={loading ? "جاري التحميل..." : "اختر الطالب"}
-        options={students.map((s) => ({ value: resolvePersonId(s), label: resolvePersonName(s) }))}
-        value={selectedStudent}
-        onChange={setSelectedStudent}
+        search={search}
+        onSearchChange={setSearch}
+        options={filteredStudents.map((s) => ({ value: resolvePersonId(s), label: resolvePersonName(s) }))}
+        selectedId={selectedStudent}
+        onSelect={(option) => {
+          setSelectedStudent(option?.value || "");
+          if (!option) return; // مسحنا الاختيار، النص هيفضل زي ما كتبه المستخدم
+          setSearch(option.label);
+        }}
+        placeholder={loading ? "جاري التحميل..." : "اكتب اسم الطالب..."}
         disabled={loading}
+        emptyLabel="لا يوجد طلاب مطابقين"
       />
       <SelectField
         label="الباقة"
@@ -446,7 +600,7 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons }) =
   const handleClick = (item) => {
     setOpen(false);
     if (item.nav === "lessons") {
-      onOpenLessons(group.id);
+      onOpenLessons(group);
     } else if (item.isNav) {
       onOpenAttendance(group.id);
     } else {
@@ -507,7 +661,7 @@ const MobileField = ({ label, children }) => (
 );
 
 // ─── Main Table ───────────────────────────────────────────────────────────────
-const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
+const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged }) => {
   const navigate = useNavigate();
   const [modal, setModal] = useState(null);
 
@@ -519,8 +673,24 @@ const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
     }
   };
 
-  const handleOpenLessons = (groupId) => {
-    navigate(`/admin/groups/${groupId}/lessons`);
+  const handleOpenLessons = (group) => {
+    navigate(`/admin/groups/${group.id}/lessons`, {
+      state: { groupName: group.name },
+    });
+  };
+
+  // ✅ لينك اسم المجموعة -> صفحة التفاصيل.
+  // مفيش صفحة "تفاصيل مجموعة" منفصلة في الراوتس حالياً، فبنستخدم صفحة الحصص
+  // (اللي موجودة أصلاً وشغالة). لو عندك صفحة تفاصيل تانية، مرر onOpenDetails
+  // كـ prop من الصفحة الأب أو غيّر المسار هنا.
+  const handleOpenDetails = (group) => {
+    if (onOpenDetails) {
+      onOpenDetails(group);
+    } else {
+      navigate(`/admin/groups/${group.id}/lessons`, {
+        state: { groupName: group.name },
+      });
+    }
   };
 
   const openAction = (type, group) => setModal({ type, group });
@@ -551,7 +721,15 @@ const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
               <tbody className="divide-y divide-gray-100">
                 {groups.map((g) => (
                   <tr key={g.id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] font-['Tajawal'] font-medium text-[15px]">{g.name}</td>
+                    <td className="px-4 lg:px-6 py-3 lg:py-4 font-['Tajawal'] font-medium text-[15px]">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetails(g)}
+                        className="text-[#123C91] hover:underline text-right transition-colors"
+                      >
+                        {g.name}
+                      </button>
+                    </td>
                     {[g.teacher, g.substituteTeacher, g.subject, g.stage, g.grade].map((v, i) => (
                       <td key={i} className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[14px] whitespace-nowrap">{v ?? "--"}</td>
                     ))}
@@ -572,7 +750,13 @@ const GroupTable = ({ groups = [], onOpenAttendance, onChanged }) => {
           {groups.map((g) => (
             <div key={g.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-[#1A1A1A] font-semibold text-[16px] font-['Tajawal']">{g.name}</h4>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDetails(g)}
+                  className="text-[#123C91] font-semibold text-[16px] font-['Tajawal'] hover:underline text-right"
+                >
+                  {g.name}
+                </button>
                 <ActionsDropdown group={g} onAction={openAction} onOpenAttendance={handleOpenAttendance} onOpenLessons={handleOpenLessons} />
               </div>
               <div className="flex items-center gap-2 mb-3">{statusBadge(g.status)}</div>

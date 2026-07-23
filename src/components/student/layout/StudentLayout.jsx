@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import StudentSidebar from "./StudentSidebar";
+import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -38,6 +39,7 @@ const StudentLayout = ({ children }) => {
       </div>
 
       <main className="flex-1 h-full overflow-y-auto p-3 md:p-6">
+         <Breadcrumbs homeTo="/student-dashboard" />
         {children}
       </main>
 

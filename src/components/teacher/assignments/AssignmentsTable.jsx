@@ -119,10 +119,16 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
               {assignments.map((a) => (
                 <tr key={a.id} className="hover:bg-gray-50/80 transition-colors">
                   <td
-                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69]"
+                    className="px-4 lg:px-6 py-3 lg:py-4"
                     style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 500, fontSize: "16px", lineHeight: "20px" }}
                   >
-                    {a.title}
+                    <button
+                      type="button"
+                      onClick={() => handleView(a.id)}
+                      className="text-[#123C91] hover:underline text-right"
+                    >
+                      {a.title}
+                    </button>
                   </td>
 
                   {[a.group, a.lesson, a.dueDate].map((cellData, index) => (
@@ -167,9 +173,14 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
         {assignments.map((a) => (
           <div key={a.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[#1A1A1A] font-semibold text-[16px]" style={{ fontFamily: "Tajawal, sans-serif" }}>
+              <button
+                type="button"
+                onClick={() => handleView(a.id)}
+                className="text-[#123C91] font-semibold text-[16px] hover:underline text-right"
+                style={{ fontFamily: "Tajawal, sans-serif" }}
+              >
                 {a.title}
-              </h4>
+              </button>
               <ViewAction assignmentId={a.id} onView={handleView} />
             </div>
 

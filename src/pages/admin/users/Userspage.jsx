@@ -16,16 +16,19 @@ import {
   updateStudentProfile,
   updateTeacherProfile,
 } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const PAGE_SIZE = 6;
 const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
 
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
+// ⚠️ "مشرف" = admin (صلاحيات محدودة)، "مشرف عام" = super-admin (صلاحيات كاملة)
 const ROLE_MAP = {
   student: "طالب",
   teacher: "معلم",
   parent: "ولي أمر",
   admin: "مشرف",
+  "super-admin": "مشرف عام",
 };
 
 const statusOf = (u) => {
@@ -140,7 +143,8 @@ const UsersPage = () => {
   // من الصفحة المعروضة بس، وكل رول بياخد عدّاده الصح
   const stats = {
     parents: visibleUsers.filter((u) => u.role === "ولي أمر").length,
-    admins: visibleUsers.filter((u) => u.role === "مشرف").length,
+    admins: visibleUsers.filter((u) => u.role === "مشرف عام").length,
+    supervisors: visibleUsers.filter((u) => u.role === "مشرف").length,
     teachers: visibleUsers.filter((u) => u.role === "معلم").length,
     students: visibleUsers.filter((u) => u.role === "طالب").length,
     total: visibleUsers.length,
@@ -241,6 +245,7 @@ const UsersPage = () => {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"

@@ -77,6 +77,10 @@ import CreateSchedulePage from "./components/teacher/groups/lessons/CreateSchedu
 import AttendanceRegistrationPage from "./pages/teacher/groups/AttendanceRegistrationPage";
 import SessionDetailsPage from "./pages/shared/SessionDetailsPage";
 import AddSubscriptionPage from "./pages/admin/subscriptions/Addsubscriptionpage";
+import AllBlogsPage from "./components/landing/AllBlogsPage";
+import BlogsPage from "./pages/admin/BlogsPage.jsx/BlogsPage";
+import BlogFormPage from "./pages/admin/BlogsPage.jsx/BlogFormPage";
+import BlogPostPage from "./components/landing/Blogpostpage";
 
 
 function App() {
@@ -94,6 +98,8 @@ function App() {
         {/* Landing */}
         <Route element={<HomeLayout />}>
           <Route index element={<Landing />} />
+          <Route path="/blogs" element={<AllBlogsPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
         </Route>
 
         {/* Auth */}
@@ -172,6 +178,10 @@ function App() {
         <Route path="/admin/subscription" element={user ? <SubscriptionsPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscriptions/requests" element={user ? <SubscriptionRequestsPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscriptions/:id" element={user ? <SubscriptionDetailsPage /> : <Navigate to="/login" replace />} />
+
+        <Route path="/admin/blogs" element={user ? <BlogsPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/blogs/add" element={user ? <BlogFormPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/blogs/:id/edit" element={user ? <BlogFormPage /> : <Navigate to="/login" replace />} />
 
         {/* <Route path="/admin/subscriptions/requests/:id" element={user ? <RequestDetailsPage  /> : <Navigate to="/login" replace />} />     */}
         <Route path="/admin/subscriptions/requests/:id/activate" element={user ? <ActivateSubscriptionPage /> : <Navigate to="/login" replace />} />

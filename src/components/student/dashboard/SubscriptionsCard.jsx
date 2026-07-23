@@ -13,20 +13,19 @@ const numberOrZero = (value) => {
 const buildGroupsFromSubscriptions = (subscriptions = []) =>
   subscriptions.map((subscription) => {
     const items = subscription.items ?? subscription.subjectSubscriptions ?? [];
-    const summary = subscription.summary ?? {};
     const subjects = items
       .map((item) => resolveName(item.subject?.name))
       .filter(Boolean);
-    const itemsTotal = items.reduce(
+    const total = items.reduce(
       (sum, item) =>
         sum + numberOrZero(item.totalSessions ?? item.package?.sessions),
       0,
     );
-    const itemsRemaining = items.reduce(
+    const remaining = items.reduce(
       (sum, item) => sum + numberOrZero(item.remainingSessions),
       0,
     );
-    const itemsDone = items.reduce((sum, item) => {
+    const done = items.reduce((sum, item) => {
       if (item.usedSessions != null)
         return sum + numberOrZero(item.usedSessions);
       if (item.consumedSessions != null)
@@ -37,17 +36,6 @@ const buildGroupsFromSubscriptions = (subscriptions = []) =>
       const itemRemaining = numberOrZero(item.remainingSessions);
       return sum + Math.max(itemTotal - itemRemaining, 0);
     }, 0);
-    const total = numberOrZero(summary.totalSessions) || itemsTotal;
-    const remaining =
-      summary.remainingSessions != null
-        ? numberOrZero(summary.remainingSessions)
-        : itemsRemaining;
-    const done =
-      summary.usedSessions != null
-        ? numberOrZero(summary.usedSessions)
-        : summary.completedSessions != null
-          ? numberOrZero(summary.completedSessions)
-          : itemsDone;
 
     return {
       id: subscription.id ?? subscription._id,
@@ -62,7 +50,6 @@ const SubscriptionsCard = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeSubscriptionIndex, setActiveSubscriptionIndex] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,15 +83,12 @@ const SubscriptionsCard = () => {
   }, []);
 
   const groups = buildGroupsFromSubscriptions(items);
-  const activeIndex =
-    groups.length > 0
-      ? Math.min(activeSubscriptionIndex, groups.length - 1)
-      : 0;
-  const activeGroup = groups[activeIndex] ?? groups[0];
-  const visibleGroups = activeGroup ? [activeGroup] : [];
-  const totalLessons = activeGroup?.total ?? 0;
-  const completedLessons = activeGroup?.done ?? 0;
-  const explicitRemainingLessons = activeGroup?.remaining ?? 0;
+  const totalLessons = groups.reduce((sum, g) => sum + g.total, 0);
+  const completedLessons = groups.reduce((sum, g) => sum + g.done, 0);
+  const explicitRemainingLessons = groups.reduce(
+    (sum, g) => sum + g.remaining,
+    0,
+  );
   const remainingLessons =
     explicitRemainingLessons > 0
       ? explicitRemainingLessons
@@ -165,34 +149,6 @@ const SubscriptionsCard = () => {
 
       {!loading && !error && groups.length > 0 && (
         <>
-          {groups.length > 1 && (
-            <div className="flex items-center justify-center gap-2 mb-4">
-              {groups.map((group, index) => {
-                const isActive = index === activeIndex;
-
-                return (
-                  <button
-                    key={group.id ?? index}
-                    type="button"
-                    onClick={() => setActiveSubscriptionIndex(index)}
-                    aria-label={`عرض الاشتراك رقم ${index + 1}`}
-                    aria-pressed={isActive}
-                    className={[
-                      "w-8 h-8 rounded-full text-[13px] font-semibold",
-                      "border transition-colors duration-200",
-                      "focus:outline-none focus:ring-2 focus:ring-[#12C6B0]/30",
-                      isActive
-                        ? "bg-[#12C6B0] border-[#12C6B0] text-white"
-                        : "bg-white border-[#E5E7EB] text-[#6B7280] hover:border-[#12C6B0] hover:text-[#12C6B0]",
-                    ].join(" ")}
-                  >
-                    {index + 1}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
           {/* Mini stats */}
           <div className="grid grid-cols-3 gap-2 mb-5">
             {miniStats.map((s) => (
@@ -215,7 +171,7 @@ const SubscriptionsCard = () => {
 
           {/* Progress list */}
           <div className="flex flex-col gap-3.5 sm:gap-4">
-            {visibleGroups.map((g) => {
+            {groups.map((g) => {
               const percent =
                 g.total > 0
                   ? Math.min(100, Math.round((g.done / g.total) * 100))

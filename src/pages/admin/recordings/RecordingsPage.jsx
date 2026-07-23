@@ -6,6 +6,7 @@ import RecordingsTable from "../../../components/admin/recordings/RecordingsTabl
 import AddRecordingModal from "../../../components/admin/recordings/AddRecordingModal";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import { getClassrooms, getClassroomSessions, getSessionRecording } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const PAGE_SIZE = 6;
 
@@ -13,6 +14,11 @@ const formatSessionDuration = (duration) => {
   if (duration === null || duration === undefined || duration === "") return "—";
   return typeof duration === "number" ? `${duration} دقيقة` : duration;
 };
+
+// ⚠️ زي resolveName/nameOf المستخدمة في باقي الصفحات — بعض الحقول (زي name) بترجع
+// كـ object { ar, en } مش string مباشر
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || "—";
 
 const RecordingsPages = () => {
   const [search, setSearch] = useState("");
@@ -38,7 +44,10 @@ const RecordingsPages = () => {
           return recording ? {
             id: recording.id || recording._id,
             title: recording.title,
-            group: classroom.name,
+            // ⚠️ groupId و lessonId ضروريين عشان لينكات "المجموعة"/"الحصة" في RecordingsTable تشتغل صح
+            groupId: classroom.id || classroom._id,
+            lessonId: session.id || session._id,
+            group: resolveName(classroom.name),
             lesson: session.title,
             teacher: classroom.teacher?.user?.fullName || classroom.teacher?.name || "—",
             duration: formatSessionDuration(session.duration),
@@ -66,6 +75,7 @@ const RecordingsPages = () => {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">
 
         {/* Header */}
@@ -94,7 +104,7 @@ const RecordingsPages = () => {
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             filterGroup={filterGroup}
             onFilterGroupChange={(v) => { setFilterGroup(v); setPage(1); }}
-            groupOptions={["جميع المجموعات", ...groups.map((g) => g.name)]}
+            groupOptions={["جميع المجموعات", ...groups.map((g) => resolveName(g.name))]}
           />
         </div>
 

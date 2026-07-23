@@ -12,6 +12,7 @@ import {
   createGrade,
   createSubject,
 } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const CreateCurriculumPage = () => {
   const navigate = useNavigate();
@@ -147,6 +148,7 @@ const CreateCurriculumPage = () => {
 
   return (
     <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
       <div dir="rtl" className="max-w-4xl mx-auto p-4 space-y-6 pb-20">
         <div className="flex justify-between items-center">
           <div>

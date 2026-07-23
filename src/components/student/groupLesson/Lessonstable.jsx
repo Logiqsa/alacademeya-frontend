@@ -19,35 +19,6 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const OPENABLE_STATUSES = new Set([
-  "active",
-  "completed",
-  "ended",
-  "finished",
-  "in_progress",
-  "live",
-  "running",
-  "جار الآن",
-  "جاري الآن",
-  "جارٍ الآن",
-  "شغالة",
-  "شغاله",
-  "مباشر الآن",
-  "مكتمل",
-  "منتهي",
-  "منتهية",
-]);
-
-const normalizeStatus = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase();
-
-const canOpenFromRow = (lesson) =>
-  [lesson.rawStatus, lesson.status, lesson.displayStatus, lesson.statusKey].some(
-    (status) => OPENABLE_STATUSES.has(normalizeStatus(status)),
-  );
-
 const LessonsTable = ({ lessons = [], onView }) => {
   return (
     <div dir="rtl" className="bg-white border border-[#E5E5E5] rounded-2xl overflow-x-auto">
@@ -70,18 +41,11 @@ const LessonsTable = ({ lessons = [], onView }) => {
               </td>
             </tr>
           ) : (
-            lessons.map((lesson) => {
-              const isRowOpenable = canOpenFromRow(lesson);
-
-              return (
+            lessons.map((lesson) => (
               <tr
                 key={lesson.id}
-                onClick={() => {
-                  if (isRowOpenable) onView?.(lesson.id);
-                }}
-                className={`border-b border-[#F1F1F1] last:border-0 text-[15px] font-semibold text-[#1F2937] transition-all ${
-                  isRowOpenable ? "hover:bg-gray-50 cursor-pointer" : ""
-                }`}
+                onClick={() => onView?.(lesson.id)}
+                className="border-b border-[#F1F1F1] last:border-0 text-[15px] font-semibold text-[#1F2937] hover:bg-gray-50 cursor-pointer transition-all"
               >
                 <td className="py-4 px-4 text-base font-bold">{lesson.title}</td>
                 <td className="py-4 px-4 text-[#575F69]">{lesson.date}</td>
@@ -103,8 +67,7 @@ const LessonsTable = ({ lessons = [], onView }) => {
                   </button>
                 </td>
               </tr>
-              );
-            })
+            ))
           )}
         </tbody>
       </table>

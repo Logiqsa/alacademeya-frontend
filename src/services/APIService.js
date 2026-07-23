@@ -136,8 +136,6 @@ export const createSubscription = (payload) =>
 export const getAllSubscriptions = (params) =>
   API.get("/subscriptions/", { params });
 export const getSubscription = (id) => API.get(`/subscriptions/${id}`);
-export const renewSubscription = (id, payload) =>
-  API.post(`/subscriptions/${id}/renew`, payload);
 export const getStudentSubscriptionOptions = (studentId) =>
   API.get(`/subscriptions/students/${studentId}/subscription-options`);
 export const getPendingSubscriptionRequests = () =>
@@ -318,6 +316,58 @@ export const submitAssignment = (assignmentId, formData) =>
     },
   });
 
+
+
+
+export const getBlogCategories = () => API.get("/blog-categories/");
+export const createBlogCategory = (payload) =>
+  API.post("/blog-categories/", payload); // body: { name }
+
+
+export const getBlogPosts = (params) => API.get("/blog-posts/", { params });
+export const getBlogPost = (id) => API.get(`/blog-posts/${id}`);
+
+
+export const createBlogPost = (formData) =>
+  API.post("/blog-posts/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const updateBlogPost = (id, formData) =>
+  API.patch(`/blog-posts/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const deleteBlogPost = (id) => API.delete(`/blog-posts/${id}`);
  
 
+// ════════════════════════════════════════════════════════════════════════════
+// ضيف الكود ده في آخر ملف src/services/api.js (تحت الجزء بتاع Blog اللي موجود)
+// دول الـ endpoints العامة (من غير حاجة لتسجيل دخول) اللي بترجع البوستات
+// المنشورة بس (status: "published") — نفس اللي شايفينه في Postman
+// ════════════════════════════════════════════════════════════════════════════
+
+// GET /blog-posts/public              → { success, results, data: [ ...posts ] }
+export const getPublicBlogPosts = (params) =>
+  API.get("/blog-posts/public", { params });
+
+// GET /blog-posts/public/:slug        → { success, data: { blogPost: {...} } }
+export const getPublicBlogPostBySlug = (slug) =>
+  API.get(`/blog-posts/public/${encodeURIComponent(slug)}`);
+
+// GET /blog-posts/public/category/:categorySlug
+//                                     → { success, results, data: { category, blogPosts: [...] } }
+export const getPublicBlogPostsByCategory = (categorySlug, params) =>
+  API.get(`/blog-posts/public/category/${encodeURIComponent(categorySlug)}`, {
+    params,
+  });
+
+// الصور بترجع من الـ API كـ path نسبي زي:
+//   "uploads/blogs/1784333423241-f52df43d-3ce4-4aba-bb9d-4d857f35236a.jpg"
+// لازم نضيف عليه الـ origin بتاع السيرفر (من غير /api) عشان تتعرض صح في <img>
+export const ASSET_BASE_URL = "https://api.alacademeya.com/api";
+
+export const getAssetUrl = (path) => {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path; // لو خلاص لينك كامل
+  return `${ASSET_BASE_URL}/${String(path).replace(/^\/+/, "")}`;
+};
  

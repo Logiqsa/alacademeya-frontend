@@ -11,6 +11,7 @@ import {
   getAllDiscounts,
   createSubscription,
 } from "../../../services/APIService";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const idOf = (obj) => {
   if (!obj) return "";
@@ -566,6 +567,7 @@ const ActivateSubscriptionPage = () => {
   if (requestLoading) {
     return (
       <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
         <div
           className="flex items-center justify-center py-24 text-[#8C9198]"
           dir="rtl"
@@ -580,6 +582,7 @@ const ActivateSubscriptionPage = () => {
   if (requestError || !request) {
     return (
       <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
         <div
           dir="rtl"
           className="flex flex-col items-center justify-center py-24 gap-3 text-center"
@@ -601,6 +604,7 @@ const ActivateSubscriptionPage = () => {
 
   return (
     <AdminLayout>
+        <Breadcrumbs homeTo="/admin-dashboard" />
       <div
         dir="rtl"
         className="w-full max-w-full p-3 sm:p-4 md:p-6 font-['IBM_Plex_Sans_Arabic'] overflow-x-hidden"
