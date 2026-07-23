@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Bell, Loader2, Check } from "lucide-react";
@@ -7,6 +7,10 @@ import {
   getNotifications,
   markNotificationRead,
 } from "../../../services/APIService";
+import {
+  markAdminLocalNotificationRead,
+  mergeAdminNotifications,
+} from "../../../utils/adminLocalNotifications";
 
 const MAX_ITEMS = 4;
 
@@ -54,6 +58,7 @@ const KEY_TITLES = {
   TEACHER_APPROVED: "تم قبول حساب المعلم",
   TEACHER_PARENT_ROOM_CREATED: "تم إنشاء محادثة",
   CERTIFICATE_ISSUED: "شهادة جديدة",
+  BLOG_CREATED: "تم إضافة مقال جديد",
 };
 
 const titleOf = (notification, lang = "ar") => {
@@ -105,7 +110,7 @@ const NotificationsSection = () => {
 
       const res = await getNotifications();
 
-      setNotifications(extractList(res.data));
+      setNotifications(mergeAdminNotifications(extractList(res.data)));
     } catch (err) {
       setLoadError(err.response?.data?.message || "تعذر تحميل الإشعارات");
     } finally {
@@ -121,6 +126,21 @@ const NotificationsSection = () => {
     if (!id) return;
 
     try {
+      const localNotification = notifications.find(
+        (notification) => (notification._id || notification.id) === id && notification._local
+      );
+      if (localNotification) {
+        markAdminLocalNotificationRead(id);
+        setNotifications((prev) =>
+          prev.map((notification) =>
+            (notification._id || notification.id) === id
+              ? { ...notification, isRead: true }
+              : notification
+          )
+        );
+        toast.success("تم تحديث الإشعار");
+        return;
+      }
       await markNotificationRead(id);
 
       setNotifications((prev) =>

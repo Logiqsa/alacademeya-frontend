@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import StatsCardds from "../../../components/admin/notifications/StatsCards";
 import NotificationsSection from "../../../components/admin/notifications/NotificationsSection";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import { getNotifications } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import { mergeAdminNotifications } from "../../../utils/adminLocalNotifications";
 
 const extractList = (resData) => {
   if (!resData) return [];
@@ -22,7 +23,7 @@ const AdminNotificationss = () => {
     setLoadError("");
     try {
       const res = await getNotifications();
-      setNotifications(extractList(res.data));
+      setNotifications(mergeAdminNotifications(extractList(res.data)));
     } catch (err) {
       setLoadError(err.response?.data?.message || "تعذر تحميل الإشعارات");
     } finally {

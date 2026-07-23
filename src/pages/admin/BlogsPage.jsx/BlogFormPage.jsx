@@ -1,8 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import { ChevronDown, ImagePlus } from "lucide-react";
+import { addBlogCreatedNotification } from "../../../utils/adminLocalNotifications";
 
 // استدعاء مكتبة Quill الأساسية
 import Quill from "quill";
@@ -14,9 +16,12 @@ import {
   updateBlogPost,
   getBlogCategories,
   createBlogCategory,
+  getAssetUrl,
 } from "../../../services/APIService";
 
 const EMPTY_FORM = {
+  coverImageFile: null,
+  coverImageUrl: null,
   title: "",
   description: "",
   content: "",
@@ -37,6 +42,7 @@ const BlogFormPage = () => {
   const [saving, setSaving] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
 
+  const fileInputRef = useRef(null);
   // مراجع خاصة بمحرر Quill الحديث
   const quillRef = useRef(null);
   const quillInstanceRef = useRef(null);
@@ -47,6 +53,17 @@ const BlogFormPage = () => {
       .catch(() => setCategories([]));
   }, []);
 
+  const coverPreview = useMemo(
+    () => data.coverImageFile
+      ? URL.createObjectURL(data.coverImageFile)
+      : data.coverImageUrl,
+    [data.coverImageFile, data.coverImageUrl]
+  );
+
+  useEffect(() => () => {
+    if (data.coverImageFile && coverPreview) URL.revokeObjectURL(coverPreview);
+  }, [data.coverImageFile, coverPreview]);
+
   useEffect(() => {
     if (!isEditMode) return;
     setLoading(true);
@@ -55,6 +72,8 @@ const BlogFormPage = () => {
         const responseData = res.data?.data;
         const p = responseData?.blogPost || responseData || {};
         setData({
+          coverImageFile: null,
+          coverImageUrl: getAssetUrl(p.coverImage),
           title: p.title || "",
           description: p.description || "",
           content: p.content || "",
@@ -143,6 +162,11 @@ const BlogFormPage = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+    if (!isEditMode && !data.coverImageFile) {
+      toast.error("يرجى اختيار صورة للمقال.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -155,13 +179,19 @@ const BlogFormPage = () => {
       fd.append("isFeatured", String(data.isFeatured));
       fd.append("seoTitle", data.title);
       fd.append("seoDescription", data.description || "");
+      if (data.coverImageFile) {
+        fd.append("coverImage", data.coverImageFile);
+      }
 
       let successMessage = "";
       if (isEditMode) {
         await updateBlogPost(id, fd);
         successMessage = "تم تعديل المقال بنجاح";
       } else {
-        await createBlogPost(fd);
+        const createResponse = await createBlogPost(fd);
+        const createdData = createResponse?.data?.data;
+        const createdBlog = createdData?.blogPost || createdData || { title: data.title };
+        addBlogCreatedNotification({ ...createdBlog, title: createdBlog.title || data.title });
         successMessage = "تم إضافة المقال بنجاح";
       }
 
@@ -195,6 +225,47 @@ const BlogFormPage = () => {
 
         <div className="bg-white border border-[#E5E5E5] rounded-2xl p-6 shadow-sm space-y-6">
 
+          {/* صورة المقال فقط، بدون ألوان غلاف */}
+          <div>
+            <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
+              صورة المقال {!isEditMode && <span className="text-red-500">*</span>}
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleField("coverImageFile", file);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative w-full h-48 overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:border-[#123C91] hover:bg-blue-50/40 transition-colors"
+            >
+              {coverPreview ? (
+                <>
+                  <img
+                    src={coverPreview}
+                    alt="معاينة صورة المقال"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/35 text-white font-medium opacity-0 hover:opacity-100 transition-opacity">
+                    اضغط لتغيير الصورة
+                  </span>
+                </>
+              ) : (
+                <span className="flex h-full flex-col items-center justify-center gap-2 text-gray-500">
+                  <ImagePlus size={34} className="text-[#123C91]" />
+                  <span className="font-medium">اضغط لإضافة صورة المقال</span>
+                  <span className="text-[12px] text-gray-400">PNG أو JPG أو WEBP</span>
+                </span>
+              )}
+            </button>
+          </div>
+
           {/* 3. عنوان المقال */}
           <div>
             <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
@@ -215,18 +286,24 @@ const BlogFormPage = () => {
               <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
                 التصنيف <span className="text-red-500">*</span>
               </label>
-              <select
-                value={data.category}
-                onChange={(e) => handleField("category", e.target.value)}
-                className="w-full h-11 px-4 rounded-xl border border-[#E5E5E5] text-[14px] text-gray-800 bg-white focus:outline-none focus:border-[#123C91]"
-              >
-                <option value="">اختر تصنيفاً...</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={data.category}
+                  onChange={(e) => handleField("category", e.target.value)}
+                  className="w-full h-11 appearance-none rounded-xl border border-[#E5E5E5] bg-white pr-4 pl-11 text-[14px] text-gray-800 cursor-pointer focus:outline-none focus:border-[#123C91] focus:ring-2 focus:ring-[#123C91]/10"
+                >
+                  <option value="" disabled>اختر تصنيفاً...</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={18}
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+              </div>
             </div>
 
             <div>

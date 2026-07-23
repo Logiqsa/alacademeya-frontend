@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { Bell, BellRing, GraduationCap, Settings, Loader2 } from "lucide-react";
 import NotificationCard from "./NotificationCard";
@@ -6,6 +6,10 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
 } from "../../../services/APIService";
+import {
+  markAdminLocalNotificationRead,
+  markAllAdminLocalNotificationsRead,
+} from "../../../utils/adminLocalNotifications";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -95,6 +99,11 @@ const NotificationsSection = ({
       ),
     );
 
+    if (n._local) {
+      markAdminLocalNotificationRead(id);
+      return;
+    }
+
     try {
       await markNotificationRead(id);
     } catch (err) {
@@ -108,6 +117,7 @@ const NotificationsSection = ({
     setMarkingAll(true);
     const prevState = notifications;
     onChange?.(notifications.map((n) => ({ ...n, isRead: true })));
+    markAllAdminLocalNotificationsRead();
     try {
       await markAllNotificationsRead();
       toast.success("تم تحديد جميع الإشعارات كمقروءة");

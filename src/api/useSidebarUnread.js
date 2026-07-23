@@ -4,6 +4,10 @@ import { AuthContext } from "../context/AuthContext";
 import { getNotifications } from "../services/APIService";
 import { getChatRooms } from "./chatApi";
 import { getSocket } from "./socket";
+import {
+  ADMIN_NOTIFICATION_EVENT,
+  getAdminLocalNotifications,
+} from "../utils/adminLocalNotifications";
 
 const extractList = (payload, keys) => {
   let value = payload;
@@ -38,6 +42,7 @@ const unreadRoom = (room, userId) => {
 export function useSidebarUnread() {
   const { user } = useContext(AuthContext);
   const userId = user?._id ?? user?.id;
+  const isAdmin = user?.role === "admin";
   const { pathname } = useLocation();
   const [unread, setUnread] = useState({ messages: false, notifications: false });
 
@@ -54,13 +59,28 @@ export function useSidebarUnread() {
           : current.messages,
       notifications:
         notificationsResult.status === "fulfilled"
-          ? extractList(notificationsResult.value.data, ["notifications"]).some((item) => {
+          ? [
+              ...extractList(notificationsResult.value.data, ["notifications"]),
+              ...(isAdmin ? getAdminLocalNotifications() : []),
+            ].some((item) => {
               const isRead = item.isRead ?? item.read ?? item.status === "read";
               return !isRead;
             })
           : current.notifications,
     }));
-  }, [userId]);
+  }, [isAdmin, userId]);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    const handleLocalNotification = () => {
+      setUnread((current) => ({
+        ...current,
+        notifications: getAdminLocalNotifications().some((item) => !item.isRead),
+      }));
+    };
+    window.addEventListener(ADMIN_NOTIFICATION_EVENT, handleLocalNotification);
+    return () => window.removeEventListener(ADMIN_NOTIFICATION_EVENT, handleLocalNotification);
+  }, [isAdmin]);
 
   useEffect(() => {
     const initial = window.setTimeout(refresh, 0);
