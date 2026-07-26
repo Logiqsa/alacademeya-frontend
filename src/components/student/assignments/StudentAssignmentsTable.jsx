@@ -374,9 +374,14 @@ const SubmitAssignmentModal = ({ assignmentId, onClose, onSubmitted }) => {
 };
 
 // ─── Main Table ────────────────────────────────────────────────────────────
-const StudentAssignmentsTable = ({ assignments = [], onView, onSubmitted }) => {
+const StudentAssignmentsTable = ({
+  assignments = [],
+  onView,
+  onSubmitted,
+  initialDetailsId = null,
+}) => {
   const [localAssignments, setLocalAssignments] = useState(assignments);
-  const [detailsId, setDetailsId] = useState(null);
+  const [detailsId, setDetailsId] = useState(initialDetailsId);
   const [submitId, setSubmitId] = useState(null);
 
   useEffect(() => {

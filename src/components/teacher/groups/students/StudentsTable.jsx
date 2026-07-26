@@ -1,4 +1,3 @@
-import React from "react";
 import { HiOutlineEye } from "react-icons/hi";
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
@@ -45,7 +44,7 @@ const MobileField = ({ label, children }) => (
 // ─────────────────────────────────────────────────────────────
 /**
  * Props:
- *  students: Array<{ id, name, joinDate, phone, parent, status }>
+ *  students: Array<{ id, name, joinDate, parent, status }>
  *  onView: (id) => void
  */
 const StudentsTable = ({ students = [], onView }) => {
@@ -73,7 +72,7 @@ const StudentsTable = ({ students = [], onView }) => {
                   fontFamily: "IBM Plex Sans Arabic, sans-serif",
                 }}
               >
-                {["اسم الطالب", "تاريخ الإنضمام", "رقم الهاتف", "ولي الأمر", "الحالة", "الإجراءات"].map((header) => (
+                {["اسم الطالب", "تاريخ الإنضمام", "ولي الأمر", "الحالة", "الإجراءات"].map((header) => (
                   <th
                     key={header}
                     className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[13px] lg:text-[14px] font-medium text-right uppercase tracking-wider whitespace-nowrap"
@@ -100,7 +99,7 @@ const StudentsTable = ({ students = [], onView }) => {
                     {student.name}
                   </td>
 
-                  {[student.joinDate, student.phone, student.parent].map((cellData, index) => (
+                  {[student.joinDate, student.parent].map((cellData, index) => (
                     <td
                       key={index}
                       className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
@@ -149,7 +148,6 @@ const StudentsTable = ({ students = [], onView }) => {
 
             <div className="space-y-0.5">
               <MobileField label="تاريخ الإنضمام">{student.joinDate}</MobileField>
-              <MobileField label="رقم الهاتف">{student.phone}</MobileField>
               <MobileField label="ولي الأمر">{student.parent}</MobileField>
             </div>
 

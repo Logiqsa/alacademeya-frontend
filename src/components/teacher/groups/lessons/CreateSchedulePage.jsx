@@ -72,7 +72,12 @@ const CreateSchedulePage = () => {
 
       await createOrUpdateClassroomSchedule(groupId, { schedule });
       navigate(`/teacher/groups/${groupId}/lessons`, {
-        state: { showSuccessToast: true },
+        state: {
+          showSuccessToast: true,
+          successMessage: editing
+            ? "تم تعديل جدول الحصص بنجاح"
+            : "تم إنشاء جدول الحصص بنجاح",
+        },
       });
     } catch (err) {
       console.error("createOrUpdateClassroomSchedule failed:", err.response?.data || err);

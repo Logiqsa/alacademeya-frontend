@@ -36,9 +36,11 @@ export default function ConversationsList({
         <button
           type="button"
           onClick={onNewConversation}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-900 text-white hover:bg-blue-800"
+          aria-label="تواصل مع الإدارة"
+          className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-900 px-3 text-xs font-medium text-white hover:bg-blue-800"
         >
-          <Plus size={18} />
+          <Plus size={16} />
+          <span>تواصل مع الإدارة</span>
         </button>
       </div>
 

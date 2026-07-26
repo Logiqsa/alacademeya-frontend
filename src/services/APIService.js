@@ -165,6 +165,8 @@ export const markNotificationRead = (id) =>
   API.patch(`/notifications/${id}/read`);
 export const markAllNotificationsRead = () =>
   API.patch("/notifications/read-all");
+export const deleteNotification = (id) =>
+  API.delete(`/notifications/${id}`);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Users (Admin)

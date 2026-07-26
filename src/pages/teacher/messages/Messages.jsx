@@ -1,5 +1,6 @@
 // TeacherMessages.jsx
-import React, { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import ConversationsList from "../../../components/teacher/messages/ConversationsList";
 import ChatBox from "../../../components/teacher/messages/ChatBox";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
@@ -23,6 +24,38 @@ export default function TeacherMessages() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [showChatOnMobile, setShowChatOnMobile] = useState(false);
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const openedFromLink = useRef(false);
+
+  useEffect(() => {
+    if (loading || openedFromLink.current) return;
+    const classroomId =
+      location.state?.openClassroomId ?? searchParams.get("classroom");
+    const roomId = location.state?.openRoomId ?? searchParams.get("room");
+    const groupName = (
+      location.state?.openClassroomName ?? searchParams.get("name")
+    )?.trim();
+    if (!classroomId && !roomId) return;
+
+    const conversation = conversations.find(
+      (item) =>
+        (roomId && String(item.id) === roomId) ||
+        (classroomId && String(item.classroomId) === classroomId),
+    ) ?? conversations.find((item) => {
+      if (
+        !groupName ||
+        (item.type !== "classroom" && item.category !== "classroom")
+      ) return false;
+      const roomName = String(item.name || "").trim();
+      return roomName === groupName || roomName.includes(groupName);
+    });
+    if (conversation) {
+      openedFromLink.current = true;
+      openConversation(conversation.id);
+      setShowChatOnMobile(true);
+    }
+  }, [conversations, loading, location.state, openConversation, searchParams]);
 
   const handleNewConversation = async () => {
     const newId = await startSupportConversation();

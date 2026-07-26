@@ -1,15 +1,13 @@
-import { Users, CheckCircle, Clock, FileText } from "lucide-react";
+import { Users, CheckCircle } from "lucide-react";
 
-const GroupStatsBar = ({ total = 12, active = 6, suspended = 3, pending = 3 }) => {
+const GroupStatsBar = ({ total = 0, active = 0 }) => {
   const stats = [
     { label: "إجمالي المجموعات", value: total, color: "text-teal-600", bg: "bg-teal-50", icon: Users },
     { label: "مجموعات نشطة", value: active, color: "text-green-600", bg: "bg-green-50", icon: CheckCircle },
-    { label: "مجموعات معلقة", value: suspended, color: "text-orange-500", bg: "bg-orange-50", icon: Clock },
-    { label: "قيد التسجيل", value: pending, color: "text-purple-600", bg: "bg-purple-50", icon: FileText },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {stats.map((s) => {
         const Icon = s.icon;
         return (

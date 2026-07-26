@@ -11,6 +11,8 @@ import {
   getMyClassrooms,
   getAssignmentsByClassroom,
   getClassroomSessions,
+  getAssignmentSubmissions,
+  getClassroomStudents,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان api.js عندك
 
 const PAGE_SIZE = 6;
@@ -39,9 +41,8 @@ const AssignmentsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
-  // بيجيب كل مجموعات المعلّم، وبعدين واجبات وحصص كل مجموعة، وبيدمجهم في قايمة واحدة.
-  // ملاحظة: submitted / totalStudents / correctionStatus لسه مش راجعين من الـ API
-  // (محتاجين endpoint تسليمات لكل واجب)، فسايبهم بقيم افتراضية حاليًا.
+  // بيجيب كل مجموعات المعلّم، وبعدين واجبات وحصص وطلاب كل مجموعة،
+  // ويقرأ تسليمات كل واجب لحساب أرقام التسليم والتصحيح الفعلية.
   const fetchAllAssignments = useCallback(async () => {
     try {
       setLoading(true);
@@ -53,9 +54,12 @@ const AssignmentsPage = () => {
 
       const perClassroom = await Promise.all(
         classrooms.map(async (classroom) => {
-          const [assignmentsRes, sessionsRes] = await Promise.all([
+          const [assignmentsRes, sessionsRes, studentsRes] = await Promise.all([
             getAssignmentsByClassroom(classroom.id),
             getClassroomSessions(classroom.id).catch(() => ({
+              data: { data: [] },
+            })),
+            getClassroomStudents(classroom.id).catch(() => ({
               data: { data: [] },
             })),
           ]);
@@ -65,17 +69,49 @@ const AssignmentsPage = () => {
             sessionsById[s.id] = s.title;
           });
 
-          return (assignmentsRes.data?.data || []).map((a) => ({
-            id: a.id,
-            title: a.title,
-            group: classroom.name,
-            lesson: sessionsById[a.session] || "-",
-            dueDate: formatDate(a.dueDate),
-            submitted: a.submittedCount ?? 0, // TODO: يحتاج endpoint التسليمات
-            totalStudents: a.totalStudents ?? classroom.studentsCount ?? 0,
-            status: mapStatus(a.status),
-            correctionStatus: a.correctionStatus ?? "لم يبدأ التصحيح", // TODO
-          }));
+          const roster = studentsRes.data?.data || [];
+          const classroomAssignments = assignmentsRes.data?.data || [];
+
+          return Promise.all(
+            classroomAssignments.map(async (a) => {
+              const submissionsRes = await getAssignmentSubmissions(a.id).catch(
+                () => ({ data: { data: [] } }),
+              );
+              const submissions = submissionsRes.data?.data || [];
+              const gradedCount = submissions.filter(
+                (submission) => submission.status === "graded",
+              ).length;
+
+              let correctionStatus = "لم يبدأ التصحيح";
+              if (gradedCount > 0 && gradedCount < submissions.length) {
+                correctionStatus = "قيد التصحيح";
+              } else if (
+                submissions.length > 0 &&
+                gradedCount === submissions.length
+              ) {
+                correctionStatus = "تم التصحيح";
+              }
+
+              const sessionId =
+                a.session?.id ?? a.session?._id ?? a.session;
+
+              return {
+                id: a.id,
+                title: a.title,
+                group: classroom.name,
+                lesson: a.session?.title || sessionsById[sessionId] || "-",
+                dueDate: formatDate(a.dueDate),
+                submitted: submissions.length,
+                totalStudents:
+                  roster.length ||
+                  classroom.students?.length ||
+                  classroom.studentsCount ||
+                  0,
+                status: mapStatus(a.status),
+                correctionStatus,
+              };
+            }),
+          );
         }),
       );
 

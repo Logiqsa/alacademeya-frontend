@@ -11,6 +11,16 @@ const normalizeRoom = (room) => ({
   // مع بعض من غير تعارض — كل صفحة بتربط الـ key بتاعها بنفس القيمة دي.
   category: room.type === "support" ? "admin" : "classroom",
   type: room.type,
+  classroomId:
+    room.classroom?.id ??
+    room.classroom?._id ??
+    room.classroomId ??
+    room.classroom ??
+    room.metadata?.classroomId ??
+    room.data?.classroomId ??
+    room.reference?.id ??
+    room.relatedEntity?.id ??
+    room.relatedEntity?._id,
   participants: room.participants ?? [],
   avatarInitial: (room.displayName ?? room.name ?? "?").trim().charAt(0),
   studentName: room.studentName ?? null,

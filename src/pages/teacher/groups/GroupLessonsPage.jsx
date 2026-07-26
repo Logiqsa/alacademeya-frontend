@@ -64,7 +64,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   // ─── Toast نجاح إضافة الحصة/الجدول ─────────────────────────────────────────
   useEffect(() => {
     if (location.state?.showSuccessToast) {
-      setToastMessage("تم إنشاء الحصة بنجاح");
+      setToastMessage(
+        location.state.successMessage || "تم إنشاء الحصة بنجاح",
+      );
       setShowToast(true);
 
       // بنشيل الـ state من الـ history عشان الرسالة متظهرش تاني لو المستخدم عمل refresh

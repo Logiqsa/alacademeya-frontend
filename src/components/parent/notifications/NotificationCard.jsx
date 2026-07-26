@@ -1,6 +1,5 @@
 
-import React from "react";
-import { Eye, EyeOff, GraduationCap, Settings } from "lucide-react";
+import { Eye, EyeOff, GraduationCap, Settings, Trash2 } from "lucide-react";
 
 const NotificationCard = ({
   title,
@@ -9,6 +8,8 @@ const NotificationCard = ({
   type,
   isRead,
   onToggleRead,
+  onOpen,
+  onDelete,
 }) => {
   const isAcademic = type === "academic";
   const Icon = isAcademic ? GraduationCap : Settings;
@@ -16,9 +17,15 @@ const NotificationCard = ({
   return (
     <div
       dir="rtl"
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (onOpen && (event.key === "Enter" || event.key === " ")) onOpen();
+      }}
+      role={onOpen ? "link" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
       className={`border border-[#E5E5E5] rounded-xl p-4 transition-all ${
         isRead ? "bg-white" : "bg-[#EAF4FF]"
-      }`}
+      } ${onOpen ? "cursor-pointer hover:border-[#123C91] focus:outline-none focus:ring-2 focus:ring-[#123C91]/30" : ""}`}
     >
       <div className="flex flex-col sm:flex-row gap-4">
         <div
@@ -44,11 +51,26 @@ const NotificationCard = ({
         </div>
 
         <button
-          onClick={onToggleRead}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleRead();
+          }}
           className="flex items-center justify-center sm:justify-start gap-1 text-[13px] sm:text-[14px] text-[#1F2937] hover:text-[#123C91] transition-colors self-start sm:self-center"
         >
           {isRead ? <EyeOff size={15} /> : <Eye size={15} />}
           <span>{isRead ? "وضع علامة كغير مقروءة" : "وضع علامة كمقروءة"}</span>
+        </button>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
+          aria-label="حذف الإشعار"
+          title="حذف الإشعار"
+          className="flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-lg text-[#8C9198] transition-colors hover:bg-red-50 hover:text-red-600 sm:self-center"
+        >
+          <Trash2 size={17} />
         </button>
       </div>
     </div>

@@ -1,10 +1,14 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { Bell, Loader2 } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Bell, Loader2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  getNotificationChatState,
+  getNotificationTarget,
+} from "../../../utils/notificationTarget";
 import {
   getNotifications,
   markNotificationRead,
-  markAllNotificationsRead,
+  deleteNotification,
 } from "../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان الملف عندك
 
 /* ------------------------------------------------------------------ */
@@ -60,6 +64,7 @@ const normalizeNotification = (n) => {
     title: displayTitle, // Now this is guaranteed to be a string
     time: timeAgo(n.createdAt ?? n.date ?? n.timestamp),
     read: n.read ?? n.isRead ?? false,
+    raw: n,
   };
 };
 
@@ -93,21 +98,37 @@ const NotificationsSection = () => {
   }, [fetchNotifications]);
 
   const handleNotificationClick = async (notif) => {
-    if (notif.read) return;
-    // تحديث فوري في الواجهة (optimistic) ثم تأكيد من السيرفر
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)),
-    );
-    try {
-      await markNotificationRead(notif.id);
-    } catch (err) {
-      console.error("فشل تحديث حالة الإشعار:", err);
+    if (!notif.read) {
+      // تحديث فوري في الواجهة (optimistic) ثم تأكيد من السيرفر
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)),
+      );
+      try {
+        await markNotificationRead(notif.id);
+      } catch (err) {
+        console.error("فشل تحديث حالة الإشعار:", err);
+      }
+    }
+    const target = getNotificationTarget(notif.raw, "teacher");
+    if (target) {
+      navigate(target, { state: getNotificationChatState(notif.raw) });
     }
   };
 
   const handleViewAll = () => {
     // ⚠️ عدّل المسار لصفحة الإشعارات الكاملة الخاصة بالمعلم لو مختلف
     navigate("/teacher/notifications");
+  };
+
+  const handleDelete = async (event, notif) => {
+    event.stopPropagation();
+    try {
+      await deleteNotification(notif.id);
+      setNotifications((prev) => prev.filter((item) => item.id !== notif.id));
+    } catch (err) {
+      console.error("فشل حذف الإشعار:", err);
+      setError("تعذر حذف الإشعار");
+    }
   };
 
   return (
@@ -175,6 +196,21 @@ const NotificationsSection = () => {
               {!notif.read && (
                 <span className="h-2 w-2 rounded-full bg-[#12C6B0] shrink-0" />
               )}
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label="حذف الإشعار"
+                title="حذف الإشعار"
+                onClick={(event) => handleDelete(event, notif)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    handleDelete(event, notif);
+                  }
+                }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#8C9198] transition-colors hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 size={16} />
+              </span>
             </button>
           ))
         )}

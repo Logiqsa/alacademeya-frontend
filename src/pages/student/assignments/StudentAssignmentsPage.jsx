@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import StudentAssignmentStatsBar from "../../../components/student/assignments/StudentAssignmentStatsBar";
 import StudentAssignmentsTable from "../../../components/student/assignments/StudentAssignmentsTable";
@@ -11,7 +11,8 @@ import { getMyAssignments } from "../../../services/APIService";
 const PAGE_SIZE = 6;
 
 const StudentAssignmentsPage = () => {
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const highlightedAssignmentId = searchParams.get("assignment");
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -143,6 +144,7 @@ const StudentAssignmentsPage = () => {
           ) : (
             <StudentAssignmentsTable
               assignments={paginatedAssignments}
+              initialDetailsId={highlightedAssignmentId}
               onSubmitted={() => loadAssignments()}
             />
           )}

@@ -1,9 +1,15 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import NotificationCard from "./NotificationCard";
+import {
+  getNotificationChatState,
+  getNotificationTarget,
+} from "../../../utils/notificationTarget";
 import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  deleteNotification,
 } from "../../../services/APIService"; // عدّل المسار حسب مكانه عندك
 
 const resolveLocalized = (val) =>
@@ -41,9 +47,11 @@ const mapNotification = (n) => ({
   time: formatRelativeTime(n.createdAt),
   type: getCategory(n.type),
   isRead: !!n.isRead,
+  raw: n,
 });
 
 const NotificationsSection = ({ onStatsUpdate }) => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -80,6 +88,28 @@ const NotificationsSection = ({ onStatsUpdate }) => {
       });
     } catch (err) {
       console.error("Failed to mark notification as read:", err);
+    }
+  };
+
+  const handleOpen = async (notification) => {
+    if (!notification.isRead) await handleToggleRead(notification);
+    const target = getNotificationTarget(notification.raw, "teacher");
+    if (target) {
+      navigate(target, { state: getNotificationChatState(notification.raw) });
+    }
+  };
+
+  const handleDelete = async (notification) => {
+    try {
+      await deleteNotification(notification.id);
+      setNotifications((prev) => {
+        const updated = prev.filter((n) => n.id !== notification.id);
+        onStatsUpdate?.(updated);
+        return updated;
+      });
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
+      setError(err);
     }
   };
 
@@ -166,6 +196,8 @@ const NotificationsSection = ({ onStatsUpdate }) => {
                 type={n.type}
                 isRead={n.isRead}
                 onToggleRead={() => handleToggleRead(n)}
+                onOpen={getNotificationTarget(n.raw, "teacher") ? () => handleOpen(n) : undefined}
+                onDelete={() => handleDelete(n)}
               />
             ))
           ) : (

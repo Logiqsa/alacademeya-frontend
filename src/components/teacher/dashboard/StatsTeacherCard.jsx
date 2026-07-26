@@ -3,17 +3,37 @@ import { Star, DollarSign, Clock3, Users } from "lucide-react";
 import {
   getMyClassrooms,
   getClassroomStudents,
+  getClassroomSessions,
 } from "../../../services/APIService";
 
 // ⚠️ ملحوظة مهمة: مفيش endpoints حاليًا لـ:
-//   - عدد ساعات التدريس الفعلية
 //   - إجمالي الأرباح
 //   - متوسط التقييم
-// لما تتضاف من الباك إند (زي GET /teachers/me/stats مثلاً) هنربطها هنا بنفس الطريقة.
-// دلوقتي بنحسب فقط "إجمالي عدد الطلاب" لأنه فعلاً ممكن نجمعه من classrooms/my + classrooms/:id/students
+
+const getSessionDurationMinutes = (session) => {
+  const duration = Number(session.duration);
+  if (Number.isFinite(duration) && duration > 0) return duration;
+
+  const start = new Date(session.startAt || session.scheduledDate);
+  const end = new Date(session.endAt);
+  if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+    const minutes = (end.getTime() - start.getTime()) / 60000;
+    return minutes > 0 ? minutes : 0;
+  }
+
+  return 0;
+};
+
+const formatHours = (minutes) => {
+  const hours = minutes / 60;
+  return new Intl.NumberFormat("ar-EG", {
+    maximumFractionDigits: 1,
+  }).format(hours);
+};
 
 const StatsTeacherCard = () => {
   const [totalStudents, setTotalStudents] = useState(null);
+  const [totalMinutes, setTotalMinutes] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,9 +50,14 @@ const StatsTeacherCard = () => {
 
         // بنجيب طلاب كل مجموعة بالتوازي ونجمعهم (طالب ممكن يتكرر في أكتر من مجموعة،
         // لو محتاجين عدد فريد بس، لازم نجمع الـ ids في Set بدل ما نجمع الطول مباشرة)
-        const studentsResults = await Promise.allSettled(
+        const [studentsResults, sessionsResults] = await Promise.all([
+          Promise.allSettled(
           classrooms.map((c) => getClassroomStudents(c.id)),
-        );
+          ),
+          Promise.allSettled(
+            classrooms.map((c) => getClassroomSessions(c.id)),
+          ),
+        ]);
 
         const uniqueStudentIds = new Set();
         studentsResults.forEach((result, idx) => {
@@ -49,8 +74,32 @@ const StatsTeacherCard = () => {
           }
         });
 
+        const countedSessionIds = new Set();
+        let completedMinutes = 0;
+        sessionsResults.forEach((result, idx) => {
+          if (result.status === "fulfilled") {
+            const sessions = result.value.data?.data || [];
+            sessions.forEach((session) => {
+              const sessionId = session.id ?? session._id;
+              if (
+                session.status !== "completed" ||
+                (sessionId && countedSessionIds.has(sessionId))
+              ) return;
+
+              if (sessionId) countedSessionIds.add(sessionId);
+              completedMinutes += getSessionDurationMinutes(session);
+            });
+          } else {
+            console.error(
+              `getClassroomSessions failed for classroom ${classrooms[idx]?.id}:`,
+              result.reason,
+            );
+          }
+        });
+
         if (cancelled) return;
         setTotalStudents(uniqueStudentIds.size);
+        setTotalMinutes(completedMinutes);
       } catch (err) {
         console.error("Failed to load teacher stats:", err);
       } finally {
@@ -74,8 +123,7 @@ const StatsTeacherCard = () => {
     },
     {
       title: "عدد الساعات",
-      // ⚠️ TODO: مفيش endpoint حاليًا لساعات التدريس الفعلية
-      value: "--",
+      value: loading || totalMinutes === null ? "--" : formatHours(totalMinutes),
       icon: Clock3,
       iconBg: "bg-blue-50",
       iconColor: "text-blue-600",

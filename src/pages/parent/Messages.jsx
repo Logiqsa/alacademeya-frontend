@@ -1,5 +1,6 @@
 // Messages.jsx
-import React, { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import ConversationsList from "../../components/parent/messages/ConversationsList";
 import ChatBox from "../../components/parent/messages/ChatBox";
 import ParentLayout from "../../components/parent/layout/ParentLayout";
@@ -23,6 +24,26 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [showChatOnMobile, setShowChatOnMobile] = useState(false);
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const openedFromLink = useRef(false);
+
+  useEffect(() => {
+    if (loading || openedFromLink.current) return;
+    const roomId = location.state?.openRoomId ?? searchParams.get("room");
+    const classroomId =
+      location.state?.openClassroomId ?? searchParams.get("classroom");
+    const conversation = conversations.find(
+      (item) =>
+        (roomId && String(item.id) === roomId) ||
+        (classroomId && String(item.classroomId) === classroomId),
+    );
+    if (conversation) {
+      openedFromLink.current = true;
+      openConversation(conversation.id);
+      setShowChatOnMobile(true);
+    }
+  }, [conversations, loading, location.state, openConversation, searchParams]);
 
   const handleNewConversation = async () => {
     const newId = await startSupportConversation();

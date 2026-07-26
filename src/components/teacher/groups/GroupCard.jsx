@@ -1,4 +1,4 @@
-import { Trash2, Edit3, Users, Calendar } from "lucide-react";
+import { Users, Calendar, MessageCircle } from "lucide-react";
 const StatusBadge = ({ status }) => {
   const styles = {
     "نشطة": "bg-[#00A63E26] bg-opacity-[0.15] text-[#00A63E]",
@@ -13,7 +13,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const GroupCard = ({ group, onViewLessons, onViewStudents, onEdit, onDelete }) => (
+const GroupCard = ({ group, onViewLessons, onViewStudents, onOpenChat }) => (
   <div className="bg-white rounded-2xl border border-[#E5E5E5] p-6 flex flex-col gap-3 w-full ">
 
   
@@ -57,6 +57,15 @@ const GroupCard = ({ group, onViewLessons, onViewStudents, onEdit, onDelete }) =
         className="flex-1 border border-[#E5E5E5] text-[#1F2937] rounded-xl py-2.5 text-[14px] font-medium hover:bg-gray-50 transition"
       >
         الطلاب
+      </button>
+      <button
+        type="button"
+        onClick={() => onOpenChat(group)}
+        aria-label={`فتح شات مجموعة ${group.name}`}
+        title="شات المجموعة"
+        className="flex items-center justify-center border border-[#E5E5E5] text-[#123C91] rounded-xl px-3 py-2.5 hover:bg-[#EAF4FF] transition"
+      >
+        <MessageCircle size={18} />
       </button>
     </div>
   </div>

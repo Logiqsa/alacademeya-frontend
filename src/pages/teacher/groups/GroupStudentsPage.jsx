@@ -89,8 +89,6 @@ const GroupStudentsPage = () => {
         const extra = user?.id ? extraByUserId.get(user.id) : null;
 
         const createdAt = entry.createdAt || extra?.createdAt;
-        const phone = user?.phone || extra?.user?.phone;
-
         return {
           id: entry.id,
           name: user?.fullName || "—",
@@ -102,7 +100,6 @@ const GroupStudentsPage = () => {
                 day: "numeric",
               })
             : "--",
-          phone: phone || "--",
           // ⚠️ TODO (Backend): "parent" بييجي كـ ID مجرد (مثال: "6a36c83d95b2505b7eb1deac").
           // مفيش endpoint متاح لحساب المعلم بيرجع اسم ولي الأمر من الـ ID ده.
           // الأفضل إن الباك إند يعمل populate لحقل parent ويرجّع fullName مباشرة

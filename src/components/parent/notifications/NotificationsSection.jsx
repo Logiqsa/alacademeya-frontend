@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, BellRing, GraduationCap, Settings } from "lucide-react";
 import NotificationCard from "./NotificationCard";
 import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  deleteNotification,
 } from "../../../services/APIService";
+import {
+  getNotificationChatState,
+  getNotificationTarget,
+} from "../../../utils/notificationTarget";
 
 const tabs = [
   { key: "all", label: "الكل", icon: Bell },
@@ -15,6 +21,7 @@ const tabs = [
 ];
 
 const NotificationsSection = ({ onStatsUpdate }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +67,28 @@ const NotificationsSection = ({ onStatsUpdate }) => {
       onStatsUpdate?.(updated);
     } catch {
       setError("فشل في تعليم الكل كمقروء");
+    }
+  };
+
+  const handleOpen = async (notification) => {
+    if (!notification.isRead) await handleToggleRead(notification);
+    const target = getNotificationTarget(notification, "parent");
+    if (target) {
+      navigate(target, { state: getNotificationChatState(notification) });
+    }
+  };
+
+  const handleDelete = async (notification) => {
+    try {
+      await deleteNotification(notification._id ?? notification.id);
+      const id = notification._id ?? notification.id;
+      const updated = notifications.filter(
+        (n) => (n._id ?? n.id) !== id,
+      );
+      setNotifications(updated);
+      onStatsUpdate?.(updated);
+    } catch {
+      setError("فشل في حذف الإشعار");
     }
   };
 
@@ -138,6 +167,8 @@ const NotificationsSection = ({ onStatsUpdate }) => {
               }
               isRead={n.isRead}
               onToggleRead={() => handleToggleRead(n)}
+              onOpen={getNotificationTarget(n, "parent") ? () => handleOpen(n) : undefined}
+              onDelete={() => handleDelete(n)}
             />
           ))}
         </div>

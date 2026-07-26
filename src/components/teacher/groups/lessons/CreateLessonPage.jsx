@@ -37,6 +37,7 @@ const CreateLessonPage = () => {
   const { groupId } = useParams();
 
   const [groupName, setGroupName] = useState("مجموعة");
+  const [lessonTitle, setLessonTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [scheduledToday, setScheduledToday] = useState(true);
@@ -71,7 +72,10 @@ const CreateLessonPage = () => {
       .then((response) => {
         if (!active) return;
         const name = response.data?.data?.name;
-        setGroupName(typeof name === "string" ? name : name?.ar || name?.en || "مجموعة");
+        const resolvedName =
+          typeof name === "string" ? name : name?.ar || name?.en || "مجموعة";
+        setGroupName(resolvedName);
+        setLessonTitle((current) => current || `حصة ${resolvedName}`);
       })
       .catch((err) => {
         console.error("getClassroom failed:", err);
@@ -83,12 +87,30 @@ const CreateLessonPage = () => {
 
   const handleSubmit = async () => {
     setError(null);
+
+    if (checkingSchedule) {
+      setError("جاري التحقق من جدول المجموعة، حاول مرة أخرى بعد لحظات");
+      return;
+    }
+
+    if (!scheduledToday) {
+      setError(
+        `لا يمكن إنشاء الحصة؛ اليوم (${DAY_LABELS[todayKey]}) غير موجود في جدول المجموعة`,
+      );
+      return;
+    }
+
+    if (!lessonTitle.trim()) {
+      setError("من فضلك اكتب اسم الحصة");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const payload = new FormData();
       payload.append("classroom", groupId);
-      payload.append("title", `حصة ${groupName || "مجموعة"}`);
+      payload.append("title", lessonTitle.trim());
       payload.append("description", "");
 
       await createClassroomSession(payload);
@@ -131,26 +153,28 @@ const CreateLessonPage = () => {
         className="mx-auto p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm mt-6 sm:mt-8"
         dir="rtl"
       >
-        {/* {!checkingSchedule && !scheduledToday && (
+        {!checkingSchedule && !scheduledToday && (
           <div className="mb-5 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
             <AlertTriangle size={18} className="text-amber-500 mt-0.5 shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-amber-800">
-                مفيش حصة مجدولة على هذه المجموعة النهاردة ({DAY_LABELS[todayKey]})
+                لا يمكن إنشاء حصة اليوم ({DAY_LABELS[todayKey]})
               </p>
               <p className="text-xs text-amber-700 mt-1">
-                عشان تقدر تنشئ حصة، لازم يكون النهاردة من أيام جدول المجموعة. تقدر تعدّل الجدول من هنا.
+                اليوم غير موجود ضمن جدول المجموعة. يمكنك تعديل الجدول أولاً ثم إنشاء الحصة.
               </p>
               <button
                 type="button"
-                onClick={() => navigate(`/teacher/groups/${groupId}/schedule`)}
+                onClick={() =>
+                  navigate(`/teacher/groups/${groupId}/lessons/schedule/new`)
+                }
                 className="mt-2 text-xs font-semibold text-[#123C91] underline"
               >
                 تعديل جدول المجموعة
               </button>
             </div>
           </div>
-        )} */}
+        )}
 
         <div className="pb-5 sm:pb-6 border-b border-gray-100">
           <p className="text-sm font-semibold text-[#1A1A1A]">
@@ -163,12 +187,13 @@ const CreateLessonPage = () => {
             <label className={labelClass}>اسم الحصة عند الإنشاء</label>
             <input
               type="text"
-              value={`حصة ${groupName || "مجموعة"}`}
+              value={lessonTitle}
+              onChange={(event) => setLessonTitle(event.target.value)}
+              placeholder={`حصة ${groupName || "مجموعة"}`}
               className={inputClass}
-              readOnly
             />
             <p className="mt-2 text-xs text-[#8C9198]">
-              تاريخ ووقت الحصة يُحددان تلقائياً من جدول المجموعة لليوم، وبعد الإنهاء هتقدر تدخل الاسم الفعلي والوصف والمرفقات.
+              تاريخ ووقت الحصة يُحددان تلقائياً من جدول المجموعة لليوم، وعند الإنهاء ستظهر نافذة إضافة الوصف والمرفقات كالمعتاد.
             </p>
           </div>
         </div>
@@ -179,10 +204,14 @@ const CreateLessonPage = () => {
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 mt-2">
           <button
             onClick={handleSubmit}
-            disabled={submitting || (!checkingSchedule && !scheduledToday)}
+            disabled={submitting || checkingSchedule || !scheduledToday}
             className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1 disabled:opacity-60"
           >
-            {submitting ? "جاري الإنشاء..." : "إنشاء حصة"}
+            {submitting
+              ? "جاري الإنشاء..."
+              : checkingSchedule
+                ? "جاري التحقق من الجدول..."
+                : "إنشاء حصة"}
             {!submitting && <ArrowRight size={18} />}
           </button>
 

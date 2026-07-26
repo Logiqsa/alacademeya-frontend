@@ -167,8 +167,6 @@ const GroupsPage = () => {
           <GroupStatsBar
             total={groups.length}
             active={groups.filter((g) => g.status === "نشطة").length}
-            paused={groups.filter((g) => g.status === "معلقة").length}
-            pending={groups.filter((g) => g.status === "قيد التسجيل").length}
           />
         </div>
 
@@ -194,6 +192,14 @@ const GroupsPage = () => {
                 }
                 onViewStudents={(id) =>
                   navigate(`/teacher/groups/${id}/students`)
+                }
+                onOpenChat={(group) =>
+                  navigate("/teacher/messages", {
+                    state: {
+                      openClassroomId: group.id,
+                      openClassroomName: group.name,
+                    },
+                  })
                 }
                 onEdit={(id) => navigate(`/teacher/groups/${id}/edit`)}
                 onDelete={handleDelete}
