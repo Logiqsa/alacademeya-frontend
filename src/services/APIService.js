@@ -145,6 +145,22 @@ export const getMyStudentsSubscriptions = () =>
   API.get("/parents/students/subscriptions");
 export const getMySubscriptions = () => API.get("/subscriptions/my");
 
+// ─── Student subscription orders ─────────────────────────────────────────────
+// Prices and totals are intentionally never accepted here. The backend is the
+// authoritative source for all monetary values.
+export const createSubscriptionOrder = (items) =>
+  API.post("/subscription-orders", { items });
+export const getSubscriptionOrder = (id) =>
+  API.get(`/subscription-orders/${id}`);
+export const startSubscriptionOrderCheckout = (id) =>
+  API.post(`/subscription-orders/${id}/checkout`);
+export const getPendingSubscriptionOrders = (params) =>
+  API.get("/subscription-orders/admin/pending", { params });
+export const getAdminSubscriptionOrder = (id) =>
+  API.get(`/subscription-orders/admin/${id}`);
+export const approveSubscriptionOrder = (id, items) =>
+  API.post(`/subscription-orders/admin/${id}/approve`, { items });
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Discounts  (NEW)
 // ──────────────────────────────────────────────────────────────────────────────

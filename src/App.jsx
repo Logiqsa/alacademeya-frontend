@@ -31,6 +31,7 @@ import StudentDetailsPages from "./pages/auth/StudentDetailsPages";
 import StudentSubjectsPages from "./pages/auth/StudentSubjectsPages";
 import StudentPackagesPage from "./pages/auth/StudentPackagesPage";
 import StudentOrderSummaryPage from "./pages/auth/StudentOrderSummaryPage";
+import SubscriptionOrderStatusPage from "./pages/student/SubscriptionOrderStatusPage";
 import GroupsPage from "./pages/teacher/groups/GroupsPage";
 import GroupLessonsPage from "./pages/teacher/groups/GroupLessonsPage";
 import GroupStudentsPage from "./pages/teacher/groups/GroupStudentsPage";
@@ -69,6 +70,7 @@ import SubscriptionsPage from "./pages/admin/subscriptions/SubscriptionsPage";
 import SubscriptionRequestsPage from "./pages/admin/subscriptions/SubscriptionRequestsPage";
 import ActivateSubscriptionPage from "./pages/admin/subscriptions/ActivateSubscriptionPage";
 import SubscriptionDetailsPage from "./pages/admin/subscriptions/SubscriptionDetailsPage";
+import SubscriptionOrderReviewPage from "./pages/admin/subscriptions/SubscriptionOrderReviewPage";
 import CreateCurriculumPage from "./pages/admin/curriculum/CreateCurriculumPage";
 import StudentAccountSettingsPage from "./pages/student/StudentAccountSettingsPage";
 import StudentNotifications from "./pages/student/Notifications";
@@ -116,6 +118,8 @@ function App() {
         <Route path="/register/subjects" element={<StudentSubjectsPages />} />
         <Route path="/register/packages" element={<StudentPackagesPage />} />
         <Route path="/register/order-summary" element={<StudentOrderSummaryPage />} />
+        <Route path="/subscription-orders/:orderId/status" element={user ? <SubscriptionOrderStatusPage /> : <Navigate to="/login" replace />} />
+        <Route path="/payment/success" element={user ? <SubscriptionOrderStatusPage /> : <Navigate to="/login" replace />} />
         <Route path="/register/success" element={<RegisterSuccessPage />} />
         <Route path="/register/teacher-details" element={<TeacherDetailsPage />} />
         <Route path="/pending" element={<PendingPage />} />
@@ -185,6 +189,7 @@ function App() {
         <Route path="/admin/messages" element={user ? <AdminMessages /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscription" element={user ? <SubscriptionsPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscriptions/requests" element={user ? <SubscriptionRequestsPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/subscription-orders/:id" element={user ? <SubscriptionOrderReviewPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscriptions/:id" element={user ? <SubscriptionDetailsPage /> : <Navigate to="/login" replace />} />
 
         <Route path="/admin/blogs" element={user ? <BlogsPage /> : <Navigate to="/login" replace />} />
