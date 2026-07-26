@@ -28,7 +28,7 @@ const STATUS_LABELS = {
   live: "مباشر الآن",
   completed: "منتهية",
   cancelled: "ملغية",
-  missed: "فائتة",
+  missed: "بدأت متأخرة",
 };
 
 const resolveName = (val) =>
@@ -151,9 +151,15 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           );
         }
 
-        const isMissed = s.status === "scheduled" && s.scheduledDate && new Date(s.scheduledDate) < new Date();
+        const isMissed =
+          ["scheduled", "upcoming"].includes(s.status) &&
+          s.scheduledDate &&
+          new Date(s.scheduledDate) < new Date();
+        const sessionId =
+          s.id || s._id || s.sessionId || s.session?.id || s.session?._id;
+        const isScheduleOnly = s.isVirtual || s.virtual || !sessionId;
         return {
-          id: s.id,
+          id: sessionId,
           title: s.title || "حصة",
           rawStatus: s.status,
           date: s.scheduledDate
@@ -178,7 +184,11 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
               : (s.duration ?? "--"),
           attendance,
           absence,
-          status: isMissed ? "فائتة" : STATUS_LABELS[s.status] || s.status || "--",
+          status: isMissed
+            ? isScheduleOnly
+              ? "فائتة (انتهت)"
+              : "فائتة (لم تبدأ بعد)"
+            : STATUS_LABELS[s.status] || s.status || "--",
           // بيستخدم بس لحساب "أقرب حصة قادمة" في العنوان، مش بيتعرض في الجدول
           _sortDate: new Date(s.scheduledDate || s.startAt || 0),
         };

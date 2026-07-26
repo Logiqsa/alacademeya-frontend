@@ -6,8 +6,10 @@ const LessonCard = ({ title, location, duration, time, status, actionLabel, onAc
 
   const badgeLabel = isEnded ? "منتهية" : status === "live" ? "تبدأ الآن" : "قادمة";
   const badgeClasses = isEnded
-    ? "bg-[#00A63E1A] text-[#00A63E]"
-    : "bg-[#EAF4FF] text-[#123C91]";
+    ? "bg-blue-100 text-[#123C91]"
+    : status === "live"
+      ? "bg-[#00A63E26] text-[#00A63E]"
+      : "bg-[#EAF4FF] text-[#123C91]";
 
   return (
     <div

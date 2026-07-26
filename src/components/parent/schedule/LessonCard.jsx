@@ -2,8 +2,8 @@ import React from "react";
 import { Clock, BookOpen, Video } from "lucide-react";
 
 const STATUS_STYLES = {
-  completed: { label: "مكتمل", className: "bg-[#00A63E1A] text-[#00A63E]" },
-  live: { label: "جارٍ الآن", className: "bg-[#FEF3C7] text-[#B45309]" },
+  completed: { label: "مكتمل", className: "bg-blue-100 text-[#123C91]" },
+  live: { label: "جارٍ الآن", className: "bg-[#00A63E26] text-[#00A63E]" },
   upcoming: { label: "قادم", className: "bg-[#EAF4FF] text-[#123C91]" },
 };
 

@@ -39,14 +39,18 @@ const STATUS_LABELS = {
   cancelled: "ملغاة",
   live: "تُعقد الآن",
   active: "نشطة",
-  missed: "فائتة",
+  missed: "بدأت متأخرة",
+  not_started: "فائتة (لم تبدأ بعد)",
+  expired_schedule: "فائتة (انتهت)",
 };
 
 const badgeClass = (lesson) => {
+  if (lesson.status === "completed") return "bg-blue-100 text-[#123C91]";
+  if (lesson.status === "missed") return "bg-orange-100 text-orange-700";
+  if (lesson.status === "not_started") return "bg-orange-50 text-orange-600";
+  if (lesson.status === "expired_schedule") return "bg-red-50 text-red-500";
   if (lesson.isVirtual || lesson.status === "scheduled")
     return "bg-blue-50 text-[#123C91]";
-  if (lesson.status === "completed") return "bg-red-100 text-red-600";
-  if (lesson.status === "missed") return "bg-orange-100 text-orange-700";
   if (["live", "active"].includes(lesson.status))
     return "bg-green-100 text-green-700";
   return "bg-gray-100 text-gray-600";
@@ -95,7 +99,15 @@ const withDisplayStatus = (lesson, date) => {
   const scheduledAt = lesson.scheduledDate
     ? new Date(lesson.scheduledDate)
     : new Date(`${date}T${lesson.startTime || "00:00"}`);
-  return scheduledAt < new Date() ? { ...lesson, status: "missed" } : lesson;
+  return scheduledAt < new Date()
+    ? {
+        ...lesson,
+        status:
+          lesson.isVirtual || lesson.virtual || !resolveLessonId(lesson)
+            ? "expired_schedule"
+            : "not_started",
+      }
+    : lesson;
 };
 
 const monthLabel = (date) =>

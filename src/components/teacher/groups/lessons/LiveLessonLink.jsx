@@ -3,7 +3,14 @@ import toast from "react-hot-toast";
 
 const LiveLessonLink = ({ lessonUrl, status }) => {
   const isLive = status === "live";
-  const stateText = status === "completed" ? "الحصة منتهية" : status === "missed" ? "الحصة فائتة" : "الحصة لم تبدأ بعد";
+  const stateText =
+    status === "completed"
+      ? "الحصة منتهية"
+      : status === "missed"
+        ? "بدأت الحصة متأخرة"
+        : status === "not_started"
+          ? "الحصة فائتة ولم تبدأ"
+          : "الحصة لم تبدأ بعد";
 
   const copyLink = async () => {
     if (!lessonUrl) return;

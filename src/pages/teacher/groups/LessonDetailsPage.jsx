@@ -41,6 +41,7 @@ const STATUS_LABELS = {
   live: "مباشر الآن",
   completed: "منتهية",
   cancelled: "ملغية",
+  missed: "بدأت متأخرة",
 };
 
 // حالة الحضور بتاعة كل طالب (مش حالة الحصة)
@@ -56,8 +57,11 @@ const StatusBadge = ({ status }) => {
   const styles = {
     قادمة: "bg-[#EAF4FF] text-[#123C91]",
     "مباشر الآن": "bg-[#00A63E26] text-[#00A63E]",
-    منتهية: "bg-[#D32F2F26] text-[#D32F2F]",
+    منتهية: "bg-blue-100 text-[#123C91]",
     ملغية: "bg-[#1F293726] text-[#1F2937]",
+    "بدأت متأخرة": "bg-[#FF8A0026] text-[#B45309]",
+    "فائتة (لم تبدأ بعد)": "bg-orange-50 text-orange-600",
+    "فائتة (انتهت)": "bg-red-50 text-red-500",
   };
   return (
     <span
@@ -343,7 +347,12 @@ const LessonDetailsPage = () => {
     setRecording(recordingResult.status === "fulfilled" ? recordingResult.value.data?.data || null : null);
 
     setAttendanceRecords(records);
-    const displayStatus = s.status === "scheduled" && s.scheduledDate && new Date(s.scheduledDate) < new Date() ? "missed" : s.status;
+    const displayStatus =
+      s.status === "scheduled" &&
+      s.scheduledDate &&
+      new Date(s.scheduledDate) < new Date()
+        ? "not_started"
+        : s.status;
     setLesson({
       id: s.id,
       title: s.title || "حصة",
@@ -367,7 +376,12 @@ const LessonDetailsPage = () => {
         typeof s.duration === "number"
           ? `${s.duration} دقيقة`
           : (s.duration ?? "--"),
-      status: displayStatus === "missed" ? "فائتة" : STATUS_LABELS[s.status] || s.status || "--",
+      status:
+        s.status === "missed"
+          ? "بدأت متأخرة"
+          : displayStatus === "not_started"
+            ? "فائتة (لم تبدأ بعد)"
+            : STATUS_LABELS[s.status] || s.status || "--",
       displayStatus,
       // إجمالي الطلاب = عدد سجلات الحضور (كل طالب مسجل في الحصة)، أو عدد طلاب المجموعة لو مفيش سجلات
       totalStudents: records.length || classroom.students?.length || 0,

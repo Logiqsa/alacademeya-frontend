@@ -178,10 +178,10 @@ const TeacherSessionsPage = () => {
                       <td className="px-6 py-4">
                         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
                           isMissed
-                            ? "bg-amber-100 text-amber-700"
+                            ? "bg-red-50 text-red-500"
                             : "bg-green-100 text-green-700"
                         }`}>
-                          {isMissed ? "فائتة - لم تبدأ" : "مكتملة"}
+                          {isMissed ? "فائتة (انتهت)" : "مكتملة"}
                         </span>
                       </td>
                     </tr>

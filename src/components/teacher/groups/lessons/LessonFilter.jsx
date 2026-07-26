@@ -1,7 +1,16 @@
 import React from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 
-const STATUS_OPTIONS = ["جميع الحالات", "قادمة", "مباشر الآن", "منتهية", "ملغية"];
+const STATUS_OPTIONS = [
+  "جميع الحالات",
+  "قادمة",
+  "مباشر الآن",
+  "منتهية",
+  "بدأت متأخرة",
+  "فائتة (لم تبدأ بعد)",
+  "فائتة (انتهت)",
+  "ملغية",
+];
 const TIME_OPTIONS = ["جميع الاوقات", "اليوم", "هذا الأسبوع", "هذا الشهر"];
 
 const LessonFilters = ({ search, onSearchChange, filterStatus, onFilterStatusChange, filterTime, onFilterTimeChange }) => {

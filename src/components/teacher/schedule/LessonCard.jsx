@@ -6,9 +6,9 @@ const LessonCard = ({ groupName, level, time, duration, status, actionLabel, onA
 
   const badge =
     status === 'ended'
-      ? { label: 'منتهية', cls: 'bg-[#00A63E26] text-[#00A63E]' }
+      ? { label: 'منتهية', cls: 'bg-blue-100 text-[#123C91]' }
       : status === 'live'
-      ? { label: 'تبدأ الآن', cls: 'bg-[#EAF4FF] text-[#123C91]' }
+      ? { label: 'تبدأ الآن', cls: 'bg-[#00A63E26] text-[#00A63E]' }
       : { label: 'قادمة', cls: 'bg-[#F3F4F6] text-[#6B7280]' };
 
   const btnCls = isLive

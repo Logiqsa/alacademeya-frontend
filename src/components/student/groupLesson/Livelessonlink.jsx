@@ -2,7 +2,16 @@ import { Share2 } from "lucide-react";
 
 const LiveLessonLink = ({ lessonUrl, status, onJoin, onShare }) => {
   const isLive = status === "live";
-  const stateText = status === "completed" ? "الحصة منتهية" : status === "missed" ? "الحصة فائتة" : "سيتم تفعيل الرابط عند بدء المعلم للحصة.";
+  const stateText =
+    status === "completed"
+      ? "الحصة منتهية"
+      : status === "missed"
+        ? "بدأت الحصة متأخرة"
+        : status === "not_started"
+          ? "الحصة فائتة ولم تبدأ بعد"
+          : status === "expired_schedule"
+            ? "انتهى موعد الحصة ولم يتم إنشاؤها"
+          : "سيتم تفعيل الرابط عند بدء المعلم للحصة.";
   return (
     <div
       className="w-full rounded-2xl bg-[#1F2937] text-white px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
@@ -24,7 +33,17 @@ const LiveLessonLink = ({ lessonUrl, status, onJoin, onShare }) => {
           className="flex items-center gap-2 px-7 py-2.5 rounded-xl bg-white text-[#1F2937] text-[16px] font-semibold hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif" }}
         >
-          {isLive ? "الانضمام للحصة" : status === "completed" ? "منتهية" : status === "missed" ? "فائتة" : "لم تبدأ بعد"}
+          {isLive
+            ? "الانضمام للحصة"
+            : status === "completed"
+              ? "منتهية"
+              : status === "missed"
+                ? "بدأت متأخرة"
+                : status === "not_started"
+                  ? "فائتة (لم تبدأ بعد)"
+                  : status === "expired_schedule"
+                    ? "فائتة (انتهت)"
+                  : "لم تبدأ بعد"}
         </button>
 
         <button

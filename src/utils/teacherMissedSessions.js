@@ -78,9 +78,16 @@ export const getTeacherMissedSessions = async (teacher) => {
       const isPast =
         !Number.isNaN(scheduledAt.getTime()) &&
         scheduledAt.getTime() < Date.now();
+      // status=missed يعني إن الحصة بدأت بعد موعدها، وليس غيابًا كاملًا.
+      // الغياب يُحسب فقط لو مر الموعد والحصة ما زالت لم تبدأ.
+      const isScheduleOnly =
+        session.isVirtual ||
+        session.virtual ||
+        !sessionId;
       const isMissed =
-        session.status === "missed" ||
-        (isPast && ["scheduled", "upcoming"].includes(session.status));
+        isPast &&
+        isScheduleOnly &&
+        ["scheduled", "upcoming"].includes(session.status);
       if (!isMissed) return [];
 
       if (sessionId) seen.add(sessionId);

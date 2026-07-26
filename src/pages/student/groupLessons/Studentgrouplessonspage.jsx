@@ -17,7 +17,9 @@ const STATUS_LABELS = {
   live: "مباشر الآن",
   ended: "منتهية",
   cancelled: "ملغاة",
-  missed: "فائتة",
+  missed: "بدأت متأخرة",
+  not_started: "فائتة (لم تبدأ بعد)",
+  expired_schedule: "فائتة (انتهت)",
 };
 
 const resolveName = (val) =>
@@ -28,12 +30,21 @@ const computeDisplayStatus = (session) => {
   if (session.status === "completed") return "ended";
   if (session.status === "cancelled") return "cancelled";
   if (["live", "active"].includes(session.status)) return "live";
+  if (session.status === "missed") return "missed";
 
   const start = new Date(session.scheduledDate || session.startAt);
   const now = new Date();
 
   if (now < start) return "upcoming";
-  return "missed";
+  const sessionId =
+    session.id ||
+    session._id ||
+    session.sessionId ||
+    session.session?.id ||
+    session.session?._id;
+  return session.isVirtual || session.virtual || !sessionId
+    ? "expired_schedule"
+    : "not_started";
 };
 
 const StudentGroupLessonsPage = () => {
@@ -83,7 +94,12 @@ const StudentGroupLessonsPage = () => {
           const date = new Date(s.scheduledDate || s.startAt);
           const status = computeDisplayStatus(s);
           return {
-            id: s.id ?? s._id,
+            id:
+              s.id ??
+              s._id ??
+              s.sessionId ??
+              s.session?.id ??
+              s.session?._id,
             title: s.title || "حصة",
             date: date.toLocaleDateString("ar-EG", {
               weekday: "long",
