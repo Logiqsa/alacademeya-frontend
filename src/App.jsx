@@ -61,6 +61,8 @@ import GroupsPages from "./pages/admin/groups/Groupspage";
 import AttendancePage from "./pages/admin/groups/attendance/AttendancePage";
 import CreateGroupPages from "./pages/admin/groups/CreateGroupPage";
 import SupervisorsPage from "./pages/admin/supervisors/SupervisorsPage";
+import TeachersPage from "./pages/admin/teachers/TeachersPage";
+import TeacherSessionsPage from "./pages/admin/teachers/TeacherSessionsPage";
 import RecordingsPages from "./pages/admin/recordings/RecordingsPage";
 import AdminMessages from "./pages/admin/messages/Adminmessages";
 import SubscriptionsPage from "./pages/admin/subscriptions/SubscriptionsPage";
@@ -177,6 +179,8 @@ function App() {
         <Route path="/admin/groups/:groupId/attendance" element={user ? <AttendancePage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/groups/new" element={user ? <CreateGroupPages /> : <Navigate to="/login" replace />} />
         <Route path="/admin/supervisors" element={user ? <SupervisorsPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/teachers" element={user ? <TeachersPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/teachers/:teacherId/sessions/:sessionStatus" element={user ? <TeacherSessionsPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/records" element={user ? <RecordingsPages /> : <Navigate to="/login" replace />} />
         <Route path="/admin/messages" element={user ? <AdminMessages /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscription" element={user ? <SubscriptionsPage /> : <Navigate to="/login" replace />} />

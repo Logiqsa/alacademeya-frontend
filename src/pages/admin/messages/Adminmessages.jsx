@@ -1,4 +1,5 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import ConversationsList from "../../../components/admin/messages/Conversationslist";
 import ChatBox from "../../../components/admin/messages/Chatbox";
@@ -7,6 +8,7 @@ import { AuthContext } from "../../../context/AuthContext";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 
 export default function AdminMessages() {
+  const location = useLocation();
   const { user } = useContext(AuthContext);
   const currentUserId = user?._id ?? user?.id;
 
@@ -23,6 +25,55 @@ export default function AdminMessages() {
   const [showChatMobile, setShowChatMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const openedFromLink = useRef(false);
+
+  useEffect(() => {
+    if (loading || openedFromLink.current) return;
+    const roomId = location.state?.openRoomId;
+    const classroomId = location.state?.openClassroomId;
+    const classroomName = location.state?.openClassroomName?.trim();
+    const userId = location.state?.openUserId;
+    const conversation = conversations.find(
+      (item) =>
+        (roomId && String(item.id) === String(roomId)) ||
+        (classroomId &&
+          String(item.classroomId) === String(classroomId)) ||
+        (userId &&
+          item.participants?.some((participant) => {
+            const participantId =
+              participant.id ||
+              participant._id ||
+              participant.user?.id ||
+              participant.user?._id ||
+              participant.user;
+            return participantId && String(participantId) === String(userId);
+          })),
+    ) ?? conversations.find((item) => {
+      if (
+        !classroomName ||
+        (item.type !== "classroom" && item.category !== "classroom")
+      ) return false;
+      const roomName = String(item.name || "").trim();
+      return roomName === classroomName || roomName.includes(classroomName);
+    });
+
+    if (conversation) {
+      openedFromLink.current = true;
+      openConversation(conversation.id);
+      setShowChatMobile(true);
+    } else if (userId) {
+      openedFromLink.current = true;
+      startSupportConversation(userId).then((newRoomId) => {
+        if (newRoomId) setShowChatMobile(true);
+      });
+    }
+  }, [
+    conversations,
+    loading,
+    location.state,
+    openConversation,
+    startSupportConversation,
+  ]);
 
   const handleSelect = (id) => {
     openConversation(id);

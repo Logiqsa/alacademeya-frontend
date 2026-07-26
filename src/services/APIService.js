@@ -46,9 +46,10 @@ export const completeStudentProfile = (payload) =>
 
 export const completeTeacherProfile = (payload) =>
   API.patch("/auth/completeTeacherProfile", payload, {
-    headers: payload instanceof FormData
-      ? { "Content-Type": "multipart/form-data" }
-      : undefined,
+    headers:
+      payload instanceof FormData
+        ? { "Content-Type": "multipart/form-data" }
+        : undefined,
   });
 
 export const saveStudentInterests = (payload) =>
@@ -165,8 +166,7 @@ export const markNotificationRead = (id) =>
   API.patch(`/notifications/${id}/read`);
 export const markAllNotificationsRead = () =>
   API.patch("/notifications/read-all");
-export const deleteNotification = (id) =>
-  API.delete(`/notifications/${id}`);
+export const deleteNotification = (id) => API.delete(`/notifications/${id}`);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Users (Admin)
@@ -230,6 +230,8 @@ export const updateStudentProfile = (studentId, payload) =>
 export const getAvailableTeachers = (params) =>
   API.get("/teachers/available", { params });
 export const getTeachers = (params) => API.get("/teachers", { params });
+export const getTeacherMonthlyReport = (teacherId, month) =>
+  API.get(`/teachers/${teacherId}/monthly-report`, { params: { month } });
 export const updateTeacherProfile = (teacherId, payload) =>
   API.patch(`/teachers/${teacherId}`, payload);
 
@@ -249,8 +251,10 @@ export const updateClassroomSession = (sessionId, formData) =>
   API.patch(`/sessions/${sessionId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-export const startSession = (sessionId) => API.patch(`/sessions/${sessionId}/start`);
-export const endSession = (sessionId) => API.patch(`/sessions/${sessionId}/end`);
+export const startSession = (sessionId) =>
+  API.patch(`/sessions/${sessionId}/start`);
+export const endSession = (sessionId) =>
+  API.patch(`/sessions/${sessionId}/end`);
 export const getNextSessions = () => API.get("/sessions/next");
 
 export const getAllPackages = (params) => API.get("/packages", { params });
@@ -300,13 +304,9 @@ export const getAssignmentSubmissions = (assignmentId) =>
 export const gradeSubmission = (submissionId, payload) =>
   API.patch(`/assignments/submissions/${submissionId}/grade`, payload);
 
+// ================= Student Assignments =================
 
-
-
-  // ================= Student Assignments =================
-
-export const getMyAssignments = () =>
-  API.get("/assignments/my");
+export const getMyAssignments = () => API.get("/assignments/my");
 
 export const getMySubmission = (assignmentId) =>
   API.get(`/assignments/${assignmentId}/my-submission`);
@@ -318,17 +318,12 @@ export const submitAssignment = (assignmentId, formData) =>
     },
   });
 
-
-
-
 export const getBlogCategories = () => API.get("/blog-categories/");
 export const createBlogCategory = (payload) =>
   API.post("/blog-categories/", payload); // body: { name }
 
-
 export const getBlogPosts = (params) => API.get("/blog-posts/", { params });
 export const getBlogPost = (id) => API.get(`/blog-posts/${id}`);
-
 
 export const createBlogPost = (formData) =>
   API.post("/blog-posts/", formData, {
@@ -339,7 +334,6 @@ export const updateBlogPost = (id, formData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 export const deleteBlogPost = (id) => API.delete(`/blog-posts/${id}`);
-
 
 // ════════════════════════════════════════════════════════════════════════════
 // Public blog endpoints (no auth required) — published posts only

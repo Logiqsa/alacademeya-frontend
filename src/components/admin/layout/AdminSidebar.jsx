@@ -6,6 +6,7 @@ import {
   UsersRound,
   CalendarClock,
   ShieldCheck,
+  GraduationCap,
   Video,
   MessageSquare,
   CreditCard,
@@ -29,6 +30,16 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       path: "/admin-dashboard",
     },
     {
+      title: "المشرفين",
+      icon: ShieldCheck,
+      path: "/admin/supervisors",
+    },
+    {
+      title: "المعلمين",
+      icon: GraduationCap,
+      path: "/admin/teachers",
+    },
+    {
       title: "المستخدمين",
       icon: Users,
       path: "/admin/users",
@@ -42,11 +53,6 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       title: "جدول الحصص",
       icon: CalendarClock,
       path: "/admin/schedule",
-    },
-    {
-      title: "المشرفين",
-      icon: ShieldCheck,
-      path: "/admin/supervisors",
     },
     {
       title: "التسجيلات",

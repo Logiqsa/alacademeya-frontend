@@ -1,10 +1,9 @@
-import React from "react";
-
 import {
   Eye,
   EyeOff,
   GraduationCap,
   Settings,
+  Trash2,
 } from "lucide-react";
 
 const getLocalizedText = (value, lang = "ar") => {
@@ -26,6 +25,10 @@ const NotificationCard = ({
   type,
   isRead,
   onToggleRead,
+  onOpen,
+  onDelete,
+  personName,
+  onPersonClick,
 }) => {
   const isAcademic = type === "academic";
 
@@ -33,16 +36,26 @@ const NotificationCard = ({
 
   const safeTitle = getLocalizedText(title, "ar");
   const safeDescription = getLocalizedText(description, "ar");
+  const personIndex = personName
+    ? safeDescription.indexOf(personName)
+    : -1;
 
   return (
     <div
       dir="rtl"
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (onOpen && (event.key === "Enter" || event.key === " ")) onOpen();
+      }}
+      role={onOpen ? "link" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
       className={`
         border
         border-[#E5E5E5]
         rounded-xl
         p-4
         transition-all
+        ${onOpen ? "cursor-pointer hover:border-[#123C91] focus:outline-none focus:ring-2 focus:ring-[#123C91]/30" : ""}
         ${
           isRead
             ? "bg-white"
@@ -71,13 +84,44 @@ const NotificationCard = ({
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-[15px] sm:text-[16px] font-medium text-[#1F2937]">
+          <h3 className="break-words text-[15px] font-semibold leading-6 text-[#1F2937] sm:text-[16px]">
             {safeTitle}
           </h3>
 
-          <p className="mt-2 text-[13px] sm:text-[14px] leading-6 text-[#1F2937BF]">
-            {safeDescription}
+          <p className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-6 text-[#575F69] sm:text-[14px]">
+            {personIndex >= 0 ? (
+              <>
+                {safeDescription.slice(0, personIndex)}
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onPersonClick();
+                  }}
+                  className="font-semibold text-[#123C91] underline decoration-[#123C91]/40 underline-offset-2 hover:decoration-[#123C91]"
+                  title="عرض تفاصيل المستخدم"
+                >
+                  {personName}
+                </button>
+                {safeDescription.slice(personIndex + personName.length)}
+              </>
+            ) : (
+              safeDescription
+            )}
           </p>
+          {personName && personIndex < 0 && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onPersonClick();
+              }}
+              className="mt-2 text-sm font-semibold text-[#123C91] underline decoration-[#123C91]/40 underline-offset-2 hover:decoration-[#123C91]"
+              title="عرض تفاصيل المستخدم"
+            >
+              {personName}
+            </button>
+          )}
 
           <span className="block mt-2 text-[12px] text-[#1F2937BF]">
             {time}
@@ -85,7 +129,10 @@ const NotificationCard = ({
         </div>
 
         <button
-          onClick={onToggleRead}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleRead();
+          }}
           className="
             flex
             items-center
@@ -112,6 +159,18 @@ const NotificationCard = ({
               ? "وضع علامة كغير مقروءة"
               : "وضع علامة كمقروءة"}
           </span>
+        </button>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
+          aria-label="حذف الإشعار"
+          title="حذف الإشعار"
+          className="flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-lg text-[#8C9198] transition-colors hover:bg-red-50 hover:text-red-600 sm:self-center"
+        >
+          <Trash2 size={17} />
         </button>
       </div>
     </div>

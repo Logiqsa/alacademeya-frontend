@@ -44,6 +44,14 @@ export const markAllAdminLocalNotificationsRead = () => {
   save(getAdminLocalNotifications().map((notification) => ({ ...notification, isRead: true })));
 };
 
+export const deleteAdminLocalNotification = (id) => {
+  save(
+    getAdminLocalNotifications().filter(
+      (notification) => notification._id !== id,
+    ),
+  );
+};
+
 export const mergeAdminNotifications = (remote = []) =>
   [...getAdminLocalNotifications(), ...remote].sort(
     (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)

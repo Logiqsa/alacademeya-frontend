@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, MessageCircle, X } from "lucide-react";
 
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
@@ -340,6 +340,25 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
                 إنشاء حصة جديدة
               </button>
             </div>
+          )}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/admin/messages", {
+                  state: {
+                    openClassroomId: groupId,
+                    openClassroomName: groupName,
+                  },
+                })
+              }
+              aria-label="فتح محادثة المجموعة"
+              title="فتح محادثة المجموعة"
+              className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF] sm:w-auto"
+            >
+              <MessageCircle size={20} />
+              <span>فتح محادثة المجموعة</span>
+            </button>
           )}
         </div>
 

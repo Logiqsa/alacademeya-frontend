@@ -1,0 +1,456 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Clock3,
+  GraduationCap,
+  Loader2,
+  MessageCircle,
+  MessagesSquare,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
+import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import Pagination from "../../../components/teacher/groups/students/Paginationn";
+import Breadcrumbs from "../../shared/Breadcrumbs";
+import {
+  getTeachers,
+  getTeacherMonthlyReport,
+} from "../../../services/APIService";
+import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
+
+const PAGE_SIZE = 8;
+
+const currentMonth = () => {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+};
+
+const formatHours = (minutes = 0) =>
+  `${new Intl.NumberFormat("ar-EG", {
+    maximumFractionDigits: 1,
+  }).format(Number(minutes || 0) / 60)} ساعة`;
+
+const teacherName = (teacher) =>
+  teacher.user?.fullName ||
+  teacher.fullName ||
+  teacher.name ||
+  "—";
+
+const teacherEmail = (teacher) =>
+  teacher.user?.email || teacher.email || "—";
+
+const teacherPhone = (teacher) =>
+  teacher.user?.phone || teacher.phone || "—";
+
+const whatsappUrl = (phone) => {
+  const number = String(phone || "")
+    .replace(/[^\d]/g, "")
+    .replace(/^00/, "");
+  return number ? `https://wa.me/${number}` : "";
+};
+
+const localizedName = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.name?.ar || value.name?.en || value.ar || value.en || "";
+};
+
+const listLabel = (value) => {
+  const list = Array.isArray(value) ? value : value ? [value] : [];
+  const names = list.map(localizedName).filter(Boolean);
+  return [...new Set(names)].join("، ") || "—";
+};
+
+const DetailItem = ({ label, value }) => (
+  <div className="rounded-xl bg-[#F9FAFA] px-4 py-3">
+    <p className="text-xs text-[#8C9198]">{label}</p>
+    <p className="mt-1 break-words text-sm font-medium text-[#1F2937]">
+      {value ?? "—"}
+    </p>
+  </div>
+);
+
+const TeachersPage = () => {
+  const navigate = useNavigate();
+  const [teachers, setTeachers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const month = useMemo(currentMonth, []);
+
+  const loadTeachers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await getTeachers({ limit: 100 });
+      const body = response.data?.data ?? response.data ?? [];
+      const list = Array.isArray(body) ? body : body.teachers || [];
+
+      const rows = await Promise.all(
+        list.map(async (teacher) => {
+          const id = teacher.id || teacher._id;
+          let summary = {};
+          let missedSessions = [];
+          const [reportResult, missedResult] = await Promise.allSettled([
+            getTeacherMonthlyReport(id, month),
+            getTeacherMissedSessions(teacher),
+          ]);
+          if (reportResult.status === "fulfilled") {
+            summary = reportResult.value.data?.data?.summary || {};
+          }
+          if (missedResult.status === "fulfilled") {
+            missedSessions = missedResult.value;
+          }
+
+          return {
+            id,
+            userId:
+              teacher.user?.id ||
+              teacher.user?._id ||
+              (typeof teacher.user === "string" ? teacher.user : null) ||
+              teacher.userId,
+            name: teacherName(teacher),
+            email: teacherEmail(teacher),
+            phone: teacherPhone(teacher),
+            monthlyMinutes: summary.totalTeachingMinutes ?? 0,
+            completedSessions: summary.completedSessions ?? 0,
+            experience:
+              teacher.experienceYears ?? teacher.experience ?? "—",
+            subjects: listLabel(teacher.subjects ?? teacher.subject),
+            grades: listLabel(teacher.grades ?? teacher.grade),
+            curricula: listLabel(
+              teacher.curriculums ?? teacher.curriculum,
+            ),
+            status:
+              teacher.status === "approved"
+                ? "معتمد"
+                : teacher.status || "—",
+            raw: teacher,
+            missedSessions,
+          };
+        }),
+      );
+
+      setTeachers(rows);
+    } catch (error) {
+      console.error("Failed to load teachers:", error);
+      toast.error(error.response?.data?.message || "تعذر تحميل المعلمين");
+    } finally {
+      setLoading(false);
+    }
+  }, [month]);
+
+  useEffect(() => {
+    loadTeachers();
+  }, [loadTeachers]);
+
+  const filtered = teachers.filter(
+    (teacher) =>
+      teacher.name.includes(search) ||
+      teacher.email.toLowerCase().includes(search.toLowerCase()),
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalMinutes = teachers.reduce(
+    (sum, teacher) => sum + Number(teacher.monthlyMinutes || 0),
+    0,
+  );
+
+  const openTeacherDetails = (teacher) => setSelectedTeacher(teacher);
+
+  return (
+    <AdminLayout>
+      <Breadcrumbs homeTo="/admin-dashboard" />
+      <div
+        className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
+        dir="rtl"
+      >
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-[#123C91] sm:text-[24px]">
+            المعلمين
+          </h1>
+          <p className="mt-2 text-sm text-[#575F69] sm:text-[16px]">
+            متابعة المعلمين وساعات التدريس خلال الشهر الحالي.
+          </p>
+        </div>
+
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="rounded-lg bg-blue-50 p-3 text-blue-600">
+              <Users size={24} />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-gray-800">{teachers.length}</p>
+              <p className="mt-1 text-sm text-gray-500">إجمالي المعلمين</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="rounded-lg bg-teal-50 p-3 text-teal-600">
+              <Clock3 size={24} />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-gray-800">
+                {formatHours(totalMinutes)}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">إجمالي ساعات الشهر</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-sm">
+          <div className="relative max-w-md">
+            <Search
+              size={17}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder="ابحث باسم المعلم أو البريد الإلكتروني..."
+              className="h-11 w-full rounded-lg border border-gray-200 bg-gray-50 pr-10 pl-3 text-sm outline-none focus:border-[#123C91]"
+            />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-16 text-[#575F69]">
+            <Loader2 size={18} className="animate-spin" />
+            جاري تحميل المعلمين والساعات الشهرية...
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="rounded-2xl border border-gray-200 bg-white py-14 text-center text-[#575F69]">
+            لا يوجد معلمون
+          </div>
+        ) : (
+          <>
+            <div className="hidden overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm md:block">
+              <div className="overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-[#F9FAFA]">
+                    <tr>
+                      {["اسم المعلم", "البريد الإلكتروني", "رقم الهاتف", "الساعات الشهرية", "الحصص المكتملة", "غياب / لم تبدأ في الموعد"].map((header) => (
+                        <th key={header} className="whitespace-nowrap px-6 py-4 text-[13px] font-medium text-[#575F69]">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {visible.map((teacher) => (
+                      <tr key={teacher.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 font-medium">
+                          <button
+                            type="button"
+                            onClick={() => openTeacherDetails(teacher)}
+                            className="text-right text-[#123C91] hover:underline"
+                          >
+                            {teacher.name}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-[#575F69]" dir="ltr">{teacher.email}</td>
+                        <td className="px-6 py-4 text-sm text-[#575F69]" dir="ltr">{teacher.phone}</td>
+                        <td className="px-6 py-4 font-semibold text-[#123C91]">{formatHours(teacher.monthlyMinutes)}</td>
+                        <td className="px-6 py-4 text-sm">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(`/admin/teachers/${teacher.id}/sessions/completed`, {
+                                state: { teacherName: teacher.name },
+                              })
+                            }
+                            className="font-semibold text-[#123C91] hover:underline"
+                          >
+                            {teacher.completedSessions}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(`/admin/teachers/${teacher.id}/sessions/missed`, {
+                                state: { teacherName: teacher.name },
+                              })
+                            }
+                            className="font-semibold text-amber-700 hover:underline"
+                          >
+                            {teacher.missedSessions.length}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="space-y-3 md:hidden">
+              {visible.map((teacher) => (
+                <div key={teacher.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => openTeacherDetails(teacher)}
+                    className="font-semibold text-[#123C91] hover:underline"
+                  >
+                    {teacher.name}
+                  </button>
+                  <p className="mt-1 break-all text-xs text-[#8C9198]" dir="ltr">{teacher.email}</p>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-blue-50 p-3">
+                      <p className="text-xs text-[#575F69]">الساعات الشهرية</p>
+                      <p className="mt-1 font-semibold text-[#123C91]">{formatHours(teacher.monthlyMinutes)}</p>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 p-3">
+                      <p className="text-xs text-[#575F69]">الحصص المكتملة</p>
+                      <p className="mt-1 font-semibold text-[#1F2937]">{teacher.completedSessions}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(`/admin/teachers/${teacher.id}/sessions/completed`, {
+                          state: { teacherName: teacher.name },
+                        })
+                      }
+                      className="rounded-lg bg-blue-50 p-3 text-right"
+                    >
+                      <p className="text-xs text-[#575F69]">الحصص المكتملة</p>
+                      <p className="mt-1 font-semibold text-[#123C91]">{teacher.completedSessions}</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(`/admin/teachers/${teacher.id}/sessions/missed`, {
+                          state: { teacherName: teacher.name },
+                        })
+                      }
+                      className="rounded-lg bg-amber-50 p-3 text-right"
+                    >
+                      <p className="text-xs text-[#575F69]">
+                        غياب / لم تبدأ في الموعد
+                      </p>
+                      <p className="mt-1 font-semibold text-amber-700">{teacher.missedSessions.length}</p>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {!loading && filtered.length > 0 && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onChange={setPage}
+            totalItems={filtered.length}
+            displayedCount={visible.length}
+            unitLabel="معلم"
+          />
+        )}
+
+        {selectedTeacher && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                setSelectedTeacher(null);
+              }
+            }}
+          >
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-[#1F2937]">
+                  تفاصيل المعلم
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTeacher(null)}
+                  aria-label="إغلاق"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+
+              <div className="mb-5 flex flex-col items-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-[#123C91]">
+                  <GraduationCap size={30} />
+                </div>
+                <h3 className="mt-3 text-lg font-semibold text-[#1F2937]">
+                  {selectedTeacher.name}
+                </h3>
+                <p className="mt-1 text-sm text-[#8C9198]" dir="ltr">
+                  {selectedTeacher.email}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <DetailItem label="رقم الهاتف" value={selectedTeacher.phone} />
+                <DetailItem label="حالة المعلم" value={selectedTeacher.status} />
+                <DetailItem label="سنوات الخبرة" value={selectedTeacher.experience} />
+                <DetailItem label="المواد" value={selectedTeacher.subjects} />
+                <DetailItem label="الصفوف" value={selectedTeacher.grades} />
+                <DetailItem label="المناهج" value={selectedTeacher.curricula} />
+                <DetailItem
+                  label="الساعات الشهرية"
+                  value={formatHours(selectedTeacher.monthlyMinutes)}
+                />
+                <DetailItem
+                  label="الحصص المكتملة هذا الشهر"
+                  value={selectedTeacher.completedSessions}
+                />
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <a
+                  href={whatsappUrl(selectedTeacher.phone) || undefined}
+                  target={
+                    whatsappUrl(selectedTeacher.phone) ? "_blank" : undefined
+                  }
+                  rel="noopener noreferrer"
+                  aria-disabled={!whatsappUrl(selectedTeacher.phone)}
+                  onClick={(event) => {
+                    if (!whatsappUrl(selectedTeacher.phone)) {
+                      event.preventDefault();
+                    }
+                  }}
+                  className={`flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold !text-white transition-colors ${
+                    whatsappUrl(selectedTeacher.phone)
+                      ? "bg-[#25D366] hover:bg-[#20bd5a]"
+                      : "cursor-not-allowed bg-gray-300"
+                  }`}
+                >
+                  <MessageCircle size={18} />
+                  تواصل عبر واتساب
+                </a>
+                <button
+                  type="button"
+                  disabled={!selectedTeacher.userId}
+                  onClick={() =>
+                    navigate("/admin/messages", {
+                      state: { openUserId: selectedTeacher.userId },
+                    })
+                  }
+                  className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#123C91] text-sm font-semibold text-white transition-colors hover:bg-[#0f327a] disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  <MessagesSquare size={18} />
+                  محادثة على الموقع
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </AdminLayout>
+  );
+};
+
+export default TeachersPage;
