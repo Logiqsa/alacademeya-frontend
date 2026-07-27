@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { getNotifications } from "../../../services/APIService";
 
+const notificationText = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.ar || value.en || "";
+};
+
 const NotificationsSection = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [renderedAt] = useState(() => Date.now());
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -24,7 +33,7 @@ const NotificationsSection = () => {
   }, []);
 
   const formatTime = (dateStr) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
+    const diff = renderedAt - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
     const hours = Math.floor(mins / 60);
     const days = Math.floor(hours / 24);
@@ -43,7 +52,11 @@ const NotificationsSection = () => {
         <h3 className="text-base sm:text-[18px] font-medium text-[#1F2937]">
           الإشعارات الأخيرة
         </h3>
-        <button className="text-sm sm:text-[16px] text-[#123C91] font-medium hover:underline shrink-0">
+        <button
+          type="button"
+          onClick={() => navigate("/parent/notifications")}
+          className="text-sm sm:text-[16px] text-[#123C91] font-medium hover:underline shrink-0"
+        >
           عرض الكل
         </button>
       </div>
@@ -77,9 +90,17 @@ const NotificationsSection = () => {
                 <Bell size={20} />
               </div>
 
-              <div className="text-right min-w-0">
+              <div className="text-right min-w-0 flex-1">
                 <p className="font-['IBM_Plex_Sans_Arabic'] font-normal mb-1.5 sm:mb-2 text-[13px] sm:text-[14px] leading-4 text-[#1F2937]">
-                  {notif.title?.ar || notif.title}
+                  {notificationText(notif.title) || "إشعار جديد"}
+                </p>
+                <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] sm:text-[13px] leading-5 text-[#575F69] line-clamp-2">
+                  {notificationText(
+                    notif.body ||
+                      notif.message ||
+                      notif.content ||
+                      notif.description,
+                  ) || "لا توجد تفاصيل إضافية"}
                 </p>
                 <p className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[11px] sm:text-[12px] leading-4 text-[#8C9198] mt-1">
                   {formatTime(notif.createdAt)}

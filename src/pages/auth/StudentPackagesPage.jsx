@@ -1,48 +1,91 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
-import { getAllPackages } from "../../services/APIService";
-
-const listFrom = (response) => {
-  const body = response?.data;
-  const list = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
-  return list.map((pkg) => ({
-    id: pkg.id ?? pkg._id,
-    name: pkg.name?.ar || pkg.name?.en || pkg.name || "باقة",
-    sessions: pkg.sessions ?? pkg.numberOfSessions ?? pkg.sessionsCount,
-    price: pkg.finalPrice ?? pkg.price,
-  })).filter((pkg) => pkg.id);
-};
+import {
+  getMyProfile,
+  getStudentSubscriptionOptions,
+} from "../../services/APIService";
 
 const StudentPackagesPage = () => {
   const navigate = useNavigate();
+  const { studentId: routeStudentId } = useParams();
   const { state } = useLocation();
-  const subjects = useMemo(() => state?.selectedSubjects || [], [state]);
+  const selectedSubjects = useMemo(
+    () => state?.selectedSubjects || [],
+    [state],
+  );
+  const [subjects, setSubjects] = useState(selectedSubjects);
   const [packagesBySubject, setPackagesBySubject] = useState({});
   const [selections, setSelections] = useState({});
   const [loading, setLoading] = useState(true);
+  const isParentFlow = Boolean(state?.parentFlow || routeStudentId);
 
   useEffect(() => {
-    if (!subjects.length) {
+    if (!selectedSubjects.length && !routeStudentId && !state?.studentId) {
       navigate("/register/subjects", { replace: true, state });
       return;
     }
     let active = true;
-    getAllPackages()
-      .then((response) => {
+    const loadOptions = async () => {
+      try {
+        let studentId = state?.studentId || routeStudentId;
+        if (!studentId) {
+          const profileResponse = await getMyProfile();
+          const profile =
+            profileResponse.data?.data?.student ||
+            profileResponse.data?.data;
+          studentId = profile?.id || profile?._id;
+        }
+        if (!studentId) throw new Error("STUDENT_PROFILE_ID_MISSING");
+
+        const response = await getStudentSubscriptionOptions(studentId);
         if (!active) return;
-        const packages = listFrom(response);
-        const entries = subjects.map((subject) => [subject.id, packages]);
+        const optionSubjects = response.data?.data?.subjects || [];
+        const optionsBySubject = new Map(
+          optionSubjects.map((subject) => [
+            String(subject.id),
+            subject,
+          ]),
+        );
+        const visibleSubjects = selectedSubjects.length
+          ? selectedSubjects
+          : optionSubjects.map((subject) => ({
+              id: subject.id,
+              name:
+                subject.name?.ar ||
+                subject.name?.en ||
+                subject.name ||
+                "مادة",
+            }));
+        setSubjects(visibleSubjects);
+        const entries = visibleSubjects.map((subject) => {
+          const option = optionsBySubject.get(String(subject.id));
+          const packages = (option?.packages || []).map((pkg) => ({
+            id: pkg.id ?? pkg._id,
+            name: pkg.name?.ar || pkg.name?.en || pkg.name || "باقة",
+            sessions:
+              pkg.sessions ?? pkg.numberOfSessions ?? pkg.sessionsCount,
+            price: pkg.price,
+          }));
+          return [subject.id, packages];
+        });
         setPackagesBySubject(Object.fromEntries(entries));
         setSelections(Object.fromEntries(entries.filter(([, packages]) => packages[0]).map(([id, packages]) => [id, packages[0].id])));
-      })
-      .catch(() => toast.error("تعذر تحميل الباقات، حاول مرة أخرى"))
-      .finally(() => active && setLoading(false));
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message ||
+            "تعذر تحميل خيارات الاشتراك، حاول مرة أخرى",
+        );
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    loadOptions();
     return () => { active = false; };
-  }, [navigate, state, subjects]);
+  }, [navigate, routeStudentId, selectedSubjects, state]);
 
   const selectedCount = useMemo(() => Object.keys(selections).length, [selections]);
   const removeSubject = (id) => setSelections((current) => {
@@ -57,7 +100,16 @@ const StudentPackagesPage = () => {
       subject,
       package: packageId,
     }));
-    navigate("/register/order-summary", { state: { ...state, orderItems: items } });
+    navigate("/register/order-summary", {
+      state: {
+        ...(state || {}),
+        parentFlow: isParentFlow,
+        skipProfileCreation:
+          isParentFlow || state?.skipProfileCreation,
+        studentId: state?.studentId || routeStudentId,
+        orderItems: items,
+      },
+    });
   };
 
   return (

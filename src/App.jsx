@@ -134,6 +134,7 @@ function App() {
         <Route path="/parent/children" element={user ? <ChildrenPage /> : <Navigate to="/login" replace />} />
         <Route path="/parent/notifications" element={user ? <Notifications /> : <Navigate to="/login" replace />} />
         <Route path="/parent/subscription" element={user ? <SubscriptionPage /> : <Navigate to="/login" replace />} />
+        <Route path="/parent/students/:studentId/subscription/packages" element={user ? <StudentPackagesPage /> : <Navigate to="/login" replace />} />
         <Route path="/parent/messages" element={user ? <Messages /> : <Navigate to="/login" replace />} />
         <Route path="/parent/settings" element={user ? <AccountSettingsPage /> : <Navigate to="/login" replace />} />
 

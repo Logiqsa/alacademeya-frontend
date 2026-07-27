@@ -71,7 +71,14 @@ const RowActions = ({ onView, onDelete }) => (
   </div>
 );
 
-const ChildrenTable = ({ children = [], onStudentRemoved }) => {
+const ChildrenTable = ({
+  children = [],
+  onStudentRemoved,
+  ordersByStudent = {},
+  subscribedStudentIds = new Set(),
+  payingOrderId,
+  onContinuePayment,
+}) => {
   const [deletingId, setDeletingId] = useState(null);
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
@@ -135,6 +142,15 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
           </thead>
           <tbody>
             {children.map((child) => {
+              const studentId = String(child.id || child._id);
+              const order = ordersByStudent[studentId];
+              const hasActiveSubscription =
+                subscribedStudentIds.has(studentId);
+              const waitingAdmin =
+                order?.paymentStatus === "paid" &&
+                order?.approvalStatus === "waiting_admin";
+              const showContinuePayment =
+                !hasActiveSubscription && !waitingAdmin;
               const name = child.user?.fullName || "بدون اسم";
               const gradeName =
                 child.grade?.name?.ar || child.grade?.name?.en || "—";
@@ -151,9 +167,28 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
                         {getInitial(name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-['Tajawal'] font-medium text-[#1F2937] text-[16px] truncate">
-                          {name}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-['Tajawal'] font-medium text-[#1F2937] text-[16px] truncate">
+                            {name}
+                          </p>
+                          {showContinuePayment && (
+                            <button
+                              type="button"
+                              onClick={() => onContinuePayment?.(child)}
+                              disabled={payingOrderId === order?.id}
+                              className="rounded-lg bg-[#123C91] px-2.5 py-1 text-[11px] font-medium text-white disabled:opacity-60"
+                            >
+                              {payingOrderId === order?.id
+                                ? "جاري التحويل..."
+                                : "استكمال الدفع"}
+                            </button>
+                          )}
+                          {waitingAdmin && (
+                            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
+                              بانتظار مراجعة الإدارة
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[12px] text-[#6B7280] truncate">
                           {gradeName}
                         </p>
@@ -185,6 +220,15 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
       {/* كروت — للموبايل */}
       <div className="md:hidden flex flex-col gap-3" dir="rtl">
         {children.map((child) => {
+          const studentId = String(child.id || child._id);
+          const order = ordersByStudent[studentId];
+          const hasActiveSubscription =
+            subscribedStudentIds.has(studentId);
+          const waitingAdmin =
+            order?.paymentStatus === "paid" &&
+            order?.approvalStatus === "waiting_admin";
+          const showContinuePayment =
+            !hasActiveSubscription && !waitingAdmin;
           const name = child.user?.fullName || "بدون اسم";
           const gradeName =
             child.grade?.name?.ar || child.grade?.name?.en || "—";
@@ -214,6 +258,24 @@ const ChildrenTable = ({ children = [], onStudentRemoved }) => {
                   onDelete={() => setConfirmTarget({ id: child.id, name })}
                 />
               </div>
+
+              {showContinuePayment && (
+                <button
+                  type="button"
+                  onClick={() => onContinuePayment?.(child)}
+                  disabled={payingOrderId === order?.id}
+                  className="mb-3 h-10 w-full rounded-lg bg-[#123C91] text-sm font-medium text-white disabled:opacity-60"
+                >
+                  {payingOrderId === order?.id
+                    ? "جاري التحويل للدفع..."
+                    : "استكمال الدفع"}
+                </button>
+              )}
+              {waitingAdmin && (
+                <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-700">
+                  تم الدفع — بانتظار مراجعة الإدارة
+                </p>
+              )}
 
               <div className="flex items-center justify-between mb-2">
                 <StatusBadge status={child.status} />

@@ -1,15 +1,23 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
-import { getMySubscriptions, getSubscriptionOrder, startSubscriptionOrderCheckout } from "../../services/APIService";
+import { AuthContext } from "../../context/AuthContext";
+import {
+  getMyStudentsSubscriptions,
+  getMySubscriptions,
+  getSubscriptionOrder,
+  startSubscriptionOrderCheckout,
+} from "../../services/APIService";
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 const terminalPayments = new Set(["paid", "failed", "refunded"]);
 
 const SubscriptionOrderStatusPage = () => {
+  const { user } = useContext(AuthContext);
+  const userRole = user?.role;
   const { orderId: pathOrderId } = useParams();
   const [searchParams] = useSearchParams();
   const orderId = pathOrderId || searchParams.get("orderId");
@@ -33,15 +41,20 @@ const SubscriptionOrderStatusPage = () => {
       const current = responseData(response);
       setOrder(current);
       if (current.paymentStatus === "paid" && current.approvalStatus === "approved") {
-        await getMySubscriptions();
-        navigate("/student-dashboard", { replace: true });
+        if (userRole === "parent") {
+          await getMyStudentsSubscriptions();
+          navigate("/parent/subscription", { replace: true });
+        } else {
+          await getMySubscriptions();
+          navigate("/student-dashboard", { replace: true });
+        }
       }
       return current;
     } catch (error) {
       if (!quiet) toast.error(error.response?.data?.message || "تعذر تحميل حالة الطلب");
       return null;
     } finally { if (!quiet) setLoading(false); }
-  }, [navigate, orderId]);
+  }, [navigate, orderId, userRole]);
 
   useEffect(() => {
     const initialRefresh = window.setTimeout(() => refresh(), 0);
@@ -97,6 +110,19 @@ const SubscriptionOrderStatusPage = () => {
           {!loading && orderId && <div className="space-y-4">{labels.map(([label, done]) => <div key={label} className="flex items-center gap-3"><span className={`w-5 h-5 rounded-full border-2 ${done ? "bg-[#123C91] border-[#123C91]" : "bg-white border-gray-300"}`} /><span className={done ? "font-medium text-[#123C91]" : "text-gray-400"}>{label}</span></div>)}</div>}
           {["created", "pending"].includes(order?.paymentStatus) && <button disabled={paying} onClick={continuePayment} className="w-full h-12 mt-6 rounded-lg bg-[#123C91] text-white disabled:opacity-60">{paying ? "جاري التحويل..." : order.paymentStatus === "pending" ? "متابعة الدفع" : "الدفع الآن"}</button>}
           {orderId && <button disabled={loading} onClick={() => refresh()} className="w-full h-11 mt-3 rounded-lg border border-[#123C91] text-[#123C91]">تحديث الحالة</button>}
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                userRole === "parent"
+                  ? "/parent-dashboard"
+                  : "/student-dashboard",
+              )
+            }
+            className="w-full h-11 mt-3 rounded-lg bg-[#F3F4F6] text-[#1F2937] font-medium"
+          >
+            الشاشة الرئيسية
+          </button>
           {pollingExpired && <p className="text-xs text-gray-500 text-center mt-3">توقف التحديث التلقائي. يمكنك تحديث الحالة يدوياً.</p>}
           {order?.paymentStatus === "refunded" && <p className="text-sm text-red-700 mt-4 text-center">تم رد المبلغ. يرجى التواصل مع الدعم.</p>}
           {order?.paymentStatus === "failed" && <p className="text-sm text-red-700 mt-4 text-center">تعذرت عملية الدفع. سياسة إعادة المحاولة غير متاحة حالياً.</p>}

@@ -8,7 +8,10 @@ const statusStyle = (status) => {
   if (status === "قيد المراجعة")
     return "bg-[#F59E0B26] text-[#F59E0B]";
 
-  return "";
+  if (status === "ملغية")
+    return "bg-gray-100 text-gray-600";
+
+  return "bg-gray-100 text-gray-600";
 };
 
 const withGroupMeta = (rows) => {
@@ -28,11 +31,16 @@ const withGroupMeta = (rows) => {
   });
 };
 
-const PlanCell = ({ subjectName, teacherName }) => (
+const PlanCell = ({ subjectName, packageName, teacherName }) => (
   <div className="flex flex-col items-center leading-tight">
     <span className="text-[#1F2937] font-medium text-[14px]">
       {subjectName || "--"}
     </span>
+    {packageName && packageName !== "—" && (
+      <span className="mt-1 text-[12px] font-medium text-[#123C91]">
+        {packageName}
+      </span>
+    )}
     {teacherName && (
       <span className="text-[#9CA3AF] text-[12px] mt-0.5" dir="auto">
         {teacherName}
@@ -53,20 +61,50 @@ const MutedOrValue = ({ value, highlight = false }) => {
   );
 };
 
-const SubscriptionTable = ({ data, ownerHeader = "الابن" }) => {
+const RemainingValue = ({ row }) => {
+  if (row.remaining === "--" || row.remaining == null) {
+    return <span className="text-[#C7CBD1] text-[13px]">غير متاح</span>;
+  }
+
+  const total = Number(row.totalSessions);
+  const remaining = Number(row.remainingSessions);
+  const ratio =
+    Number.isFinite(total) && total > 0 && Number.isFinite(remaining)
+      ? remaining / total
+      : null;
+  const color =
+    ratio != null && ratio < 0.25
+      ? "bg-red-50 text-red-600"
+      : ratio != null && ratio < 0.5
+        ? "bg-orange-50 text-orange-600"
+        : "bg-blue-50 text-[#123C91]";
+
+  return (
+    <span className={`inline-flex rounded-full px-3 py-1 font-semibold ${color}`}>
+      {row.remaining}
+    </span>
+  );
+};
+
+const SubscriptionTable = ({
+  data,
+  ownerHeader = "الابن",
+  hideOwner = false,
+  onRenew,
+}) => {
   const rows = withGroupMeta(data ?? []);
 
   const headers = [
-    ownerHeader,
+    ...(!hideOwner ? [ownerHeader] : []),
     "الباقة",
-    "إجمالي الساعات",
+    "إجمالي الحصص",
     "المستهلك",
     "المتبقي",
     "مدة الاشتراك",
     "تاريخ البدء",
-    "تاريخ الانتهاء",
     "المبلغ",
     "الحالة",
+    ...(onRenew ? ["الإجراء"] : []),
   ];
 
   return (
@@ -133,7 +171,7 @@ const SubscriptionTable = ({ data, ownerHeader = "الابن" }) => {
                 `}
               >
                 
-                {row.isFirstInGroup && (
+                {!hideOwner && row.isFirstInGroup && (
                   <td
                     rowSpan={row.groupSize}
                     className="
@@ -153,6 +191,7 @@ const SubscriptionTable = ({ data, ownerHeader = "الابن" }) => {
                 <td className="px-4 py-5 text-center">
                   <PlanCell
                     subjectName={row.subjectName}
+                    packageName={row.packageName}
                     teacherName={row.teacherName}
                   />
                 </td>
@@ -166,7 +205,7 @@ const SubscriptionTable = ({ data, ownerHeader = "الابن" }) => {
                 </td>
 
                 <td className="px-4 py-5 text-center">
-                  <MutedOrValue value={row.remaining} highlight />
+                  <RemainingValue row={row} />
                 </td>
 
                 <td className="px-4 py-5 text-center text-[#575F69]">
@@ -175,10 +214,6 @@ const SubscriptionTable = ({ data, ownerHeader = "الابن" }) => {
 
                 <td className="px-4 py-5 text-center text-[#575F69]">
                   {row.startDate}
-                </td>
-
-                <td className="px-4 py-5 text-center">
-                  <MutedOrValue value={row.endDate} />
                 </td>
 
                 <td className="px-4 py-5 text-center text-[#575F69]">
@@ -202,6 +237,18 @@ const SubscriptionTable = ({ data, ownerHeader = "الابن" }) => {
                     {row.status}
                   </span>
                 </td>
+                {onRenew && (
+                  <td className="px-4 py-5 text-center">
+                    <button
+                      type="button"
+                      disabled={!row.studentId || !row.subjectId}
+                      onClick={() => onRenew(row)}
+                      className="whitespace-nowrap rounded-lg border border-[#123C91] px-3 py-2 text-xs font-semibold text-[#123C91] transition-colors hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      تجديد
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -244,9 +291,11 @@ const SubscriptionTable = ({ data, ownerHeader = "الابن" }) => {
               dir="rtl"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-[#1F2937]">
-                  {group.name}
-                </h3>
+                {!hideOwner && (
+                  <h3 className="font-semibold text-[#1F2937]">
+                    {group.name}
+                  </h3>
+                )}
 
                 <span
                   className={`
@@ -277,26 +326,33 @@ const SubscriptionTable = ({ data, ownerHeader = "الابن" }) => {
                       value={
                         <PlanCell
                           subjectName={item.subjectName}
+                          packageName={item.packageName}
                           teacherName={item.teacherName}
                         />
                       }
                     />
-                    <InfoRow label="إجمالي الساعات" value={item.totalHours} />
+                    <InfoRow label="إجمالي الحصص" value={item.totalHours} />
                     <InfoRow
                       label="المستهلك"
                       value={<MutedOrValue value={item.consumed} />}
                     />
                     <InfoRow
                       label="المتبقي"
-                      value={<MutedOrValue value={item.remaining} highlight />}
+                      value={<RemainingValue row={item} />}
                     />
                     <InfoRow label="مدة الاشتراك" value={item.duration} />
                     <InfoRow label="تاريخ البدء" value={item.startDate} />
-                    <InfoRow
-                      label="تاريخ الانتهاء"
-                      value={<MutedOrValue value={item.endDate} />}
-                    />
                     <InfoRow label="المبلغ" value={item.amount} />
+                    {onRenew && (
+                      <button
+                        type="button"
+                        disabled={!item.studentId || !item.subjectId}
+                        onClick={() => onRenew(item)}
+                        className="mt-2 w-full rounded-xl border border-[#123C91] py-2.5 text-sm font-semibold text-[#123C91] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        تجديد الاشتراك
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

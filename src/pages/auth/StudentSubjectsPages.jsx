@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import {
+  completeStudentProfile,
+  getMyProfile,
   getSubjects,
 } from "../../services/APIService";
 
@@ -31,6 +33,7 @@ const StudentSubjectsPages = () => {
   const [birthDate, setBirthDate] = useState("");
   const [studyLanguage, setStudyLanguage] = useState("ar");
   const [loadingSubjects, setLoadingSubjects] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!gradeId || !stageId || !curriculumId) {
@@ -72,20 +75,60 @@ const StudentSubjectsPages = () => {
       return;
     }
 
-    const selectedSubjects = subjects.filter((subject) =>
-      selected.includes(subject.id),
-    );
-
-    navigate("/register/packages", {
-      state: {
-        ...(state || {}),
+    setSubmitting(true);
+    try {
+      const profilePayload = {
         birthDate,
         studyLanguage,
+        curriculum: curriculumId,
+        stage: stageId,
+        grade: gradeId,
         preferredSubjects: selected,
-        selectedSubjects,
         studentType: studentType || "school",
-      },
-    });
+      };
+
+      try {
+        const response = await completeStudentProfile(profilePayload);
+        const token = response.data?.token;
+        if (token) localStorage.setItem("token", token);
+      } catch (error) {
+        const message = String(error.response?.data?.message || "");
+        if (
+          !["PROFILE_ALREADY_EXISTS", "PROFILE_ALREADY_COMPLETED"].includes(
+            message,
+          )
+        ) {
+          throw error;
+        }
+      }
+
+      const profileResponse = await getMyProfile();
+      const profile =
+        profileResponse.data?.data?.student ||
+        profileResponse.data?.data;
+      const studentId = profile?.id || profile?._id;
+      if (!studentId) throw new Error("STUDENT_PROFILE_ID_MISSING");
+
+      const selectedSubjects = subjects.filter((subject) =>
+        selected.includes(subject.id),
+      );
+
+      navigate("/register/packages", {
+        state: {
+          ...(state || {}),
+          studentId,
+          skipProfileCreation: true,
+          selectedSubjects,
+        },
+      });
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "تعذر استكمال ملف الطالب وتحميل خيارات الاشتراك",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -178,11 +221,12 @@ const StudentSubjectsPages = () => {
 
         <button
           onClick={handleSubmit}
+          disabled={submitting}
           disabled={loadingSubjects}
           className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
-          التالي
+          {submitting ? "جاري تجهيز الاشتراك..." : "التالي"}
         </button>
 
         <div className="flex items-center justify-center gap-1 pt-4">

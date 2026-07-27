@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import ParentLayout from "../../components/parent/layout/ParentLayout";
-import ChildCard from "../../components/parent/subscription/ChildCard";
 import SubscriptionTable from "../../components/parent/subscription/SubscriptionTable";
 import SubscriptionFilters from "../../components/parent/subscription/SubscriptionFilters";
+import SubscriptionOrdersPanel from "../../components/subscription/SubscriptionOrdersPanel";
 
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
@@ -14,7 +14,10 @@ import {
 const STATUS_MAP = {
   active: "نشطة",
   expired: "منتهية",
+  ended: "منتهية",
+  completed: "منتهية",
   pending: "قيد المراجعة",
+  cancelled: "ملغية",
 };
 
 const mapStatus = (status) => STATUS_MAP[status] || status;
@@ -75,7 +78,23 @@ const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
 
   return sub.items.map((item) => {
     const subjectName = item.subject?.name?.ar || "--";
+    const packageName =
+      item.package?.name?.ar ||
+      item.package?.name?.en ||
+      item.package?.name ||
+      "—";
     const teacherName = item.teacher?.user?.fullName || "";
+    const totalSessions =
+      item.totalSessions ?? item.package?.sessions;
+    const usedSessions =
+      item.usedSessions ?? item.consumedSessions;
+    const remainingSessions =
+      item.remainingSessions ??
+      (totalSessions != null && usedSessions != null
+        ? Math.max(Number(totalSessions) - Number(usedSessions), 0)
+        : null);
+    const itemEndDate =
+      item.endedAt || item.completedAt || sub.endedAt || sub.completedAt;
 
     return {
       id: item._id,
@@ -84,16 +103,29 @@ const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
       name: studentName,
       stage: studentGrade,
       subjectName,
+      packageName,
+      subjectId:
+        typeof item.subject === "string"
+          ? item.subject
+          : item.subject?.id || item.subject?._id,
       teacherName,
 
       totalHours:
-        item.package?.sessions != null ? `${item.package.sessions} ساعة` : "--",
-      consumed: "--",
-      remaining: "--",
-      duration: "شهر",
+        totalSessions != null ? `${totalSessions} حصة` : "--",
+      totalSessions:
+        totalSessions != null ? Number(totalSessions) : null,
+      consumed:
+        usedSessions != null ? `${usedSessions} حصة` : "--",
+      remaining:
+        remainingSessions != null ? `${remainingSessions} حصة` : "--",
+      remainingSessions:
+        remainingSessions != null ? Number(remainingSessions) : null,
+      duration: "حتى نفاد الحصص",
       startDate,
 
-      endDate: "--",
+      endDate: itemEndDate
+        ? new Date(itemEndDate).toLocaleDateString("en-GB")
+        : "حتى نفاد الحصص",
       amount:
         item.finalPrice != null
           ? `EGP ${item.finalPrice.toLocaleString()}`
@@ -175,12 +207,38 @@ const SubscriptionPage = () => {
     return matchesSearch && matchesStudent && matchesStatus;
   });
 
-  const cardRows = filteredTableRows.filter((row, index) => {
-    const firstIndexOfGroup = filteredTableRows.findIndex(
-      (r) => r.groupId === row.groupId,
-    );
-    return firstIndexOfGroup === index;
-  });
+  const groupedSubscriptions = Object.values(
+    filteredTableRows.reduce((groups, row) => {
+      const key = String(row.studentId || row.name);
+      if (!groups[key]) {
+        groups[key] = {
+          id: key,
+          name: row.name,
+          stage: row.stage,
+          rows: [],
+        };
+      }
+      groups[key].rows.push(row);
+      return groups;
+    }, {}),
+  );
+
+  const renewSubject = (row) => {
+    if (!row.studentId || !row.subjectId) return;
+    navigate(`/parent/students/${row.studentId}/subscription/packages`, {
+      state: {
+        parentFlow: true,
+        skipProfileCreation: true,
+        studentId: row.studentId,
+        selectedSubjects: [
+          {
+            id: row.subjectId,
+            name: row.subjectName,
+          },
+        ],
+      },
+    });
+  };
 
   return (
     <ParentLayout>
@@ -272,31 +330,6 @@ const SubscriptionPage = () => {
 
         {!isLoading && !error && (
           <>
-            {/* Children Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-              {cardRows.length === 0 ? (
-                <p className="text-[#575F69] col-span-2 text-center py-6">
-                  لا توجد اشتراكات حالياً
-                </p>
-              ) : (
-                cardRows.map((row) => (
-                  <ChildCard
-                    key={row.groupId}
-                    name={row.name}
-                    stage={row.stage}
-                    plan={
-                      row.teacherName
-                        ? `${row.subjectName} - ${row.teacherName}`
-                        : row.subjectName
-                    }
-                    status={row.status}
-                    date={row.endDate !== "--" ? row.endDate : row.startDate}
-                    isExpiring={row.status === "منتهية"}
-                  />
-                ))
-              )}
-            </div>
-
             {/* Filters */}
             <div
               className="
@@ -322,18 +355,46 @@ const SubscriptionPage = () => {
               />
             </div>
 
-            {/* Table */}
-            <div
-              className="
-                border
-                border-[#E5E5E5]
-                rounded-2xl
-                shadow-sm
-                overflow-hidden
-              "
-            >
-              <SubscriptionTable data={filteredTableRows} />
-            </div>
+            {groupedSubscriptions.length === 0 ? (
+              <div className="rounded-2xl border border-[#E5E5E5] bg-white py-12 text-center text-[#575F69]">
+                لا توجد اشتراكات حالياً
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {groupedSubscriptions.map((group) => (
+                  <section
+                    key={group.id}
+                    className="rounded-3xl border border-[#DCE8F7] bg-[#F8FBFF] p-4 shadow-sm sm:p-6"
+                  >
+                    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#123C91] text-lg font-bold text-white">
+                          {group.name?.trim()?.[0] || "ط"}
+                        </div>
+                        <div>
+                          <h2 className="font-['Tajawal'] text-lg font-semibold text-[#1F2937]">
+                            {group.name}
+                          </h2>
+                          <p className="mt-1 text-xs text-[#6B7280]">
+                            {group.stage || "الصف غير محدد"}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#123C91] shadow-sm">
+                        {group.rows.length} مادة
+                      </span>
+                    </div>
+
+                    <SubscriptionTable
+                      data={group.rows}
+                      hideOwner
+                      onRenew={renewSubject}
+                    />
+                  </section>
+                ))}
+              </div>
+            )}
+            <SubscriptionOrdersPanel />
           </>
         )}
       </div>

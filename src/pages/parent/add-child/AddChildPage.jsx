@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import StepsNavigation from "../../../components/parent/add-child/StepsNavigation";
 import PersonalInfoStep from "../../../components/parent/add-child/PersonalInfoStep";
 import AcademicInfoStep from "../../../components/parent/add-child/AcademicInfoStep";
 import AccountSetupStep from "../../../components/parent/add-child/AccountSetupStep";
 import ReviewStep from "../../../components/parent/add-child/ReviewStep";
-import SuccessStep from "../../../components/parent/add-child/SuccessStep";
-import RequestStatusPage from "../../../components/parent/add-child/RequestStatusPage";
 import ParentLayout from "../../../components/parent/layout/ParentLayout";
 import {
   getCountries,
@@ -32,9 +31,8 @@ const stepTitles = {
 };
 
 const AddChildPage = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showStatus, setShowStatus] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -59,6 +57,22 @@ const AddChildPage = () => {
 
   const handleChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+  const handleStudentCreated = (studentId) => {
+    const selectedSubjects = formData.subjects.map((id) => ({
+      id,
+      name: subjectsMap[id] || "مادة",
+    }));
+
+    navigate(`/parent/students/${studentId}/subscription/packages`, {
+      state: {
+        parentFlow: true,
+        skipProfileCreation: true,
+        studentId,
+        selectedSubjects,
+      },
+    });
+  };
 
   const countryId = formData.country?.id;
 
@@ -114,24 +128,6 @@ const AddChildPage = () => {
       })
       .catch(() => {});
   }, [formData.grade]);
-
-  if (showStatus)
-    return (
-      <ParentLayout>
-        <div className="max-w-4xl mx-auto mt-10">
-          <RequestStatusPage />
-        </div>
-      </ParentLayout>
-    );
-
-  if (isSubmitted)
-    return (
-      <ParentLayout>
-        <div className="max-w-4xl mx-auto mt-20">
-          <SuccessStep onStatusClick={() => setShowStatus(true)} />
-        </div>
-      </ParentLayout>
-    );
 
   return (
     <ParentLayout>
@@ -190,7 +186,7 @@ const AddChildPage = () => {
             <ReviewStep
               data={formData}
               onBack={() => setCurrentStep(3)}
-              onSuccess={() => setIsSubmitted(true)}
+              onSuccess={handleStudentCreated}
               countriesMap={countriesMap}
               curriculumsMap={curriculumsMap}
               stagesMap={stagesMap}

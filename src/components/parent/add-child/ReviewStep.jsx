@@ -80,6 +80,7 @@ const ReviewStep = ({
       const payload = {
         fullName: data.fullName.trim(),
         email: data.email.trim().toLowerCase(),
+        phone: data.phone?.trim(),
         birthDate: data.birthDate
           ? new Date(data.birthDate).toISOString().split('T')[0]
           : undefined,
@@ -93,9 +94,15 @@ const ReviewStep = ({
         password: data.password,
         passwordConfirm: data.passwordConfirm,
       };
-      await addStudent(payload);
+      const response = await addStudent(payload);
+      const studentId =
+        response.data?.data?.studentId ||
+        response.data?.studentId;
+      if (!studentId) {
+        throw new Error('STUDENT_ID_MISSING');
+      }
       toast.success('تم إنشاء حساب الطالب بنجاح!');
-      onSuccess();
+      onSuccess(studentId);
     } catch (err) {
       console.error('addStudent error response:', err.response?.data);
       const message = getServerErrorMessage(err);
@@ -148,7 +155,7 @@ const ReviewStep = ({
 
       {/* ملاحظة */}
       <div className="mb-4 p-3 sm:p-4 rounded-xl bg-[#F0F4FC] border border-[#DBEAFE] text-[#1E4FAE] text-[13px] sm:text-[14px] text-right leading-relaxed">
-        بإرسال هذا الطلب، سيتم تحويله إلى الإدارة للمراجعة. وسيتم التواصل مع ولي الأمر لتحديد الباقة التعليمية المناسبة واستكمال إجراءات التفعيل قبل إنشاء الحساب بشكل نهائي.
+        بعد إنشاء الطالب ستنتقل لاختيار الباقات واستكمال الدفع، ثم يُرسل الطلب إلى الإدارة للمراجعة والتفعيل.
       </div>
 
       {submitError && (
@@ -170,7 +177,7 @@ const ReviewStep = ({
           disabled={loading}
           className="flex-1 py-3 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium cursor-pointer disabled:opacity-70 transition-opacity text-[14px] sm:text-[16px]"
         >
-          {loading ? 'جاري الإرسال...' : 'إرسال الطلب'}
+          {loading ? 'جاري إنشاء الطالب...' : 'إنشاء طالب واستكمال الدفع'}
         </button>
       </div>
 

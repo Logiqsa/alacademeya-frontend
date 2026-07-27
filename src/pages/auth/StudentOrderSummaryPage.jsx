@@ -31,7 +31,7 @@ const StudentOrderSummaryPage = () => {
     const createOrder = async () => {
       setLoading(true);
       try {
-        if (!state?.renewal) {
+        if (!state?.renewal && !state?.skipProfileCreation) {
           try {
             await completeStudentProfile({
               birthDate: state.birthDate, studyLanguage: state.studyLanguage,
@@ -42,7 +42,13 @@ const StudentOrderSummaryPage = () => {
             if (!isExistingProfileError(error)) throw error;
           }
         }
-        const response = await createSubscriptionOrder(items.map(({ subject, package: packageId }) => ({ subject, package: packageId })));
+        const response = await createSubscriptionOrder(
+          items.map(({ subject, package: packageId }) => ({
+            subject,
+            package: packageId,
+          })),
+          state?.studentId,
+        );
         const created = responseData(response);
         if (!active) return;
         setOrder(created);

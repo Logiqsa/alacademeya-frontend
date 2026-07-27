@@ -7,6 +7,7 @@ import Breadcrumbs from "../shared/Breadcrumbs";
 import ChildCard from "../../components/parent/subscription/ChildCard";
 import SubscriptionFilters from "../../components/parent/subscription/SubscriptionFilters";
 import SubscriptionTable from "../../components/parent/subscription/SubscriptionTable";
+import SubscriptionOrdersPanel from "../../components/subscription/SubscriptionOrdersPanel";
 import { AuthContext } from "../../context/AuthContext";
 import { getMySubscriptions } from "../../services/APIService";
 
@@ -282,6 +283,7 @@ const StudentSubscriptionPage = () => {
               data={filteredRows}
               ownerHeader="الطالب"
             />
+            <SubscriptionOrdersPanel />
           </>
         )}
       </main>

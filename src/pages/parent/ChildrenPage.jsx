@@ -2,13 +2,17 @@ import { useState, useEffect } from "react";
 import ParentLayout from "../../components/parent/layout/ParentLayout";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
+import toast from "react-hot-toast";
 import ChildrenStatsCards from "../../components/parent/children/ChildrenStatsCard";
 import ChildrenSearch from "../../components/parent/children/ChildrenSearch";
 import ChildrenTable from "../../components/parent/children/ChildrenTable";
 
 import {
   getMyStudents,
+  getMyStudentsSubscriptions,
+  getMySubscriptionOrders,
   getStudentsStatistics,
+  startSubscriptionOrderCheckout,
 } from "../../services/APIService";
 import Paginationn from "../../components/teacher/groups/students/Paginationn";
 
@@ -19,18 +23,61 @@ const ChildrenPage = () => {
   const [students, setStudents] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [ordersByStudent, setOrdersByStudent] = useState({});
+  const [subscribedStudentIds, setSubscribedStudentIds] = useState(
+    new Set(),
+  );
+  const [payingOrderId, setPayingOrderId] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [studentsRes, statsRes] = await Promise.all([
+        const [studentsRes, statsRes, ordersRes, subscriptionsRes] =
+          await Promise.all([
           getMyStudents(),
           getStudentsStatistics(),
+          getMySubscriptionOrders().catch(() => ({ data: { data: [] } })),
+          getMyStudentsSubscriptions().catch(() => ({
+            data: { data: [] },
+          })),
         ]);
         setStudents(studentsRes.data?.data || []);
         setStats(statsRes.data?.data || null);
+
+        const orders = ordersRes.data?.data || [];
+        setOrdersByStudent(
+          orders.reduce((map, order) => {
+            const studentId = order.student?.id || order.student?._id;
+            if (studentId && !map[String(studentId)]) {
+              map[String(studentId)] = order;
+            }
+            return map;
+          }, {}),
+        );
+
+        const subscriptions = subscriptionsRes.data?.data || [];
+        setSubscribedStudentIds(
+          new Set(
+            subscriptions
+              .filter(
+                (subscription) =>
+                  subscription.status === "active" ||
+                  (subscription.items || []).some(
+                    (item) => item.status === "active",
+                  ),
+              )
+              .map(
+                (subscription) =>
+                  subscription.student?.id ||
+                  subscription.student?._id ||
+                  subscription.student,
+              )
+              .filter(Boolean)
+              .map(String),
+          ),
+        );
       } catch (err) {
         console.error("فشل تحميل بيانات الأبناء:", err.response?.data);
       } finally {
@@ -58,6 +105,44 @@ const ChildrenPage = () => {
   const handleSearch = (val) => {
     setSearch(val);
     setPage(1);
+  };
+
+  const handleContinuePayment = async (child) => {
+    const studentId = String(child.id || child._id);
+    const order = ordersByStudent[studentId];
+
+    if (!order || !["created", "pending"].includes(order.paymentStatus)) {
+      navigate(
+        `/parent/students/${studentId}/subscription/packages`,
+        {
+          state: {
+            parentFlow: true,
+            skipProfileCreation: true,
+            studentId,
+          },
+        },
+      );
+      return;
+    }
+
+    setPayingOrderId(order.id);
+    try {
+      const response = await startSubscriptionOrderCheckout(order.id);
+      const purchaseUrl =
+        response.data?.data?.purchaseUrl ||
+        response.data?.purchaseUrl;
+      if (!purchaseUrl) throw new Error("PURCHASE_URL_MISSING");
+      window.location.assign(purchaseUrl);
+    } catch (error) {
+      if (error.response?.status === 409) {
+        navigate(`/subscription-orders/${order.id}/status`);
+      } else {
+        toast.error(
+          error.response?.data?.message || "تعذر استكمال عملية الدفع",
+        );
+      }
+      setPayingOrderId("");
+    }
   };
 
   return (
@@ -100,6 +185,10 @@ const ChildrenPage = () => {
             <>
               <ChildrenTable
                 children={paginated}
+                ordersByStudent={ordersByStudent}
+                subscribedStudentIds={subscribedStudentIds}
+                payingOrderId={payingOrderId}
+                onContinuePayment={handleContinuePayment}
                 onStudentRemoved={(removedId) =>
                   setStudents((prev) => prev.filter((s) => s.id !== removedId))
                 }
