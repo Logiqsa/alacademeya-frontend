@@ -86,6 +86,26 @@ const RemainingValue = ({ row }) => {
   );
 };
 
+const shouldShowRenew = (row) => {
+  if (row.status === "منتهية") return true;
+
+  const remaining =
+    row.remainingSessions == null ? null : Number(row.remainingSessions);
+
+  if (Number.isFinite(remaining) && remaining <= 2) return true;
+
+  const total =
+    row.totalSessions == null ? null : Number(row.totalSessions);
+  const consumed = Number.parseFloat(row.consumed);
+
+  return (
+    Number.isFinite(total) &&
+    total > 0 &&
+    Number.isFinite(consumed) &&
+    consumed >= total
+  );
+};
+
 const SubscriptionTable = ({
   data,
   ownerHeader = "الابن",
@@ -239,14 +259,18 @@ const SubscriptionTable = ({
                 </td>
                 {onRenew && (
                   <td className="px-4 py-5 text-center">
-                    <button
-                      type="button"
-                      disabled={!row.groupId || !row.subjectId}
-                      onClick={() => onRenew(row)}
-                      className="whitespace-nowrap rounded-lg border border-[#123C91] px-3 py-2 text-xs font-semibold text-[#123C91] transition-colors hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      تجديد
-                    </button>
+                    {shouldShowRenew(row) ? (
+                      <button
+                        type="button"
+                        disabled={!row.groupId || !row.subjectId}
+                        onClick={() => onRenew(row)}
+                        className="whitespace-nowrap rounded-lg border border-[#123C91] px-3 py-2 text-xs font-semibold text-[#123C91] transition-colors hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        تجديد
+                      </button>
+                    ) : (
+                      <span className="text-[#C7CBD1]">—</span>
+                    )}
                   </td>
                 )}
               </tr>
@@ -343,7 +367,7 @@ const SubscriptionTable = ({
                     <InfoRow label="مدة الاشتراك" value={item.duration} />
                     <InfoRow label="تاريخ البدء" value={item.startDate} />
                     <InfoRow label="المبلغ" value={item.amount} />
-                    {onRenew && (
+                    {onRenew && shouldShowRenew(item) && (
                       <button
                         type="button"
                         disabled={!item.groupId || !item.subjectId}
