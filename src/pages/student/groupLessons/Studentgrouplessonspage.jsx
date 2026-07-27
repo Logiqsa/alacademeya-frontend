@@ -9,6 +9,7 @@ import Paginationn from "../../../components/teacher/groups/lessons/Paginationn"
 import {
   getMyClassrooms,
   getClassroomSessions,
+  getMySubscriptions,
 } from "../../../services/APIService";
 
 const ITEMS_PER_PAGE = 5;
@@ -25,6 +26,36 @@ const STATUS_LABELS = {
 
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
+
+const getId = (value) =>
+  typeof value === "string" ? value : value?.id || value?._id;
+
+const getSubscriptionJoinDate = (response, classroomId) => {
+  const body = response?.data?.data ?? response?.data ?? [];
+  const subscriptions = Array.isArray(body)
+    ? body
+    : Array.isArray(body?.subscriptions)
+      ? body.subscriptions
+      : body
+        ? [body]
+        : [];
+
+  const enrollmentDates = subscriptions.flatMap((subscription) => {
+    const items =
+      subscription.items ?? subscription.subjectSubscriptions ?? [];
+
+    return items
+      .filter((item) => getId(item.classroom) === classroomId)
+      .map((item) => new Date(item.createdAt || subscription.createdAt))
+      .filter((date) => !Number.isNaN(date.getTime()));
+  });
+
+  if (!enrollmentDates.length) return null;
+
+  return new Date(
+    Math.min(...enrollmentDates.map((date) => date.getTime())),
+  );
+};
 
 // بيحسب حالة العرض اعتمادًا على status الحقيقي من الباك إند، وعلى التوقيت لو لسه "scheduled"
 const computeDisplayStatus = (session) => {
@@ -58,10 +89,12 @@ const StudentGroupLessonsPage = () => {
     setLoading(true);
     setError(null);
 
-    const [classroomsResult, sessionsResult] = await Promise.allSettled([
-      getMyClassrooms(),
-      getClassroomSessions(groupId),
-    ]);
+    const [classroomsResult, sessionsResult, subscriptionsResult] =
+      await Promise.allSettled([
+        getMyClassrooms(),
+        getClassroomSessions(groupId),
+        getMySubscriptions(),
+      ]);
 
     if (classroomsResult.status === "fulfilled") {
       const classrooms = classroomsResult.value.data?.data ?? [];
@@ -81,8 +114,21 @@ const StudentGroupLessonsPage = () => {
 
     try {
       const sessions = sessionsResult.value.data?.data ?? [];
+      const joinedAt =
+        subscriptionsResult.status === "fulfilled"
+          ? getSubscriptionJoinDate(subscriptionsResult.value, groupId)
+          : null;
 
       const mapped = sessions
+        .filter((session) => {
+          if (!joinedAt) return true;
+          const sessionDate = new Date(
+            session.scheduledDate || session.startAt,
+          );
+          return (
+            !Number.isNaN(sessionDate.getTime()) && sessionDate >= joinedAt
+          );
+        })
         .map((s) => {
           const date = new Date(s.scheduledDate || s.startAt);
           const status = computeDisplayStatus(s);
