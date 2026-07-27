@@ -91,14 +91,14 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
           <NavLink
             key={item.path}
             to={item.path}
-            end
+            end={item.path.endsWith("-dashboard")}
             className={({ isActive }) => `
               flex
               items-center
               ${isOpen ? "gap-2 px-3 justify-start" : "justify-center"}
               py-2
               mb-1
-              rounded-lg
+              rounded-xl
               transition-all
               font-['IBM_Plex_Sans_Arabic']
               font-medium

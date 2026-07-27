@@ -166,6 +166,12 @@ export const getAdminSubscriptionOrder = (id) =>
 export const approveSubscriptionOrder = (id, items) =>
   API.post(`/subscription-orders/admin/${id}/approve`, { items });
 
+// ─── Admin payments ──────────────────────────────────────────────────────────
+export const getAdminPayments = (params) =>
+  API.get("/admin/payments", { params });
+export const getAdminPaymentDetails = (id) =>
+  API.get(`/admin/payments/${id}`);
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Discounts  (NEW)
 // ──────────────────────────────────────────────────────────────────────────────
