@@ -9,8 +9,8 @@ const LiveLessonLink = ({ lessonUrl, status }) => {
       : status === "missed"
         ? "بدأت الحصة متأخرة"
         : status === "not_started"
-          ? "الحصة فائتة ولم تبدأ"
-          : "الحصة لم تبدأ بعد";
+          ? "الحصة لم تُعقد"
+          : "الحصة مجدولة ولم تبدأ بعد";
 
   const copyLink = async () => {
     if (!lessonUrl) return;

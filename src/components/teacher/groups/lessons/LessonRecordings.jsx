@@ -1,4 +1,5 @@
 import { Download, ExternalLink } from "lucide-react";
+import { getAssetUrl } from "../../../../services/APIService";
 
 const normalizePlayableUrl = (url) => {
   if (!url) return "";
@@ -7,7 +8,7 @@ const normalizePlayableUrl = (url) => {
     ? typeof window !== "undefined" && window.location.protocol === "https:"
       ? url.replace(/^http:\/\//i, "https://")
       : url
-    : `https://api.alacademeya.com/${url.replace(/^\//, "")}`;
+    : getAssetUrl(url);
 
   return encodeURI(absoluteUrl);
 };

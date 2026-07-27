@@ -44,7 +44,13 @@ const AttendancePage = () => {
 
   const [groupName, setGroupName] = useState("");
   const [records, setRecords] = useState([]);
-  const [sessionsCount, setSessionsCount] = useState(0);
+  const [sessionsSummary, setSessionsSummary] = useState({
+    total: 0,
+    completed: 0,
+    scheduled: 0,
+    notHeld: 0,
+    other: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -75,7 +81,38 @@ const AttendancePage = () => {
 
     try {
       const sessions = sessionsResult.value.data?.data || [];
-      setSessionsCount(sessions.length);
+      const now = Date.now();
+      const actualSessions = sessions.filter(
+        (session) =>
+          session.id ||
+          session._id ||
+          session.sessionId ||
+          session.session?.id ||
+          session.session?._id,
+      );
+      const isWaitingToStart = (session) =>
+        ["scheduled", "upcoming", "not_started"].includes(session.status);
+      const isPast = (session) => {
+        const scheduledAt = new Date(session.scheduledDate || session.startAt);
+        return !Number.isNaN(scheduledAt.getTime()) && scheduledAt.getTime() < now;
+      };
+      const completed = sessions.filter(
+        (session) => session.status === "completed",
+      ).length;
+      const notHeld = sessions.filter(
+        (session) => isWaitingToStart(session) && isPast(session),
+      ).length;
+      const scheduled = sessions.filter(
+        (session) => isWaitingToStart(session) && !isPast(session),
+      ).length;
+
+      setSessionsSummary({
+        total: sessions.length,
+        completed,
+        scheduled,
+        notHeld,
+        other: Math.max(0, sessions.length - completed - scheduled - notHeld),
+      });
 
       // خريطة أولية بكل طلاب المجموعة (عشان لو طالب معندوش أي سجل حضور يظهر بـ 0/0 مش يتشال)
       const studentMap = new Map();
@@ -102,13 +139,21 @@ const AttendancePage = () => {
 
       // نجيب سجل حضور كل حصة على حدة، ونجمّعه لكل طالب
       const attendanceResults = await Promise.allSettled(
-        sessions.map((s) => getSessionAttendance(s.id)),
+        actualSessions.map((s) =>
+          getSessionAttendance(
+            s.id ||
+              s._id ||
+              s.sessionId ||
+              s.session?.id ||
+              s.session?._id,
+          ),
+        ),
       );
 
       attendanceResults.forEach((res, index) => {
         if (res.status !== "fulfilled") {
           console.error(
-            `getSessionAttendance failed for session ${sessions[index]?.id}:`,
+            `getSessionAttendance failed for session ${actualSessions[index]?.id}:`,
             res.reason,
           );
           return;
@@ -156,7 +201,8 @@ const AttendancePage = () => {
   }, [groupId]);
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(fetchData, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchData]);
 
   const filtered = records.filter((r) => r.studentName.includes(search));
@@ -170,7 +216,11 @@ const AttendancePage = () => {
     late: records.reduce((sum, r) => sum + r.lateCount, 0),
     excused: records.reduce((sum, r) => sum + r.excusedCount, 0),
     students: records.length,
-    sessions: sessionsCount,
+    sessions: sessionsSummary.total,
+    completedSessions: sessionsSummary.completed,
+    scheduledSessions: sessionsSummary.scheduled,
+    notHeldSessions: sessionsSummary.notHeld,
+    otherSessions: sessionsSummary.other,
   };
 
   return (

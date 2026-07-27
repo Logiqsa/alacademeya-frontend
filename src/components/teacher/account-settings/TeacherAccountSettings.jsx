@@ -11,6 +11,10 @@ import {
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
+import {
+  getCountryId,
+  resolveCountryLabel,
+} from "../../../utils/countryName";
 
 const LANG = "ar"; // change to dynamic locale if you support i18n switching
 
@@ -26,7 +30,7 @@ const pickName = (val) => {
 // في object واحد مسطّح اسمه "teacher" نقدر نستخدمه بسهولة في الكومبوننت
 const extractUser = (resData) => {
   if (!resData) return null;
-  const root = resData?.data || resData;
+  const root = resData?.data?.data ?? resData?.data ?? resData;
   const user = root?.user || root;
   if (!user) return null;
 
@@ -55,6 +59,7 @@ const extractList = (resData) => {
 // بيوحد شكل العنصر (id / label) مهما كان اسم الحقول جاي من الباك إند، وبيدعم الاسم البايلينجوال
 const normalizeOption = (item) => ({
   id: item._id || item.id || item.value || item.code,
+  code: item.code || item.countryCode,
   label:
     item.nameAr ||
     item.arabicName ||
@@ -442,8 +447,7 @@ const TeacherPersonalCard = ({
     fullName: teacher.fullName || "",
     username: teacher.username || "",
     email: teacher.email || "",
-    countryId:
-      teacher.country?._id || teacher.country?.id || teacher.country || "",
+    countryId: getCountryId(teacher.country),
   });
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -463,14 +467,11 @@ const TeacherPersonalCard = ({
   };
 
   // بيدور على اسم الدولة من القائمة عشان نعرضها في وضع العرض (لإن الريسبونس بيرجع ID بس)
-  const countryLabel =
-    pickName(teacher.country?.name) ||
-    countryOptions.find(
-      (c) =>
-        c.id ===
-        (teacher.country?._id || teacher.country?.id || teacher.country),
-    )?.label ||
-    "";
+  const countryLabel = resolveCountryLabel({
+    country: teacher.country,
+    countryCode: teacher.countryCode,
+    options: countryOptions,
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();

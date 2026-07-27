@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import {
   LayoutDashboard,
@@ -116,11 +116,13 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       {/* Header */}
       <div className="relative flex items-center justify-between  px-6 border-b border-[#FFFFFF14]">
         {isOpen && (
-          <img
-            src={logo}
-            alt="logo"
-            className="object-contain w-36 h-8"
-          />
+          <Link to="/" aria-label="الذهاب إلى الصفحة الرئيسية">
+            <img
+              src={logo}
+              alt="الأكاديمية"
+              className="object-contain w-36 h-8"
+            />
+          </Link>
         )}
 
         <button

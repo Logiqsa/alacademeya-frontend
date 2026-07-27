@@ -18,9 +18,11 @@ const PAGE_SIZE = 6;
 
 const mapPost = (p) => {
   return {
-    id: p._id,
+    ...p,
+    id: p.id || p._id,
     title: p.title,
     description: p.description,
+    content: p.content,
     status: p.status,
     categoryName: p.category?.name || "—",
     coverImageUrl: getAssetUrl(p.coverImage),

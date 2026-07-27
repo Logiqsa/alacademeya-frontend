@@ -5,22 +5,14 @@ import {
   ChevronRight,
   Clock,
   Info,
-  UserRound,
   Video,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getMonthlySchedule } from "../../services/APIService";
-
-const DAY_NAMES = {
-  saturday: "السبت",
-  sunday: "الأحد",
-  monday: "الاثنين",
-  tuesday: "الثلاثاء",
-  wednesday: "الأربعاء",
-  thursday: "الخميس",
-  friday: "الجمعة",
-};
+import {
+  getMonthlySchedule,
+  getMySubscriptions,
+} from "../../services/APIService";
 
 // نفس ترتيب DAY_NAMES بالظبط، بيتماشى مع weekdayIndex تحت (السبت = أول عمود)
 const WEEKDAY_HEADERS = [
@@ -34,14 +26,14 @@ const WEEKDAY_HEADERS = [
 ];
 
 const STATUS_LABELS = {
-  scheduled: "قادمة",
+  scheduled: "مجدولة — لم تبدأ بعد",
   completed: "مكتملة",
   cancelled: "ملغاة",
   live: "تُعقد الآن",
   active: "نشطة",
   missed: "بدأت متأخرة",
-  not_started: "فائتة (لم تبدأ بعد)",
-  expired_schedule: "فائتة (انتهت)",
+  not_started: "لم تُعقد",
+  expired_schedule: "لم تُعقد",
 };
 
 const badgeClass = (lesson) => {
@@ -94,6 +86,39 @@ const getStudentLabel = (lesson) => {
 const resolveLessonId = (lesson) =>
   lesson.id || lesson._id || lesson.sessionId || lesson.session?.id || lesson.session?._id || lesson.session;
 
+const resolveClassroomId = (value) =>
+  typeof value === "string" ? value : value?.id || value?._id || "";
+
+const buildEnrollmentStarts = (subscriptions) => {
+  const starts = new Map();
+
+  subscriptions.forEach((subscription) => {
+    (subscription.items || []).forEach((item) => {
+      const classroomId = resolveClassroomId(item.classroom);
+      const joinedAt = new Date(item.createdAt || subscription.createdAt);
+      if (!classroomId || Number.isNaN(joinedAt.getTime())) return;
+
+      const current = starts.get(classroomId);
+      if (!current || joinedAt < current) starts.set(classroomId, joinedAt);
+    });
+  });
+
+  return starts;
+};
+
+const filterBeforeEnrollment = (days, enrollmentStarts) =>
+  days.map((day) => ({
+    ...day,
+    lessons: (day.lessons || []).filter((lesson) => {
+      const joinedAt = enrollmentStarts.get(resolveClassroomId(lesson.classroom));
+      if (!joinedAt) return true;
+      const scheduledAt = new Date(
+        lesson.scheduledDate || `${day.date}T${lesson.startTime || "00:00"}`,
+      );
+      return Number.isNaN(scheduledAt.getTime()) || scheduledAt >= joinedAt;
+    }),
+  }));
+
 const withDisplayStatus = (lesson, date) => {
   if (lesson.status !== "scheduled") return lesson;
   const scheduledAt = lesson.scheduledDate
@@ -102,10 +127,7 @@ const withDisplayStatus = (lesson, date) => {
   return scheduledAt < new Date()
     ? {
         ...lesson,
-        status:
-          lesson.isVirtual || lesson.virtual || !resolveLessonId(lesson)
-            ? "expired_schedule"
-            : "not_started",
+        status: "expired_schedule",
       }
     : lesson;
 };
@@ -158,11 +180,20 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
   useEffect(() => {
     let active = true;
 
-    getMonthlySchedule({ year, month })
-      .then((response) => {
+    const scheduleRequest = getMonthlySchedule({ year, month });
+    const subscriptionsRequest = ["student", "parent"].includes(role)
+      ? getMySubscriptions().catch(() => null)
+      : Promise.resolve(null);
+
+    Promise.all([scheduleRequest, subscriptionsRequest])
+      .then(([response, subscriptionsResponse]) => {
         if (!active) return;
         const list = response.data?.data;
-        const nextDays = Array.isArray(list) ? list : [];
+        const rawDays = Array.isArray(list) ? list : [];
+        const subscriptions = subscriptionsResponse?.data?.data;
+        const nextDays = Array.isArray(subscriptions)
+          ? filterBeforeEnrollment(rawDays, buildEnrollmentStarts(subscriptions))
+          : rawDays;
         setDays(nextDays);
 
         const todayISO = new Date().toLocaleDateString("en-CA");
@@ -181,7 +212,7 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
     return () => {
       active = false;
     };
-  }, [year, month]);
+  }, [year, month, role]);
 
   const daysByDate = useMemo(() => {
     const map = new Map();

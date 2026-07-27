@@ -74,6 +74,7 @@ import SubscriptionOrderReviewPage from "./pages/admin/subscriptions/Subscriptio
 import CreateCurriculumPage from "./pages/admin/curriculum/CreateCurriculumPage";
 import StudentAccountSettingsPage from "./pages/student/StudentAccountSettingsPage";
 import StudentNotifications from "./pages/student/Notifications";
+import StudentSubscriptionPage from "./pages/student/StudentSubscriptionPage";
 import StudentMessagess from "./pages/student/messages/Messages";
 import StudentAssignmentsPage from "./pages/student/assignments/StudentAssignmentsPage";
 import StudentGroupLessonsPage from "./pages/student/groupLessons/Studentgrouplessonspage";
@@ -140,6 +141,7 @@ function App() {
         <Route path="/student-dashboard" element={<StudentGuard><StudentHome /></StudentGuard>} />
         <Route path="/student/settings" element={<StudentGuard><StudentAccountSettingsPage /></StudentGuard>} />
         <Route path="/student/notifications" element={<StudentGuard><StudentNotifications /></StudentGuard>} />
+        <Route path="/student/subscription" element={<StudentGuard><StudentSubscriptionPage /></StudentGuard>} />
         <Route path="/student/messages" element={<StudentGuard><StudentMessagess /></StudentGuard>} />
         <Route path="/student/assignments" element={<StudentGuard><StudentAssignmentsPage /></StudentGuard>} />
         <Route path="/student/schedule" element={<StudentGuard><StudentSchedulePage /></StudentGuard>} />
@@ -178,6 +180,7 @@ function App() {
         <Route path="/admin/users" element={user ? <UsersPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/groups" element={user ? <GroupsPages /> : <Navigate to="/login" replace />} />
         <Route path="/admin/groups/:groupId/lessons" element={user ? <GroupLessonsPage role="admin" /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/groups/:groupId/lessons/new" element={user ? <CreateLessonPage role="admin" /> : <Navigate to="/login" replace />} />
         <Route path="/admin/schedule" element={user ? <AdminSchedulePage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/classrooms/:classroomId/sessions/:sessionId" element={user ? <SessionDetailsPage role="admin" /> : <Navigate to="/login" replace />} />
         <Route path="/admin/groups/:groupId/attendance" element={user ? <AttendancePage /> : <Navigate to="/login" replace />} />

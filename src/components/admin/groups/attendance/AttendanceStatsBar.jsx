@@ -1,13 +1,36 @@
 import { UserX, UserCheck, Users, Clock, Timer, ShieldCheck } from "lucide-react";
 
-const AttendanceStatsBar = ({ absences = 10, attendances = 68, late = 0, excused = 0, students = 14, sessions = 20 }) => {
+const AttendanceStatsBar = ({
+  absences = 0,
+  attendances = 0,
+  late = 0,
+  excused = 0,
+  students = 0,
+  sessions = 0,
+  completedSessions = 0,
+  scheduledSessions = 0,
+  notHeldSessions = 0,
+  otherSessions = 0,
+}) => {
   const stats = [
     { label: "إجمالي الغياب", value: absences, color: "text-red-500", bg: "bg-red-50", icon: UserX },
     { label: "إجمالي الحضور", value: attendances, color: "text-green-600", bg: "bg-green-50", icon: UserCheck },
     { label: "إجمالي التأخير", value: late, color: "text-amber-600", bg: "bg-amber-50", icon: Timer },
     { label: "غياب بعذر", value: excused, color: "text-[#123C91]", bg: "bg-[#EAF4FF]", icon: ShieldCheck },
     { label: "إجمالي الطلاب", value: students, color: "text-[#123C91]", bg: "bg-[#EAF4FF]", icon: Users },
-    { label: "إجمالي الحصص", value: sessions, color: "text-teal-600", bg: "bg-teal-50", icon: Clock },
+    {
+      label: "إجمالي مواعيد الحصص",
+      value: sessions,
+      detail: [
+        `${completedSessions} تمت`,
+        scheduledSessions ? `${scheduledSessions} مجدولة — لم تبدأ بعد` : null,
+        notHeldSessions ? `${notHeldSessions} لم تُعقد` : null,
+        otherSessions ? `${otherSessions} بحالات أخرى` : null,
+      ].filter(Boolean).join(" • "),
+      color: "text-teal-600",
+      bg: "bg-teal-50",
+      icon: Clock,
+    },
   ];
 
   return (
@@ -26,6 +49,11 @@ const AttendanceStatsBar = ({ absences = 10, attendances = 68, late = 0, excused
             <div className="text-right">
               <h3 className="text-xl font-bold text-gray-800">{s.value}</h3>
               <p className="text-gray-500 text-sm mt-1">{s.label}</p>
+              {s.detail && (
+                <p className="mt-1 text-[11px] leading-5 text-gray-400">
+                  {s.detail}
+                </p>
+              )}
             </div>
           </div>
         );

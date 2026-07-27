@@ -1,14 +1,12 @@
-import React from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   "جميع الحالات",
-  "قادمة",
+  "مجدولة — لم تبدأ بعد",
   "مباشر الآن",
   "منتهية",
   "بدأت متأخرة",
-  "فائتة (لم تبدأ بعد)",
-  "فائتة (انتهت)",
+  "لم تُعقد",
   "ملغية",
 ];
 const TIME_OPTIONS = ["جميع الاوقات", "اليوم", "هذا الأسبوع", "هذا الشهر"];

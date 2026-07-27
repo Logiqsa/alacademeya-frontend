@@ -100,7 +100,7 @@ const TeacherSessionsPage = () => {
       <Breadcrumbs homeTo="/admin-dashboard" />
       <div className="w-full p-2 text-right" dir="rtl">
         <h1 className="text-xl font-semibold text-[#123C91] sm:text-[24px]">
-          {isMissed ? "الحصص الفائتة" : "الحصص المكتملة"} - {teacherName}
+          {isMissed ? "الحصص التي لم تُعقد" : "الحصص المكتملة"} - {teacherName}
         </h1>
         <p className="mt-2 text-sm text-[#575F69]">
           {isMissed
@@ -181,7 +181,7 @@ const TeacherSessionsPage = () => {
                             ? "bg-red-50 text-red-500"
                             : "bg-green-100 text-green-700"
                         }`}>
-                          {isMissed ? "فائتة (انتهت)" : "مكتملة"}
+                          {isMissed ? "لم تُعقد" : "مكتملة"}
                         </span>
                       </td>
                     </tr>

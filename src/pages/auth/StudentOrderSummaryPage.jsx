@@ -31,14 +31,16 @@ const StudentOrderSummaryPage = () => {
     const createOrder = async () => {
       setLoading(true);
       try {
-        try {
-          await completeStudentProfile({
-            birthDate: state.birthDate, studyLanguage: state.studyLanguage,
-            curriculum: state.curriculumId, stage: state.stageId, grade: state.gradeId,
-            studentType: state.studentType || "school", preferredSubjects: state.preferredSubjects,
-          });
-        } catch (error) {
-          if (!isExistingProfileError(error)) throw error;
+        if (!state?.renewal) {
+          try {
+            await completeStudentProfile({
+              birthDate: state.birthDate, studyLanguage: state.studyLanguage,
+              curriculum: state.curriculumId, stage: state.stageId, grade: state.gradeId,
+              studentType: state.studentType || "school", preferredSubjects: state.preferredSubjects,
+            });
+          } catch (error) {
+            if (!isExistingProfileError(error)) throw error;
+          }
         }
         const response = await createSubscriptionOrder(items.map(({ subject, package: packageId }) => ({ subject, package: packageId })));
         const created = responseData(response);

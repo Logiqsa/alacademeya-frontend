@@ -10,6 +10,15 @@ const UsersFilters = ({
   onFilterRoleChange,
   filterStatus,
   onFilterStatusChange,
+  filterGrade,
+  gradeOptions = [],
+  onFilterGradeChange,
+  filterSubject,
+  subjectOptions = [],
+  onFilterSubjectChange,
+  filterCurriculum,
+  curriculumOptions = [],
+  onFilterCurriculumChange,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-1" dir="rtl">
@@ -53,6 +62,56 @@ const UsersFilters = ({
         </select>
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
       </div>
+
+      {["طالب", "معلم"].includes(filterRole) && (
+        <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
+          <select
+            value={filterGrade}
+            onChange={(e) => onFilterGradeChange?.(e.target.value)}
+            className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
+          >
+            <option value="جميع الصفوف">جميع الصفوف</option>
+            {gradeOptions.map((grade) => (
+              <option key={grade} value={grade}>
+                {grade}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </div>
+      )}
+
+      {filterRole === "معلم" && (
+        <>
+          <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
+            <select
+              value={filterSubject}
+              onChange={(e) => onFilterSubjectChange?.(e.target.value)}
+              className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
+            >
+              <option value="جميع المواد">جميع المواد</option>
+              {subjectOptions.map((subject) => (
+                <option key={subject} value={subject}>{subject}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+          </div>
+
+          <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
+            <select
+              value={filterCurriculum}
+              onChange={(e) => onFilterCurriculumChange?.(e.target.value)}
+              className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
+            >
+              <option value="جميع المناهج">جميع المناهج</option>
+              {curriculumOptions.map((curriculum) => (
+                <option key={curriculum} value={curriculum}>{curriculum}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+          </div>
+        </>
+      )}
     </div>
   );
 };

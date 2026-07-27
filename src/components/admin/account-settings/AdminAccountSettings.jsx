@@ -4,7 +4,11 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { getContactSettings, getCountries, getMyProfile, updateContactSettings, updateMyProfile } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext"; // عدّل المسار حسب مشروعك
-import { countryOption, getArabicCountryName } from "../../../utils/countryName";
+import {
+  countryOption,
+  getCountryId,
+  resolveCountryLabel,
+} from "../../../utils/countryName";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 
@@ -16,17 +20,19 @@ import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 // الدالة دي بتدوّر على الـ user جوه أي شكل شائع برضه احتياطًا
 const extractUser = (resData) => {
   if (!resData) return null;
-  if (
-    resData.data &&
-    typeof resData.data === "object" &&
-    !Array.isArray(resData.data)
-  ) {
-    // لو فيه data.user أو data.data.user (أشكال تانية محتملة) خد الأعمق
-    if (resData.data.user) return resData.data.user;
-    if (resData.data.data?.user) return resData.data.data.user;
-    return resData.data;
-  }
-  return resData.user || resData;
+  const root = resData?.data?.data ?? resData?.data ?? resData;
+  const user = root?.user || root;
+  if (!user || typeof user !== "object") return null;
+  if (user === root) return user;
+  const profile = { ...root };
+  delete profile.user;
+  return {
+    ...profile,
+    ...user,
+    country: user.country ?? profile.country,
+    countryCode: user.countryCode ?? profile.countryCode,
+    birthDate: user.birthDate ?? profile.birthDate,
+  };
 };
 
 const PASSWORD_RULES = [
@@ -357,7 +363,7 @@ const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged })
     fullName: admin.fullName || "",
     username: admin.username || "",
     email: admin.email || "",
-    countryId: admin.country?._id || admin.country?.id || admin.country || "",
+    countryId: getCountryId(admin.country),
   });
 
   const [editing, setEditing] = useState(false);
@@ -378,9 +384,11 @@ const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged })
   };
 
   const countryLabel =
-    getArabicCountryName(admin.country) ||
-    countryOptions.find((country) => country.id === form.countryId)?.label ||
-    "—";
+    resolveCountryLabel({
+      country: admin.country,
+      countryCode: admin.countryCode,
+      options: countryOptions,
+    }) || "—";
 
   const handleSubmit = async (e) => {
     e.preventDefault();

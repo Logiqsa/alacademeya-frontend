@@ -1,5 +1,3 @@
-import React from "react";
-
 const ChildCard = ({
   name,
   stage,
@@ -7,6 +5,8 @@ const ChildCard = ({
   status,
   date,
   isExpiring,
+  sessionsText = "24 ساعة شهرياً",
+  onRenew,
 }) => {
   const borderColor = isExpiring
     ? "border-l-[#D32F2F]"
@@ -174,10 +174,13 @@ const ChildCard = ({
             ✓
           </span>
 
-          <span>24 ساعة شهرياً</span>
+          <span>{sessionsText}</span>
         </div>
 
         <button
+          type="button"
+          onClick={onRenew}
+          disabled={onRenew === null}
           className="
             w-full
             h-12
@@ -190,6 +193,8 @@ const ChildCard = ({
             text-[15px]
             hover:bg-[#F8FAFC]
             transition-all
+            disabled:cursor-not-allowed
+            disabled:opacity-60
           "
         >
           تجديد الآن

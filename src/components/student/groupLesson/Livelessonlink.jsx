@@ -40,10 +40,10 @@ const LiveLessonLink = ({ lessonUrl, status, onJoin, onShare }) => {
               : status === "missed"
                 ? "بدأت متأخرة"
                 : status === "not_started"
-                  ? "فائتة (لم تبدأ بعد)"
+                  ? "لم تُعقد"
                   : status === "expired_schedule"
-                    ? "فائتة (انتهت)"
-                  : "لم تبدأ بعد"}
+                    ? "لم تُعقد"
+                  : "مجدولة — لم تبدأ بعد"}
         </button>
 
         <button

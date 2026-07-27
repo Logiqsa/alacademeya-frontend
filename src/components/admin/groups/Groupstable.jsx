@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList, BookOpen, Search } from "lucide-react";
+import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList, BookOpen, Search, MessageCircle } from "lucide-react";
 import {
   getTeachers,
   getAllStudents,
@@ -535,7 +535,7 @@ const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
 const MENU_WIDTH = 190;
 const MENU_GAP = 6;
 
-const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons }) => {
+const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onOpenChat }) => {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -543,6 +543,7 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons }) =
 
   const items = [
     { key: "lessons", label: "عرض الحصص", Icon: BookOpen, nav: "lessons" },
+    { key: "chat", label: "فتح محادثة المجموعة", Icon: MessageCircle, nav: "chat" },
     { key: "attendance", label: "سجل الحضور", Icon: ClipboardList, isNav: true },
     { key: "add-student", label: "إضافة طالب", Icon: UserPlus },
     { key: "assign-teacher", label: "تعيين معلم", Icon: Users },
@@ -601,6 +602,8 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons }) =
     setOpen(false);
     if (item.nav === "lessons") {
       onOpenLessons(group);
+    } else if (item.nav === "chat") {
+      onOpenChat(group);
     } else if (item.isNav) {
       onOpenAttendance(group.id);
     } else {
@@ -675,7 +678,20 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
 
   const handleOpenLessons = (group) => {
     navigate(`/admin/groups/${group.id}/lessons`, {
-      state: { groupName: group.name },
+      state: {
+        groupName: group.name,
+        groupTeacher: group.teacher,
+        groupTeacherId: group.teacherId,
+      },
+    });
+  };
+
+  const handleOpenChat = (group) => {
+    navigate("/admin/messages", {
+      state: {
+        openClassroomId: group.id,
+        openClassroomName: group.name,
+      },
     });
   };
 
@@ -688,7 +704,11 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
       onOpenDetails(group);
     } else {
       navigate(`/admin/groups/${group.id}/lessons`, {
-        state: { groupName: group.name },
+        state: {
+          groupName: group.name,
+          groupTeacher: group.teacher,
+          groupTeacherId: group.teacherId,
+        },
       });
     }
   };
@@ -713,7 +733,7 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
             <table className="w-full text-right">
               <thead>
                 <tr style={{ backgroundColor: "#F9FAFA" }}>
-                  {["اسم المجموعة", "المعلم", "المعلم البديل", "المادة", "المرحلة", "الصف", "الطلاب", "الحالة", "الإجراءات"].map((h) => (
+                  {["اسم المجموعة", "المعلم", "المادة", "المرحلة", "الصف", "الطلاب", "الحالة", "الإجراءات"].map((h) => (
                     <th key={h} className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[13px] font-medium text-right whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -730,13 +750,13 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
                         {g.name}
                       </button>
                     </td>
-                    {[g.teacher, g.substituteTeacher, g.subject, g.stage, g.grade].map((v, i) => (
+                    {[g.teacher, g.subject, g.stage, g.grade].map((v, i) => (
                       <td key={i} className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[14px] whitespace-nowrap">{v ?? "--"}</td>
                     ))}
                     <td className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[14px] whitespace-nowrap">{g.enrolled}/{g.capacity}</td>
                     <td className="px-4 lg:px-6 py-3 lg:py-4">{statusBadge(g.status)}</td>
                     <td className="px-4 lg:px-6 py-3 lg:py-4">
-                      <ActionsDropdown group={g} onAction={openAction} onOpenAttendance={handleOpenAttendance} onOpenLessons={handleOpenLessons} />
+                      <ActionsDropdown group={g} onAction={openAction} onOpenAttendance={handleOpenAttendance} onOpenLessons={handleOpenLessons} onOpenChat={handleOpenChat} />
                     </td>
                   </tr>
                 ))}
@@ -757,12 +777,11 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
                 >
                   {g.name}
                 </button>
-                <ActionsDropdown group={g} onAction={openAction} onOpenAttendance={handleOpenAttendance} onOpenLessons={handleOpenLessons} />
+                <ActionsDropdown group={g} onAction={openAction} onOpenAttendance={handleOpenAttendance} onOpenLessons={handleOpenLessons} onOpenChat={handleOpenChat} />
               </div>
               <div className="flex items-center gap-2 mb-3">{statusBadge(g.status)}</div>
               <div className="space-y-0.5">
                 <MobileField label="المعلم">{g.teacher ?? "--"}</MobileField>
-                <MobileField label="المعلم البديل">{g.substituteTeacher ?? "--"}</MobileField>
                 <MobileField label="المادة">{g.subject}</MobileField>
                 <MobileField label="المرحلة">{g.stage}</MobileField>
                 <MobileField label="الصف">{g.grade}</MobileField>

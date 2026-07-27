@@ -5,10 +5,14 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
+import AdminLayout from "../../../admin/layout/AdminLayout";
+import Breadcrumbs from "../../../../pages/shared/Breadcrumbs";
 import {
   createClassroomSession,
   getClassroom,
   getClassroomSchedule,
+  getTeachers,
+  updateClassroomSubstituteTeacher,
 } from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 const DAY_LABELS = {
@@ -32,11 +36,16 @@ const TODAY_KEY_BY_JS_DAY = [
   "saturday",
 ];
 
-const CreateLessonPage = () => {
+const CreateLessonPage = ({ role = "teacher" }) => {
   const navigate = useNavigate();
   const { groupId } = useParams();
+  const isAdmin = role === "admin";
+  const Layout = isAdmin ? AdminLayout : TeacherLayout;
 
   const [groupName, setGroupName] = useState("مجموعة");
+  const [classroom, setClassroom] = useState(null);
+  const [teachers, setTeachers] = useState([]);
+  const [substituteTeacher, setSubstituteTeacher] = useState("");
   const [lessonTitle, setLessonTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -74,6 +83,7 @@ const CreateLessonPage = () => {
         const name = response.data?.data?.name;
         const resolvedName =
           typeof name === "string" ? name : name?.ar || name?.en || "مجموعة";
+        setClassroom(response.data?.data || null);
         setGroupName(resolvedName);
         setLessonTitle((current) => current || `حصة ${resolvedName}`);
       })
@@ -84,6 +94,41 @@ const CreateLessonPage = () => {
       active = false;
     };
   }, [groupId]);
+
+  useEffect(() => {
+    if (!isAdmin || !classroom) return;
+    let active = true;
+    getTeachers({ status: "approved", limit: 100 })
+      .then((response) => {
+        if (!active) return;
+        const subjectId =
+          typeof classroom.subject === "string"
+            ? classroom.subject
+            : classroom.subject?.id || classroom.subject?._id;
+        const list = response.data?.data || [];
+        setTeachers(
+          list.filter((teacher) => {
+            const user = teacher.user || {};
+            const supportsSubject =
+              !subjectId ||
+              (teacher.subjects || []).some(
+                (subject) =>
+                  String(subject?.id || subject?._id || subject) ===
+                  String(subjectId),
+              );
+            return (
+              supportsSubject &&
+              user.isActive !== false &&
+              user.registrationStatus !== "pending"
+            );
+          }),
+        );
+      })
+      .catch(() => setTeachers([]));
+    return () => {
+      active = false;
+    };
+  }, [classroom, isAdmin]);
 
   const handleSubmit = async () => {
     setError(null);
@@ -108,6 +153,9 @@ const CreateLessonPage = () => {
     setSubmitting(true);
 
     try {
+      if (isAdmin && substituteTeacher) {
+        await updateClassroomSubstituteTeacher(groupId, substituteTeacher);
+      }
       const payload = new FormData();
       payload.append("classroom", groupId);
       payload.append("title", lessonTitle.trim());
@@ -115,7 +163,9 @@ const CreateLessonPage = () => {
 
       await createClassroomSession(payload);
 
-      navigate(`/teacher/groups/${groupId}/lessons`, {
+      navigate(isAdmin
+        ? `/admin/groups/${groupId}/lessons`
+        : `/teacher/groups/${groupId}/lessons`, {
         state: { showSuccessToast: true },
       });
     } catch (err) {
@@ -144,7 +194,8 @@ const CreateLessonPage = () => {
   const labelClass = "block text-sm font-semibold text-gray-700 mb-2";
 
   return (
-    <TeacherLayout>
+    <Layout>
+      <Breadcrumbs homeTo={isAdmin ? "/admin-dashboard" : "/teacher-dashboard"} />
       <h2 className="font-[IBM_Plex_Sans_Arabic] text-xl sm:text-2xl font-bold text-[#123C91]">
         إنشاء حصة جديدة
       </h2>
@@ -166,11 +217,15 @@ const CreateLessonPage = () => {
               <button
                 type="button"
                 onClick={() =>
-                  navigate(`/teacher/groups/${groupId}/lessons/schedule/new`)
+                  navigate(
+                    isAdmin
+                      ? `/admin/groups/${groupId}/lessons`
+                      : `/teacher/groups/${groupId}/lessons/schedule/new`,
+                  )
                 }
                 className="mt-2 text-xs font-semibold text-[#123C91] underline"
               >
-                تعديل جدول المجموعة
+                {isAdmin ? "العودة للمجموعة" : "تعديل جدول المجموعة"}
               </button>
             </div>
           </div>
@@ -196,6 +251,29 @@ const CreateLessonPage = () => {
               تاريخ ووقت الحصة يُحددان تلقائياً من جدول المجموعة لليوم، وعند الإنهاء ستظهر نافذة إضافة الوصف والمرفقات كالمعتاد.
             </p>
           </div>
+          {isAdmin && (
+            <div>
+              <label className={labelClass}>مدرس الحصة البديل (اختياري)</label>
+              <select
+                value={substituteTeacher}
+                onChange={(event) => setSubstituteTeacher(event.target.value)}
+                className={inputClass}
+              >
+                <option value="">مدرس المجموعة الأساسي</option>
+                {teachers.map((teacher) => (
+                  <option
+                    key={teacher.id || teacher._id}
+                    value={teacher.id || teacher._id}
+                  >
+                    {teacher.user?.fullName || teacher.fullName || "معلم"}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs text-[#8C9198]">
+                عند اختيار مدرس آخر سيتم تعيينه كمدرس بديل للمجموعة قبل إنشاء الحصة.
+              </p>
+            </div>
+          )}
         </div>
 
         {error && <p className="text-sm text-red-500 mt-4">{error}</p>}
@@ -224,7 +302,7 @@ const CreateLessonPage = () => {
           </button>
         </div>
       </div>
-    </TeacherLayout>
+    </Layout>
   );
 };
 

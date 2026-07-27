@@ -1,6 +1,5 @@
 import { HiOutlineClipboardList, HiOutlineDownload } from "react-icons/hi";
-
-const assetUrl = (url) => !url ? "" : /^https?:\/\//i.test(url) ? url : `https://api.alacademeya.com/${url.replace(/^\//, "")}`;
+import { getAssetUrl } from "../../../../services/APIService";
 
 const LessonAssignments = ({ assignments = [], onAdd }) => (
   <div dir="rtl" className="rounded-2xl border border-[#E5E5E5] bg-white p-5">
@@ -9,7 +8,7 @@ const LessonAssignments = ({ assignments = [], onAdd }) => (
       <div key={assignment.id || assignment._id} className="mb-3 rounded-xl border p-4">
         <div className="flex items-center gap-2"><HiOutlineClipboardList className="text-[#123C91]" /><p className="font-medium">{assignment.title}</p></div>
         <p className="mt-2 text-xs text-[#575F69]">التسليم: {new Date(assignment.dueDate).toLocaleString("ar-EG")} • الدرجة: {assignment.totalScore}</p>
-        {!!assignment.attachments?.length && <div className="mt-3 flex flex-wrap gap-2">{assignment.attachments.map((file) => <a key={file.id || file._id || file.url} href={assetUrl(file.url)} target="_blank" rel="noreferrer" download={file.originalName} className="flex items-center gap-1 rounded-lg border px-2 py-1 text-xs"><HiOutlineDownload />{file.originalName || "تحميل المرفق"}</a>)}</div>}
+        {!!assignment.attachments?.length && <div className="mt-3 flex flex-wrap gap-2">{assignment.attachments.map((file) => <a key={file.id || file._id || file.url} href={getAssetUrl(file.url)} target="_blank" rel="noreferrer" download={file.originalName} className="flex items-center gap-1 rounded-lg border px-2 py-1 text-xs"><HiOutlineDownload />{file.originalName || "تحميل المرفق"}</a>)}</div>}
       </div>
     ))}
   </div>

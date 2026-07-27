@@ -13,6 +13,10 @@ import {
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
+import {
+  getCountryId,
+  resolveCountryLabel,
+} from "../../../utils/countryName";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -34,11 +38,17 @@ import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 // بندمج user + باقي حقول data في object واحد عشان الكروت تستخدمه بسهولة
 const extractStudent = (resData) => {
   if (!resData) return null;
-  const data = resData.data || resData;
+  const data = resData?.data?.data ?? resData.data ?? resData;
   const user = data.user || data;
   // أي حاجة تانية على مستوى data (غير user) بنحطها جنب بيانات اليوزر
   const { user: _omit, ...rest } = data;
-  return { ...rest, ...user };
+  return {
+    ...rest,
+    ...user,
+    country: user.country ?? rest.country,
+    countryCode: user.countryCode ?? rest.countryCode,
+    birthDate: user.birthDate ?? rest.birthDate,
+  };
 };
 
 // بيستخرج array الأوبشنز من أشكال الريسبونس المختلفة اللي ممكن يرجعها الباك إند
@@ -63,6 +73,7 @@ const pickName = (name) => {
 // بيوحد شكل العنصر (id / label) مهما كان شكل الحقول جاي من الباك إند
 const normalizeOption = (item) => ({
   id: item.id || item._id || item.value || item.code,
+  code: item.code || item.countryCode,
   label:
     item.nameAr ||
     item.arabicName ||
@@ -361,7 +372,7 @@ const StudentPersonalCard = ({
   const buildForm = () => ({
     fullName: student.fullName || "",
     username: student.username || "",
-    countryId: student.country || "", // country بييجي كـ id string من الـ API
+    countryId: getCountryId(student.country),
     birthDate: toDateInputValue(student.birthDate),
   });
   const [editing, setEditing] = useState(false);
@@ -406,8 +417,11 @@ const StudentPersonalCard = ({
 
   // اسم الدولة للعرض: بندوّر عليه في الليستة المحمّلة (لو متوفرة)، وإلا بنعرض الـ id كاحتياطي
   const countryLabel =
-    countryOptions.find((c) => c.id === student.country)?.label ||
-    "—";
+    resolveCountryLabel({
+      country: student.country,
+      countryCode: student.countryCode,
+      options: countryOptions,
+    }) || "—";
 
   return (
     <form

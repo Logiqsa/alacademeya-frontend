@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import LessonStatsBar from "../../../components/student/groupLesson/Lessonstatsbar";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
@@ -13,13 +14,13 @@ import {
 const ITEMS_PER_PAGE = 5;
 
 const STATUS_LABELS = {
-  upcoming: "قادمة",
+  upcoming: "مجدولة — لم تبدأ بعد",
   live: "مباشر الآن",
   ended: "منتهية",
   cancelled: "ملغاة",
   missed: "بدأت متأخرة",
-  not_started: "فائتة (لم تبدأ بعد)",
-  expired_schedule: "فائتة (انتهت)",
+  not_started: "لم تُعقد",
+  expired_schedule: "لم تُعقد",
 };
 
 const resolveName = (val) =>
@@ -36,15 +37,7 @@ const computeDisplayStatus = (session) => {
   const now = new Date();
 
   if (now < start) return "upcoming";
-  const sessionId =
-    session.id ||
-    session._id ||
-    session.sessionId ||
-    session.session?.id ||
-    session.session?._id;
-  return session.isVirtual || session.virtual || !sessionId
-    ? "expired_schedule"
-    : "not_started";
+  return "expired_schedule";
 };
 
 const StudentGroupLessonsPage = () => {
@@ -129,7 +122,8 @@ const StudentGroupLessonsPage = () => {
   }, [groupId]);
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(fetchData, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchData]);
 
   const filtered = lessons.filter(
@@ -146,7 +140,7 @@ const StudentGroupLessonsPage = () => {
 
   const stats = {
     total: lessons.length,
-    upcoming: lessons.filter((l) => l.status === "قادمة").length,
+    upcoming: lessons.filter((l) => l.status === "مجدولة — لم تبدأ بعد").length,
     completed: lessons.filter((l) => l.status === "منتهية").length,
     cancelled: lessons.filter((l) => l.status === "ملغاة").length,
   };
@@ -157,13 +151,30 @@ const StudentGroupLessonsPage = () => {
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"
       >
-        <div className="mb-4">
-          <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
-            {groupName || "مجموعة"}
-          </h3>
-          <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
-            تابع كل حصصك: الجدول، الواجبات، والتسجيلات في مكان واحد.
-          </p>
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3 className="mb-2 text-xl font-semibold leading-8 text-[#123C91] sm:mb-3 sm:text-[24px]">
+              {groupName || "مجموعة"}
+            </h3>
+            <p className="text-sm font-normal leading-6 text-[#575F69] sm:text-[16px]">
+              تابع كل حصصك: الجدول، الواجبات، والتسجيلات في مكان واحد.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/student/messages", {
+                state: {
+                  openClassroomId: groupId,
+                  openClassroomName: groupName,
+                },
+              })
+            }
+            className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF] sm:w-auto"
+          >
+            <MessageCircle size={20} />
+            محادثة المجموعة
+          </button>
         </div>
 
         <div className="mb-6">

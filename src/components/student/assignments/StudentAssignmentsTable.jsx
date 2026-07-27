@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   MoreVertical,
@@ -10,7 +10,12 @@ import {
   Paperclip,
 } from "lucide-react";
 // عدّل هذا المسار حسب مكان ملف الـ api عندك
-import { getAssignment, getMySubmission, submitAssignment } from "../../../services/APIService";
+import {
+  getAssignment,
+  getAssetUrl,
+  getMySubmission,
+  submitAssignment,
+} from "../../../services/APIService";
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type, subLabel }) => {
@@ -245,7 +250,7 @@ const AssignmentDetailsModal = ({ assignmentId, onClose }) => {
                     {assignment.attachments.map((att, i) => (
                       <a
                         key={i}
-                        href={att.url ?? att}
+                        href={getAssetUrl(att.url ?? att)}
                         target="_blank"
                         rel="noreferrer"
                         className="flex items-center gap-2 text-sm text-[#123C91] hover:underline"

@@ -1,11 +1,11 @@
 import { Presentation, CheckSquare, Calendar, BookOpen } from "lucide-react";
 
-const LessonStatsBar = ({ total = 12, upcoming = 6, completed = 5, cancelled = 1 }) => {
+const LessonStatsBar = ({ total = 0, upcoming = 0, completed = 0, notHeld = 0 }) => {
   const stats = [
     { label: "إجمالي الحصص", value: total, color: "text-teal-600", bg: "bg-teal-50", icon: BookOpen },
     { label: "الحصص القادمة", value: upcoming, color: "text-blue-600", bg: "bg-blue-50", icon: Calendar },
     { label: "الحصص المكتملة", value: completed, color: "text-gray-600", bg: "bg-gray-100", icon: CheckSquare },
-    { label: "الحصص الملغاة", value: cancelled, color: "text-red-600", bg: "bg-red-50", icon: Presentation },
+    { label: "حصص لم تُعقد", value: notHeld, color: "text-red-600", bg: "bg-red-50", icon: Presentation },
   ];
 
   return (

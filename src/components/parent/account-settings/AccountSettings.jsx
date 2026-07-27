@@ -96,7 +96,7 @@ const TabButton = ({ label, isActive, onClick }) => (
  *     uses a letter avatar derived from fullName instead.
  */
 const AccountSettings = () => {
-  const { logout } = useContext(AuthContext);
+  const { user: ctxUser, logout } = useContext(AuthContext);
 
   const [parent, setParent] = useState(null);
   const [students, setStudents] = useState([]);
@@ -138,24 +138,56 @@ const AccountSettings = () => {
         fullName:
           userNode.fullName ||
           outerData.fullName ||
+          ctxUser?.fullName ||
           savedProfile.fullName ||
           null,
         // everything else falls back to what was saved at registration.
         username:
           userNode.username ||
           outerData.username ||
+          ctxUser?.username ||
           savedProfile.username ||
           null,
-        email: userNode.email || outerData.email || savedProfile.email || null,
-        phone: userNode.phone || outerData.phone || savedProfile.phone || null,
+        email:
+          userNode.email ||
+          outerData.email ||
+          ctxUser?.email ||
+          savedProfile.email ||
+          null,
+        phone:
+          userNode.phone ||
+          outerData.phone ||
+          ctxUser?.phone ||
+          savedProfile.phone ||
+          null,
+        countryId:
+          userNode.country?.id ||
+          userNode.country?._id ||
+          userNode.country ||
+          outerData.country?.id ||
+          outerData.country?._id ||
+          outerData.country ||
+          ctxUser?.country?.id ||
+          ctxUser?.country?._id ||
+          ctxUser?.country ||
+          savedProfile.countryId ||
+          null,
         countryCode:
           userNode.countryCode ||
           outerData.countryCode ||
+          ctxUser?.countryCode ||
           savedProfile.countryCode ||
           null,
         countryName:
           userNode.countryName ||
           outerData.countryName ||
+          (typeof userNode.country === "object"
+            ? getArabicCountryName(userNode.country)
+            : null) ||
+          (typeof outerData.country === "object"
+            ? getArabicCountryName(outerData.country)
+            : null) ||
+          ctxUser?.countryName ||
           savedProfile.countryName ||
           null,
         timezone:
@@ -177,7 +209,7 @@ const AccountSettings = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [ctxUser]);
 
   useEffect(() => {
     loadData();

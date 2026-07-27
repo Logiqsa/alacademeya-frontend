@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
@@ -11,6 +11,7 @@ import assignmentsIcon from "../../../assets/icons/children.png";
 import scheduleIcon from "../../../assets/icons/schedule.png";
 import messagesIcon from "../../../assets/icons/messages.png";
 import notificationsIcon from "../../../assets/icons/notifications.png";
+import subscriptionIcon from "../../../assets/icons/subscription.png";
 import settingsIcon from "../../../assets/icons/settings.png";
 import logoutIcon from "../../../assets/icons/logout.png";
 
@@ -46,6 +47,11 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       title: "الإشعارات",
       icon: notificationsIcon,
       path: "/student/notifications",
+    },
+    {
+      title: "الاشتراك والباقات",
+      icon: subscriptionIcon,
+      path: "/student/subscription",
     },
     {
       title: "الإعدادات",
@@ -89,7 +95,11 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
     >
       {/* Header */}
       <div className="relative flex items-center justify-between px-6 border-b border-[#FFFFFF14]">
-        {isOpen && <img src={logo} alt="logo" className="object-contain w-36 h-8" />}
+        {isOpen && (
+          <Link to="/" aria-label="الذهاب إلى الصفحة الرئيسية">
+            <img src={logo} alt="الأكاديمية" className="object-contain w-36 h-8" />
+          </Link>
+        )}
 
         <button
           onClick={() => setIsOpen(!isOpen)}

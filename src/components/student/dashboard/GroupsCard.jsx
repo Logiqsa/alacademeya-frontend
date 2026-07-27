@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, GraduationCap, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, GraduationCap, Loader2, MessageCircle } from "lucide-react";
 import {
   getMyClassrooms,
   getClassroomSessions,
 } from "../../../services/APIService";
 
 const GroupCard = ({
-  groupId,
   name,
   teacher,
   status,
@@ -16,6 +15,7 @@ const GroupCard = ({
   done,
   total,
   onClick,
+  onOpenChat,
 }) => {
   const isGroup = statusType === "group";
 
@@ -64,11 +64,23 @@ const GroupCard = ({
         <span className="truncate">{nextLesson}</span>
       </div>
 
-      <div className="flex items-center justify-start gap-2 mt-auto">
+      <div className="flex items-center justify-between gap-2 mt-auto">
         <span className="flex items-center gap-1 text-[#6B7280] text-[11.5px] sm:text-[12px] shrink-0">
           <GraduationCap size={14} className="text-[#9CA3AF]" />
           {done}/{total} حصص
         </span>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenChat();
+          }}
+          aria-label={`فتح محادثة مجموعة ${name}`}
+          title="فتح محادثة المجموعة"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#123C91] hover:bg-[#EAF4FF]"
+        >
+          <MessageCircle size={17} />
+        </button>
       </div>
     </div>
   );
@@ -239,6 +251,14 @@ const GroupsCard = ({
               key={g.groupId}
               {...g}
               onClick={() => navigate(`/student/groups/${g.groupId}/lessons`)}
+              onOpenChat={() =>
+                navigate("/student/messages", {
+                  state: {
+                    openClassroomId: g.groupId,
+                    openClassroomName: g.name,
+                  },
+                })
+              }
             />
           ))}
         </div>

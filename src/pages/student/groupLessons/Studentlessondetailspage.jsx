@@ -17,13 +17,13 @@ const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
 
 const STATUS_LABELS = {
-  upcoming: "قادمة",
+  upcoming: "مجدولة — لم تبدأ بعد",
   live: "مباشر الآن",
   ended: "منتهية",
   cancelled: "ملغاة",
   missed: "بدأت متأخرة",
-  not_started: "فائتة (لم تبدأ بعد)",
-  expired_schedule: "فائتة (انتهت)",
+  not_started: "لم تُعقد",
+  expired_schedule: "لم تُعقد",
 };
 
 const computeDisplayStatus = (session) => {
@@ -36,26 +36,17 @@ const computeDisplayStatus = (session) => {
   const now = new Date();
 
   if (now < start) return "upcoming";
-  const sessionId =
-    session.id ||
-    session._id ||
-    session.sessionId ||
-    session.session?.id ||
-    session.session?._id;
-  return session.isVirtual || session.virtual || !sessionId
-    ? "expired_schedule"
-    : "not_started";
+  return "expired_schedule";
 };
 
 const StatusBadge = ({ status }) => {
   const styles = {
-    قادمة: "bg-[#EAF4FF] text-[#123C91]",
+    "مجدولة — لم تبدأ بعد": "bg-[#EAF4FF] text-[#123C91]",
     "مباشر الآن": "bg-[#00A63E26] text-[#00A63E]",
     منتهية: "bg-blue-100 text-[#123C91]",
     ملغاة: "bg-gray-100 text-gray-500",
     "بدأت متأخرة": "bg-orange-100 text-orange-700",
-    "فائتة (لم تبدأ بعد)": "bg-orange-50 text-orange-600",
-    "فائتة (انتهت)": "bg-red-50 text-red-500",
+    "لم تُعقد": "bg-red-50 text-red-500",
   };
   return (
     <span

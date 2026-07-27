@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getAssetUrl } from "../../../services/APIService";
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type }) => {
@@ -31,18 +32,11 @@ const SubmissionCount = ({ value }) => {
   );
 };
 
-const assetUrl = (url) => {
-  if (!url) return "";
-  return /^https?:\/\//i.test(url)
-    ? url
-    : `https://api.alacademeya.com/${url.replace(/^\//, "")}`;
-};
-
 // ─── Correction Modal ─────────────────────────────────────────────────────────
 const CorrectionModal = ({ student, type, onClose, onSubmit }) => {
   const [grade, setGrade] = useState(student.score ?? "");
   const [feedback, setFeedback] = useState(student.feedback ?? "");
-  const submissionFileUrl = assetUrl(student.fileUrl);
+  const submissionFileUrl = getAssetUrl(student.fileUrl);
 
   const handleSubmit = () => {
     onSubmit?.({ student, grade, feedback, type });

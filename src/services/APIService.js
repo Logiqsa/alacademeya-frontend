@@ -246,6 +246,7 @@ export const updateStudentProfile = (studentId, payload) =>
 export const getAvailableTeachers = (params) =>
   API.get("/teachers/available", { params });
 export const getTeachers = (params) => API.get("/teachers", { params });
+export const getTeacher = (teacherId) => API.get(`/teachers/${teacherId}`);
 export const getTeacherMonthlyReport = (teacherId, month) =>
   API.get(`/teachers/${teacherId}/monthly-report`, { params: { month } });
 export const updateTeacherProfile = (teacherId, payload) =>

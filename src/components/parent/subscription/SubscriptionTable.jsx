@@ -1,5 +1,3 @@
-import React from "react";
-
 const statusStyle = (status) => {
   if (status === "نشطة")
     return "bg-[#00A63E26] text-[#00A63E]";
@@ -55,11 +53,11 @@ const MutedOrValue = ({ value, highlight = false }) => {
   );
 };
 
-const SubscriptionTable = ({ data }) => {
+const SubscriptionTable = ({ data, ownerHeader = "الابن" }) => {
   const rows = withGroupMeta(data ?? []);
 
   const headers = [
-    "الابن",
+    ownerHeader,
     "الباقة",
     "إجمالي الساعات",
     "المستهلك",

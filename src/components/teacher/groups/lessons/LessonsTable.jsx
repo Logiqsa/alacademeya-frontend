@@ -3,13 +3,12 @@ import { useNavigate } from "react-router-dom";
 
 const StatusBadge = ({ status }) => {
   const styles = {
-    "قادمة": "bg-[#EAF4FF] text-[#123C91] ",
+    "مجدولة — لم تبدأ بعد": "bg-[#EAF4FF] text-[#123C91] ",
     "مباشر الآن": "bg-[#00A63E26] text-[#00A63E] ",
     "منتهية": "bg-blue-100 text-[#123C91] ",
     "ملغية": "bg-[#1F293726] text-[#1F2937] ",
     "بدأت متأخرة": "bg-[#FF8A0026] text-[#B45309] ",
-    "فائتة (لم تبدأ بعد)": "bg-orange-50 text-orange-600 ",
-    "فائتة (انتهت)": "bg-red-50 text-red-500 ",
+    "لم تُعقد": "bg-red-50 text-red-500 ",
   };
 
   return (
@@ -65,9 +64,9 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
   }
 
   const attendanceValue = (lesson) =>
-    lesson.attendance === 0 && (lesson.absence === 0 || lesson.status === "قادمة") ? "--" : lesson.attendance;
+    lesson.attendance === 0 && (lesson.absence === 0 || lesson.status === "مجدولة — لم تبدأ بعد") ? "--" : lesson.attendance;
   const absenceValue = (lesson) =>
-    lesson.absence === 0 && (lesson.attendance === 0 || lesson.status === "قادمة") ? "--" : lesson.absence;
+    lesson.absence === 0 && (lesson.attendance === 0 || lesson.status === "مجدولة — لم تبدأ بعد") ? "--" : lesson.absence;
 
   return (
     <div dir="rtl" className="w-full">

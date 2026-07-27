@@ -1,7 +1,7 @@
-import { useState, useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import logo from "../../assets/icons/logo.svg";
 import { Menu, X } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { isAdminRole } from "../../utils/roles";
 
@@ -55,6 +55,7 @@ const Navbar = () => {
   const { user } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const links = [
     { title: "الرئيسية", id: "home" },
@@ -65,11 +66,36 @@ const Navbar = () => {
     { title: "الأسئلة الشائعة", id: "faq" },
   ];
 
-  const scrollToSection = (id) => {
+  const scrollToSection = (id, behavior = "smooth") => {
     const section = document.getElementById(id);
-    if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
-    setMenuOpen(false);
+    if (section) section.scrollIntoView({ behavior, block: "start" });
   };
+
+  const handleNavLink = (id) => {
+    setMenuOpen(false);
+
+    if (location.pathname === "/") {
+      scrollToSection(id);
+      window.history.replaceState(null, "", `/#${id}`);
+      return;
+    }
+
+    navigate({
+      pathname: "/",
+      hash: `#${id}`,
+    });
+  };
+
+  useEffect(() => {
+    if (location.pathname !== "/" || !location.hash) return;
+
+    const sectionId = decodeURIComponent(location.hash.slice(1));
+    const frameId = window.requestAnimationFrame(() => {
+      scrollToSection(sectionId);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [location.pathname, location.hash]);
 
   const handleDashboardClick = () => {
     goToDashboard(user, navigate);
@@ -100,7 +126,7 @@ const Navbar = () => {
             {links.map((item, index) => (
               <button
                 key={index}
-                onClick={() => scrollToSection(item.id)}
+                onClick={() => handleNavLink(item.id)}
                 className="relative inline-flex items-center text-[16px] font-medium text-primary transition-all duration-300 hover:text-[#12C6B0]! hover:scale-105 after:content-[''] after:absolute after:right-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:origin-right after:bg-[#12C6B0] after:transition-transform after:duration-300 hover:after:scale-x-100"
               >
                 {item.title}
@@ -175,7 +201,7 @@ const Navbar = () => {
           {links.map((item, index) => (
             <button
               key={index}
-              onClick={() => scrollToSection(item.id)}
+              onClick={() => handleNavLink(item.id)}
               className="text-primary hover:text-[#12C6B0]! text-[16px] font-medium transition-colors duration-300"
             >
               {item.title}

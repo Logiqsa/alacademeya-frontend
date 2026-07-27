@@ -48,7 +48,7 @@ const fileUrl = (value) => {
       : value?.url || value?.secureUrl || value?.path) || "";
   if (!raw) return "";
   if (/^https?:\/\//i.test(raw)) return raw;
-  return `https://api.alacademeya.com/${raw.replace(/^\//, "")}`;
+  return `https://api.alacademeya.com/api/${raw.replace(/^\/+/, "").replace(/^api\//, "")}`;
 };
 
 const whatsappUrl = (phone) => {
@@ -147,7 +147,7 @@ const DetailRow = ({ label, value }) => (
   </div>
 );
 
-const UserDetailsModal = ({
+export const UserDetailsModal = ({
   open,
   onClose,
   user,
@@ -235,7 +235,7 @@ const UserDetailsModal = ({
 
         {isStudent && (
           <div className="grid grid-cols-2 gap-2 mb-2">
-            <DetailRow label="الصف" value={user.grade ?? "الثالث الثانوي"} />
+            <DetailRow label="الصف" value={user.grade || "—"} />
           </div>
         )}
 

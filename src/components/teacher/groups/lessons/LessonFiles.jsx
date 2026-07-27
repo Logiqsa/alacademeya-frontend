@@ -1,6 +1,5 @@
 import { HiOutlineDocumentText, HiOutlineDownload } from "react-icons/hi";
-
-const assetUrl = (url) => !url ? "" : /^https?:\/\//i.test(url) ? url : `https://api.alacademeya.com/${url.replace(/^\//, "")}`;
+import { getAssetUrl } from "../../../../services/APIService";
 const sizeLabel = (size) => size ? `${(size / 1024 / 1024).toFixed(1)} MB` : "";
 
 const LessonFiles = ({ files = [] }) => (
@@ -10,7 +9,7 @@ const LessonFiles = ({ files = [] }) => (
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {files.map((file) => <div key={file.id || file._id || file.url} className="flex items-center justify-between rounded-xl border p-4">
           <div className="flex min-w-0 items-center gap-3"><HiOutlineDocumentText size={22} className="text-[#123C91]" /><div className="min-w-0"><p className="truncate text-sm font-medium">{file.originalName || "ملف مرفق"}</p><p className="text-xs text-[#8C9198]">{file.mimeType} {sizeLabel(file.size)}</p></div></div>
-          <a href={assetUrl(file.url)} target="_blank" rel="noreferrer" download={file.originalName} className="rounded-lg p-2 hover:bg-gray-100" aria-label="تحميل"><HiOutlineDownload size={20} /></a>
+          <a href={getAssetUrl(file.url)} target="_blank" rel="noreferrer" download={file.originalName} className="rounded-lg p-2 hover:bg-gray-100" aria-label="تحميل"><HiOutlineDownload size={20} /></a>
         </div>)}
       </div>
     )}

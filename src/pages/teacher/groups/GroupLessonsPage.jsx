@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { CheckCircle2, MessageCircle, X } from "lucide-react";
+import { CheckCircle2, MessageCircle, Users, UserRound, X } from "lucide-react";
 
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
@@ -9,22 +9,28 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 import Pagination from "../../../components/teacher/groups/lessons/Paginationn";
 import EndSessionDetailsModal from "../../../components/teacher/groups/lessons/EndSessionDetailsModal";
+import { UserDetailsModal } from "../../../components/admin/users/Userstable";
 import {
   getClassroomSessions,
   getClassroom,
+  getClassroomStudents,
   getSessionAttendance,
   getClassroomSchedule,
+  getAllSubscriptions,
+  getTeacher,
+  getTeachers,
+  getUser,
   endSession,
   updateClassroomSession,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
-// import Breadcrumbs from "../../shared/Breadcrumbs";
+import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const ITEMS_PER_PAGE = 5;
 
 // status enum زي ما راجعة فعلاً من الـ API (شفتها من الـ response: "completed")
 const STATUS_LABELS = {
-  scheduled: "قادمة",
-  upcoming: "قادمة",
+  scheduled: "مجدولة — لم تبدأ بعد",
+  upcoming: "مجدولة — لم تبدأ بعد",
   live: "مباشر الآن",
   completed: "منتهية",
   cancelled: "ملغية",
@@ -34,6 +40,39 @@ const STATUS_LABELS = {
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
 
+const unwrapTeacher = (response) => {
+  const body = response?.data?.data ?? response?.data ?? response;
+  return body?.teacher ?? body;
+};
+
+const teacherProfileMatches = (teacher, ids) => {
+  const teacherUser = teacher?.user;
+  const candidateIds = [
+    teacher?.id,
+    teacher?._id,
+    teacher?.userId,
+    typeof teacherUser === "string" ? teacherUser : teacherUser?.id,
+    typeof teacherUser === "object" ? teacherUser?._id : null,
+  ]
+    .filter(Boolean)
+    .map(String);
+
+  return ids.some((id) => candidateIds.includes(String(id)));
+};
+
+const hasTeacherProfileData = (teacher) =>
+  Boolean(
+    teacher?.user ||
+      teacher?.subjects ||
+      teacher?.subject ||
+      teacher?.grades ||
+      teacher?.grade ||
+      teacher?.curriculums ||
+      teacher?.curriculum ||
+      teacher?.experienceYears != null ||
+      teacher?.experience != null,
+  );
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const GroupLessonsPage = ({ role = "teacher" }) => {
   const { groupId } = useParams();
@@ -41,6 +80,8 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const location = useLocation();
   const isAdmin = role === "admin";
   const Layout = isAdmin ? AdminLayout : TeacherLayout;
+  const routedGroupTeacher = location.state?.groupTeacher;
+  const routedGroupTeacherId = location.state?.groupTeacherId;
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
@@ -48,6 +89,11 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const [page, setPage] = useState(1);
 
   const [groupName, setGroupName] = useState(location.state?.groupName || "");
+  const [groupTeacher, setGroupTeacher] = useState(
+    routedGroupTeacher || "—",
+  );
+  const [groupStudents, setGroupStudents] = useState([]);
+  const [selectedPerson, setSelectedPerson] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,18 +109,20 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
 
   // ─── Toast نجاح إضافة الحصة/الجدول ─────────────────────────────────────────
   useEffect(() => {
-    if (location.state?.showSuccessToast) {
+    if (!location.state?.showSuccessToast) return;
+    let hideTimer;
+    const showTimer = window.setTimeout(() => {
       setToastMessage(
         location.state.successMessage || "تم إنشاء الحصة بنجاح",
       );
       setShowToast(true);
-
-      // بنشيل الـ state من الـ history عشان الرسالة متظهرش تاني لو المستخدم عمل refresh
       navigate(location.pathname, { replace: true, state: {} });
-
-      const timer = setTimeout(() => setShowToast(false), 4000);
-      return () => clearTimeout(timer);
-    }
+      hideTimer = window.setTimeout(() => setShowToast(false), 4000);
+    }, 0);
+    return () => {
+      window.clearTimeout(showTimer);
+      window.clearTimeout(hideTimer);
+    };
   }, [location.state, location.pathname, navigate]);
 
   const fetchData = useCallback(async () => {
@@ -82,10 +130,11 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     setError(null);
 
     // بنستخدم allSettled عشان لو endpoint الـ classroom فشل، الصفحة تفضل تعرض الحصص عادي
-    const [classroomResult, sessionsResult, scheduleResult] = await Promise.allSettled([
+    const [classroomResult, sessionsResult, scheduleResult, studentsResult] = await Promise.allSettled([
       getClassroom(groupId),
       getClassroomSessions(groupId),
       getClassroomSchedule(groupId),
+      isAdmin ? getClassroomStudents(groupId) : Promise.resolve({ data: { data: [] } }),
     ]);
 
     setHasSchedule(
@@ -109,9 +158,133 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       // لو الـ API رجّع اسم فعلي بنستخدمه، غير كده بنسيب اللي جالنا من صفحة الجدول (location.state)
       // أو نرجع لـ "مجموعة" بس لو مفيش أي مصدر تاني للاسم
       setGroupName((prev) => resolved || prev || "مجموعة");
+      const nestedTeacherName =
+        classroomData.teacher?.user?.fullName ||
+        classroomData.teacher?.fullName;
+      const teacherId =
+        typeof classroomData.teacher === "string"
+          ? classroomData.teacher
+          : classroomData.teacher?.id || classroomData.teacher?._id;
+      const teacherUserId =
+        typeof classroomData.teacher?.user === "string"
+          ? classroomData.teacher.user
+          : classroomData.teacher?.user?.id ||
+            classroomData.teacher?.user?._id;
+      const profileOrUserId = teacherId || routedGroupTeacherId;
+      if (nestedTeacherName) setGroupTeacher(nestedTeacherName);
+      if (profileOrUserId) {
+        let resolvedTeacher = null;
+        try {
+          const teacherResponse = await getTeacher(profileOrUserId);
+          resolvedTeacher = unwrapTeacher(teacherResponse);
+        } catch (error) {
+          console.warn("getTeacher failed, trying teachers list:", error);
+        }
+
+        if (!hasTeacherProfileData(resolvedTeacher)) {
+          try {
+            const teachersResponse = await getTeachers({ limit: 1000 });
+            const teachersBody =
+              teachersResponse.data?.data ?? teachersResponse.data ?? [];
+            const teachers = Array.isArray(teachersBody)
+              ? teachersBody
+              : teachersBody.teachers || [];
+            const matchingIds = [
+              teacherId,
+              teacherUserId,
+              routedGroupTeacherId,
+            ].filter(Boolean);
+            resolvedTeacher = teachers.find((teacher) =>
+              teacherProfileMatches(teacher, matchingIds),
+            );
+          } catch (error) {
+            console.warn("getTeachers failed:", error);
+          }
+        }
+
+        const teacher =
+          resolvedTeacher ||
+          (typeof classroomData.teacher === "object"
+            ? classroomData.teacher
+            : null);
+        setGroupTeacher(
+          teacher?.user?.fullName ||
+            teacher?.fullName ||
+            nestedTeacherName ||
+            routedGroupTeacher ||
+            "لم يُعيّن معلم",
+        );
+      } else if (teacherUserId) {
+        try {
+          const userResponse = await getUser(teacherUserId);
+          const teacherUser = userResponse.data?.data || userResponse.data;
+          setGroupTeacher(
+            teacherUser?.fullName ||
+              routedGroupTeacher ||
+              "لم يُعيّن معلم",
+          );
+        } catch {
+          setGroupTeacher(
+            routedGroupTeacher || "لم يُعيّن معلم",
+          );
+        }
+      } else if (!nestedTeacherName) {
+        setGroupTeacher(routedGroupTeacher || "لم يُعيّن معلم");
+      }
     } else {
       console.error("getClassroom failed:", classroomResult.reason);
       setGroupName((prev) => prev || "مجموعة");
+    }
+
+    if (isAdmin && studentsResult.status === "fulfilled") {
+      const students = studentsResult.value.data?.data || [];
+      const enrichedStudents = await Promise.all(
+        students.map(async (student) => {
+          const studentId = student.id || student._id;
+          if (!studentId) return student;
+          try {
+            const subscriptionsResponse = await getAllSubscriptions({
+              student: studentId,
+              status: "active",
+              limit: 100,
+            });
+            const subscriptions = subscriptionsResponse.data?.data || [];
+            const matchingItems = subscriptions.flatMap((subscription) =>
+              (subscription.items || [])
+                .filter((item) => {
+                  const classroomId =
+                    typeof item.classroom === "string"
+                      ? item.classroom
+                      : item.classroom?.id || item.classroom?._id;
+                  return String(classroomId) === String(groupId);
+                })
+                .map((item) => ({ item, subscription })),
+            );
+            const packageNames = [
+              ...new Set(
+                matchingItems
+                  .map(({ item }) => resolveName(item.package?.name || item.package))
+                  .filter((name) => name && name !== "--"),
+              ),
+            ];
+            const joinedDates = matchingItems
+              .map(
+                ({ item, subscription }) =>
+                  new Date(item.createdAt || subscription.createdAt),
+              )
+              .filter((date) => !Number.isNaN(date.getTime()))
+              .sort((a, b) => a - b);
+            return {
+              ...student,
+              groupPackage: packageNames.join("، ") || null,
+              groupJoinedAt: joinedDates[0]?.toISOString() || null,
+            };
+          } catch {
+            return student;
+          }
+        }),
+      );
+      setGroupStudents(enrichedStudents);
     }
 
     if (sessionsResult.status === "rejected") {
@@ -157,7 +330,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           new Date(s.scheduledDate) < new Date();
         const sessionId =
           s.id || s._id || s.sessionId || s.session?.id || s.session?._id;
-        const isScheduleOnly = s.isVirtual || s.virtual || !sessionId;
         return {
           id: sessionId,
           title: s.title || "حصة",
@@ -185,10 +357,10 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           attendance,
           absence,
           status: isMissed
-            ? isScheduleOnly
-              ? "فائتة (انتهت)"
-              : "فائتة (لم تبدأ بعد)"
-            : STATUS_LABELS[s.status] || s.status || "--",
+            ? "لم تُعقد"
+            : ["scheduled", "upcoming"].includes(s.status)
+              ? "مجدولة — لم تبدأ بعد"
+              : STATUS_LABELS[s.status] || s.status || "--",
           // بيستخدم بس لحساب "أقرب حصة قادمة" في العنوان، مش بيتعرض في الجدول
           _sortDate: new Date(s.scheduledDate || s.startAt || 0),
         };
@@ -201,10 +373,11 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     } finally {
       setLoading(false);
     }
-  }, [groupId]);
+  }, [groupId, isAdmin, routedGroupTeacher, routedGroupTeacherId]);
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(fetchData, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchData]);
 
   const filtered = lessons.filter(
@@ -221,29 +394,17 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
 
   const stats = {
     total: lessons.length,
-    upcoming: lessons.filter((l) => l.status === "قادمة").length,
+    upcoming: lessons.filter((l) => l.status === "مجدولة — لم تبدأ بعد").length,
     completed: lessons.filter((l) => l.status === "منتهية").length,
-    cancelled: lessons.filter((l) => l.status === "ملغية").length,
+    notHeld: lessons.filter((l) => l.status === "لم تُعقد").length,
   };
 
   // العنوان بيفضّل عرض اسم حصة محددة بدل اسم المجموعة:
   // الأولوية للحصة اللي شغالة live دلوقتي، وبعدين أقرب حصة قادمة.
   // لو مفيش أي حصة live ولا قادمة، بيرجع يعرض اسم المجموعة كـ fallback.
-  const liveLesson = lessons.find((l) => l.status === STATUS_LABELS.live);
-  const nextUpcomingLesson = lessons
-    .filter((l) => l.status === "قادمة")
-    .sort((a, b) => a._sortDate - b._sortDate)[0];
-  const highlightedLesson = liveLesson || nextUpcomingLesson || null;
-
   // ⚠️ افتراض: راوت عرض الحصة الواحدة مش متعرّف في الملف ده أصلاً — بنيت المسار
   // على نفس نمط باقي الروابط هنا (/teacher/groups/:id/lessons/... و/admin/groups/:id/lessons/...)
   // لازم تتأكد إن الراوت ده معرّف فعلاً في الـ router بتاعك.
-  const highlightedLessonPath = highlightedLesson
-    ? isAdmin
-      ? `/admin/groups/${groupId}/lessons/${highlightedLesson.id}`
-      : `/teacher/groups/${groupId}/lessons/${highlightedLesson.id}`
-    : null;
-
   // ⚠️ مفيش endpoint لحذف/تعديل حصة منفردة في api.js الحالي (مفيش deleteSession/updateSession)
   // فالأزرار دي مؤقتًا بتعمل log بس لحد ما الـ endpoints دي تتضاف
   const handleEdit = (id) =>
@@ -255,6 +416,28 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const handleEndRequest = (lesson) => {
     setEndError(null);
     setEndTarget(lesson);
+  };
+
+  const openStudentDetails = (student) => {
+    const user = student.user || {};
+    setSelectedPerson({
+      ...student,
+      id: user.id || user._id || student.id || student._id,
+      name: user.fullName || student.fullName || student.name || "طالب",
+      email: user.email,
+      phone: user.phone,
+      username: user.username,
+      role: "طالب",
+      status: user.isActive === false ? "موقوف" : "نشط",
+      joinDate: student.groupJoinedAt || student.createdAt || user.createdAt
+        ? new Date(
+            student.groupJoinedAt || student.createdAt || user.createdAt,
+          ).toLocaleDateString("ar-EG")
+        : "—",
+      stage: resolveName(student.stage?.name || student.stage),
+      grade: resolveName(student.grade?.name || student.grade),
+      package: student.groupPackage || "لا توجد باقة فعالة",
+    });
   };
 
   const closeEndModal = () => {
@@ -290,7 +473,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
 
   return (
     <Layout>
-            {/* <Breadcrumbs homeTo={isAdmin ? "/admin-dashboard" : "/teacher-dashboard"} /> */}
+      <Breadcrumbs homeTo={isAdmin ? "/admin-dashboard" : "/teacher-dashboard"} />
 
       <div
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right relative"
@@ -315,6 +498,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div>
+            <h1 className="mb-2 text-xl font-semibold text-[#123C91] sm:text-2xl">
+              {groupName || "المجموعة"}
+            </h1>
             {/* {highlightedLesson ? (
               <button
                 type="button"
@@ -336,6 +522,21 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           {!isAdmin && (
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
               <button
+                type="button"
+                onClick={() =>
+                  navigate("/teacher/messages", {
+                    state: {
+                      openClassroomId: groupId,
+                      openClassroomName: groupName,
+                    },
+                  })
+                }
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF] sm:w-auto"
+              >
+                <MessageCircle size={20} />
+                محادثة المجموعة
+              </button>
+              <button
                 onClick={() =>
                   navigate(`/teacher/groups/${groupId}/lessons/schedule/new`)
                 }
@@ -352,25 +553,70 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             </div>
           )}
           {isAdmin && (
-            <button
-              type="button"
-              onClick={() =>
-                navigate("/admin/messages", {
-                  state: {
-                    openClassroomId: groupId,
-                    openClassroomName: groupName,
-                  },
-                })
-              }
-              aria-label="فتح محادثة المجموعة"
-              title="فتح محادثة المجموعة"
-              className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF] sm:w-auto"
-            >
-              <MessageCircle size={20} />
-              <span>فتح محادثة المجموعة</span>
-            </button>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <button
+                type="button"
+                onClick={() =>
+                  navigate("/admin/messages", {
+                    state: {
+                      openClassroomId: groupId,
+                      openClassroomName: groupName,
+                    },
+                  })
+                }
+                aria-label="فتح محادثة المجموعة"
+                title="فتح محادثة المجموعة"
+                className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF]"
+              >
+                <MessageCircle size={20} />
+                <span>محادثة المجموعة</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/admin/groups/${groupId}/lessons/new`)}
+                className="flex h-12 items-center justify-center rounded-lg bg-[#123C91] px-5 font-['Tajawal'] text-sm font-medium text-white"
+              >
+                إنشاء حصة جديدة
+              </button>
+            </div>
           )}
         </div>
+
+        {isAdmin && (
+          <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
+            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4">
+              <div className="mb-2 flex items-center gap-2 text-sm text-[#8C9198]">
+                <UserRound size={17} />
+                معلم المجموعة
+              </div>
+              <p className="font-semibold text-[#1F2937]">
+                {groupTeacher}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4">
+              <div className="mb-3 flex items-center gap-2 text-sm text-[#8C9198]">
+                <Users size={17} />
+                الطلاب ({groupStudents.length})
+              </div>
+              {groupStudents.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {groupStudents.map((student) => (
+                    <button
+                      key={student.id || student._id}
+                      type="button"
+                      onClick={() => openStudentDetails(student)}
+                      className="rounded-full bg-[#EAF4FF] px-3 py-1.5 text-xs font-medium text-[#123C91]"
+                    >
+                      {student.user?.fullName || student.fullName || student.name || "طالب"}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#9CA3AF]">لا يوجد طلاب في المجموعة</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="mb-6">
@@ -378,7 +624,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             total={stats.total}
             upcoming={stats.upcoming}
             completed={stats.completed}
-            cancelled={stats.cancelled}
+            notHeld={stats.notHeld}
           />
         </div>
 
@@ -443,6 +689,11 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           onClose={closeEndModal}
         />
       )}
+      <UserDetailsModal
+        open={Boolean(selectedPerson)}
+        onClose={() => setSelectedPerson(null)}
+        user={selectedPerson}
+      />
     </Layout>
   );
 };

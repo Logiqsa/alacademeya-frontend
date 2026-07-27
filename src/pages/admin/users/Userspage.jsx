@@ -38,6 +38,17 @@ const statusOf = (u) => {
   return "نشط";
 };
 
+const localizedProfileName = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.name?.ar || value.name?.en || value.ar || value.en || "";
+};
+
+const profileNames = (values) =>
+  (Array.isArray(values) ? values : values ? [values] : [])
+    .map(localizedProfileName)
+    .filter(Boolean);
+
 const mapUser = (u) => ({
   id: u.id || u._id,
   name: u.fullName || u.name || "—",
@@ -99,13 +110,89 @@ const UsersPage = () => {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("جميع المستخدمين");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
+  const [filterGrade, setFilterGrade] = useState("جميع الصفوف");
+  const [filterSubject, setFilterSubject] = useState("جميع المواد");
+  const [filterCurriculum, setFilterCurriculum] = useState("جميع المناهج");
   const [page, setPage] = useState(1);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await fetchAllUsers();
-      setUsers(Array.isArray(list) ? list.map(mapUser) : []);
+      const [list, studentsResponse, teachersResponse] = await Promise.all([
+        fetchAllUsers(),
+        getAllStudents({ page: 1, limit: FETCH_LIMIT }).catch(() => null),
+        getTeachers({ page: 1, limit: FETCH_LIMIT }).catch(() => null),
+      ]);
+      const studentProfilesData = studentsResponse?.data?.data;
+      const studentProfiles = Array.isArray(studentProfilesData)
+        ? studentProfilesData
+        : [];
+      const studentsByUserId = new Map(
+        studentProfiles.map((student) => [
+          String(
+            typeof student.user === "string"
+              ? student.user
+              : student.user?.id || student.user?._id,
+          ),
+          student,
+        ]),
+      );
+      const teacherProfilesData = teachersResponse?.data?.data;
+      const teacherProfiles = Array.isArray(teacherProfilesData)
+        ? teacherProfilesData
+        : [];
+      const teachersByUserId = new Map(
+        teacherProfiles.map((teacher) => [
+          String(
+            typeof teacher.user === "string"
+              ? teacher.user
+              : teacher.user?.id || teacher.user?._id,
+          ),
+          teacher,
+        ]),
+      );
+      setUsers(
+        Array.isArray(list)
+          ? list.map((rawUser) => {
+              const mapped = mapUser(rawUser);
+              const student = studentsByUserId.get(String(mapped.id));
+              const teacher = teachersByUserId.get(String(mapped.id));
+              if (teacher) {
+                const grades = profileNames(teacher.grades ?? teacher.grade);
+                const subjects = profileNames(teacher.subjects ?? teacher.subject);
+                const curriculums = profileNames(
+                  teacher.curriculums ?? teacher.curriculum,
+                );
+                return {
+                  ...mapped,
+                  teacherGrades: grades,
+                  teacherSubjects: subjects,
+                  teacherCurriculums: curriculums,
+                  gradesLabel: grades.join("، ") || "—",
+                  subjectsLabel: subjects.join("، ") || "—",
+                  curriculaLabel: curriculums.join("، ") || "—",
+                };
+              }
+              return student
+                ? {
+                    ...mapped,
+                    grade:
+                      student.grade?.name?.ar ||
+                      student.grade?.name?.en ||
+                      student.grade?.name ||
+                      student.gradeName ||
+                      "—",
+                    stage:
+                      student.stage?.name?.ar ||
+                      student.stage?.name?.en ||
+                      student.stage?.name ||
+                      student.stageName ||
+                      "—",
+                  }
+                : mapped;
+            })
+          : [],
+      );
     } catch (err) {
       console.error(err);
       toast.error("تعذر تحميل المستخدمين");
@@ -120,12 +207,50 @@ const UsersPage = () => {
 
   // استبعد أي مستخدم متعمله soft-delete من الجدول والإحصائيات
   const visibleUsers = users.filter((u) => !u.isDeleted);
+  const gradeOptions = [
+    ...new Set(
+      visibleUsers
+        .filter((user) => user.role === "طالب" && user.grade && user.grade !== "—")
+        .map((user) => user.grade),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const teacherGradeOptions = [
+    ...new Set(
+      visibleUsers
+        .filter((user) => user.role === "معلم")
+        .flatMap((user) => user.teacherGrades || []),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const teacherSubjectOptions = [
+    ...new Set(
+      visibleUsers
+        .filter((user) => user.role === "معلم")
+        .flatMap((user) => user.teacherSubjects || []),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const teacherCurriculumOptions = [
+    ...new Set(
+      visibleUsers
+        .filter((user) => user.role === "معلم")
+        .flatMap((user) => user.teacherCurriculums || []),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
 
   const filtered = visibleUsers.filter(
     (u) =>
       (u.name?.includes(search) || u.email?.includes(search)) &&
       (filterRole === "جميع المستخدمين" || u.role === filterRole) &&
-      (filterStatus === "جميع الحالات" || u.status === filterStatus),
+      (filterStatus === "جميع الحالات" || u.status === filterStatus) &&
+      (filterRole !== "طالب" ||
+        filterGrade === "جميع الصفوف" ||
+        u.grade === filterGrade) &&
+      (filterRole !== "معلم" ||
+        ((filterGrade === "جميع الصفوف" ||
+          u.teacherGrades?.includes(filterGrade)) &&
+          (filterSubject === "جميع المواد" ||
+            u.teacherSubjects?.includes(filterSubject)) &&
+          (filterCurriculum === "جميع المناهج" ||
+            u.teacherCurriculums?.includes(filterCurriculum)))),
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -274,11 +399,34 @@ const UsersPage = () => {
             filterRole={filterRole}
             onFilterRoleChange={(v) => {
               setFilterRole(v);
+              setFilterGrade("جميع الصفوف");
+              setFilterSubject("جميع المواد");
+              setFilterCurriculum("جميع المناهج");
               setPage(1);
             }}
             filterStatus={filterStatus}
             onFilterStatusChange={(v) => {
               setFilterStatus(v);
+              setPage(1);
+            }}
+            filterGrade={filterGrade}
+            gradeOptions={
+              filterRole === "معلم" ? teacherGradeOptions : gradeOptions
+            }
+            onFilterGradeChange={(v) => {
+              setFilterGrade(v);
+              setPage(1);
+            }}
+            filterSubject={filterSubject}
+            subjectOptions={teacherSubjectOptions}
+            onFilterSubjectChange={(v) => {
+              setFilterSubject(v);
+              setPage(1);
+            }}
+            filterCurriculum={filterCurriculum}
+            curriculumOptions={teacherCurriculumOptions}
+            onFilterCurriculumChange={(v) => {
+              setFilterCurriculum(v);
               setPage(1);
             }}
           />

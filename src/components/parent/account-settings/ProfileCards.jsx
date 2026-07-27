@@ -363,9 +363,18 @@ export const ParentProfileCard = ({
 }) => {
   const resolveCountryId = () => {
     if (!countries.length) return "";
-    const byId = countries.find((c) => c.id === parent?.countryId);
+    const byId = countries.find(
+      (c) =>
+        parent?.countryId &&
+        String(c.id) === String(parent.countryId),
+    );
     if (byId) return byId.id;
-    const byCode = countries.find((c) => c.code === parent?.countryCode);
+    const byCode = countries.find(
+      (c) =>
+        parent?.countryCode &&
+        String(c.code || "").toUpperCase() ===
+          String(parent.countryCode).toUpperCase(),
+    );
     return byCode?.id || "";
   };
 
@@ -525,10 +534,15 @@ export const StudentPersonalCard = ({
     // country lives on user.country as a bare id in the real API —
     // student.country / student.countryCode never actually exist.
     const countryId = idOf(u.country) || idOf(student?.country);
-    const byId = countries.find((c) => c.id === countryId);
+    const byId = countries.find(
+      (c) => countryId && String(c.id) === String(countryId),
+    );
     if (byId) return byId.id;
     const byCode = countries.find(
-      (c) => c.code === (u.countryCode || student?.countryCode),
+      (c) =>
+        (u.countryCode || student?.countryCode) &&
+        String(c.code || "").toUpperCase() ===
+          String(u.countryCode || student?.countryCode).toUpperCase(),
     );
     return byCode?.id || "";
   };
