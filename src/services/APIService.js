@@ -143,7 +143,10 @@ export const getPendingSubscriptionRequests = () =>
   API.get("/subscriptions/students/pending");
 export const getMyStudentsSubscriptions = () =>
   API.get("/parents/students/subscriptions");
-export const getMySubscriptions = () => API.get("/subscriptions/my");
+export const getMySubscriptions = (params) =>
+  API.get("/subscriptions/my", { params });
+export const getSubscriptionRenewOptions = (id) =>
+  API.get(`/subscriptions/${id}/renew-options`);
 
 // ─── Student subscription orders ─────────────────────────────────────────────
 // Prices and totals are intentionally never accepted here. The backend is the
@@ -152,6 +155,21 @@ export const createSubscriptionOrder = (items, studentId) =>
   API.post("/subscription-orders", {
     items,
     ...(studentId ? { studentId } : {}),
+  });
+export const createRenewalSubscriptionOrder = (sourceSubscription, items) =>
+  API.post("/subscription-orders", {
+    orderType: "renewal",
+    sourceSubscription,
+    items,
+  });
+export const createAddSubjectSubscriptionOrder = (
+  sourceSubscription,
+  items,
+) =>
+  API.post("/subscription-orders", {
+    orderType: "add_subject",
+    sourceSubscription,
+    items,
   });
 export const getSubscriptionOrder = (id) =>
   API.get(`/subscription-orders/${id}`);

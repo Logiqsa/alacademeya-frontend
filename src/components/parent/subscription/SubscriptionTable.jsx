@@ -241,7 +241,7 @@ const SubscriptionTable = ({
                   <td className="px-4 py-5 text-center">
                     <button
                       type="button"
-                      disabled={!row.studentId || !row.subjectId}
+                      disabled={!row.groupId || !row.subjectId}
                       onClick={() => onRenew(row)}
                       className="whitespace-nowrap rounded-lg border border-[#123C91] px-3 py-2 text-xs font-semibold text-[#123C91] transition-colors hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-40"
                     >
@@ -346,7 +346,7 @@ const SubscriptionTable = ({
                     {onRenew && (
                       <button
                         type="button"
-                        disabled={!item.studentId || !item.subjectId}
+                        disabled={!item.groupId || !item.subjectId}
                         onClick={() => onRenew(item)}
                         className="mt-2 w-full rounded-xl border border-[#123C91] py-2.5 text-sm font-semibold text-[#123C91] disabled:cursor-not-allowed disabled:opacity-40"
                       >

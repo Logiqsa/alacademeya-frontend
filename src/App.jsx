@@ -77,6 +77,8 @@ import CreateCurriculumPage from "./pages/admin/curriculum/CreateCurriculumPage"
 import StudentAccountSettingsPage from "./pages/student/StudentAccountSettingsPage";
 import StudentNotifications from "./pages/student/Notifications";
 import StudentSubscriptionPage from "./pages/student/StudentSubscriptionPage";
+import RenewalPage from "./pages/subscription/RenewalPage";
+import AddSubjectPage from "./pages/subscription/AddSubjectPage";
 import StudentMessagess from "./pages/student/messages/Messages";
 import StudentAssignmentsPage from "./pages/student/assignments/StudentAssignmentsPage";
 import StudentGroupLessonsPage from "./pages/student/groupLessons/Studentgrouplessonspage";
@@ -136,6 +138,8 @@ function App() {
         <Route path="/parent/children" element={user ? <ChildrenPage /> : <Navigate to="/login" replace />} />
         <Route path="/parent/notifications" element={user ? <Notifications /> : <Navigate to="/login" replace />} />
         <Route path="/parent/subscription" element={user ? <SubscriptionPage /> : <Navigate to="/login" replace />} />
+        <Route path="/parent/subscriptions/:id/renew" element={user ? <RenewalPage role="parent" /> : <Navigate to="/login" replace />} />
+        <Route path="/parent/subscriptions/:id/add-subject" element={user ? <AddSubjectPage role="parent" /> : <Navigate to="/login" replace />} />
         <Route path="/parent/students/:studentId/subscription/packages" element={user ? <StudentPackagesPage /> : <Navigate to="/login" replace />} />
         <Route path="/parent/messages" element={user ? <Messages /> : <Navigate to="/login" replace />} />
         <Route path="/parent/settings" element={user ? <AccountSettingsPage /> : <Navigate to="/login" replace />} />
@@ -145,6 +149,8 @@ function App() {
         <Route path="/student/settings" element={<StudentGuard><StudentAccountSettingsPage /></StudentGuard>} />
         <Route path="/student/notifications" element={<StudentGuard><StudentNotifications /></StudentGuard>} />
         <Route path="/student/subscription" element={<StudentGuard><StudentSubscriptionPage /></StudentGuard>} />
+        <Route path="/student/subscriptions/:id/renew" element={<StudentGuard><RenewalPage role="student" /></StudentGuard>} />
+        <Route path="/student/subscriptions/:id/add-subject" element={<StudentGuard><AddSubjectPage role="student" /></StudentGuard>} />
         <Route path="/student/messages" element={<StudentGuard><StudentMessagess /></StudentGuard>} />
         <Route path="/student/assignments" element={<StudentGuard><StudentAssignmentsPage /></StudentGuard>} />
         <Route path="/student/schedule" element={<StudentGuard><StudentSchedulePage /></StudentGuard>} />

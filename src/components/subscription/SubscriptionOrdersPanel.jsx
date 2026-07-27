@@ -22,6 +22,11 @@ const APPROVAL_LABELS = {
   approved: "تم تفعيل الاشتراك",
   rejected: "مرفوض",
 };
+const ORDER_TYPE_LABELS = {
+  new_subscription: "اشتراك جديد",
+  renewal: "تجديد اشتراك",
+  add_subject: "إضافة مادة",
+};
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 
@@ -121,6 +126,12 @@ const SubscriptionOrdersPanel = () => {
                     <h3 className="font-semibold text-[#1F2937]">
                       {order.student?.name || "الطالب"}
                     </h3>
+                    {order.orderType && (
+                      <span className="rounded-full bg-violet-50 px-3 py-1 text-xs text-violet-700">
+                        {ORDER_TYPE_LABELS[order.orderType] ||
+                          order.orderType}
+                      </span>
+                    )}
                     <span className="rounded-full bg-[#EAF4FF] px-3 py-1 text-xs text-[#123C91]">
                       {PAYMENT_LABELS[order.paymentStatus] ||
                         order.paymentStatus}

@@ -1,10 +1,8 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 
 import StudentLayout from "../../components/student/layout/StudentLayout";
-import Breadcrumbs from "../shared/Breadcrumbs";
-import ChildCard from "../../components/parent/subscription/ChildCard";
 import SubscriptionFilters from "../../components/parent/subscription/SubscriptionFilters";
 import SubscriptionTable from "../../components/parent/subscription/SubscriptionTable";
 import SubscriptionOrdersPanel from "../../components/subscription/SubscriptionOrdersPanel";
@@ -14,6 +12,8 @@ import { getMySubscriptions } from "../../services/APIService";
 const STATUS_LABELS = {
   active: "نشطة",
   expired: "منتهية",
+  ended: "منتهية",
+  completed: "منتهية",
   pending: "قيد المراجعة",
   cancelled: "ملغية",
 };
@@ -101,6 +101,7 @@ const subscriptionRows = (subscription, studentName) => {
           ? `${Number(item.finalPrice).toLocaleString("ar-EG")} ج.م`
           : "--",
       status: STATUS_LABELS[status] || status || "—",
+      rawStatus: status,
       totalSessions: total,
       remainingSessions: remaining,
     };
@@ -155,8 +156,8 @@ const StudentSubscriptionPage = () => {
   }, []);
 
   const rows = useMemo(
-    () =>
-      subscriptions.flatMap((subscription) =>
+    () => {
+      const allRows = subscriptions.flatMap((subscription) =>
         subscriptionRows(
           subscription,
           subscription.student?.user?.fullName ||
@@ -164,7 +165,19 @@ const StudentSubscriptionPage = () => {
             user?.fullName ||
             "الطالب",
         ),
-      ),
+      );
+      const activeSubjects = new Set(
+        allRows
+          .filter((row) => row.rawStatus === "active")
+          .map((row) => String(row.subjectId || row.subjectName)),
+      );
+
+      return allRows.filter(
+        (row) =>
+          !["ended", "expired", "completed"].includes(row.rawStatus) ||
+          !activeSubjects.has(String(row.subjectId || row.subjectName)),
+      );
+    },
     [subscriptions, user?.fullName],
   );
 
@@ -190,31 +203,48 @@ const StudentSubscriptionPage = () => {
   }));
 
   const renewSubject = (row) => {
-    if (!row.subjectId) return;
-    navigate("/register/packages", {
+    if (!row.groupId) return;
+    navigate(`/student/subscriptions/${row.groupId}/renew`, {
       state: {
-        renewal: true,
-        selectedSubjects: [
-          { id: row.subjectId, name: row.subjectName },
-        ],
+        subjectId: row.subjectId,
       },
     });
+  };
+  const activeSourceSubscription = rows.find(
+    (row) => row.rawStatus === "active" && row.groupId,
+  );
+  const addSubject = () => {
+    if (!activeSourceSubscription?.groupId) return;
+    navigate(
+      `/student/subscriptions/${activeSourceSubscription.groupId}/add-subject`,
+    );
   };
 
   return (
     <StudentLayout>
-      <Breadcrumbs homeTo="/student-dashboard" />
       <main
         className="mx-auto w-full max-w-7xl px-3 py-3 font-['IBM_Plex_Sans_Arabic'] sm:px-5 sm:py-5 lg:px-2"
         dir="rtl"
       >
-        <header className="mb-6">
-          <h1 className="text-[22px] font-semibold text-[#123C91] sm:text-[26px]">
-            الاشتراك والباقات
-          </h1>
-          <p className="mt-2 text-sm text-[#575F69] sm:text-base">
-            تابع وجدّد باقتك لكل مادة بشكل مستقل من حسابك مباشرة.
-          </p>
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-[22px] font-semibold text-[#123C91] sm:text-[26px]">
+              الاشتراك والباقات
+            </h1>
+            <p className="mt-2 text-sm text-[#575F69] sm:text-base">
+              تابع وجدّد باقتك لكل مادة بشكل مستقل من حسابك مباشرة.
+            </p>
+          </div>
+          {activeSourceSubscription && (
+            <button
+              type="button"
+              onClick={addSubject}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#123C91] px-5 text-sm font-semibold text-white"
+            >
+              <Plus size={17} />
+              إضافة مادة
+            </button>
+          )}
         </header>
 
         {loading && (
@@ -230,40 +260,6 @@ const StudentSubscriptionPage = () => {
 
         {!loading && !error && (
           <>
-            <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {filteredRows.length ? (
-                filteredRows.map((row) => (
-                  <ChildCard
-                    key={row.id}
-                    name={row.subjectName}
-                    stage={row.packageName}
-                    plan={
-                      row.teacherName
-                        ? `${row.packageName} - ${row.teacherName}`
-                        : row.packageName
-                    }
-                    status={row.status}
-                    date={
-                      row.endDate !== "--" ? row.endDate : row.startDate
-                    }
-                    isExpiring={row.status === "منتهية"}
-                    sessionsText={
-                      row.remainingSessions != null
-                        ? `${row.remainingSessions} حصة متبقية من ${row.totalSessions || 0}`
-                        : "تفاصيل الحصص غير متاحة"
-                    }
-                    onRenew={
-                      row.subjectId ? () => renewSubject(row) : null
-                    }
-                  />
-                ))
-              ) : (
-                <p className="col-span-2 py-8 text-center text-[#575F69]">
-                  لا توجد اشتراكات حالياً
-                </p>
-              )}
-            </div>
-
             <div className="mb-5 rounded-2xl border border-[#E5E5E5] bg-white p-3 shadow-sm sm:p-5">
               <SubscriptionFilters
                 searchTerm={searchTerm}
@@ -281,7 +277,8 @@ const StudentSubscriptionPage = () => {
 
             <SubscriptionTable
               data={filteredRows}
-              ownerHeader="الطالب"
+              hideOwner
+              onRenew={renewSubject}
             />
             <SubscriptionOrdersPanel />
           </>

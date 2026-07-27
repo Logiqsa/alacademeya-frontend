@@ -131,6 +131,7 @@ const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
           ? `EGP ${item.finalPrice.toLocaleString()}`
           : "--",
       status: mapStatus(item.status || sub.status),
+      rawStatus: item.status || sub.status,
       studentId,
     };
   });
@@ -183,8 +184,23 @@ const SubscriptionPage = () => {
     fetchData();
   }, []);
 
-  const tableRows = subscriptions.flatMap((sub) =>
+  const allTableRows = subscriptions.flatMap((sub) =>
     mapSubscriptionToRows(sub, gradeNameByStudentId),
+  );
+  const activeStudentSubjects = new Set(
+    allTableRows
+      .filter((row) => row.rawStatus === "active")
+      .map(
+        (row) =>
+          `${row.studentId || row.name}:${row.subjectId || row.subjectName}`,
+      ),
+  );
+  const tableRows = allTableRows.filter(
+    (row) =>
+      !["ended", "expired", "completed"].includes(row.rawStatus) ||
+      !activeStudentSubjects.has(
+        `${row.studentId || row.name}:${row.subjectId || row.subjectName}`,
+      ),
   );
 
   const studentOptions = [...new Set(tableRows.map((row) => row.name))];
@@ -224,20 +240,19 @@ const SubscriptionPage = () => {
   );
 
   const renewSubject = (row) => {
-    if (!row.studentId || !row.subjectId) return;
-    navigate(`/parent/students/${row.studentId}/subscription/packages`, {
+    if (!row.groupId) return;
+    navigate(`/parent/subscriptions/${row.groupId}/renew`, {
       state: {
-        parentFlow: true,
-        skipProfileCreation: true,
-        studentId: row.studentId,
-        selectedSubjects: [
-          {
-            id: row.subjectId,
-            name: row.subjectName,
-          },
-        ],
+        subjectId: row.subjectId,
       },
     });
+  };
+  const addSubject = (group) => {
+    const sourceRow = group.rows.find(
+      (row) => row.rawStatus === "active" && row.groupId,
+    );
+    if (!sourceRow?.groupId) return;
+    navigate(`/parent/subscriptions/${sourceRow.groupId}/add-subject`);
   };
 
   return (
@@ -380,9 +395,23 @@ const SubscriptionPage = () => {
                           </p>
                         </div>
                       </div>
-                      <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#123C91] shadow-sm">
-                        {group.rows.length} مادة
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#123C91] shadow-sm">
+                          {group.rows.length} مادة
+                        </span>
+                        {group.rows.some(
+                          (row) => row.rawStatus === "active" && row.groupId,
+                        ) && (
+                          <button
+                            type="button"
+                            onClick={() => addSubject(group)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#123C91] px-4 py-2 text-sm font-semibold text-white"
+                          >
+                            <Plus size={16} />
+                            إضافة مادة
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <SubscriptionTable

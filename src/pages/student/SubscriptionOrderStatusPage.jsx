@@ -1,5 +1,10 @@
 import { useCallback, useContext, useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import toast from "react-hot-toast";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
@@ -18,6 +23,10 @@ const terminalPayments = new Set(["paid", "failed", "refunded"]);
 const SubscriptionOrderStatusPage = () => {
   const { user } = useContext(AuthContext);
   const userRole = user?.role;
+  const { pathname } = useLocation();
+  const isWhopReturn = pathname === "/payment/success";
+  const hasActiveAccount =
+    user?.isActive === true || user?.registrationStatus === "active";
   const { orderId: pathOrderId } = useParams();
   const [searchParams] = useSearchParams();
   const orderId = pathOrderId || searchParams.get("orderId");
@@ -51,10 +60,30 @@ const SubscriptionOrderStatusPage = () => {
       }
       return current;
     } catch (error) {
-      if (!quiet) toast.error(error.response?.data?.message || "تعذر تحميل حالة الطلب");
+      if (
+        isWhopReturn &&
+        hasActiveAccount &&
+        [403, 404].includes(error.response?.status)
+      ) {
+        navigate(
+          userRole === "parent" ? "/parent-dashboard" : "/student-dashboard",
+          { replace: true },
+        );
+        return null;
+      }
+      if (!quiet)
+        toast.error(
+          error.response?.data?.message || "تعذر تحميل حالة الطلب",
+        );
       return null;
     } finally { if (!quiet) setLoading(false); }
-  }, [navigate, orderId, userRole]);
+  }, [
+    hasActiveAccount,
+    isWhopReturn,
+    navigate,
+    orderId,
+    userRole,
+  ]);
 
   useEffect(() => {
     const initialRefresh = window.setTimeout(() => refresh(), 0);
