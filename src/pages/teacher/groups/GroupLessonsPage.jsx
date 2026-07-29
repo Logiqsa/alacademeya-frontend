@@ -88,6 +88,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [filterTime, setFilterTime] = useState("جميع الاوقات");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
 
   const [groupName, setGroupName] = useState(location.state?.groupName || "");
   const [groupTeacher, setGroupTeacher] = useState(
@@ -406,10 +407,10 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       (filterStatus === "جميع الحالات" || l.status === filterStatus),
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginatedLessons = filtered.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE,
+    (page - 1) * pageSize,
+    page * pageSize,
   );
 
   const stats = {
@@ -704,6 +705,8 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           displayedCount={paginatedLessons.length}
           onChange={(p) => setPage(p)}
           unitLabel="حصة"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
       </div>
 

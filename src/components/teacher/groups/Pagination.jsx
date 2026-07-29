@@ -1,14 +1,24 @@
 import { ChevronRight, ChevronLeft } from "lucide-react";
 
-const Pagination = ({ page, totalItems, itemsPerPage = 6, onChange }) => {
+const Pagination = ({ page, totalItems, itemsPerPage = 6, onChange, onPageSizeChange, pageSizeOptions = [5, 10, 20] }) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   if (totalPages <= 1) return null;
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 text-sm text-gray-500 mt-6">
-      <span className="text-xs sm:text-sm text-center sm:text-right">
-        عرض {Math.min(itemsPerPage, totalItems)} من اصل {totalItems} مجموعة
-      </span>
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+        <span className="text-xs sm:text-sm text-center sm:text-right">
+          عرض {Math.min(itemsPerPage, totalItems)} من اصل {totalItems} مجموعة
+        </span>
+        {onPageSizeChange && (
+          <label className="flex items-center gap-2 text-xs text-gray-500">
+            عدد الصفوف
+            <select value={itemsPerPage} onChange={(event) => onPageSizeChange(Number(event.target.value))} className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-700 outline-none focus:border-[#123C91]">
+              {[...new Set([itemsPerPage, ...pageSizeOptions])].sort((a, b) => a - b).map((size) => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </label>
+        )}
+      </div>
 
       <div className="flex items-center gap-1 flex-wrap justify-center">
         <button

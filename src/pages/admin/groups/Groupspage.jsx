@@ -41,6 +41,7 @@ const GroupsPage = () => {
   const [filterSubject, setFilterSubject] = useState("جميع المواد");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
 
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -196,10 +197,10 @@ const GroupsPage = () => {
       (filterStatus === "جميع الحالات" || g.status === filterStatus),
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginatedGroups = filtered.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
+    (page - 1) * pageSize,
+    page * pageSize,
   );
 
   const stats = {
@@ -278,6 +279,8 @@ const GroupsPage = () => {
           totalItems={filtered.length}
           displayedCount={paginatedGroups.length}
           unitLabel="مجموعة"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
       </div>
     </AdminLayout>

@@ -42,6 +42,7 @@ const BlogsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [filterCategory, setFilterCategory] = useState("جميع التصنيفات");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
 
   // حالات نافذة تأكيد الحذف
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -115,8 +116,8 @@ const BlogsPage = () => {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const stats = {
     draft: posts.filter((p) => p.status === "draft").length,
@@ -224,6 +225,8 @@ const BlogsPage = () => {
           totalItems={filtered.length}
           displayedCount={paginated.length}
           unitLabel="مقال"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
 
         {/* نافذة تأكيد الحذف الاحترافية (Professional Delete Modal) */}

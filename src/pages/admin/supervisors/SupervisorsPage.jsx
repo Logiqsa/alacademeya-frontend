@@ -35,6 +35,7 @@ const SupervisorsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [filterRole, setFilterRole] = useState("جميع الصلاحيات");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [modalOpen, setModalOpen] = useState(false);
 
   const [supervisors, setSupervisors] = useState([]);
@@ -94,8 +95,8 @@ const SupervisorsPage = () => {
     [supervisors, search, filterStatus, filterRole],
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const stats = {
     paused: supervisors.filter((s) => s.status === "متوقف").length,
@@ -232,6 +233,8 @@ const SupervisorsPage = () => {
           totalItems={filtered.length}
           displayedCount={paginated.length}
           unitLabel="مشرف"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
 
         {/* Add Supervisor Modal */}

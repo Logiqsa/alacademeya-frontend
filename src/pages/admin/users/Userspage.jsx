@@ -114,6 +114,7 @@ const UsersPage = () => {
   const [filterSubject, setFilterSubject] = useState("جميع المواد");
   const [filterCurriculum, setFilterCurriculum] = useState("جميع المناهج");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -253,15 +254,15 @@ const UsersPage = () => {
             u.teacherCurriculums?.includes(filterCurriculum)))),
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
 
   const paginatedUsers = filtered.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
+    (page - 1) * pageSize,
+    page * pageSize,
   );
 
   // ⚠️ الأرقام دي بتحسب من كل اليوزرز اللي جم من السيرفر (visibleUsers) مش
@@ -456,6 +457,8 @@ const UsersPage = () => {
           totalItems={filtered.length}
           displayedCount={paginatedUsers.length}
           unitLabel="مستخدم"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
       </div>
     </AdminLayout>

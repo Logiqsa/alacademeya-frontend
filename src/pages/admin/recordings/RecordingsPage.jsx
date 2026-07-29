@@ -24,6 +24,7 @@ const RecordingsPages = () => {
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState("جميع المجموعات");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [modalOpen, setModalOpen] = useState(false);
   const [recordings, setRecordings] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -70,8 +71,8 @@ const RecordingsPages = () => {
       (filterGroup === "جميع المجموعات" || r.group === filterGroup)
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <AdminLayout>
@@ -119,6 +120,8 @@ const RecordingsPages = () => {
           totalItems={filtered.length}
           displayedCount={paginated.length}
           unitLabel="تسجيل"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
 
         {/* Modal */}

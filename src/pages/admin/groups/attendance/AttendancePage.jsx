@@ -41,6 +41,7 @@ const AttendancePage = () => {
   const { groupId } = useParams();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
 
   const [groupName, setGroupName] = useState("");
   const [records, setRecords] = useState([]);
@@ -207,8 +208,8 @@ const AttendancePage = () => {
 
   const filtered = records.filter((r) => r.studentName.includes(search));
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginatedRecords = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginatedRecords = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const stats = {
     absences: records.reduce((sum, r) => sum + r.absenceCount, 0),
@@ -276,6 +277,8 @@ const AttendancePage = () => {
           totalItems={filtered.length}
           displayedCount={paginatedRecords.length}
           unitLabel="طالب"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
       </div>
     </AdminLayout>

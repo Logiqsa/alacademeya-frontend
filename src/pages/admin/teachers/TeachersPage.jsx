@@ -79,6 +79,7 @@ const TeachersPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const month = useMemo(currentMonth, []);
 
@@ -152,8 +153,8 @@ const TeachersPage = () => {
       teacher.name.includes(search) ||
       teacher.email.toLowerCase().includes(search.toLowerCase()),
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
   const totalMinutes = teachers.reduce(
     (sum, teacher) => sum + Number(teacher.monthlyMinutes || 0),
     0,
@@ -352,6 +353,8 @@ const TeachersPage = () => {
             totalItems={filtered.length}
             displayedCount={visible.length}
             unitLabel="معلم"
+            pageSize={pageSize}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
           />
         )}
 
