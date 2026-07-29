@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { CheckCircle2, MessageCircle, Users, UserRound, X } from "lucide-react";
+import { CheckCircle2, MessageCircle, Users, UserCheck, UserRound, X } from "lucide-react";
 
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
@@ -10,6 +10,7 @@ import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilt
 import Pagination from "../../../components/teacher/groups/lessons/Paginationn";
 import EndSessionDetailsModal from "../../../components/teacher/groups/lessons/EndSessionDetailsModal";
 import { UserDetailsModal } from "../../../components/admin/users/Userstable";
+import { AssignSubstituteModal } from "../../../components/admin/groups/Groupstable";
 import {
   getClassroomSessions,
   getClassroom,
@@ -93,6 +94,8 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     routedGroupTeacher || "—",
   );
   const [groupStudents, setGroupStudents] = useState([]);
+  const [groupDetails, setGroupDetails] = useState(null);
+  const [showSubstituteModal, setShowSubstituteModal] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -170,6 +173,23 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           ? classroomData.teacher.user
           : classroomData.teacher?.user?.id ||
             classroomData.teacher?.user?._id;
+      const substituteTeacherId =
+        typeof classroomData.substituteTeacher === "string"
+          ? classroomData.substituteTeacher
+          : classroomData.substituteTeacher?.id ||
+            classroomData.substituteTeacher?._id ||
+            classroomData.substituteTeacher?.user?.id ||
+            classroomData.substituteTeacher?.user?._id;
+      const substituteTeacherName =
+        classroomData.substituteTeacher?.user?.fullName ||
+        classroomData.substituteTeacher?.fullName;
+      setGroupDetails({
+        id: classroomData.id || classroomData._id || groupId,
+        teacherId: teacherId || routedGroupTeacherId,
+        teacher: nestedTeacherName || routedGroupTeacher || "—",
+        substituteTeacherId,
+        substituteTeacher: substituteTeacherName,
+      });
       const profileOrUserId = teacherId || routedGroupTeacherId;
       if (nestedTeacherName) setGroupTeacher(nestedTeacherName);
       if (profileOrUserId) {
@@ -556,6 +576,15 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <button
                 type="button"
+                onClick={() => setShowSubstituteModal(true)}
+                disabled={!groupDetails}
+                className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <UserCheck size={20} />
+                <span>اختيار معلم بديل</span>
+              </button>
+              <button
+                type="button"
                 onClick={() =>
                   navigate("/admin/messages", {
                     state: {
@@ -693,6 +722,16 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         open={Boolean(selectedPerson)}
         onClose={() => setSelectedPerson(null)}
         user={selectedPerson}
+      />
+      <AssignSubstituteModal
+        open={showSubstituteModal}
+        onClose={() => setShowSubstituteModal(false)}
+        group={
+          groupDetails
+            ? { ...groupDetails, teacher: groupTeacher }
+            : null
+        }
+        onChanged={fetchData}
       />
     </Layout>
   );

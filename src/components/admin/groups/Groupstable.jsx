@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, UserPlus, Users, UserCheck, X, ChevronDown, ClipboardList, BookOpen, Search, MessageCircle } from "lucide-react";
+import { MoreVertical, UserPlus, Users, X, ChevronDown, ClipboardList, BookOpen, Search, MessageCircle } from "lucide-react";
 import {
   getTeachers,
   getAllStudents,
@@ -428,7 +428,7 @@ const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
 };
 
 // ─── Assign Substitute Modal ────────────────────────────────────────────────────
-const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
+export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
   const [teachers, setTeachers] = useState([]);
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [loading, setLoading] = useState(false);
@@ -547,7 +547,6 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onO
     { key: "attendance", label: "سجل الحضور", Icon: ClipboardList, isNav: true },
     { key: "add-student", label: "إضافة طالب", Icon: UserPlus },
     { key: "assign-teacher", label: "تعيين معلم", Icon: Users },
-    { key: "assign-substitute", label: "تعيين معلم بديل", Icon: UserCheck },
   ];
 
   const updatePosition = () => {
