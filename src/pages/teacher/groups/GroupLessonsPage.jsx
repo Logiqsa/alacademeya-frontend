@@ -562,7 +562,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
                 }
                 className="w-full sm:w-40 h-12 rounded-lg bg-white border border-[#E5E5E5] text-[#1A1A1A] flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
               >
-                {hasSchedule ? "تعديل الجدول" : "مواعيد الحصص"}
+                {hasSchedule ? "تعديل جدول المجموعة" : "مواعيد الحصص"}
               </button>
               <button
                 onClick={() => navigate(`/teacher/groups/${groupId}/lessons/new`)}
