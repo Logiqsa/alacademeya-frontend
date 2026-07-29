@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { X, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { createUser, updateUser, getCountries } from "../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان ملف api.js عندك
 import { getArabicCountryName } from "../../../utils/countryName";
+import { buildInternationalPhone } from "../../../utils/phone";
 
 const getFlagUrl = (code) => {
   if (!code) return null;
@@ -322,12 +323,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
   // If data.phone already starts with "+", it means we couldn't confidently
   // strip a calling code from it (unmatched/unknown country) — send it as-is
   // rather than risk prepending a code on top of it.
-  const buildFullPhone = () =>
-    data.phone.startsWith("+")
-      ? data.phone
-      : phoneCode
-        ? `${phoneCode}${data.phone}`
-        : data.phone;
+  const buildFullPhone = () => buildInternationalPhone(phoneCode, data.phone);
 
   const handleSubmit = async () => {
     if (!validate()) return;

@@ -494,7 +494,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
 
   return (
     <Layout>
-      <Breadcrumbs homeTo={isAdmin ? "/admin-dashboard" : "/teacher-dashboard"} />
+      {isAdmin && <Breadcrumbs homeTo="/admin-dashboard" />}
 
       <div
         className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right relative"

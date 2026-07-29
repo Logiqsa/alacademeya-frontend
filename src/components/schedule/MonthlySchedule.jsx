@@ -26,21 +26,21 @@ const WEEKDAY_HEADERS = [
 ];
 
 const STATUS_LABELS = {
-  scheduled: "مجدولة — لم تبدأ بعد",
+  scheduled: "لم تبدأ",
   completed: "مكتملة",
   cancelled: "ملغاة",
   live: "تُعقد الآن",
   active: "نشطة",
   missed: "بدأت متأخرة",
-  not_started: "لم تُعقد",
-  expired_schedule: "لم تُعقد",
+  not_started: "لم تبدأ",
+  expired_schedule: "لم تبدأ",
 };
 
 const badgeClass = (lesson) => {
   if (lesson.status === "completed") return "bg-blue-100 text-[#123C91]";
   if (lesson.status === "missed") return "bg-orange-100 text-orange-700";
-  if (lesson.status === "not_started") return "bg-orange-50 text-orange-600";
-  if (lesson.status === "expired_schedule") return "bg-red-50 text-red-500";
+  if (["not_started", "expired_schedule"].includes(lesson.status))
+    return "bg-blue-50 text-[#123C91]";
   if (lesson.isVirtual || lesson.status === "scheduled")
     return "bg-blue-50 text-[#123C91]";
   if (["live", "active"].includes(lesson.status))

@@ -195,7 +195,7 @@ const CreateLessonPage = ({ role = "teacher" }) => {
 
   return (
     <Layout>
-      <Breadcrumbs homeTo={isAdmin ? "/admin-dashboard" : "/teacher-dashboard"} />
+      {isAdmin && <Breadcrumbs homeTo="/admin-dashboard" />}
       <h2 className="font-[IBM_Plex_Sans_Arabic] text-xl sm:text-2xl font-bold text-[#123C91]">
         إنشاء حصة جديدة
       </h2>

@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import { getArabicCountryName } from "../../utils/countryName";
+import { buildInternationalPhone } from "../../utils/phone";
 import {
   register,
   verifyAccount,
@@ -330,7 +331,7 @@ const RegisterForm = ({ type }) => {
         fullName: formData.fullName,
         username: formData.username,
         email: formData.email,
-        phone: phoneCode ? `${phoneCode}${formData.phone}` : formData.phone,
+        phone: buildInternationalPhone(phoneCode, formData.phone),
         password: formData.password,
         passwordConfirm: formData.passwordConfirm,
         country: formData.country,
