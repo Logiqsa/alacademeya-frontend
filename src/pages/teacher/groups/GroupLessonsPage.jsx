@@ -10,7 +10,7 @@ import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilt
 import Pagination from "../../../components/teacher/groups/lessons/Paginationn";
 import EndSessionDetailsModal from "../../../components/teacher/groups/lessons/EndSessionDetailsModal";
 import { UserDetailsModal } from "../../../components/admin/users/Userstable";
-import { AssignSubstituteModal } from "../../../components/admin/groups/Groupstable";
+import SubstituteTeacherModal from "../../../components/admin/groups/SubstituteTeacherModal";
 import {
   getClassroomSessions,
   getClassroom,
@@ -577,8 +577,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
               <button
                 type="button"
                 onClick={() => setShowSubstituteModal(true)}
-                disabled={!groupDetails}
-                className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF]"
               >
                 <UserCheck size={20} />
                 <span>اختيار معلم بديل</span>
@@ -723,16 +722,19 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         onClose={() => setSelectedPerson(null)}
         user={selectedPerson}
       />
-      <AssignSubstituteModal
-        open={showSubstituteModal}
-        onClose={() => setShowSubstituteModal(false)}
-        group={
-          groupDetails
-            ? { ...groupDetails, teacher: groupTeacher }
-            : null
-        }
-        onChanged={fetchData}
-      />
+      {showSubstituteModal && (
+        <SubstituteTeacherModal
+          groupId={groupDetails?.id || groupId}
+          primaryTeacherId={
+            groupDetails?.teacherId || routedGroupTeacherId
+          }
+          primaryTeacherName={groupTeacher}
+          currentTeacherId={groupDetails?.substituteTeacherId}
+          currentTeacherName={groupDetails?.substituteTeacher}
+          onClose={() => setShowSubstituteModal(false)}
+          onChanged={fetchData}
+        />
+      )}
     </Layout>
   );
 };
