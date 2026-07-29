@@ -9,6 +9,13 @@ import {
   getStudentSubscriptionOptions,
 } from "../../services/APIService";
 
+const PAYMENT_CURRENCIES = [
+  { value: "EGP", label: "الجنيه المصري (EGP)" },
+  { value: "USD", label: "الدولار الأمريكي (USD)" },
+  { value: "SAR", label: "الريال السعودي (SAR)" },
+  { value: "AED", label: "الدرهم الإماراتي (AED)" },
+];
+
 const StudentPackagesPage = () => {
   const navigate = useNavigate();
   const { studentId: routeStudentId } = useParams();
@@ -20,6 +27,7 @@ const StudentPackagesPage = () => {
   const [subjects, setSubjects] = useState(selectedSubjects);
   const [packagesBySubject, setPackagesBySubject] = useState({});
   const [selections, setSelections] = useState({});
+  const [currency, setCurrency] = useState(state?.currency || "");
   const [loading, setLoading] = useState(true);
   const isParentFlow = Boolean(state?.parentFlow || routeStudentId);
 
@@ -96,6 +104,7 @@ const StudentPackagesPage = () => {
 
   const handleNext = () => {
     if (!selectedCount) return toast.error("يجب اختيار مادة واحدة على الأقل");
+    if (!currency) return toast.error("اختر العملة التي تريد الدفع بها");
     const items = Object.entries(selections).map(([subject, packageId]) => ({
       subject,
       package: packageId,
@@ -108,6 +117,7 @@ const StudentPackagesPage = () => {
           isParentFlow || state?.skipProfileCreation,
         studentId: state?.studentId || routeStudentId,
         orderItems: items,
+        currency,
       },
     });
   };
@@ -144,7 +154,29 @@ const StudentPackagesPage = () => {
               {subjects.some(({ id }) => !(packagesBySubject[id] || []).length) && <p className="text-sm text-amber-700">لا توجد باقات متاحة حالياً لبعض المواد.</p>}
             </div>
           )}
-          <button disabled={loading || !selectedCount} onClick={handleNext} className="w-full h-12 mt-5 rounded-lg bg-[#123C91] text-white font-medium disabled:opacity-60">مراجعة الطلب</button>
+
+          {!loading && selectedCount > 0 && (
+            <div className="mt-5">
+              <label htmlFor="payment-currency" className="block mb-2 text-sm font-medium text-[#1F2937]">
+                اختر عملة الدفع
+              </label>
+              <select
+                id="payment-currency"
+                value={currency}
+                onChange={(event) => setCurrency(event.target.value)}
+                className="w-full h-12 px-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] text-sm outline-none focus:border-[#123C91]"
+              >
+                <option value="">اختر العملة</option>
+                {PAYMENT_CURRENCIES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button disabled={loading || !selectedCount || !currency} onClick={handleNext} className="w-full h-12 mt-5 rounded-lg bg-[#123C91] text-white font-medium disabled:opacity-60">مراجعة الطلب</button>
         </div>
       </div>
     </AuthLayout>

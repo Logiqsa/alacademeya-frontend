@@ -151,10 +151,11 @@ export const getSubscriptionRenewOptions = (id) =>
 // ─── Student subscription orders ─────────────────────────────────────────────
 // Prices and totals are intentionally never accepted here. The backend is the
 // authoritative source for all monetary values.
-export const createSubscriptionOrder = (items, studentId) =>
+export const createSubscriptionOrder = (items, studentId, currency) =>
   API.post("/subscription-orders", {
     items,
     ...(studentId ? { studentId } : {}),
+    ...(currency ? { currency } : {}),
   });
 export const createRenewalSubscriptionOrder = (sourceSubscription, items) =>
   API.post("/subscription-orders", {

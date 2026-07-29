@@ -5,7 +5,8 @@ import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { completeStudentProfile, createSubscriptionOrder, startSubscriptionOrderCheckout } from "../../services/APIService";
 
-const money = (value) => `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
+const money = (value, currency = "EGP") =>
+  `${Number(value || 0).toLocaleString("ar-EG")} ${currency}`;
 const responseData = (response) => response?.data?.data ?? response?.data;
 const isExistingProfileError = (error) => {
   const message = String(error.response?.data?.message || "").toLowerCase();
@@ -48,6 +49,7 @@ const StudentOrderSummaryPage = () => {
             package: packageId,
           })),
           state?.studentId,
+          state?.currency,
         );
         const created = responseData(response);
         if (!active) return;
@@ -102,12 +104,12 @@ const StudentOrderSummaryPage = () => {
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               {(order.items || []).map((item) => (
                 <div key={item.id || `${item.subject}-${item.package}`} className="px-4 py-3 border-b last:border-b-0 border-gray-100">
-                  <div className="flex justify-between gap-3"><div><strong>{item.subjectName}</strong><small className="block text-gray-500">{item.packageName} · {item.sessions} حصة</small></div><strong className="text-[#123C91]">{money(item.finalPrice)}</strong></div>
-                  {(item.discount || 0) > 0 && <div className="text-xs text-gray-500 mt-1">السعر الأصلي {money(item.originalPrice)} — الخصم {money(item.discount)}</div>}
+                  <div className="flex justify-between gap-3"><div><strong>{item.subjectName}</strong><small className="block text-gray-500">{item.packageName} · {item.sessions} حصة</small></div><strong className="text-[#123C91]">{money(item.finalPrice, order.currency || state?.currency)}</strong></div>
+                  {(item.discount || 0) > 0 && <div className="text-xs text-gray-500 mt-1">السعر الأصلي {money(item.originalPrice, order.currency || state?.currency)} — الخصم {money(item.discount, order.currency || state?.currency)}</div>}
                 </div>
               ))}
             </div>
-            <div className="flex justify-between border border-gray-200 rounded-xl p-4 mt-5 text-lg font-bold"><span>الإجمالي</span><strong className="text-[#123C91]">{money(order.totalAmount)}</strong></div>
+            <div className="flex justify-between border border-gray-200 rounded-xl p-4 mt-5 text-lg font-bold"><span>الإجمالي</span><strong className="text-[#123C91]">{money(order.totalAmount, order.currency || state?.currency)}</strong></div>
           </>}
 
           {order && (
