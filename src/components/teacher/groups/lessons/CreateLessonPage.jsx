@@ -202,6 +202,8 @@ const CreateLessonPage = ({ role = "teacher" }) => {
 
       const code = err?.response?.data?.message;
       const KNOWN_ERRORS = {
+        INVALID_SCHEDULED_DATE:
+          "موعد الحصة المؤجلة غير صالح أو قد مضى، من فضلك اختر موعدًا مستقبليًا",
         SESSION_ALREADY_EXISTS:
           "يوجد حصة أخرى مجدولة لهذه المجموعة في نفس الموعد، من فضلك اختر تاريخًا أو وقتًا مختلفًا",
         "There is no classroom schedule for today":
