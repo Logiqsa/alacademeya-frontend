@@ -188,6 +188,8 @@ const CreateLessonPage = ({ role = "teacher" }) => {
       payload.append("description", "");
       if (postponedDate) {
         payload.append("scheduledDate", postponedDate.toISOString());
+        payload.append("isPostponed", "true");
+        payload.append("scheduleSource", "manual");
       }
 
       await createClassroomSession(payload);

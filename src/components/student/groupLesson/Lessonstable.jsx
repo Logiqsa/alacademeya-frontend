@@ -7,6 +7,7 @@ const StatusBadge = ({ status }) => {
     منتهية: "bg-blue-100 text-[#123C91]",
     ملغية: "bg-[#1F293726] text-[#1F2937]",
     "بدأت متأخرة": "bg-[#FF8A0026] text-[#B45309]",
+    مؤجلة: "bg-orange-100 text-orange-700",
     "لم تُعقد": "bg-red-50 text-red-500",
   };
   return (

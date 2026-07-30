@@ -355,6 +355,15 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           new Date(s.scheduledDate) < new Date();
         const sessionId =
           s.id || s._id || s.sessionId || s.session?.id || s.session?._id;
+        const isPostponed =
+          s.isPostponed === true ||
+          s.postponed === true ||
+          s.isRescheduled === true ||
+          ["manual", "postponed"].includes(
+            String(s.scheduleSource || "").toLowerCase(),
+          ) ||
+          String(s.status || "").toLowerCase() === "postponed" ||
+          String(s.title || "").includes("مؤجلة");
         return {
           id: sessionId,
           title: s.title || "حصة",
@@ -381,7 +390,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
               : (s.duration ?? "--"),
           attendance,
           absence,
-          status: isMissed
+          status: isPostponed
+            ? "مؤجلة"
+            : isMissed
             ? "لم تُعقد"
             : ["scheduled", "upcoming"].includes(s.status)
               ? "مجدولة — لم تبدأ بعد"

@@ -3,6 +3,7 @@ import { Search, ChevronDown } from 'lucide-react';
 const STATUS_OPTIONS = [
   "جميع الحالات",
   "مجدولة — لم تبدأ بعد",
+  "مؤجلة",
   "مباشر الآن",
   "منتهية",
   "بدأت متأخرة",

@@ -137,6 +137,15 @@ const StudentGroupLessonsPage = () => {
         .map((s) => {
           const date = new Date(s.scheduledDate || s.startAt);
           const status = computeDisplayStatus(s);
+          const isPostponed =
+            s.isPostponed === true ||
+            s.postponed === true ||
+            s.isRescheduled === true ||
+            ["manual", "postponed"].includes(
+              String(s.scheduleSource || "").toLowerCase(),
+            ) ||
+            String(s.status || "").toLowerCase() === "postponed" ||
+            String(s.title || "").includes("مؤجلة");
           return {
             id:
               s.id ??
@@ -157,7 +166,7 @@ const StudentGroupLessonsPage = () => {
               hour12: true,
             }),
             duration: s.duration || 45,
-            status: STATUS_LABELS[status] || status,
+            status: isPostponed ? "مؤجلة" : STATUS_LABELS[status] || status,
             _sortDate: date,
           };
         })

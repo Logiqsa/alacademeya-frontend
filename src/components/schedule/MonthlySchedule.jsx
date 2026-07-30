@@ -35,9 +35,22 @@ const STATUS_LABELS = {
   missed: "بدأت متأخرة",
   not_started: "لم تبدأ",
   expired_schedule: "لم تبدأ",
+  postponed: "مؤجلة",
 };
 
+const isPostponedLesson = (lesson) =>
+  lesson.isPostponed === true ||
+  lesson.postponed === true ||
+  lesson.isRescheduled === true ||
+  ["manual", "postponed"].includes(
+    String(lesson.scheduleSource || "").toLowerCase(),
+  ) ||
+  String(lesson.status || "").toLowerCase() === "postponed" ||
+  String(lesson.title || "").includes("مؤجلة");
+
 const badgeClass = (lesson) => {
+  if (isPostponedLesson(lesson))
+    return "bg-orange-100 text-orange-700";
   if (lesson.status === "completed") return "bg-blue-100 text-[#123C91]";
   if (lesson.status === "missed") return "bg-orange-100 text-orange-700";
   if (["not_started", "expired_schedule"].includes(lesson.status))
@@ -121,6 +134,9 @@ const filterBeforeEnrollment = (days, enrollmentStarts) =>
   }));
 
 const withDisplayStatus = (lesson, date) => {
+  if (isPostponedLesson(lesson)) {
+    return { ...lesson, status: "postponed", isPostponed: true };
+  }
   if (lesson.status !== "scheduled") return lesson;
   const scheduledAt = lesson.scheduledDate
     ? new Date(lesson.scheduledDate)
@@ -270,7 +286,7 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
       window.open(lesson.meetingLink, "_blank", "noopener,noreferrer");
       return;
     }
-    if (lesson.status === "scheduled") {
+    if (["scheduled", "postponed"].includes(lesson.status)) {
       toast("لم تبدأ الحصة بعد، يرجى الدخول في الموعد المحدد لها.", { icon: "⏰" });
       return;
     }
