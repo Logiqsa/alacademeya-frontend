@@ -227,11 +227,6 @@ const StudentDetailsPage = () => {
           />
         </div>
 
-        {/* Table */}
-        <div className="mt-4">
-          <StudentLessonsTable lessons={paginatedLessons} />
-        </div>
-
         {/* Pagination */}
         <Paginationn
           page={page}
@@ -241,6 +236,12 @@ const StudentDetailsPage = () => {
           displayedCount={paginatedLessons.length}
           unitLabel="حصة"
         />
+
+        {/* Table */}
+        <div className="mt-4">
+          <StudentLessonsTable lessons={paginatedLessons} />
+        </div>
+
       </div>
     </TeacherLayout>
   );

@@ -33,15 +33,25 @@ export const getTeacherMissedSessions = async (teacher) => {
   ].filter(Boolean);
   if (!teacherIds.length) return [];
 
-  const classroomsResponse = await getClassrooms({
-    teacher: teacherIds[0],
-    limit: 100,
+  const classroomResults = await Promise.allSettled(
+    teacherIds.map((teacherId) =>
+      getClassrooms({ teacher: teacherId, limit: 100 }),
+    ),
+  );
+  const returnedClassrooms = [];
+  const seenClassrooms = new Set();
+  classroomResults.forEach((result) => {
+    if (result.status !== "fulfilled") return;
+    const body = result.value.data?.data ?? result.value.data ?? [];
+    const list = Array.isArray(body) ? body : body.classrooms || [];
+    list.forEach((classroom) => {
+      const classroomId = idOf(classroom);
+      const key = classroomId || classroom;
+      if (seenClassrooms.has(key)) return;
+      seenClassrooms.add(key);
+      returnedClassrooms.push(classroom);
+    });
   });
-  const body =
-    classroomsResponse.data?.data ?? classroomsResponse.data ?? [];
-  const returnedClassrooms = Array.isArray(body)
-    ? body
-    : body.classrooms || [];
   const matchedClassrooms = returnedClassrooms.filter((classroom) =>
     belongsToTeacher(classroom, teacherIds),
   );
@@ -68,31 +78,38 @@ export const getTeacherMissedSessions = async (teacher) => {
   return sessionResults.flatMap((result, index) => {
     if (result.status !== "fulfilled") return [];
     const classroom = classrooms[index];
-    const sessions = result.value.data?.data || [];
+    const sessionsBody = result.value.data?.data ?? result.value.data ?? [];
+    const sessions = Array.isArray(sessionsBody)
+      ? sessionsBody
+      : sessionsBody.sessions || [];
 
     return sessions.flatMap((session) => {
       const sessionId = idOf(session);
       if (sessionId && seen.has(sessionId)) return [];
 
-      const scheduledAt = new Date(session.scheduledDate || session.startAt);
+      const scheduledValue =
+        session.scheduledDate ||
+        session.scheduledAt ||
+        session.startAt ||
+        session.startTime ||
+        session.date;
+      const scheduledAt = new Date(scheduledValue);
       const isPast =
         !Number.isNaN(scheduledAt.getTime()) &&
         scheduledAt.getTime() < Date.now();
-      // status=missed يعني إن الحصة بدأت بعد موعدها، وليس غيابًا كاملًا.
-      // الغياب يُحسب فقط لو مر الموعد والحصة ما زالت لم تبدأ.
-      const isScheduleOnly =
-        session.isVirtual ||
-        session.virtual ||
-        !sessionId;
+      const status = String(session.status || "").toLowerCase();
+      // missed = لم يبدأ في الموعد/بدأ متأخرًا، أما not_started و
+      // expired_schedule فتعني أن الموعد انتهى من غير عقد الحصة.
       const isMissed =
-        isPast &&
-        isScheduleOnly &&
-        ["scheduled", "upcoming"].includes(session.status);
+        ["missed", "not_started", "expired_schedule", "absent"].includes(
+          status,
+        ) ||
+        (isPast && ["scheduled", "upcoming", "pending"].includes(status));
       if (!isMissed) return [];
 
       if (sessionId) seen.add(sessionId);
       return [{
-        id: sessionId || `${index}-${session.scheduledDate}`,
+        id: sessionId || `${index}-${scheduledValue}`,
         title: session.title || "حصة",
         classroomId: idOf(classroom),
         classroomName: nameOf(classroom.name),

@@ -15,31 +15,44 @@ import {
   getUser,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import LoadingState from "../../../components/shared/LoadingState";
 
 const PAGE_SIZE = 6;
 
 // ⚠️ عدّل القيم دي لو الباك إند بيرجع أسماء status مختلفة
 const STATUS_LABELS = {
   active: "نشطة",
+  inactive: "متوقفة",
   full: "مكتملة العدد",
   pending: "قيد التسجيل",
+  "pending-registration": "قيد التسجيل",
   paused: "متوقفة",
+  suspended: "متوقفة",
   completed: "منتهية",
+  ended: "منتهية",
 };
 
-const SUBJECT_FILTER_OPTIONS = [
-  "جميع المواد",
-  "رياضيات",
-  "علوم",
-  "لغة عربية",
-  "لغة إنجليزية",
-];
+const idOf = (value) =>
+  typeof value === "string" ? value : value?.id || value?._id || null;
+
+const localizedName = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.name?.ar || value.name?.en || value.ar || value.en || "";
+};
+
+const statusLabel = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return STATUS_LABELS[normalized] || value || "—";
+};
 
 const GroupsPage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filterSubject, setFilterSubject] = useState("جميع المواد");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
+  const [filterStage, setFilterStage] = useState("جميع المراحل");
+  const [filterGrade, setFilterGrade] = useState("جميع الصفوف");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
 
@@ -63,16 +76,22 @@ const GroupsPage = () => {
       const rawClassrooms = classroomsRes.data?.data || [];
 
       const subjectMap = Object.fromEntries(
-        subjects.map((s) => [s.id, s.name?.ar || s.name]),
+        subjects.map((subject) => [
+          idOf(subject),
+          localizedName(subject) || "—",
+        ]),
       );
       const gradeMap = Object.fromEntries(
-        grades.map((g) => [g.id, g.name?.ar || g.name]),
+        grades.map((grade) => [
+          idOf(grade),
+          localizedName(grade) || "—",
+        ]),
       );
 
       // مفيش endpoint بيرجع كل المراحل مرة واحدة (getCurriculumStages بياخد curriculum id)
       // فبنجيب اسم كل مرحلة فريدة (unique) موجودة في المجموعات عن طريق /stages/{id}
       const uniqueStageIds = [
-        ...new Set(rawClassrooms.map((c) => c.stage).filter(Boolean)),
+        ...new Set(rawClassrooms.map((classroom) => idOf(classroom.stage)).filter(Boolean)),
       ];
 
       const stageEntries = await Promise.all(
@@ -131,6 +150,9 @@ const GroupsPage = () => {
       };
 
       const mapped = rawClassrooms.map((c) => {
+        const subjectId = idOf(c.subject);
+        const gradeId = idOf(c.grade);
+        const stageId = idOf(c.stage);
         const teacherId =
           typeof c.teacher === "string"
             ? c.teacher
@@ -157,21 +179,27 @@ const GroupsPage = () => {
             teacherMap[substituteTeacherId] ||
             null,
           // subjectId خام لازم نبعته لما نضيف طالب/اشتراك للمجموعة دي (items array)
-          subjectId: c.subject,
+          subjectId,
           classroomType: ["private", "group"].includes(c.type) ? c.type : "group",
           // fallback: لو الماده/الصف مش لاقيينها في الـ map، نجرب نجيبها من بيانات المعلم نفسه
           subject:
-            subjectMap[c.subject] ||
-            c.teacher?.subjects?.find((s) => s.id === c.subject)?.name?.ar ||
+            subjectMap[subjectId] ||
+            (typeof c.subject === "object" ? localizedName(c.subject) : "") ||
+            c.teacher?.subjects?.find((s) => idOf(s) === subjectId)?.name?.ar ||
             "--",
           grade:
-            gradeMap[c.grade] ||
-            c.teacher?.grades?.find((g) => g.id === c.grade)?.name?.ar ||
+            gradeMap[gradeId] ||
+            (typeof c.grade === "object" ? localizedName(c.grade) : "") ||
+            c.teacher?.grades?.find((g) => idOf(g) === gradeId)?.name?.ar ||
             "--",
-          stage: stageMap[c.stage] || c.stage || "--",
+          stage:
+            stageMap[stageId] ||
+            (typeof c.stage === "object" ? localizedName(c.stage) : "") ||
+            stageId ||
+            "--",
           enrolled: c.students?.length || 0,
           capacity: c.capacity,
-          status: STATUS_LABELS[c.status] || c.status,
+          status: statusLabel(c.status),
         };
       });
 
@@ -188,14 +216,54 @@ const GroupsPage = () => {
     fetchGroups();
   }, [fetchGroups]);
 
-  const filtered = groups.filter(
-    (g) =>
-      (g.name?.includes(search) ||
-        (g.teacher ?? "").includes(search) ||
-        g.subject.includes(search)) &&
-      (filterSubject === "جميع المواد" || g.subject === filterSubject) &&
-      (filterStatus === "جميع الحالات" || g.status === filterStatus),
-  );
+  const subjectOptions = [
+    "جميع المواد",
+    ...new Set(groups.map((group) => group.subject).filter((name) => name && name !== "--")),
+  ];
+  const statusOptions = [
+    "جميع الحالات",
+    ...new Set(groups.map((group) => group.status).filter((status) => status && status !== "—")),
+  ];
+  const stageOptions = [
+    "جميع المراحل",
+    ...new Set(groups.map((group) => group.stage).filter((stage) => stage && stage !== "--")),
+  ];
+  const gradeOptions = [
+    "جميع الصفوف",
+    ...new Set(
+      groups
+        .filter(
+          (group) =>
+            filterStage === "جميع المراحل" || group.stage === filterStage,
+        )
+        .map((group) => group.grade)
+        .filter((grade) => grade && grade !== "--"),
+    ),
+  ];
+  const normalizedSearch = search.trim().toLocaleLowerCase("ar");
+  const filtered = groups.filter((group) => {
+    const matchesSearch =
+      !normalizedSearch ||
+      [group.name, group.teacher, group.subject].some((value) =>
+        String(value || "").toLocaleLowerCase("ar").includes(normalizedSearch),
+      );
+    const matchesSubject =
+      filterSubject === "جميع المواد" || group.subject === filterSubject;
+    const matchesStatus =
+      filterStatus === "جميع الحالات" || group.status === filterStatus;
+    const matchesStage =
+      filterStage === "جميع المراحل" || group.stage === filterStage;
+    const matchesGrade =
+      filterGrade === "جميع الصفوف" || group.grade === filterGrade;
+
+    return (
+      matchesSearch &&
+      matchesSubject &&
+      matchesStatus &&
+      matchesStage &&
+      matchesGrade
+    );
+  });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginatedGroups = filtered.slice(
@@ -247,41 +315,67 @@ const GroupsPage = () => {
               setPage(1);
             }}
             filterSubject={filterSubject}
+            subjectOptions={subjectOptions}
             onFilterSubjectChange={(v) => {
               setFilterSubject(v);
               setPage(1);
             }}
             filterStatus={filterStatus}
+            statusOptions={statusOptions}
             onFilterStatusChange={(v) => {
               setFilterStatus(v);
+              setPage(1);
+            }}
+            filterStage={filterStage}
+            stageOptions={stageOptions}
+            onFilterStageChange={(value) => {
+              setFilterStage(value);
+              setFilterGrade("جميع الصفوف");
+              setPage(1);
+            }}
+            filterGrade={filterGrade}
+            gradeOptions={gradeOptions}
+            onFilterGradeChange={(value) => {
+              setFilterGrade(value);
               setPage(1);
             }}
           />
         </div>
       
 
+        {!loading && !error && filtered.length > 0 && (
+          <Paginationn
+            page={page}
+            totalPages={totalPages}
+            onChange={setPage}
+            totalItems={filtered.length}
+            displayedCount={paginatedGroups.length}
+            unitLabel="مجموعة"
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
+        )}
+
         <div className="mt-4">
           {loading ? (
-            <div className="text-center py-10 text-[#575F69]">
-              جارٍ التحميل...
-            </div>
+            <LoadingState
+              label="جاري تحميل المجموعات..."
+              className="rounded-2xl border border-gray-200 bg-white"
+            />
           ) : error ? (
             <div className="text-center py-10 text-red-500">{error}</div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl border border-gray-200 bg-white py-14 text-center text-[#575F69]">
+              لا توجد مجموعات مطابقة.
+            </div>
           ) : (
             <GroupTable groups={paginatedGroups} onChanged={fetchGroups} />
           )}
         </div>
 
-        <Paginationn
-          page={page}
-          totalPages={totalPages}
-          onChange={setPage}
-          totalItems={filtered.length}
-          displayedCount={paginatedGroups.length}
-          unitLabel="مجموعة"
-          pageSize={pageSize}
-          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
-        />
       </div>
     </AdminLayout>
   );

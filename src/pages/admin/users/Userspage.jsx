@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
+import { getSavedPageSize } from "../../../utils/tablePagination";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import UsersStatsBar from "../../../components/admin/users/Usersstatsbar";
 import UsersFilters from "../../../components/admin/users/Usersfilters";
@@ -17,6 +18,7 @@ import {
   updateTeacherProfile,
 } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import LoadingState from "../../../components/shared/LoadingState";
 
 const PAGE_SIZE = 6;
 const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
@@ -62,6 +64,15 @@ const mapUser = (u) => ({
   isDeleted: !!u.isDeleted,
   isActive: !!u.isActive,
   registrationStatus: u.registrationStatus,
+  createdAt: u.createdAt,
+  lastLoginAt:
+    u.lastLoginAt ||
+    u.lastLogin ||
+    u.lastLoggedInAt ||
+    u.lastSeenAt ||
+    u.lastActiveAt ||
+    u.loginAt ||
+    null,
   status: statusOf(u),
   joinDate: u.createdAt
     ? new Date(u.createdAt).toLocaleDateString("en-CA")
@@ -114,7 +125,11 @@ const UsersPage = () => {
   const [filterSubject, setFilterSubject] = useState("جميع المواد");
   const [filterCurriculum, setFilterCurriculum] = useState("جميع المناهج");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
+  const [sort, setSort] = useState({
+    key: "lastLogin",
+    direction: "desc",
+  });
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -254,13 +269,48 @@ const UsersPage = () => {
             u.teacherCurriculums?.includes(filterCurriculum)))),
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const sortedUsers = [...filtered].sort((a, b) => {
+    let comparison;
+
+    if (["name", "role", "status"].includes(sort.key)) {
+      comparison = String(a[sort.key] || "").localeCompare(
+        String(b[sort.key] || ""),
+        "ar",
+        { sensitivity: "base" },
+      );
+    } else {
+      const field = sort.key === "joinDate" ? "createdAt" : "lastLoginAt";
+      const aValue = a[field] ? new Date(a[field]).getTime() : 0;
+      const bValue = b[field] ? new Date(b[field]).getTime() : 0;
+      comparison = aValue - bValue;
+
+      // لو الـ API لا يعيد آخر دخول، يظهر الأحدث تسجيلًا أولًا بدل ترتيب عشوائي.
+      if (sort.key === "lastLogin" && comparison === 0) {
+        comparison =
+          new Date(a.createdAt || 0).getTime() -
+          new Date(b.createdAt || 0).getTime();
+      }
+    }
+
+    return sort.direction === "asc" ? comparison : -comparison;
+  });
+
+  const handleSort = (key) => {
+    setSort((current) => ({
+      key,
+      direction:
+        current.key === key && current.direction === "asc" ? "desc" : "asc",
+    }));
+    setPage(1);
+  };
+
+  const totalPages = Math.max(1, Math.ceil(sortedUsers.length / pageSize));
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
 
-  const paginatedUsers = filtered.slice(
+  const paginatedUsers = sortedUsers.slice(
     (page - 1) * pageSize,
     page * pageSize,
   );
@@ -434,10 +484,28 @@ const UsersPage = () => {
         </div>
 
         <div className="mt-4">
-          {loading ? (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69] font-['IBM_Plex_Sans_Arabic']">
-              جاري التحميل...
+          {!loading && filtered.length > 0 && (
+            <div className="mb-4">
+              <Paginationn
+                page={page}
+                totalPages={totalPages}
+                onChange={setPage}
+                totalItems={filtered.length}
+                displayedCount={paginatedUsers.length}
+                unitLabel="مستخدم"
+                pageSize={pageSize}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
+              />
             </div>
+          )}
+          {loading ? (
+            <LoadingState
+              label="جاري تحميل المستخدمين..."
+              className="rounded-2xl border border-gray-200 bg-white shadow-sm"
+            />
           ) : (
             <UsersTable
               users={paginatedUsers}
@@ -446,20 +514,20 @@ const UsersPage = () => {
               onApprove={handleApprove}
               onToggleStatus={handleToggleStatus}
               onDelete={handleDelete}
+              sort={sort}
+              onSort={handleSort}
+              typeFilter={filterRole}
+              onTypeFilter={(role) => {
+                setFilterRole(role);
+                setFilterGrade("جميع الصفوف");
+                setFilterSubject("جميع المواد");
+                setFilterCurriculum("جميع المناهج");
+                setPage(1);
+              }}
             />
           )}
         </div>
 
-        <Paginationn
-          page={page}
-          totalPages={totalPages}
-          onChange={setPage}
-          totalItems={filtered.length}
-          displayedCount={paginatedUsers.length}
-          unitLabel="مستخدم"
-          pageSize={pageSize}
-          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
-        />
       </div>
     </AdminLayout>
   );

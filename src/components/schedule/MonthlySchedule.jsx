@@ -13,6 +13,7 @@ import {
   getMonthlySchedule,
   getMySubscriptions,
 } from "../../services/APIService";
+import LoadingState from "../shared/LoadingState";
 
 // نفس ترتيب DAY_NAMES بالظبط، بيتماشى مع weekdayIndex تحت (السبت = أول عمود)
 const WEEKDAY_HEADERS = [
@@ -313,9 +314,10 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
         </div>
 
         {loading ? (
-          <p className="py-12 text-center text-[#8C9198]">
-            جاري تحميل الجدول...
-          </p>
+          <LoadingState
+            label="جاري تحميل الجدول..."
+            className="rounded-xl bg-[#F9FAFA]"
+          />
         ) : error ? (
           <p className="py-12 text-center text-red-500">{error}</p>
         ) : (

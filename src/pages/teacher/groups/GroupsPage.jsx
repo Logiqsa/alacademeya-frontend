@@ -5,6 +5,7 @@ import GroupStatsBar from "../../../components/teacher/groups/GroupStatsBar";
 import GroupCard from "../../../components/teacher/groups/GroupCard";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import Pagination from "../../../components/teacher/groups/Pagination";
+import LoadingState from "../../../components/shared/LoadingState";
 import {
   getMyClassrooms,
   getAllSubjects,
@@ -171,10 +172,21 @@ const GroupsPage = () => {
         </div>
 
         {/* Groups grid */}
+        {/* Pagination */}
+        {!loading && !error && groups.length > 0 && (
+          <Pagination
+            page={page}
+            totalItems={groups.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onChange={setPage}
+          />
+        )}
+
         {loading ? (
-          <div className="text-center py-10 text-[#575F69]">
-            جارٍ التحميل...
-          </div>
+          <LoadingState
+            label="جاري تحميل المجموعات..."
+            className="rounded-2xl border border-gray-200 bg-white"
+          />
         ) : error ? (
           <div className="text-center py-10 text-red-500">{error}</div>
         ) : groups.length === 0 ? (
@@ -208,15 +220,6 @@ const GroupsPage = () => {
           </div>
         )}
 
-        {/* Pagination */}
-        {!loading && !error && groups.length > 0 && (
-          <Pagination
-            page={page}
-            totalItems={groups.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-            onChange={setPage}
-          />
-        )}
       </div>
     </TeacherLayout>
   );

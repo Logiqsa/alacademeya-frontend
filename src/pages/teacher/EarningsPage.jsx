@@ -88,9 +88,6 @@ const EarningsPage = () => {
           />
         </div>
 
-        {/* ── Table ── */}
-        <EarningsTable transactions={paginated} />
-
         {/* ── Pagination ── */}
         <Paginationn
           page={page}
@@ -100,6 +97,9 @@ const EarningsPage = () => {
           displayedCount={paginated.length}
           unitLabel="معاملة"
         />
+
+        {/* ── Table ── */}
+        <EarningsTable transactions={paginated} />
       </div>
     </TeacherLayout>
   );

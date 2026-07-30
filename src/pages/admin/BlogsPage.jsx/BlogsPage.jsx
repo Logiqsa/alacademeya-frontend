@@ -7,6 +7,8 @@ import BlogsStatsBar from "../../../components/admin/blogs/BlogsStatsBar";
 import BlogsFilters from "../../../components/admin/blogs/BlogsFilters";
 import BlogCard from "../../../components/admin/blogs/BlogCard";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
+import { getSavedPageSize } from "../../../utils/tablePagination";
+import LoadingState from "../../../components/shared/LoadingState";
 import {
   getBlogPosts,
   getBlogCategories,
@@ -42,7 +44,7 @@ const BlogsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [filterCategory, setFilterCategory] = useState("جميع التصنيفات");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
 
   // حالات نافذة تأكيد الحذف
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -198,11 +200,29 @@ const BlogsPage = () => {
           />
         </div>
 
-        {loading ? (
-          <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 flex items-center justify-center gap-2 text-[#575F69]">
-            <Loader2 size={18} className="animate-spin" />
-            جارٍ تحميل المقالات...
+        {!loading && filtered.length > 0 && (
+          <div className="mb-4">
+            <Paginationn
+              page={page}
+              totalPages={totalPages}
+              onChange={setPage}
+              totalItems={filtered.length}
+              displayedCount={paginated.length}
+              unitLabel="مقال"
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
           </div>
+        )}
+
+        {loading ? (
+          <LoadingState
+            label="جاري تحميل المقالات..."
+            className="rounded-2xl border border-gray-200 bg-white shadow-sm"
+          />
         ) : paginated.length > 0 ? (
           <div className="grid md:grid-cols-3 gap-6 mb-6">
             {paginated.map((post) => (
@@ -217,17 +237,6 @@ const BlogsPage = () => {
         ) : (
           <p className="text-center text-gray-400 py-12">لا توجد مقالات مطابقة</p>
         )}
-
-        <Paginationn
-          page={page}
-          totalPages={totalPages}
-          onChange={setPage}
-          totalItems={filtered.length}
-          displayedCount={paginated.length}
-          unitLabel="مقال"
-          pageSize={pageSize}
-          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
-        />
 
         {/* نافذة تأكيد الحذف الاحترافية (Professional Delete Modal) */}
         {deleteModalOpen && (

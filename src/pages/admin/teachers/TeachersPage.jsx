@@ -6,6 +6,7 @@ import {
   MessageCircle,
   MessagesSquare,
   Search,
+  CheckCircle2,
   Users,
   X,
 } from "lucide-react";
@@ -14,10 +15,13 @@ import toast from "react-hot-toast";
 
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Pagination from "../../../components/teacher/groups/students/Paginationn";
+import { getSavedPageSize } from "../../../utils/tablePagination";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
   getTeachers,
   getTeacherMonthlyReport,
+  updateTeacherProfile,
+  updateUser,
 } from "../../../services/APIService";
 import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 
@@ -79,8 +83,9 @@ const TeachersPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
   const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [approvingTeacher, setApprovingTeacher] = useState(false);
   const month = useMemo(currentMonth, []);
 
   const loadTeachers = useCallback(async () => {
@@ -129,13 +134,21 @@ const TeachersPage = () => {
               teacher.status === "approved"
                 ? "معتمد"
                 : teacher.status || "—",
+            isApproved: teacher.status === "approved",
+            createdAt: teacher.createdAt || teacher.user?.createdAt,
             raw: teacher,
             missedSessions,
           };
         }),
       );
 
-      setTeachers(rows);
+      setTeachers(
+        rows.sort(
+          (a, b) =>
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime(),
+        ),
+      );
     } catch (error) {
       console.error("Failed to load teachers:", error);
       toast.error(error.response?.data?.message || "تعذر تحميل المعلمين");
@@ -161,6 +174,36 @@ const TeachersPage = () => {
   );
 
   const openTeacherDetails = (teacher) => setSelectedTeacher(teacher);
+
+  const handleApproveTeacher = async () => {
+    if (!selectedTeacher || selectedTeacher.isApproved) return;
+    setApprovingTeacher(true);
+    try {
+      await updateTeacherProfile(selectedTeacher.id, { status: "approved" });
+      if (selectedTeacher.userId) {
+        await updateUser(selectedTeacher.userId, {
+          registrationStatus: "active",
+          isActive: true,
+        });
+      }
+      const approvedTeacher = {
+        ...selectedTeacher,
+        status: "معتمد",
+        isApproved: true,
+      };
+      setSelectedTeacher(approvedTeacher);
+      setTeachers((current) =>
+        current.map((teacher) =>
+          teacher.id === approvedTeacher.id ? approvedTeacher : teacher,
+        ),
+      );
+      toast.success("تم اعتماد المعلم وتفعيل حسابه");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر اعتماد المعلم");
+    } finally {
+      setApprovingTeacher(false);
+    }
+  };
 
   return (
     <AdminLayout>
@@ -218,6 +261,24 @@ const TeachersPage = () => {
             />
           </div>
         </div>
+
+        {!loading && filtered.length > 0 && (
+          <div className="mb-4">
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onChange={setPage}
+              totalItems={filtered.length}
+              displayedCount={visible.length}
+              unitLabel="معلم"
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-16 text-[#575F69]">
@@ -345,19 +406,6 @@ const TeachersPage = () => {
           </>
         )}
 
-        {!loading && filtered.length > 0 && (
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onChange={setPage}
-            totalItems={filtered.length}
-            displayedCount={visible.length}
-            unitLabel="معلم"
-            pageSize={pageSize}
-            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
-          />
-        )}
-
         {selectedTeacher && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
@@ -411,7 +459,24 @@ const TeachersPage = () => {
                 />
               </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className={`mt-5 grid grid-cols-1 gap-3 ${
+                selectedTeacher.isApproved ? "sm:grid-cols-2" : "sm:grid-cols-3"
+              }`}>
+                {!selectedTeacher.isApproved && (
+                  <button
+                    type="button"
+                    disabled={approvingTeacher}
+                    onClick={handleApproveTeacher}
+                    className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {approvingTeacher ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <CheckCircle2 size={18} />
+                    )}
+                    اعتماد المعلم
+                  </button>
+                )}
                 <a
                   href={whatsappUrl(selectedTeacher.phone) || undefined}
                   target={

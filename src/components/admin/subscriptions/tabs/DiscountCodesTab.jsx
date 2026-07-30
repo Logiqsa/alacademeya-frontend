@@ -734,6 +734,13 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
         </div>
       ) : (
         <>
+          <Pagination
+            page={page}
+            total={codes.length}
+            totalPages={totalPages}
+            onChange={setPage}
+          />
+
           {/* Desktop / tablet table */}
           <div className="hidden sm:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -808,12 +815,6 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
             ))}
           </div>
 
-          <Pagination
-            page={page}
-            total={codes.length}
-            totalPages={totalPages}
-            onChange={setPage}
-          />
         </>
       )}
 

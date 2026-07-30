@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowRight,
   AlertTriangle,
+  CalendarClock,
+  Loader2,
 } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
 import AdminLayout from "../../../admin/layout/AdminLayout";
@@ -36,6 +38,12 @@ const TODAY_KEY_BY_JS_DAY = [
   "saturday",
 ];
 
+const localDateTimeMin = () => {
+  const date = new Date(Date.now() + 60 * 1000);
+  const offset = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+};
+
 const CreateLessonPage = ({ role = "teacher" }) => {
   const navigate = useNavigate();
   const { groupId } = useParams();
@@ -51,6 +59,8 @@ const CreateLessonPage = ({ role = "teacher" }) => {
   const [error, setError] = useState(null);
   const [scheduledToday, setScheduledToday] = useState(true);
   const [checkingSchedule, setCheckingSchedule] = useState(true);
+  const [isPostponed, setIsPostponed] = useState(false);
+  const [postponedAt, setPostponedAt] = useState("");
 
   const todayKey = TODAY_KEY_BY_JS_DAY[new Date().getDay()];
 
@@ -133,12 +143,12 @@ const CreateLessonPage = ({ role = "teacher" }) => {
   const handleSubmit = async () => {
     setError(null);
 
-    if (checkingSchedule) {
+    if (!isPostponed && checkingSchedule) {
       setError("جاري التحقق من جدول المجموعة، حاول مرة أخرى بعد لحظات");
       return;
     }
 
-    if (!scheduledToday) {
+    if (!isPostponed && !scheduledToday) {
       setError(
         `لا يمكن إنشاء الحصة؛ اليوم (${DAY_LABELS[todayKey]}) غير موجود في جدول المجموعة`,
       );
@@ -148,6 +158,22 @@ const CreateLessonPage = ({ role = "teacher" }) => {
     if (!lessonTitle.trim()) {
       setError("من فضلك اكتب اسم الحصة");
       return;
+    }
+
+    let postponedDate = null;
+    if (isPostponed) {
+      if (!postponedAt) {
+        setError("من فضلك اختر تاريخ ووقت الحصة المؤجلة");
+        return;
+      }
+      postponedDate = new Date(postponedAt);
+      if (
+        Number.isNaN(postponedDate.getTime()) ||
+        postponedDate.getTime() <= Date.now()
+      ) {
+        setError("موعد الحصة المؤجلة يجب أن يكون في المستقبل");
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -160,6 +186,9 @@ const CreateLessonPage = ({ role = "teacher" }) => {
       payload.append("classroom", groupId);
       payload.append("title", lessonTitle.trim());
       payload.append("description", "");
+      if (postponedDate) {
+        payload.append("scheduledDate", postponedDate.toISOString());
+      }
 
       await createClassroomSession(payload);
 
@@ -204,7 +233,7 @@ const CreateLessonPage = ({ role = "teacher" }) => {
         className="mx-auto p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm mt-6 sm:mt-8"
         dir="rtl"
       >
-        {!checkingSchedule && !scheduledToday && (
+        {!isPostponed && !checkingSchedule && !scheduledToday && (
           <div className="mb-5 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
             <AlertTriangle size={18} className="text-amber-500 mt-0.5 shrink-0" />
             <div className="flex-1">
@@ -248,9 +277,78 @@ const CreateLessonPage = ({ role = "teacher" }) => {
               className={inputClass}
             />
             <p className="mt-2 text-xs text-[#8C9198]">
-              تاريخ ووقت الحصة يُحددان تلقائياً من جدول المجموعة لليوم، وعند الإنهاء ستظهر نافذة إضافة الوصف والمرفقات كالمعتاد.
+              {isPostponed
+                ? "سيتم إنشاء الحصة في الموعد المؤجل الذي تختاره."
+                : "تاريخ ووقت الحصة يُحددان تلقائياً من جدول المجموعة لليوم، وعند الإنهاء ستظهر نافذة إضافة الوصف والمرفقات كالمعتاد."}
             </p>
           </div>
+
+          <div className="rounded-xl border border-[#E5E5E5] bg-[#F9FAFA] p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg bg-[#EAF4FF] p-2 text-[#123C91]">
+                  <CalendarClock size={20} />
+                </div>
+                <div>
+                  <label
+                    htmlFor="postponed-lesson-toggle"
+                    className="block cursor-pointer text-sm font-semibold text-[#1F2937]"
+                  >
+                    الحصة مؤجلة
+                  </label>
+                  <p className="mt-1 text-xs text-[#8C9198]">
+                    فعّل الاختيار لإنشاء الحصة في تاريخ ووقت مختلف.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                id="postponed-lesson-toggle"
+                type="button"
+                role="switch"
+                aria-checked={isPostponed}
+                onClick={() => {
+                  setIsPostponed((current) => {
+                    if (current) setPostponedAt("");
+                    return !current;
+                  });
+                  setError(null);
+                }}
+                className={`relative h-7 w-13 shrink-0 rounded-full transition-colors ${
+                  isPostponed ? "bg-[#123C91]" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${
+                    isPostponed ? "right-7" : "right-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {isPostponed && (
+              <div className="mt-4 border-t border-gray-200 pt-4">
+                <label className={labelClass} htmlFor="postponed-at">
+                  تاريخ ووقت الحصة المؤجلة
+                </label>
+                <input
+                  id="postponed-at"
+                  type="datetime-local"
+                  min={localDateTimeMin()}
+                  value={postponedAt}
+                  onChange={(event) => {
+                    setPostponedAt(event.target.value);
+                    setError(null);
+                  }}
+                  className={inputClass}
+                />
+                <p className="mt-2 text-xs text-[#8C9198]">
+                  سيتم حفظ الموعد حسب توقيت جهازك.
+                </p>
+              </div>
+            )}
+          </div>
+
           {isAdmin && (
             <div>
               <label className={labelClass}>مدرس الحصة البديل (اختياري)</label>
@@ -282,12 +380,21 @@ const CreateLessonPage = ({ role = "teacher" }) => {
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 mt-2">
           <button
             onClick={handleSubmit}
-            disabled={submitting || checkingSchedule || !scheduledToday}
+            disabled={
+              submitting ||
+              (!isPostponed && (checkingSchedule || !scheduledToday))
+            }
             className="w-full sm:flex-1 h-12 sm:h-12.5 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-bold text-sm sm:text-[16px] flex items-center justify-center gap-2 shadow-sm order-1 sm:order-1 disabled:opacity-60"
           >
             {submitting
-              ? "جاري الإنشاء..."
+              ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  جاري الإنشاء...
+                </>
+              )
               : checkingSchedule
+                && !isPostponed
                 ? "جاري التحقق من الجدول..."
                 : "إنشاء حصة"}
             {!submitting && <ArrowRight size={18} />}

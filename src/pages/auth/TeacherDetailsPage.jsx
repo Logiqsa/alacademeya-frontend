@@ -276,16 +276,18 @@ const TeacherDetailsPage = () => {
       // ✅ لو الـ API رجّع user محدّث فيه status، احفظه
       const updatedUser = res.data?.data || res.data?.user;
 
-      if (updatedUser && updatedUser.status) {
-        // الـ backend رجّع user object كامل
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-      } else {
-        // الـ backend مش بيرجع user — نحدّث الـ status يدوياً
-        const patched = { ...user, status: "pending" };
-        setUser(patched);
-        localStorage.setItem("user", JSON.stringify(patched));
-      }
+      // بعض استجابات الـ API ترجع الحالة فقط، لذلك لا نستبدل بيانات المستخدم
+      // ونثبت الدور حتى يظل الحساب المعلّق معروفًا كحساب معلم.
+      const patched = {
+        ...user,
+        ...(updatedUser && typeof updatedUser === "object" ? updatedUser : {}),
+        role: "teacher",
+        status: updatedUser?.status || "pending",
+        registrationStatus:
+          updatedUser?.registrationStatus || "pending",
+      };
+      setUser(patched);
+      localStorage.setItem("user", JSON.stringify(patched));
 
       navigate("/pending");
     } catch (err) {

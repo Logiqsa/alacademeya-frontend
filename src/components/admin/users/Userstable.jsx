@@ -11,6 +11,10 @@ import {
   FileText,
   ExternalLink,
   MessageCircle,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  ChevronDown,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { getArabicCountryName } from "../../../utils/countryName";
@@ -21,6 +25,15 @@ const getCurrentMonth = () => {
 
   return `${year}-${month}`;
 };
+
+const USER_TYPE_OPTIONS = [
+  "جميع المستخدمين",
+  "معلم",
+  "طالب",
+  "ولي أمر",
+  "مشرف",
+  "مشرف عام",
+];
 
 const formatMonthlyHours = (minutes = 0) => {
   const hours = minutes / 60;
@@ -95,7 +108,7 @@ const Badge = ({ label, type }) => {
 
   return (
     <span
-      className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${map[type] ?? map.gray
+      className={`inline-flex min-w-18 items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${map[type] ?? map.gray
         }`}
     >
       {label}
@@ -595,7 +608,16 @@ const MobileCard = ({ u, onView, onApprove, onToggleStatus, onDelete }) => (
   </div>
 );
 
-const UsersTable = ({ users = [], onApprove, onToggleStatus, onDelete }) => {
+const UsersTable = ({
+  users = [],
+  onApprove,
+  onToggleStatus,
+  onDelete,
+  sort,
+  onSort,
+  typeFilter = "جميع المستخدمين",
+  onTypeFilter,
+}) => {
   const [detailsUser, setDetailsUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
   const [approveUser, setApproveUser] = useState(null);
@@ -745,24 +767,89 @@ const UsersTable = ({ users = [], onApprove, onToggleStatus, onDelete }) => {
       <div dir="rtl" className="w-full">
         <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-right" style={{ minWidth: "700px" }}>
+            <table
+              className="w-full table-fixed text-right"
+              style={{ minWidth: "900px" }}
+            >
+              <colgroup>
+                <col className="w-[21%]" />
+                <col className="w-[12%]" />
+                <col className="w-[25%]" />
+                <col className="w-[12%]" />
+                <col className="w-[18%]" />
+                <col className="w-[12%]" />
+              </colgroup>
               <thead className="bg-[#F9FAFA] border-b border-gray-100">
                 <tr>
                   {[
-                    "المستخدم",
-                    "النوع",
-                    "البريد الإلكتروني",
-                    "الحالة",
-                    "تاريخ الانضمام",
-                    "الإجراءات",
-                  ].map((heading) => (
-                    <th
-                      key={heading}
-                      className="px-5 py-3.5 text-[13px] font-medium text-[#575F69] whitespace-nowrap"
-                    >
-                      {heading}
-                    </th>
-                  ))}
+                    { label: "المستخدم", sortKey: "name" },
+                    { label: "النوع", isTypeFilter: true },
+                    { label: "البريد الإلكتروني" },
+                    { label: "الحالة", sortKey: "status" },
+                    { label: "تاريخ الانضمام", sortKey: "joinDate" },
+                    { label: "الإجراءات" },
+                  ].map(({ label, sortKey, isTypeFilter }) => {
+                    const isActive = sortKey && sort?.key === sortKey;
+                    const SortIcon = !isActive
+                      ? ArrowUpDown
+                      : sort.direction === "asc"
+                        ? ArrowUp
+                        : ArrowDown;
+
+                    return (
+                      <th
+                        key={label}
+                        className="whitespace-nowrap px-5 py-3.5 text-[13px] font-medium text-[#575F69]"
+                        aria-sort={
+                          isActive
+                            ? sort.direction === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : undefined
+                        }
+                      >
+                        {isTypeFilter ? (
+                          <label className="relative inline-flex items-center">
+                            <select
+                              value={typeFilter}
+                              onChange={(event) =>
+                                onTypeFilter?.(event.target.value)
+                              }
+                              aria-label="اختيار نوع المستخدم"
+                              className={`h-9 cursor-pointer appearance-none rounded-lg border bg-white py-1 pr-3 pl-8 text-sm font-medium outline-none transition-colors hover:border-[#123C91] ${
+                                typeFilter !== "جميع المستخدمين"
+                                  ? "border-[#123C91] bg-[#EAF4FF] text-[#123C91]"
+                                  : "border-gray-200 text-[#575F69]"
+                              }`}
+                            >
+                              {USER_TYPE_OPTIONS.map((role) => (
+                                <option key={role} value={role}>
+                                  {role}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown
+                              size={15}
+                              className="pointer-events-none absolute left-2.5 text-[#123C91]"
+                            />
+                          </label>
+                        ) : sortKey ? (
+                          <button
+                            type="button"
+                            onClick={() => onSort?.(sortKey)}
+                            className={`flex items-center gap-1.5 font-medium transition-colors hover:text-[#123C91] ${
+                              isActive ? "text-[#123C91]" : ""
+                            }`}
+                          >
+                            {label}
+                            <SortIcon size={15} />
+                          </button>
+                        ) : (
+                          label
+                        )}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
 

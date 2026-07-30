@@ -219,6 +219,15 @@ const SubscriptionsTab = () => {
 
   return (
     <div className="w-full max-w-full">
+      {rows.length > 0 && (
+        <Pagination
+          page={page}
+          total={rows.length}
+          totalPages={totalPages}
+          onChange={setPage}
+        />
+      )}
+
       <div
         className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
         dir="rtl"
@@ -313,14 +322,6 @@ const SubscriptionsTab = () => {
         )}
       </div>
 
-      {rows.length > 0 && (
-        <Pagination
-          page={page}
-          total={rows.length}
-          totalPages={totalPages}
-          onChange={setPage}
-        />
-      )}
     </div>
   );
 };

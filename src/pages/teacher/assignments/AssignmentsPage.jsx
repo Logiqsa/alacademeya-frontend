@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import AssignmentStatsBar from "../../../components/teacher/assignments/AssignmentStatsBar";
 import AssignmentFilters from "../../../components/teacher/assignments/AssignmentFilters";
 import AssignmentsTable from "../../../components/teacher/assignments/AssignmentsTable";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
+import LoadingState from "../../../components/shared/LoadingState";
 import {
   getMyClassrooms,
   getAssignmentsByClassroom,
@@ -211,20 +212,6 @@ const AssignmentsPage = () => {
         </div>
 
         {/* Table */}
-        <div className="mt-4">
-          {loading ? (
-            <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 flex items-center justify-center gap-2 text-[#575F69]">
-              <Loader2 size={18} className="animate-spin" />
-              جارٍ تحميل الواجبات...
-            </div>
-          ) : (
-            <AssignmentsTable
-              assignments={paginatedAssignments}
-              onView={(id) => navigate(`/teacher/assignments/${id}`)}
-            />
-          )}
-        </div>
-
         {/* Pagination */}
         <Paginationn
           page={page}
@@ -234,6 +221,21 @@ const AssignmentsPage = () => {
           displayedCount={paginatedAssignments.length}
           unitLabel="واجب"
         />
+
+        <div className="mt-4">
+          {loading ? (
+            <LoadingState
+              label="جاري تحميل الواجبات..."
+              className="rounded-2xl border border-gray-200 bg-white shadow-sm"
+            />
+          ) : (
+            <AssignmentsTable
+              assignments={paginatedAssignments}
+              onView={(id) => navigate(`/teacher/assignments/${id}`)}
+            />
+          )}
+        </div>
+
       </div>
     </TeacherLayout>
   );

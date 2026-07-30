@@ -7,7 +7,8 @@ import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTabl
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
-import Pagination from "../../../components/teacher/groups/lessons/Paginationn";
+import Pagination from "../../../components/teacher/groups/students/Paginationn";
+import { getSavedPageSize } from "../../../utils/tablePagination";
 import EndSessionDetailsModal from "../../../components/teacher/groups/lessons/EndSessionDetailsModal";
 import { UserDetailsModal } from "../../../components/admin/users/Userstable";
 import SubstituteTeacherModal from "../../../components/admin/groups/SubstituteTeacherModal";
@@ -25,6 +26,7 @@ import {
   updateClassroomSession,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import LoadingState from "../../../components/shared/LoadingState";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -88,7 +90,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [filterTime, setFilterTime] = useState("جميع الاوقات");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
+  const [pageSize, setPageSize] = useState(() =>
+    getSavedPageSize(ITEMS_PER_PAGE),
+  );
 
   const [groupName, setGroupName] = useState(location.state?.groupName || "");
   const [groupTeacher, setGroupTeacher] = useState(
@@ -675,15 +679,37 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           />
         </div>
 
+        {/* Pagination */}
+        {!loading && !error && filtered.length > 0 && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            displayedCount={paginatedLessons.length}
+            onChange={(p) => setPage(p)}
+            unitLabel="حصة"
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
+        )}
+
         {/* Table */}
         <div className="mt-4">
           {loading ? (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
-              جاري التحميل...
-            </div>
+            <LoadingState
+              label="جاري تحميل الحصص..."
+              className="rounded-2xl border border-gray-200 bg-white shadow-sm"
+            />
           ) : error ? (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-red-500">
               {error}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl border border-gray-200 bg-white py-14 text-center text-[#575F69] shadow-sm">
+              لا توجد حصص مطابقة.
             </div>
           ) : (
             <LessonsTable
@@ -697,17 +723,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           )}
         </div>
 
-        {/* Pagination */}
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          totalItems={filtered.length}
-          displayedCount={paginatedLessons.length}
-          onChange={(p) => setPage(p)}
-          unitLabel="حصة"
-          pageSize={pageSize}
-          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
-        />
       </div>
 
       {endTarget && (

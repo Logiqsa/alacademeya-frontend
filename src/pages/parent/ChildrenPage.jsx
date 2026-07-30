@@ -15,6 +15,7 @@ import {
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
 import Paginationn from "../../components/teacher/groups/students/Paginationn";
+import LoadingState from "../../components/shared/LoadingState";
 
 const PER_PAGE = 10;
 
@@ -180,9 +181,21 @@ const ChildrenPage = () => {
 
         <div>
           {loading ? (
-            <p className="text-[#575F69] text-center py-10">جاري التحميل...</p>
+            <LoadingState
+              label="جاري تحميل الأبناء..."
+              className="rounded-2xl border border-gray-200 bg-white"
+            />
           ) : (
             <>
+              <Paginationn
+                page={safePage}
+                totalPages={totalPages}
+                onChange={setPage}
+                totalItems={filteredStudents.length}
+                displayedCount={paginated.length}
+                unitLabel="ابن"
+              />
+
               <ChildrenTable
                 children={paginated}
                 ordersByStudent={ordersByStudent}
@@ -194,14 +207,6 @@ const ChildrenPage = () => {
                 }
               />
 
-              <Paginationn
-                page={safePage}
-                totalPages={totalPages}
-                onChange={setPage}
-                totalItems={filteredStudents.length}
-                displayedCount={paginated.length}
-                unitLabel="ابن"
-              />
             </>
           )}
         </div>

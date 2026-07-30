@@ -5,7 +5,9 @@ import StudentLayout from "../../../components/student/layout/StudentLayout";
 import LessonStatsBar from "../../../components/student/groupLesson/Lessonstatsbar";
 import LessonFilters from "../../../components/teacher/groups/lessons/LessonFilter";
 import LessonsTable from "../../../components/student/groupLesson/Lessonstable";
-import Paginationn from "../../../components/teacher/groups/lessons/Paginationn";
+import Paginationn from "../../../components/teacher/groups/students/Paginationn";
+import { getSavedPageSize } from "../../../utils/tablePagination";
+import LoadingState from "../../../components/shared/LoadingState";
 import {
   getMyClassrooms,
   getClassroomSessions,
@@ -79,6 +81,9 @@ const StudentGroupLessonsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [filterTime, setFilterTime] = useState("جميع الاوقات");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(() =>
+    getSavedPageSize(ITEMS_PER_PAGE),
+  );
 
   const [groupName, setGroupName] = useState("");
   const [lessons, setLessons] = useState([]);
@@ -178,10 +183,10 @@ const StudentGroupLessonsPage = () => {
       (filterStatus === "جميع الحالات" || l.status === filterStatus),
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginatedLessons = filtered.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE,
+    (page - 1) * pageSize,
+    page * pageSize,
   );
 
   const stats = {
@@ -249,11 +254,26 @@ const StudentGroupLessonsPage = () => {
           />
         </div>
 
+        <Paginationn
+          page={page}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          displayedCount={paginatedLessons.length}
+          onChange={(p) => setPage(p)}
+          unitLabel="حصة"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
+
         <div className="mt-4">
           {loading ? (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
-              جاري التحميل...
-            </div>
+            <LoadingState
+              label="جاري تحميل الحصص..."
+              className="rounded-2xl border border-gray-200 bg-white shadow-sm"
+            />
           ) : error ? (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-red-500">
               {error}
@@ -268,14 +288,6 @@ const StudentGroupLessonsPage = () => {
           )}
         </div>
 
-        <Paginationn
-          page={page}
-          totalPages={totalPages}
-          totalItems={filtered.length}
-          displayedCount={paginatedLessons.length}
-          onChange={(p) => setPage(p)}
-          unitLabel="حصة"
-        />
       </div>
     </StudentLayout>
   );

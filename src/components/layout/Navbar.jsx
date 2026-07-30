@@ -34,7 +34,7 @@ const goToDashboard = (user, navigate) => {
       user?.registrationStatus === "active" ||
       user?.status === "approved";
 
-    navigate(isApproved ? "/teacher-dashboard" : "/register/success");
+    navigate(isApproved ? "/teacher-dashboard" : "/account-state");
     return;
   }
 
@@ -44,11 +44,21 @@ const goToDashboard = (user, navigate) => {
       user?.registrationStatus === "active" ||
       user?.status === "approved";
 
-    navigate(isApproved ? "/student-dashboard" : "/register/success");
+    navigate(isApproved ? "/student-dashboard" : "/account-state");
     return;
   }
 
-  navigate("/parent-dashboard");
+  if (role === "parent") {
+    navigate("/parent-dashboard");
+    return;
+  }
+
+  const isPending =
+    user?.status === "pending" ||
+    String(user?.registrationStatus || "").startsWith("pending") ||
+    user?.isActive === false;
+
+  navigate(isPending || user ? "/account-state" : "/");
 };
 
 const Navbar = () => {

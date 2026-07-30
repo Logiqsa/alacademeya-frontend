@@ -10,6 +10,7 @@ import {
   getClassroomStudents,
   getAllStudents,
 } from "../../../services/APIService";
+import LoadingState from "../../../components/shared/LoadingState";
 
 const PAGE_SIZE = 6;
 
@@ -185,11 +186,22 @@ const GroupStudentsPage = () => {
         </div>
 
         {/* Table */}
+        {/* Pagination */}
+        <Paginationn
+          page={page}
+          totalPages={totalPages}
+          onChange={setPage}
+          totalItems={filtered.length}
+          displayedCount={paginatedStudents.length}
+          unitLabel="طالب"
+        />
+
         <div className="mt-4">
           {loading ? (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
-              جاري التحميل...
-            </div>
+            <LoadingState
+              label="جاري تحميل الطلاب..."
+              className="rounded-2xl border border-gray-200 bg-white shadow-sm"
+            />
           ) : error ? (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-red-500">
               {error}
@@ -204,15 +216,6 @@ const GroupStudentsPage = () => {
           )}
         </div>
 
-        {/* Pagination */}
-        <Paginationn
-          page={page}
-          totalPages={totalPages}
-          onChange={setPage}
-          totalItems={filtered.length}
-          displayedCount={paginatedStudents.length}
-          unitLabel="طالب"
-        />
       </div>
     </TeacherLayout>
   );

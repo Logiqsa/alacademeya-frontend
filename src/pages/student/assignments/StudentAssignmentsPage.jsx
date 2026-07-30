@@ -7,6 +7,7 @@ import AssignmentFilters from "../../../components/teacher/assignments/Assignmen
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 
 import { getMyAssignments } from "../../../services/APIService";
+import LoadingState from "../../../components/shared/LoadingState";
 
 const PAGE_SIZE = 6;
 
@@ -136,11 +137,21 @@ const StudentAssignmentsPage = () => {
           />
         </div>
 
+        <Paginationn
+          page={page}
+          totalPages={totalPages}
+          onChange={setPage}
+          totalItems={filtered.length}
+          displayedCount={paginatedAssignments.length}
+          unitLabel="واجب"
+        />
+
         <div className="mt-4">
           {loading ? (
-            <div className="bg-white rounded-2xl border border-gray-200 py-20 text-center">
-              جاري تحميل الواجبات...
-            </div>
+            <LoadingState
+              label="جاري تحميل الواجبات..."
+              className="rounded-2xl border border-gray-200 bg-white"
+            />
           ) : (
             <StudentAssignmentsTable
               assignments={paginatedAssignments}
@@ -150,14 +161,6 @@ const StudentAssignmentsPage = () => {
           )}
         </div>
 
-        <Paginationn
-          page={page}
-          totalPages={totalPages}
-          onChange={setPage}
-          totalItems={filtered.length}
-          displayedCount={paginatedAssignments.length}
-          unitLabel="واجب"
-        />
       </div>
     </StudentLayout>
   );

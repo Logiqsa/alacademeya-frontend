@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Upload } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import RecordingsFilters from "../../../components/admin/recordings/RecordingsFilters";
 import RecordingsTable from "../../../components/admin/recordings/RecordingsTable";
@@ -28,8 +28,10 @@ const RecordingsPages = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [recordings, setRecordings] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const loadRecordings = useCallback(async () => {
+    setLoading(true);
     try {
       const groupsRes = await getClassrooms({ limit: 100 });
       const classroomList = groupsRes.data?.data || [];
@@ -57,7 +59,11 @@ const RecordingsPages = () => {
         } catch { return null; }
       })));
       setRecordings(rows.filter(Boolean));
-    } catch { setRecordings([]); }
+    } catch {
+      setRecordings([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -109,20 +115,34 @@ const RecordingsPages = () => {
           />
         </div>
 
-        {/* Table */}
-        <RecordingsTable recordings={paginated} />
+        {loading ? (
+          <div className="flex min-h-52 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white text-[#123C91] shadow-sm">
+            <Loader2 size={34} className="animate-spin" />
+            <p className="text-sm font-medium">جاري تحميل التسجيلات...</p>
+          </div>
+        ) : (
+          <>
+            {/* Pagination */}
+            {filtered.length > 0 && (
+              <Paginationn
+                page={page}
+                totalPages={totalPages}
+                onChange={setPage}
+                totalItems={filtered.length}
+                displayedCount={paginated.length}
+                unitLabel="تسجيل"
+                pageSize={pageSize}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
+              />
+            )}
 
-        {/* Pagination */}
-        <Paginationn
-          page={page}
-          totalPages={totalPages}
-          onChange={setPage}
-          totalItems={filtered.length}
-          displayedCount={paginated.length}
-          unitLabel="تسجيل"
-          pageSize={pageSize}
-          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
-        />
+            {/* Table */}
+            <RecordingsTable recordings={paginated} />
+          </>
+        )}
 
         {/* Modal */}
         <AddRecordingModal

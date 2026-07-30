@@ -217,14 +217,6 @@ const AssignmentDetailsPage = () => {
           />
         </div>
 
-        {/* Table */}
-        <div className="mt-4">
-          <StudentSubmissionsTable
-            students={paginatedStudents}
-            onAction={handleAction}
-          />
-        </div>
-
         {/* Pagination */}
         <Paginationn
           page={page}
@@ -234,6 +226,14 @@ const AssignmentDetailsPage = () => {
           displayedCount={paginatedStudents.length}
           unitLabel="طالب"
         />
+
+        {/* Table */}
+        <div className="mt-4">
+          <StudentSubmissionsTable
+            students={paginatedStudents}
+            onAction={handleAction}
+          />
+        </div>
       </div>
     </TeacherLayout>
   );

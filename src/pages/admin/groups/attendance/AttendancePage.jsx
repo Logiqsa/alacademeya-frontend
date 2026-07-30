@@ -13,6 +13,7 @@ import {
   getSessionAttendance,
 } from "../../../../services/APIService";
 import Breadcrumbs from "../../../shared/Breadcrumbs";
+import LoadingState from "../../../../components/shared/LoadingState";
 
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
@@ -257,18 +258,6 @@ const AttendancePage = () => {
         </div>
 
         {/* Table */}
-        {loading ? (
-          <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
-            جاري التحميل...
-          </div>
-        ) : error ? (
-          <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-red-500">
-            {error}
-          </div>
-        ) : (
-          <AttendanceTable records={paginatedRecords} />
-        )}
-
         {/* Pagination */}
         <Paginationn
           page={page}
@@ -280,6 +269,20 @@ const AttendancePage = () => {
           pageSize={pageSize}
           onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
+
+        {loading ? (
+          <LoadingState
+            label="جاري تحميل الحضور..."
+            className="rounded-2xl border border-gray-200 bg-white shadow-sm"
+          />
+        ) : error ? (
+          <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-red-500">
+            {error}
+          </div>
+        ) : (
+          <AttendanceTable records={paginatedRecords} />
+        )}
+
       </div>
     </AdminLayout>
   );

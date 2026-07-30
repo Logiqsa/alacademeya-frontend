@@ -1,15 +1,20 @@
 import { Search, ChevronDown } from "lucide-react";
 
-const SUBJECT_OPTIONS = ["جميع المواد", "رياضيات", "علوم", "لغة عربية", "لغة إنجليزية"];
-const STATUS_OPTIONS = ["جميع الحالات", "نشطة", "مكتملة العدد", "قيد التسجيل", "منتهية", "متوقفة"];
-
 const GroupsFilters = ({
   search,
   onSearchChange,
   filterSubject,
+  subjectOptions = ["جميع المواد"],
   onFilterSubjectChange,
   filterStatus,
+  statusOptions = ["جميع الحالات"],
   onFilterStatusChange,
+  filterStage,
+  stageOptions = ["جميع المراحل"],
+  onFilterStageChange,
+  filterGrade,
+  gradeOptions = ["جميع الصفوف"],
+  onFilterGradeChange,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-1" dir="rtl">
@@ -30,7 +35,7 @@ const GroupsFilters = ({
           onChange={(e) => onFilterSubjectChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
         >
-          {SUBJECT_OPTIONS.map((opt) => (
+          {subjectOptions.map((opt) => (
             <option key={opt} value={opt}>
               {opt}
             </option>
@@ -45,7 +50,7 @@ const GroupsFilters = ({
           onChange={(e) => onFilterStatusChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
         >
-          {STATUS_OPTIONS.map((opt) => (
+          {statusOptions.map((opt) => (
             <option key={opt} value={opt}>
               {opt}
             </option>
@@ -53,6 +58,38 @@ const GroupsFilters = ({
         </select>
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
       </div>
+
+      <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
+        <select
+          value={filterStage}
+          onChange={(e) => onFilterStageChange?.(e.target.value)}
+          className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
+        >
+          {stageOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+      </div>
+
+      {filterStage !== "جميع المراحل" && (
+        <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
+          <select
+            value={filterGrade}
+            onChange={(e) => onFilterGradeChange?.(e.target.value)}
+            className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
+          >
+            {gradeOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </div>
+      )}
     </div>
   );
 };

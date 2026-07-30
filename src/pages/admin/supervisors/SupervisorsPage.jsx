@@ -9,6 +9,7 @@ import Paginationn from "../../../components/teacher/groups/students/Paginationn
 import { getUsers, updateUser, deleteUser } from "../../../services/APIService";
 import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import LoadingState from "../../../components/shared/LoadingState";
 
 const PAGE_SIZE = 6;
 const SUPERVISOR_ROLES = ["admin", "super-admin"];
@@ -205,11 +206,24 @@ const SupervisorsPage = () => {
         )}
 
         {/* Table */}
+        {/* Pagination */}
+        <Paginationn
+          page={page}
+          totalPages={totalPages}
+          onChange={setPage}
+          totalItems={filtered.length}
+          displayedCount={paginated.length}
+          unitLabel="مشرف"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+        />
+
         <div className="mt-4">
           {loading ? (
-            <div className="text-center py-12 text-[#9CA3AF] text-[14px]">
-              جارٍ التحميل...
-            </div>
+            <LoadingState
+              label="جاري تحميل المشرفين..."
+              className="rounded-2xl border border-gray-200 bg-white"
+            />
           ) : error ? (
             <div className="text-center py-12 text-red-500 text-[14px]">
               {error}
@@ -224,18 +238,6 @@ const SupervisorsPage = () => {
             />
           )}
         </div>
-
-        {/* Pagination */}
-        <Paginationn
-          page={page}
-          totalPages={totalPages}
-          onChange={setPage}
-          totalItems={filtered.length}
-          displayedCount={paginated.length}
-          unitLabel="مشرف"
-          pageSize={pageSize}
-          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
-        />
 
         {/* Add Supervisor Modal */}
         <AddSupervisorModal

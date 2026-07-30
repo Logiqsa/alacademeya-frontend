@@ -11,6 +11,7 @@ import {
   MessageSquare,
   User,
   UserPlus,
+  CheckCircle2,
   X,
 } from "lucide-react";
 import NotificationCard from "./NotificationCard";
@@ -20,6 +21,8 @@ import {
   deleteNotification,
   getTeachers,
   getUsers,
+  updateTeacherProfile,
+  updateUser,
 } from "../../../services/APIService";
 import {
   markAdminLocalNotificationRead,
@@ -132,6 +135,48 @@ const isNewUserNotification = (notification) => {
     searchable.includes("user_registered") ||
     searchable.includes("مستخدم جديد انضم")
   );
+};
+
+const JOIN_ROLE_OPTIONS = [
+  { value: "all", label: "كل الأنواع" },
+  { value: "teacher", label: "معلم" },
+  { value: "student", label: "طالب" },
+  { value: "parent", label: "ولي أمر" },
+  { value: "admin", label: "مشرف" },
+];
+
+const notificationUserRole = (notification) => {
+  const sources = [notification, notification.data, notification.metadata];
+  for (const source of sources) {
+    if (!source) continue;
+    const role =
+      source.role ||
+      source.userRole ||
+      source.accountType ||
+      source.user?.role ||
+      source.actor?.role;
+    if (role) {
+      const normalized = String(role).trim().toLowerCase();
+      if (["super-admin", "super_admin"].includes(normalized)) return "admin";
+      if (["معلم", "teacher"].includes(normalized)) return "teacher";
+      if (["طالب", "student"].includes(normalized)) return "student";
+      if (["ولي أمر", "ولي امر", "parent"].includes(normalized)) return "parent";
+      if (["مشرف", "admin"].includes(normalized)) return "admin";
+      return normalized;
+    }
+  }
+
+  const searchable = [
+    localizedText(notification.title),
+    descOf(notification),
+  ]
+    .join(" ")
+    .toLowerCase();
+  if (searchable.includes("معلم") || searchable.includes("teacher")) return "teacher";
+  if (searchable.includes("طالب") || searchable.includes("student")) return "student";
+  if (searchable.includes("ولي أمر") || searchable.includes("ولي امر") || searchable.includes("parent")) return "parent";
+  if (searchable.includes("مشرف") || searchable.includes("admin")) return "admin";
+  return "";
 };
 
 const notificationUserId = (notification) => {
@@ -289,14 +334,21 @@ const NotificationsSection = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
+  const [joinRole, setJoinRole] = useState("all");
   const [markingAll, setMarkingAll] = useState(false);
   const [teacherDetails, setTeacherDetails] = useState(null);
   const [teacherDetailsLoading, setTeacherDetailsLoading] = useState(false);
+  const [approvingTeacher, setApprovingTeacher] = useState(false);
 
   const filtered = notifications.filter((n) => {
     if (activeTab === "all") return true;
     if (activeTab === "unread") return !n.isRead;
-    if (activeTab === "joined") return isNewUserNotification(n);
+    if (activeTab === "joined") {
+      return (
+        isNewUserNotification(n) &&
+        (joinRole === "all" || notificationUserRole(n) === joinRole)
+      );
+    }
     if (activeTab === "teachers") return isTeacherNotification(n);
     if (activeTab === "messages") return isMessageNotification(n);
     return true;
@@ -375,8 +427,29 @@ const NotificationsSection = ({
           return;
         }
 
+        let teacherProfile = null;
+        if (user.role === "teacher") {
+          const teachersResponse = await getTeachers({ user: user.id || user._id });
+          const teachersBody =
+            teachersResponse.data?.data ?? teachersResponse.data ?? [];
+          const teacherProfiles = Array.isArray(teachersBody)
+            ? teachersBody
+            : teachersBody.teachers || [];
+          const userId = user.id || user._id;
+          teacherProfile =
+            teacherProfiles.find((profile) => {
+              const profileUserId =
+                profile.user?.id || profile.user?._id || profile.user;
+              return (
+                profileUserId &&
+                String(profileUserId) === String(userId)
+              );
+            }) || null;
+        }
+
         setTeacherDetails({
           userId: user.id || user._id,
+          teacherId: teacherProfile?.id || teacherProfile?._id,
           name: user.fullName || user.name,
           email: user.email,
           phone: user.phone,
@@ -388,8 +461,23 @@ const NotificationsSection = ({
             admin: "مشرف",
             "super-admin": "مشرف عام",
           }[user.role] || user.role,
-          status: user.isActive === false ? "موقوف" : "نشط",
-          isTeacher: false,
+          status:
+            teacherProfile?.status === "approved"
+              ? "معتمد"
+              : user.isActive === false
+                ? "موقوف"
+                : teacherProfile?.status || "نشط",
+          isApproved: teacherProfile?.status === "approved",
+          experience:
+            teacherProfile?.experienceYears ?? teacherProfile?.experience,
+          subjects: listLabel(
+            teacherProfile?.subjects ?? teacherProfile?.subject,
+          ),
+          grades: listLabel(teacherProfile?.grades ?? teacherProfile?.grade),
+          curricula: listLabel(
+            teacherProfile?.curriculums ?? teacherProfile?.curriculum,
+          ),
+          isTeacher: user.role === "teacher",
         });
         return;
       }
@@ -418,6 +506,7 @@ const NotificationsSection = ({
         }
 
         setTeacherDetails({
+          teacherId: teacher.id || teacher._id,
           userId:
             teacher.user?.id ||
             teacher.user?._id ||
@@ -429,6 +518,7 @@ const NotificationsSection = ({
           username: teacher.user?.username || teacher.username,
           status:
             teacher.status === "approved" ? "معتمد" : teacher.status,
+          isApproved: teacher.status === "approved",
           experience:
             teacher.experienceYears ?? teacher.experience,
           subjects: listLabel(teacher.subjects ?? teacher.subject),
@@ -443,6 +533,39 @@ const NotificationsSection = ({
       toast.error(err.response?.data?.message || "تعذر تحميل تفاصيل المعلم");
     } finally {
       setTeacherDetailsLoading(false);
+    }
+  };
+
+  const handleApproveTeacher = async () => {
+    if (
+      !teacherDetails?.isTeacher ||
+      !teacherDetails.teacherId ||
+      teacherDetails.isApproved
+    ) {
+      return;
+    }
+
+    setApprovingTeacher(true);
+    try {
+      await updateTeacherProfile(teacherDetails.teacherId, {
+        status: "approved",
+      });
+      if (teacherDetails.userId) {
+        await updateUser(teacherDetails.userId, {
+          registrationStatus: "active",
+          isActive: true,
+        });
+      }
+      setTeacherDetails((current) => ({
+        ...current,
+        status: "معتمد",
+        isApproved: true,
+      }));
+      toast.success("تم اعتماد المعلم وتفعيل حسابه");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "تعذر اعتماد المعلم");
+    } finally {
+      setApprovingTeacher(false);
     }
   };
 
@@ -556,6 +679,28 @@ const NotificationsSection = ({
         ))}
       </div>
 
+      {activeTab === "joined" && (
+        <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-gray-100 bg-[#F9FAFA] p-3">
+          <span className="ml-1 text-sm font-medium text-[#575F69]">
+            نوع الحساب:
+          </span>
+          {JOIN_ROLE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setJoinRole(option.value)}
+              className={`h-9 rounded-lg px-4 text-sm font-semibold transition-colors ${
+                joinRole === option.value
+                  ? "bg-[#123C91] text-white shadow-sm"
+                  : "border border-gray-200 bg-white text-[#575F69] hover:border-[#123C91] hover:text-[#123C91]"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 size={22} className="animate-spin text-[#123C91]" />
@@ -667,7 +812,30 @@ const NotificationsSection = ({
               )}
             </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className={`mt-5 grid grid-cols-1 gap-3 ${
+              teacherDetails.isTeacher &&
+              !teacherDetails.isApproved &&
+              teacherDetails.teacherId
+                ? "sm:grid-cols-3"
+                : "sm:grid-cols-2"
+            }`}>
+              {teacherDetails.isTeacher &&
+                !teacherDetails.isApproved &&
+                teacherDetails.teacherId && (
+                  <button
+                    type="button"
+                    disabled={approvingTeacher}
+                    onClick={handleApproveTeacher}
+                    className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {approvingTeacher ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <CheckCircle2 size={18} />
+                    )}
+                    اعتماد المعلم
+                  </button>
+                )}
               <a
                 href={whatsappUrl(teacherDetails.phone) || undefined}
                 target={whatsappUrl(teacherDetails.phone) ? "_blank" : undefined}
