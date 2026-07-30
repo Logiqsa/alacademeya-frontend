@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { CheckCircle2, MessageCircle, Users, UserCheck, UserRound, X } from "lucide-react";
+import { CheckCircle2, MessageCircle, UserPlus, Users, UserCheck, UserRound, X } from "lucide-react";
 
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
@@ -12,6 +12,7 @@ import { getSavedPageSize } from "../../../utils/tablePagination";
 import EndSessionDetailsModal from "../../../components/teacher/groups/lessons/EndSessionDetailsModal";
 import { UserDetailsModal } from "../../../components/admin/users/Userstable";
 import SubstituteTeacherModal from "../../../components/admin/groups/SubstituteTeacherModal";
+import { AddStudentModal } from "../../../components/admin/groups/Groupstable";
 import {
   getClassroomSessions,
   getClassroom,
@@ -85,6 +86,8 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const Layout = isAdmin ? AdminLayout : TeacherLayout;
   const routedGroupTeacher = location.state?.groupTeacher;
   const routedGroupTeacherId = location.state?.groupTeacherId;
+  const routedGroupSubjectId = location.state?.groupSubjectId;
+  const routedClassroomType = location.state?.classroomType;
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
@@ -101,6 +104,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const [groupStudents, setGroupStudents] = useState([]);
   const [groupDetails, setGroupDetails] = useState(null);
   const [showSubstituteModal, setShowSubstituteModal] = useState(false);
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -192,6 +196,15 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         id: classroomData.id || classroomData._id || groupId,
         teacherId: teacherId || routedGroupTeacherId,
         teacher: nestedTeacherName || routedGroupTeacher || "—",
+        subjectId:
+          typeof classroomData.subject === "string"
+            ? classroomData.subject
+            : classroomData.subject?.id ||
+              classroomData.subject?._id ||
+              routedGroupSubjectId,
+        classroomType: ["private", "group"].includes(classroomData.type)
+          ? classroomData.type
+          : routedClassroomType || "group",
         substituteTeacherId,
         substituteTeacher: substituteTeacherName,
       });
@@ -409,7 +422,14 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     } finally {
       setLoading(false);
     }
-  }, [groupId, isAdmin, routedGroupTeacher, routedGroupTeacherId]);
+  }, [
+    groupId,
+    isAdmin,
+    routedClassroomType,
+    routedGroupSubjectId,
+    routedGroupTeacher,
+    routedGroupTeacherId,
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(fetchData, 0);
@@ -592,6 +612,14 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <button
                 type="button"
+                onClick={() => setShowAddStudentModal(true)}
+                className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF]"
+              >
+                <UserPlus size={20} />
+                <span>إضافة طالب</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowSubstituteModal(true)}
                 className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF]"
               >
@@ -764,6 +792,12 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           onChanged={fetchData}
         />
       )}
+      <AddStudentModal
+        open={showAddStudentModal}
+        onClose={() => setShowAddStudentModal(false)}
+        group={groupDetails}
+        onChanged={fetchData}
+      />
     </Layout>
   );
 };

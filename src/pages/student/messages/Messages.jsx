@@ -33,11 +33,29 @@ export default function StudentMessages() {
     const roomId = location.state?.openRoomId ?? searchParams.get("room");
     const classroomId =
       location.state?.openClassroomId ?? searchParams.get("classroom");
-    const conversation = conversations.find(
-      (item) =>
-        (roomId && String(item.id) === roomId) ||
-        (classroomId && String(item.classroomId) === classroomId),
-    );
+    const groupName = (
+      location.state?.openClassroomName ?? searchParams.get("name")
+    )?.trim();
+    if (!classroomId && !roomId && !groupName) return;
+
+    const conversation =
+      conversations.find(
+        (item) =>
+          (roomId && String(item.id) === String(roomId)) ||
+          (classroomId &&
+            String(item.classroomId) === String(classroomId)),
+      ) ??
+      conversations.find((item) => {
+        if (
+          !groupName ||
+          (item.type !== "classroom" && item.category !== "classroom")
+        ) {
+          return false;
+        }
+
+        const roomName = String(item.name || "").trim();
+        return roomName === groupName || roomName.includes(groupName);
+      });
     if (conversation) {
       openedFromLink.current = true;
       openConversation(conversation.id);

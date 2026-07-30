@@ -239,7 +239,7 @@ const TimezoneSettingsCard = ({ timezone, onUpdated }) => {
           </div>
           <div className="flex flex-col gap-1.5 min-w-0">
             <span className="text-[14px] mb-1 text-(--text-light)">
-              القيمة
+              البلد والمدينة
             </span>
             <span
               className="text-sm font-semibold text-(--text-dark) wrap-break-word"

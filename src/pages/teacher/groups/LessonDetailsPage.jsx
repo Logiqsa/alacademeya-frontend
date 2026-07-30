@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Share2, Play, Square, Loader2 } from "lucide-react";
+import { Play, Square, Loader2 } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LessonRecordings from "../../../components/teacher/groups/lessons/LessonRecordings";
 import LessonAssignments from "../../../components/teacher/groups/lessons/LessonAssignments";
@@ -125,12 +125,6 @@ const PageHeader = ({ lesson, onOpenAttendance, onLifecycle, lifecycleLoading, e
           تسجيل الحضور
         </button>
       )}
-      <button
-        className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-[#374151] hover:bg-gray-50 transition-colors"
-        title="مشاركة"
-      >
-        <Share2 size={16} />
-      </button>
     </div>
   </div>
 );

@@ -1,12 +1,17 @@
 import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, UserPlus, Users, X, ChevronDown, ClipboardList, BookOpen, Search, MessageCircle } from "lucide-react";
+import { MoreVertical, Users, X, ChevronDown, ClipboardList, BookOpen, Search, MessageCircle, UserPlus } from "lucide-react";
 import {
   getTeachers,
   getAllStudents,
   getClassroomStudents,
   getAllPackages,
+  getCurriculums,
+  getCurriculumStages,
+  getStageGrades,
+  getAllGrades,
+  getUsers,
   updateClassroom,
   updateClassroomSubstituteTeacher,
   createSubscription,
@@ -17,14 +22,56 @@ const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
 
 const resolvePersonName = (p) =>
-  p?.user?.fullName || p?.fullName || p?.name || resolveName(p?.name) || "--";
+  p?.user?.fullName ||
+  p?.fullName ||
+  (typeof p?.name === "string" ? p.name : resolveName(p?.name)) ||
+  "--";
 
-const resolvePersonId = (p) => p?.teacherId || p?.id || p?._id || p?.user?.id;
+const resolvePersonId = (p) =>
+  p?.studentId ||
+  p?.student?.id ||
+  p?.student?._id ||
+  p?.studentProfile?.id ||
+  p?.studentProfile?._id ||
+  p?.teacherId ||
+  p?.id ||
+  p?._id ||
+  p?.user?.id ||
+  p?.user?._id;
+
+const resolveEntityId = (value) =>
+  typeof value === "string" ? value : value?.id || value?._id || "";
+
+// ⚠️ بقى فيها fallback عام: لو المفاتيح المعروفة (keys) ملقتش array، بتدور
+// على أي array تاني جوه نفس الـ object أيًا كان اسم الحقل. ده بيخليها تشتغل
+// حتى لو شكل الـ response مختلف عن اللي احنا متوقعينه بالظبط.
+const extractList = (response, keys = []) => {
+  let value = response?.data ?? response;
+
+  for (let depth = 0; depth < 3 && value && !Array.isArray(value); depth += 1) {
+    const keyedValue = keys.map((key) => value?.[key]).find(Array.isArray);
+    if (keyedValue) return keyedValue;
+
+    if (typeof value === "object") {
+      const anyArray = Object.values(value).find(Array.isArray);
+      if (anyArray) return anyArray;
+    }
+
+    value = value?.data;
+  }
+
+  return Array.isArray(value) ? value : [];
+};
 
 // ⚠️ افتراض: الطالب فيه حقل "stage" و"grade" مباشر أو جوه object فيه name/ar/en —
 // لسه محتاج تأكيد من بوستمان/Network tab لشكل الـ student object الراجع من getAllStudents()
 const resolveStageName = (s) => {
-  const stage = s?.stage ?? s?.stageId;
+  const stage =
+    s?.stage ??
+    s?.stageId ??
+    s?.user?.stage ??
+    s?.profile?.stage ??
+    s?.studentProfile?.stage;
   if (!stage) return null;
   if (typeof stage === "string") return stage;
   const nested = stage.name ?? stage;
@@ -33,7 +80,12 @@ const resolveStageName = (s) => {
 };
 
 const resolveGradeName = (s) => {
-  const grade = s?.grade ?? s?.gradeId;
+  const grade =
+    s?.grade ??
+    s?.gradeId ??
+    s?.user?.grade ??
+    s?.profile?.grade ??
+    s?.studentProfile?.grade;
   if (!grade) return null;
   if (typeof grade === "string") return grade;
   const nested = grade.name ?? grade;
@@ -202,9 +254,11 @@ const ModalFooter = ({ onClose, confirmLabel, onConfirm, loading, disabled }) =>
 );
 
 // ─── Add Student Modal ─────────────────────────────────────────────────────────
-const AddStudentModal = ({ open, onClose, group, onChanged }) => {
+export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
   const [students, setStudents] = useState([]);
   const [packages, setPackages] = useState([]);
+  const [stages, setStages] = useState([]);
+  const [grades, setGrades] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedPackage, setSelectedPackage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -223,6 +277,8 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
     setSearch("");
     setStageFilter("");
     setGradeFilter("");
+    setStages([]);
+    setGrades([]);
     setError(null);
     setLoading(true);
 
@@ -230,52 +286,164 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       getAllStudents(),
       getClassroomStudents(group.id),
       getAllPackages(),
+      getCurriculums(),
+      getAllGrades(),
     ])
-      .then(([allRes, enrolledRes, packagesRes]) => {
-        const all = allRes.status === "fulfilled" ? allRes.value.data?.data || [] : [];
-        const enrolled = enrolledRes.status === "fulfilled" ? enrolledRes.value.data?.data || [] : [];
-        const enrolledIds = new Set(enrolled.map(resolvePersonId));
+      .then(async ([
+        allRes,
+        ,
+        packagesRes,
+        curriculumsRes,
+        allGradesRes,
+      ]) => {
+        let all =
+          allRes.status === "fulfilled"
+            ? extractList(allRes.value, ["students", "results", "items"])
+            : [];
+        if (all.length === 0) {
+          try {
+            const usersResponse = await getUsers({
+              role: "student",
+              page: 1,
+              limit: 1000,
+            });
+            all = extractList(usersResponse, ["users", "results", "items"]);
+          } catch (usersError) {
+            console.error("getUsers student fallback failed:", usersError);
+          }
+        }
+        setStudents(all.filter((student) => resolvePersonId(student)));
+        setPackages(
+          packagesRes.status === "fulfilled"
+            ? extractList(packagesRes.value, ["packages", "results", "items"])
+            : [],
+        );
 
-        setStudents(all.filter((s) => !enrolledIds.has(resolvePersonId(s))));
-        setPackages(packagesRes.status === "fulfilled" ? packagesRes.value.data?.data || [] : []);
+        // ⚠️ بندمج مصدرين لبناء قايمة المراحل بدل ما نوقف عند أول واحد بيرجّع
+        // حاجة: (1) المراحل المتضمنة جوه grade.stage (لو الـ API بيرجعها populated)،
+        // (2) المراحل الجاية من curriculums -> getCurriculumStages لكل curriculum.
+        // اللي يلاقي بيانات أكتر بيفضل، وبنعمل dedupe بالـ id في الآخر.
+        const allGrades =
+          allGradesRes.status === "fulfilled"
+            ? extractList(allGradesRes.value, ["grades", "results", "items"])
+            : [];
+        const stagesFromGrades = allGrades
+          .map((grade) => grade.stage)
+          .filter((stage) => stage && typeof stage === "object");
 
-        if (allRes.status === "rejected") console.error("getAllStudents failed:", allRes.reason);
-        if (packagesRes.status === "rejected") console.error("getAllPackages failed:", packagesRes.reason);
+        let loadedStages = [...stagesFromGrades];
+
+        if (curriculumsRes.status === "fulfilled") {
+          const curriculums = extractList(curriculumsRes.value, [
+            "curriculums",
+            "results",
+            "items",
+          ]);
+          const stageResults = await Promise.allSettled(
+            curriculums
+              .map(resolveEntityId)
+              .filter(Boolean)
+              .map((curriculumId) => getCurriculumStages(curriculumId)),
+          );
+          const curriculumStages = stageResults.flatMap((result) =>
+            result.status === "fulfilled"
+              ? extractList(result.value, ["stages", "results", "items"])
+              : [],
+          );
+          loadedStages = loadedStages.concat(curriculumStages);
+
+          stageResults.forEach((result, i) => {
+            if (result.status === "rejected") {
+              console.error(
+                `getCurriculumStages failed for curriculum ${curriculums[i]?.id ?? i}:`,
+                result.reason,
+              );
+            }
+          });
+        } else {
+          console.error("getCurriculums failed:", curriculumsRes.reason);
+        }
+
+        setStages(
+          Array.from(
+            new Map(
+              loadedStages
+                .map((stage) => [resolveEntityId(stage), stage])
+                .filter(([id]) => id),
+            ).values(),
+          ),
+        );
+
+        if (loadedStages.length === 0) {
+          console.error(
+            "No stages resolved from grades or curriculums. curriculumsRes:",
+            curriculumsRes,
+            "allGradesRes:",
+            allGradesRes,
+          );
+          setError((prev) => prev || "تعذر تحميل المراحل الدراسية");
+        }
+
+        if (allRes.status === "rejected") {
+          console.error("getAllStudents failed:", allRes.reason);
+          setError("تعذر تحميل قائمة الطلاب");
+        } else if (packagesRes.status === "rejected") {
+          console.error("getAllPackages failed:", packagesRes.reason);
+          setError("تعذر تحميل قائمة الباقات");
+        }
       })
       .finally(() => setLoading(false));
   }, [open, group]);
 
   // خيارات فلتر "المرحلة" مستخرجة من قايمة الطلاب اللي وصلت فعلاً (مفيش استدعاء API إضافي)
-  const stageOptions = useMemo(() => {
-    const names = new Set(students.map(resolveStageName).filter(Boolean));
-    return Array.from(names).map((name) => ({ value: name, label: name }));
-  }, [students]);
+  const stageOptions = stages.map((stage) => ({
+    value: resolveEntityId(stage),
+    label: resolveName(stage.name),
+  }));
 
   // خيارات فلتر "الصف"، لو فيه مرحلة مختارة بيفلتر الصفوف اللي تبعها بس
-  const gradeOptions = useMemo(() => {
-    const relevant = stageFilter
-      ? students.filter((s) => resolveStageName(s) === stageFilter)
-      : students;
-    const names = new Set(relevant.map(resolveGradeName).filter(Boolean));
-    return Array.from(names).map((name) => ({ value: name, label: name }));
-  }, [students, stageFilter]);
+  const gradeOptions = grades.map((grade) => ({
+    value: resolveEntityId(grade),
+    label: resolveName(grade.name),
+  }));
 
   // لو الصف المختار بقى مش موجود ضمن خيارات الصف الجديدة (بعد تغيير المرحلة)، بنمسحه
-  useEffect(() => {
-    if (gradeFilter && !gradeOptions.some((o) => o.value === gradeFilter)) {
-      setGradeFilter("");
+  const handleStageChange = async (stageId) => {
+    setStageFilter(stageId);
+    setGradeFilter("");
+    setGrades([]);
+    if (!stageId) return;
+
+    try {
+      const response = await getStageGrades(stageId);
+      setGrades(extractList(response, ["grades", "results", "items"]));
+    } catch (err) {
+      console.error("getStageGrades failed:", err);
+      setError("تعذر تحميل الصفوف الدراسية");
     }
-  }, [gradeOptions, gradeFilter]);
+  };
 
   const filteredStudents = useMemo(() => {
     const q = search.trim().toLowerCase();
     return students.filter((s) => {
       const matchesSearch = !q || resolvePersonName(s).toLowerCase().includes(q);
-      const matchesStage = !stageFilter || resolveStageName(s) === stageFilter;
-      const matchesGrade = !gradeFilter || resolveGradeName(s) === gradeFilter;
+      const selectedStage = stages.find(
+        (stage) => String(resolveEntityId(stage)) === String(stageFilter),
+      );
+      const selectedGrade = grades.find(
+        (grade) => String(resolveEntityId(grade)) === String(gradeFilter),
+      );
+      const matchesStage =
+        !stageFilter ||
+        String(resolveEntityId(s?.stage ?? s?.stageId)) === String(stageFilter) ||
+        resolveStageName(s) === resolveName(selectedStage?.name);
+      const matchesGrade =
+        !gradeFilter ||
+        String(resolveEntityId(s?.grade ?? s?.gradeId)) === String(gradeFilter) ||
+        resolveGradeName(s) === resolveName(selectedGrade?.name);
       return matchesSearch && matchesStage && matchesGrade;
     });
-  }, [students, search, stageFilter, gradeFilter]);
+  }, [students, search, stageFilter, gradeFilter, stages, grades]);
 
   const handleSubmit = async () => {
     if (!selectedStudent) {
@@ -325,7 +493,7 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         placeholder="كل المراحل"
         options={stageOptions}
         value={stageFilter}
-        onChange={setStageFilter}
+        onChange={handleStageChange}
         disabled={loading || stageOptions.length === 0}
         allowClear
       />
@@ -356,7 +524,12 @@ const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       <SelectField
         label="الباقة"
         placeholder={loading ? "جاري التحميل..." : "اختر الباقة"}
-        options={packages.map((p) => ({ value: p.id, label: p.name || resolveName(p.name) }))}
+        options={packages
+          .map((p) => ({
+            value: p.id || p._id,
+            label: typeof p.name === "string" ? p.name : resolveName(p.name),
+          }))
+          .filter((option) => option.value)}
         value={selectedPackage}
         onChange={setSelectedPackage}
         disabled={loading}
@@ -681,6 +854,8 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
         groupName: group.name,
         groupTeacher: group.teacher,
         groupTeacherId: group.teacherId,
+        groupSubjectId: group.subjectId,
+        classroomType: group.classroomType,
       },
     });
   };
@@ -707,6 +882,8 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
           groupName: group.name,
           groupTeacher: group.teacher,
           groupTeacherId: group.teacherId,
+          groupSubjectId: group.subjectId,
+          classroomType: group.classroomType,
         },
       });
     }
