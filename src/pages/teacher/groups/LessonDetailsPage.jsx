@@ -511,7 +511,10 @@ const LessonDetailsPage = () => {
   }
 
   return (
-    <TeacherLayout>
+    <TeacherLayout
+      breadcrumbLabels={{ lessonId: lesson.title }}
+      breadcrumbCurrentLabel={lesson.title}
+    >
       {/* <Breadcrumbs homeTo="/teacher-dashboard" /> */}
       <div
         className="w-full p-1 font-['IBM_Plex_Sans_Arabic'] text-right"

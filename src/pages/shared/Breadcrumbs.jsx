@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { getClassroomSessions } from "../../services/APIService";
 
 // ⚠️ عدّلي المسميات دي حسب اللي عايزاه يتعرض للمستخدم
 // المفتاح = segment زي ما هو مكتوب في الـ path
@@ -112,9 +114,47 @@ const ADMIN_CLASSROOMS_SESSIONS_OVERRIDES = {
   },
 };
 
-export default function Breadcrumbs({ homeTo = "/" }) {
+export default function Breadcrumbs({
+  homeTo = "/",
+  dynamicLabels = {},
+  currentPageLabel = "",
+}) {
   const location = useLocation();
   const params = useParams();
+  const [resolvedLessonTitle, setResolvedLessonTitle] = useState("");
+  const lessonParamKey = params.lessonId ? "lessonId" : params.sessionId ? "sessionId" : "";
+  const lessonId = params.lessonId || params.sessionId;
+  const classroomId = params.groupId || params.classroomId;
+  const providedLessonTitle = lessonParamKey ? dynamicLabels[lessonParamKey] : "";
+
+  useEffect(() => {
+    if (!lessonId || !classroomId || providedLessonTitle) {
+      setResolvedLessonTitle("");
+      return;
+    }
+
+    let active = true;
+    getClassroomSessions(classroomId)
+      .then((response) => {
+        if (!active) return;
+        const sessions = response.data?.data || [];
+        const session = sessions.find(
+          (item) => String(item.id || item._id) === String(lessonId)
+        );
+        setResolvedLessonTitle(session?.title || "");
+      })
+      .catch(() => {
+        if (active) setResolvedLessonTitle("");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [classroomId, lessonId, providedLessonTitle]);
+
+  const breadcrumbLabels = lessonParamKey && resolvedLessonTitle
+    ? { ...dynamicLabels, [lessonParamKey]: resolvedLessonTitle }
+    : dynamicLabels;
 
   // نبني set من قيم الـ params عشان نقدر نميز أي segment هو فعليا قيمة id ديناميكي
   const paramValues = new Set(Object.values(params).filter(Boolean));
@@ -142,8 +182,9 @@ export default function Breadcrumbs({ homeTo = "/" }) {
       let linkPath = accumulatedPath;
       if (paramValues.has(segment)) {
         const paramKey = paramKeysByValue[segment];
-        if (HIDDEN_PARAM_KEYS.has(paramKey)) return null;
-        label = DYNAMIC_LABELS[paramKey] || segment;
+        const dynamicLabel = breadcrumbLabels[paramKey];
+        if (HIDDEN_PARAM_KEYS.has(paramKey) && !dynamicLabel) return null;
+        label = dynamicLabel || DYNAMIC_LABELS[paramKey] || segment;
         isDynamic = true;
 
         const suffix = DYNAMIC_LINK_SUFFIX[paramKey];
@@ -171,6 +212,17 @@ export default function Breadcrumbs({ homeTo = "/" }) {
       };
     })
     .filter(Boolean);
+
+  if (
+    currentPageLabel &&
+    crumbs[crumbs.length - 1]?.label !== currentPageLabel
+  ) {
+    crumbs.push({
+      path: `${location.pathname}#current`,
+      label: currentPageLabel,
+      clickable: false,
+    });
+  }
 
   return (
     <nav aria-label="Breadcrumb" dir="rtl" className="mb-4">

@@ -208,7 +208,10 @@ const StudentLessonDetailsPage = () => {
   }
 
   return (
-    <StudentLayout>
+    <StudentLayout
+      breadcrumbLabels={{ lessonId: lesson.title }}
+      breadcrumbCurrentLabel={lesson.title}
+    >
       <div
         className="w-full p-1 font-['IBM_Plex_Sans_Arabic'] text-right"
         dir="rtl"
