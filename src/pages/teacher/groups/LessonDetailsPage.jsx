@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Play, Square, Loader2 } from "lucide-react";
+import { Play, Square, Loader2, MessageCircle } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LessonRecordings from "../../../components/teacher/groups/lessons/LessonRecordings";
 import LessonAssignments from "../../../components/teacher/groups/lessons/LessonAssignments";
@@ -93,7 +93,7 @@ const AttendanceBadge = ({ status }) => {
 };
 
 // ─── Header الصفحة + زرار تسجيل الحضور ─────────────────────────────────────────
-const PageHeader = ({ lesson, onOpenAttendance, onLifecycle, lifecycleLoading, elapsed }) => (
+const PageHeader = ({ lesson, onOpenAttendance, onLifecycle, onOpenChat, lifecycleLoading, elapsed }) => (
   <div dir="rtl" className="flex items-center justify-between gap-3 flex-wrap">
     <div className="flex items-center gap-3 min-w-0">
       <div className="min-w-0">
@@ -109,7 +109,7 @@ const PageHeader = ({ lesson, onOpenAttendance, onLifecycle, lifecycleLoading, e
       </div>
     </div>
 
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       {lesson.rawStatus !== "completed" && (
         <button onClick={onLifecycle} disabled={lifecycleLoading} className={`h-10 px-4 rounded-lg text-white text-sm font-medium flex items-center gap-2 ${lesson.rawStatus === "live" ? "bg-red-600" : "bg-green-600"}`}>
           {lifecycleLoading ? <Loader2 size={16} className="animate-spin" /> : lesson.rawStatus === "live" ? <Square size={15} /> : <Play size={16} />}
@@ -125,6 +125,14 @@ const PageHeader = ({ lesson, onOpenAttendance, onLifecycle, lifecycleLoading, e
           تسجيل الحضور
         </button>
       )}
+      <button
+        type="button"
+        onClick={onOpenChat}
+        className="h-10 px-4 rounded-lg border border-[#E5E5E5] bg-white text-[#123C91] text-[14px] font-medium flex items-center gap-2 hover:bg-[#EAF4FF] transition-colors"
+      >
+        <MessageCircle size={18} />
+        محادثة المجموعة
+      </button>
     </div>
   </div>
 );
@@ -519,6 +527,14 @@ const LessonDetailsPage = () => {
             lesson={lesson}
             onOpenAttendance={() =>
               navigate(`/teacher/groups/${groupId}/lessons/${lessonId}/attendance`)
+            }
+            onOpenChat={() =>
+              navigate("/teacher/messages", {
+                state: {
+                  openClassroomId: groupId,
+                  openClassroomName: lesson.groupName,
+                },
+              })
             }
             onLifecycle={handleLifecycle}
             lifecycleLoading={lifecycleLoading}

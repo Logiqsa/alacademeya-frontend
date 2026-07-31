@@ -16,11 +16,24 @@ const normalizeRoom = (room) => ({
     room.classroom?._id ??
     room.classroomId ??
     room.classroom ??
+    room.classroom?._id ??
+    room.classroom?.id ??
+    room.classroomId ??
+    room.classroom ??
     room.metadata?.classroomId ??
     room.data?.classroomId ??
+    room.data?.classroom?.id ??
+    room.data?.classroom?._id ??
     room.reference?.id ??
+    room.reference?._id ??
     room.relatedEntity?.id ??
-    room.relatedEntity?._id,
+    room.relatedEntity?._id ??
+    room.room?.classroomId ??
+    room.room?.classroom?._id ??
+    room.room?.classroom?.id ??
+    room.classroom_id ??
+    room.info?.classroomId ??
+    room.parent?.classroomId,
   participants: room.participants ?? [],
   avatarInitial: (room.displayName ?? room.name ?? "?").trim().charAt(0),
   studentName: room.studentName ?? null,

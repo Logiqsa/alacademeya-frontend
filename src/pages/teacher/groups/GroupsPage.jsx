@@ -206,12 +206,15 @@ const GroupsPage = () => {
                   navigate(`/teacher/groups/${id}/students`)
                 }
                 onOpenChat={(group) =>
-                  navigate("/teacher/messages", {
-                    state: {
-                      openClassroomId: group.id,
-                      openClassroomName: group.name,
-                    },
-                  })
+                  navigate(
+                    `/teacher/messages?classroom=${encodeURIComponent(group.id)}&name=${encodeURIComponent(group.name)}`,
+                    {
+                      state: {
+                        openClassroomId: group.id,
+                        openClassroomName: group.name,
+                      },
+                    }
+                  )
                 }
                 onEdit={(id) => navigate(`/teacher/groups/${id}/edit`)}
                 onDelete={handleDelete}

@@ -223,12 +223,15 @@ const StudentGroupLessonsPage = () => {
           <button
             type="button"
             onClick={() =>
-              navigate("/student/messages", {
-                state: {
-                  openClassroomId: groupId,
-                  openClassroomName: groupName,
-                },
-              })
+              navigate(
+                `/student/messages?classroom=${encodeURIComponent(groupId)}&name=${encodeURIComponent(groupName)}`,
+                {
+                  state: {
+                    openClassroomId: groupId,
+                    openClassroomName: groupName,
+                  },
+                }
+              )
             }
             className="flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF] sm:w-auto"
           >

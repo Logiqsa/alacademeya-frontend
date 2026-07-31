@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import LiveLessonLink from "../../../components/student/groupLesson/Livelessonlink";
 import LessonAssignments from "../../../components/teacher/groups/lessons/LessonAssignments";
 import LessonRecordings from "../../../components/teacher/groups/lessons/LessonRecordings";
 import LessonFiles from "../../../components/teacher/groups/lessons/LessonFiles";
+import { MessageCircle } from "lucide-react";
 import {
   getMyClassrooms,
   getClassroomSessions,
@@ -59,7 +60,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const PageHeader = ({ lesson }) => (
+const PageHeader = ({ lesson, onOpenChat }) => (
   <div dir="rtl" className="flex items-center justify-between gap-3 flex-wrap">
     <div className="flex items-center gap-3 min-w-0">
       <div className="min-w-0">
@@ -74,11 +75,20 @@ const PageHeader = ({ lesson }) => (
         </p>
       </div>
     </div>
+    <button
+      type="button"
+      onClick={onOpenChat}
+      className="h-10 px-4 rounded-lg border border-[#E5E5E5] bg-white text-[#123C91] text-[14px] font-medium flex items-center gap-2 hover:bg-[#EAF4FF] transition-colors"
+    >
+      <MessageCircle size={18} />
+      محادثة المجموعة
+    </button>
   </div>
 );
 
 const StudentLessonDetailsPage = () => {
   const { groupId, lessonId } = useParams();
+  const navigate = useNavigate();
 
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -217,7 +227,17 @@ const StudentLessonDetailsPage = () => {
         dir="rtl"
       >
         <div className="mx-auto space-y-5">
-          <PageHeader lesson={lesson} />
+          <PageHeader
+            lesson={lesson}
+            onOpenChat={() =>
+              navigate("/student/messages", {
+                state: {
+                  openClassroomId: groupId,
+                  openClassroomName: lesson.groupName,
+                },
+              })
+            }
+          />
 
           <LiveLessonLink
             lessonUrl={lesson.lessonUrl}
