@@ -272,6 +272,25 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     } else {
       console.error("getClassroom failed:", classroomResult.reason);
       setGroupName((prev) => prev || "مجموعة");
+      setGroupTeacher((prev) => (prev && prev !== "—" ? prev : routedGroupTeacher || "لم يُعيّن معلم"));
+
+      // ✅ الإصلاح الأساسي: getClassroom بترجع 404 عندك (endpoint لازم يتأكد منه في بوستمان).
+      // من غير السطر ده، groupDetails كانت بتفضل null للأبد، وAddStudentModal
+      // بترفض تشتغل خالص لو group === null (أول سطر في الـ effect بتاعها:
+      // `if (!open || !group) return;`) — فمكانتش بتجيب طلاب ولا مراحل ولا صفوف.
+      // هنا بنعمل fallback بالبيانات اللي جايه من صفحة المجموعات (location.state)
+      // عشان الـ group تفضل موجودة حتى لو تفاصيل المجموعة الكاملة فشلت تتحمل.
+      setGroupDetails((prev) =>
+        prev || {
+          id: groupId,
+          teacherId: routedGroupTeacherId,
+          teacher: routedGroupTeacher || "—",
+          subjectId: routedGroupSubjectId,
+          classroomType: routedClassroomType || "group",
+          substituteTeacherId: undefined,
+          substituteTeacher: undefined,
+        },
+      );
     }
 
     if (isAdmin && studentsResult.status === "fulfilled") {
@@ -557,19 +576,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             <h1 className="mb-2 text-xl font-semibold text-[#123C91] sm:text-2xl">
               {groupName || "المجموعة"}
             </h1>
-            {/* {highlightedLesson ? (
-              <button
-                type="button"
-                onClick={() => navigate(highlightedLessonPath)}
-                className="block text-right text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3 hover:underline"
-              >
-                {highlightedLesson.title}
-              </button>
-            ) : (
-              <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
-                {groupName || "مجموعة"}
-              </h3>
-            )} */}
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في
               مكان واحد.
