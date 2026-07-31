@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import { AuthContext } from "../../context/AuthContext";
-import { isAdminRole } from "../../utils/roles";
+import { getDashboardPathByRole } from "../../utils/roles";
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,23 +21,8 @@ const LoginForm = () => {
       const data = await login(credentials);
       toast.success("تم تسجيل الدخول بنجاح!");
 
-      const role = data?.user?.role;
-      const isApproved = data?.user?.registrationStatus === "approved";
-
-      // اطبع شكل اليوزر الفعلي اللي راجع من الـ login عشان نتأكد من اسم الحقل الصح
-      console.log("user data:", JSON.stringify(data.user));
-
-      if (role === "teacher") {
-        navigate(isApproved ? "/teacher-dashboard" : "/account-state");
-      } else if (role === "student") {
-        navigate(isApproved ? "/student-dashboard" : "/register/success");
-      } else if (role === "parent") {
-        navigate("/parent-dashboard");
-      } else if (isAdminRole(role)) {
-        navigate("/admin-dashboard");
-      } else {
-        navigate("/");
-      }
+      const redirectPath = getDashboardPathByRole(data?.user ?? data);
+      navigate(redirectPath);
 
     } catch (error) {
       toast.error(

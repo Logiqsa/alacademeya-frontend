@@ -21,6 +21,7 @@ import SubscriptionPage from "./pages/parent/SubscriptionPage";
 import ChildrenPage from "./pages/parent/ChildrenPage";
 
 import { AuthContext } from "./context/AuthContext";
+import { getDashboardPathByRole } from "./utils/roles";
 
 import RegisterSuccessPage from "./pages/auth/RegisterSuccessPage";
 import TeacherHome from "./pages/teacher/TeacherHome";
@@ -108,13 +109,13 @@ function App() {
       <Routes>
         {/* Landing */}
         <Route element={<HomeLayout />}>
-          <Route index element={<Landing />} />
+          <Route index element={user ? <Navigate to={getDashboardPathByRole(user)} replace /> : <Landing />} />
           <Route path="/blogs" element={<AllBlogsPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
         </Route>
 
         {/* Auth */}
-        <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+        <Route path="/login" element={user ? <Navigate to={getDashboardPathByRole(user)} replace /> : <LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/select-account-type" element={<AccountTypePage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -216,7 +217,7 @@ function App() {
         <Route path="/admin/subscriptions/add" element={user ? <AddSubscriptionPage /> : <Navigate to="/login" replace />} />
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={user ? <Navigate to={getDashboardPathByRole(user)} replace /> : <Navigate to="/" replace />} />
       </Routes>
     </>
   );
