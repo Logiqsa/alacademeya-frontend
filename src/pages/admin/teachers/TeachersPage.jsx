@@ -296,7 +296,7 @@ const TeachersPage = () => {
                 <table className="w-full text-right">
                   <thead className="bg-[#F9FAFA]">
                     <tr>
-                      {["اسم المعلم", "البريد الإلكتروني", "رقم الهاتف", "الساعات الشهرية", "الحصص المكتملة", "غياب / لم تبدأ في الموعد"].map((header) => (
+                      {["اسم المعلم", "البريد الإلكتروني", "رقم الهاتف", "الساعات الشهرية", "الحصص المكتملة", "غياب / لم تبدأ في الموعد", "الإجراءات"].map((header) => (
                         <th key={header} className="whitespace-nowrap px-6 py-4 text-[13px] font-medium text-[#575F69]">
                           {header}
                         </th>
@@ -343,6 +343,19 @@ const TeachersPage = () => {
                           >
                             {teacher.missedSessions.length}
                           </button>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          {!teacher.isApproved ? (
+                            <button
+                              type="button"
+                              onClick={() => openTeacherDetails(teacher)}
+                              className="rounded-lg border border-[#123C91] px-3 py-2 text-sm font-semibold text-[#123C91] hover:bg-[#EAF4FF]"
+                            >
+                              قبول الطلب
+                            </button>
+                          ) : (
+                            <span className="text-sm text-[#10B981]">معتمد</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -400,6 +413,15 @@ const TeachersPage = () => {
                       <p className="mt-1 font-semibold text-amber-700">{teacher.missedSessions.length}</p>
                     </button>
                   </div>
+                  {!teacher.isApproved && (
+                    <button
+                      type="button"
+                      onClick={() => openTeacherDetails(teacher)}
+                      className="mt-3 w-full rounded-xl border border-[#123C91] py-3 text-sm font-semibold text-[#123C91] hover:bg-[#EAF4FF]"
+                    >
+                      قبول الطلب
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
