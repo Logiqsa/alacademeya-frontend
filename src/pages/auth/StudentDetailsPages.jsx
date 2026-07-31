@@ -263,7 +263,9 @@ const StudentDetailsPages = () => {
   return (
     <AuthLayout>
       <div className="relative w-full max-w-175 mx-auto p-6">
-        <img src={logo} alt="logo" className="w-44 h-8 mb-5 cursor-pointer" />
+        <Link to="/">
+          <img src={logo} alt="logo" className="w-44 h-8 mb-5 cursor-pointer" />
+        </Link>
         <h2
           className="text-[24px] font-bold mb-6 text-[#1F2937]"
           style={{ fontFamily: "Tajawal, sans-serif" }}

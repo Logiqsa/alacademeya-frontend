@@ -1,5 +1,5 @@
 import { CheckCircle, Mail, MessageCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
@@ -38,7 +38,9 @@ const PendingPage = () => {
         className="w-full max-w-md mx-auto p-8 flex flex-col items-center"
         dir="rtl"
       >
-        <img src={logo} alt="logo" className="w-44 h-8 mb-8 cursor-pointer" />
+        <Link to="/">
+          <img src={logo} alt="logo" className="w-44 h-8 mb-8 cursor-pointer" />
+        </Link>
 
         <div className="w-16 h-16 rounded-full bg-[#ECFDF5] flex items-center justify-center mb-5">
           <CheckCircle size={32} className="text-[#059669]" />

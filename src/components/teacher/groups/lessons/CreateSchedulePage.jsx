@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Clock } from "lucide-react";
 import TeacherLayout from "../../layout/TeacherLayout";
 
-import { createOrUpdateClassroomSchedule, getClassroomSchedule } from "../../../../services/APIService";
+import { createOrUpdateClassroomSchedule, getClassroom, getClassroomSchedule } from "../../../../services/APIService";
 
 const DAYS = [
   { key: "saturday", label: "السبت" },
@@ -19,6 +19,7 @@ const CreateSchedulePage = () => {
   const navigate = useNavigate();
   const { groupId } = useParams();
 
+  const [groupName, setGroupName] = useState("مجموعة");
   const [selectedDays, setSelectedDays] = useState([]);
   const [time, setTime] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,7 +45,26 @@ const CreateSchedulePage = () => {
         }
       })
       .finally(() => active && setInitialLoading(false));
+
     return () => { active = false; };
+  }, [groupId]);
+
+  useEffect(() => {
+    let active = true;
+    getClassroom(groupId)
+      .then((response) => {
+        if (!active) return;
+        const name = response.data?.data?.name;
+        const resolvedName =
+          typeof name === "string" ? name : name?.ar || name?.en || "مجموعة";
+        setGroupName(resolvedName);
+      })
+      .catch(() => {
+        if (active) setGroupName("مجموعة");
+      });
+    return () => {
+      active = false;
+    };
   }, [groupId]);
 
   const toggleDay = (key) => {
@@ -77,6 +97,7 @@ const CreateSchedulePage = () => {
           successMessage: editing
             ? "تم تعديل جدول الحصص بنجاح"
             : "تم إنشاء جدول الحصص بنجاح",
+          groupName,
         },
       });
     } catch (err) {

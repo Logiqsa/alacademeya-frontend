@@ -51,6 +51,10 @@ const CreateLessonPage = ({ role = "teacher" }) => {
   const Layout = isAdmin ? AdminLayout : TeacherLayout;
 
   const [groupName, setGroupName] = useState("مجموعة");
+  const [groupTeacher, setGroupTeacher] = useState("—");
+  const [groupTeacherId, setGroupTeacherId] = useState("");
+  const [groupSubjectId, setGroupSubjectId] = useState("");
+  const [classroomType, setClassroomType] = useState("group");
   const [classroom, setClassroom] = useState(null);
   const [teachers, setTeachers] = useState([]);
   const [substituteTeacher, setSubstituteTeacher] = useState("");
@@ -90,12 +94,34 @@ const CreateLessonPage = ({ role = "teacher" }) => {
     getClassroom(groupId)
       .then((response) => {
         if (!active) return;
-        const name = response.data?.data?.name;
+        const classroomData = response.data?.data || {};
+        const name = classroomData.name;
         const resolvedName =
           typeof name === "string" ? name : name?.ar || name?.en || "مجموعة";
-        setClassroom(response.data?.data || null);
+        const teacherName =
+          typeof classroomData.teacher === "object"
+            ? classroomData.teacher?.user?.fullName || classroomData.teacher?.user?.name || classroomData.teacher?.fullName || classroomData.teacher?.name
+            : "";
+        const teacherId =
+          typeof classroomData.teacher === "string"
+            ? classroomData.teacher
+            : classroomData.teacher?.id || classroomData.teacher?._id || "";
+        const subjectId =
+          typeof classroomData.subject === "string"
+            ? classroomData.subject
+            : classroomData.subject?.id || classroomData.subject?._id || "";
+        const type =
+          ["private", "group"].includes(classroomData.type)
+            ? classroomData.type
+            : "group";
+
+        setClassroom(classroomData);
         setGroupName(resolvedName);
         setLessonTitle((current) => current || `حصة ${resolvedName}`);
+        setGroupTeacher(teacherName || "—");
+        setGroupTeacherId(teacherId);
+        setGroupSubjectId(subjectId);
+        setClassroomType(type);
       })
       .catch((err) => {
         console.error("getClassroom failed:", err);
@@ -197,7 +223,14 @@ const CreateLessonPage = ({ role = "teacher" }) => {
       navigate(isAdmin
         ? `/admin/groups/${groupId}/lessons`
         : `/teacher/groups/${groupId}/lessons`, {
-        state: { showSuccessToast: true },
+        state: {
+          showSuccessToast: true,
+          groupName,
+          groupTeacher,
+          groupTeacherId,
+          groupSubjectId,
+          classroomType,
+        },
       });
     } catch (err) {
       console.error("createClassroomSession failed:", err);

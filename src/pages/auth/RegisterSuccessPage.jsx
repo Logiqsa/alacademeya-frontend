@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
@@ -21,7 +21,9 @@ const RegisterSuccessPage = () => {
                 className="w-full max-w-md mx-auto p-8 flex flex-col items-center"
                 dir="rtl"
             >
-                <img src={logo} alt="logo" className="w-44 h-8 mb-8 cursor-pointer" />
+                <Link to="/">
+                    <img src={logo} alt="logo" className="w-44 h-8 mb-8 cursor-pointer" />
+                </Link>
 
                 <div className="w-14 h-14 rounded-full bg-[#ECFDF5] flex items-center justify-center mb-5">
                     <CheckCircle size={30} className="text-[#059669]" />

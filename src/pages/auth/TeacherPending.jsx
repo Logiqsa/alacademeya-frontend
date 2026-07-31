@@ -22,7 +22,9 @@ const PendingPage = () => {
 
       <div className="relative bg-white rounded-3xl shadow-[0_8px_40px_rgba(18,60,145,0.08)] w-full max-w-md p-10 flex flex-col items-center text-center">
 
-        <img src={logo} alt="الأكاديمية" className="h-8 w-auto mb-8" />
+        <Link to="/">
+          <img src={logo} alt="الأكاديمية" className="h-8 w-auto mb-8" />
+        </Link>
 
         {/* success icon */}
         <div className="w-16 h-16 rounded-full border-2 border-[#00A63E] flex items-center justify-center mb-6">

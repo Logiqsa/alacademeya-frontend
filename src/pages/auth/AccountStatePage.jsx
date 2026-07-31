@@ -1,5 +1,5 @@
 import { useContext, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/auth/AuthLayout";
 import logo from "../../assets/icons/logo.svg";
 import clockIcon from "../../assets/icons/clock.svg";
@@ -66,12 +66,13 @@ const AccountStatePage = () => {
     <AuthLayout>
       <div className="w-full max-w-145 mx-auto p-2 flex flex-col items-center" dir="rtl">
 
-        <img
-          src={logo}
-          alt="logo"
-          className="w-44 h-8 mb-2 mt-4 cursor-pointer"
-          onClick={() => navigate("/")}
-        />
+        <Link to="/">
+          <img
+            src={logo}
+            alt="logo"
+            className="w-44 h-8 mb-2 mt-4 cursor-pointer"
+          />
+        </Link>
         <img src={clockIcon} alt="clock" className="w-16 h-16 mb-4" />
 
         <h2 className="text-center mb-2" style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "24px", lineHeight: "32px", color: "#1F2937" }}>

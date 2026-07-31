@@ -1,4 +1,5 @@
 import { Mail, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import logo from "../../assets/icons/logo.svg";
 import fbIcon from "../../assets/icons/facebook.png";
 import twitterIcon from "../../assets/icons/twitter.png";

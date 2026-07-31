@@ -11,7 +11,9 @@ const SuccessPage = () => {
   return (
     <AuthLayout>
       <div className="w-full max-w-md mx-auto p-8 flex flex-col items-center" dir="rtl">
-        <img src={logo} alt="logo" className="w-44 h-8 mb-8 cursor-pointer" />
+        <Link to="/">
+          <img src={logo} alt="logo" className="w-44 h-8 mb-8 cursor-pointer" />
+        </Link>
 
         <div className="w-12 h-12 rounded-full border-2 border-[#14B8A6] flex items-center justify-center mb-5">
           <svg width="20" height="16" viewBox="0 0 20 16" fill="none">

@@ -556,7 +556,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       >
         {/* Toast نجاح */}
         {showToast && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#D6E4C3] shadow-lg rounded-xl px-4 py-3 min-w-70">
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#D6E4C3] shadow-lg rounded-xl px-4 py-3 min-w-[280px]">
             <CheckCircle2 className="text-green-600 shrink-0" size={20} />
             <p className="text-sm text-[#1A1A1A] font-medium flex-1">
               {toastMessage}
@@ -586,15 +586,12 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
               <button
                 type="button"
                 onClick={() =>
-                  navigate(
-                    `/teacher/messages?classroom=${encodeURIComponent(groupId)}&name=${encodeURIComponent(groupName)}`,
-                    {
-                      state: {
-                        openClassroomId: groupId,
-                        openClassroomName: groupName,
-                      },
-                    }
-                  )
+                  navigate("/teacher/messages", {
+                    state: {
+                      openClassroomId: groupId,
+                      openClassroomName: groupName,
+                    },
+                  })
                 }
                 className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF] sm:w-auto"
               >

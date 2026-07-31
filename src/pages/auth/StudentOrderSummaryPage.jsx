@@ -93,7 +93,9 @@ const StudentOrderSummaryPage = () => {
   return (
     <AuthLayout>
       <div className="w-full max-w-[650px] mx-auto p-5" dir="rtl">
-        <img src={logo} alt="الأكاديمية" className="w-40 h-9 mx-auto mb-6" />
+        <Link to="/">
+          <img src={logo} alt="الأكاديمية" className="w-40 h-9 mx-auto mb-6" />
+        </Link>
         <div className="bg-white border border-[#DCE8F7] rounded-2xl p-6 shadow-sm">
           <button onClick={() => navigate(-1)} className="text-[#123C91] text-sm mb-2">رجوع</button>
           <h1 className="text-[22px] font-bold">ملخص طلبك</h1>

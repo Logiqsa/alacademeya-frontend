@@ -71,6 +71,24 @@ const GroupsPage = () => {
         return map[field] || "--";
       };
 
+      const resolveTeacher = (teacher) => {
+        if (!teacher) return "—";
+        if (typeof teacher === "string") return teacher;
+        return (
+          resolveName(teacher?.user?.fullName) ||
+          resolveName(teacher?.user?.name) ||
+          resolveName(teacher?.fullName) ||
+          resolveName(teacher?.name) ||
+          "—"
+        );
+      };
+
+      const resolveTeacherId = (teacher) => {
+        if (!teacher) return null;
+        if (typeof teacher === "string") return teacher;
+        return teacher?.id || teacher?._id || teacher?.user?.id || teacher?.user?._id || null;
+      };
+
       const mapped = rawClassrooms.map((c) => {
         const enrolled = c.students?.length || 0;
         const capacity = c.capacity || 0;
@@ -81,6 +99,15 @@ const GroupsPage = () => {
             : c.status === "pending"
               ? "التسجيل مفتوح"
               : "لا توجد حصص قادمة حالياً";
+        const teacherName = resolveTeacher(c.teacher);
+        const teacherId = resolveTeacherId(c.teacher) || c.teacherId || null;
+        const subjectId =
+          typeof c.subject === "string"
+            ? c.subject
+            : c.subject?.id || c.subject?._id || null;
+        const classroomType = ["private", "group"].includes(c.type)
+          ? c.type
+          : "group";
 
         return {
           id: c.id,
@@ -91,6 +118,10 @@ const GroupsPage = () => {
           enrolled,
           max: capacity,
           nextLesson: nextLessonText,
+          teacher: teacherName,
+          teacherId,
+          subjectId,
+          classroomType,
         };
       });
 
@@ -199,8 +230,16 @@ const GroupsPage = () => {
               <GroupCard
                 key={g.id}
                 group={g}
-                onViewLessons={(id) =>
-                  navigate(`/teacher/groups/${id}/lessons`)
+                onViewLessons={() =>
+                  navigate(`/teacher/groups/${g.id}/lessons`, {
+                    state: {
+                      groupName: g.name,
+                      groupTeacher: g.teacher,
+                      groupTeacherId: g.teacherId,
+                      groupSubjectId: g.subjectId,
+                      classroomType: g.classroomType,
+                    },
+                  })
                 }
                 onViewStudents={(id) =>
                   navigate(`/teacher/groups/${id}/students`)

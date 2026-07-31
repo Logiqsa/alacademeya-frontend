@@ -306,29 +306,6 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
       )}
 
       <section className="w-full min-w-0 rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-sm sm:p-6 md:p-8">
-        {/* Header: month title + nav */}
-        {/* <div className="mb-5  flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => changeMonth(-1)}
-            className="rounded-lg border p-2 mr-4 text-[#123C91] shrink-0"
-            aria-label="الشهر السابق"
-          >
-            <ChevronRight size={18} />
-          </button>
-          <h2 className="text-[15px] sm:text-[16px] font-semibold text-[#1F2937]">
-            {monthLabel(monthDate)}
-          </h2>
-          <button
-            type="button"
-            onClick={() => changeMonth(1)}
-            className="rounded-lg border p-2  ml-4 text-[#123C91] shrink-0"
-            aria-label="الشهر التالي"
-          >
-            <ChevronLeft size={18} />
-          </button>
-        </div> */}
-
         {loading ? (
           <LoadingState
             label="جاري تحميل الجدول..."
@@ -343,7 +320,7 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
                 <button
                   type="button"
                   onClick={() => changeMonth(-1)}
-                  className="rounded-lg border p-2 text-[#123C91] shrink-0"
+                  className="rounded-lg border p-2 text-[#123C91] hover:bg-[#F0F4FF] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91] shrink-0"
                   aria-label="الشهر السابق"
                 >
                   <ChevronRight size={18} />
@@ -354,7 +331,7 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
                 <button
                   type="button"
                   onClick={() => changeMonth(1)}
-                  className="rounded-lg border p-2  ml-4 text-[#123C91] shrink-0"
+                  className="rounded-lg border p-2 text-[#123C91] hover:bg-[#F0F4FF] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91] shrink-0"
                   aria-label="الشهر التالي"
                 >
                   <ChevronLeft size={18} />
