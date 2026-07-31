@@ -386,32 +386,16 @@ const TeachersPage = () => {
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(`/admin/teachers/${teacher.id}/sessions/completed`, {
-                          state: { teacherName: teacher.name },
-                        })
-                      }
-                      className="rounded-lg bg-blue-50 p-3 text-right"
-                    >
-                      <p className="text-xs text-[#575F69]">الحصص المكتملة</p>
-                      <p className="mt-1 font-semibold text-[#123C91]">{teacher.completedSessions}</p>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(`/admin/teachers/${teacher.id}/sessions/missed`, {
-                          state: { teacherName: teacher.name },
-                        })
-                      }
-                      className="rounded-lg bg-amber-50 p-3 text-right"
-                    >
-                      <p className="text-xs text-[#575F69]">
-                        غياب / لم تبدأ في الموعد
-                      </p>
+                    <div className="rounded-lg bg-amber-50 p-3">
+                      <p className="text-xs text-[#575F69]">غياب / لم تبدأ في الموعد</p>
                       <p className="mt-1 font-semibold text-amber-700">{teacher.missedSessions.length}</p>
-                    </button>
+                    </div>
+                    <div className="rounded-lg bg-white p-3 text-sm text-[#575F69]">
+                      <p className="text-xs text-[#575F69]">الحالة</p>
+                      <p className="mt-1 font-semibold text-[#1F2937]">
+                        {teacher.isApproved ? "معتمد" : "بانتظار الموافقة"}
+                      </p>
+                    </div>
                   </div>
                   {!teacher.isApproved && (
                     <button

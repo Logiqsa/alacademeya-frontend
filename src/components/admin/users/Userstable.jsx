@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MoreVertical,
   Eye,
@@ -142,13 +143,15 @@ const Avatar = ({ name, avatarUrl, size = 8 }) => (
   </div>
 );
 
-const UserCell = ({ name, avatarUrl }) => (
-  <div className="flex items-center gap-2.5">
+const UserCell = ({ name, avatarUrl, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex items-center gap-2.5 text-left transition-colors hover:text-[#123C91]"
+  >
     <Avatar name={name} avatarUrl={avatarUrl} size={8} />
-    <span className="text-sm font-medium text-[#1A1A1A] font-['Tajawal']">
-      {name}
-    </span>
-  </div>
+    <span className="text-sm font-medium text-[#1A1A1A] font-['Tajawal']">{name}</span>
+  </button>
 );
 
 const DetailRow = ({ label, value }) => (
@@ -166,6 +169,10 @@ export const UserDetailsModal = ({
   user,
   reportLoading,
   reportError,
+  onOpenChat,
+  onApprove,
+  onToggleStatus,
+  onDelete,
 }) => {
   if (!open || !user) return null;
 
@@ -233,6 +240,53 @@ export const UserDetailsModal = ({
           <MessageCircle size={18} />
           تواصل عبر واتساب
         </a>
+
+        <div className="grid gap-3 mb-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => onOpenChat?.(user)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#EAF4FF] px-4 py-3 text-sm font-semibold text-[#123C91] transition-colors hover:bg-[#dbe7fc]"
+          >
+            <MessageCircle size={18} />
+            فتح محادثة الموقع
+          </button>
+
+          {user.status === "معلق" && (
+            <button
+              type="button"
+              onClick={() => onApprove?.(user)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#123C91] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0f3280]"
+            >
+              <CheckCircle2 size={18} />
+              قبول الطلب
+            </button>
+          )}
+
+          {(user.status === "نشط" || user.status === "موقوف") && (
+            <button
+              type="button"
+              onClick={() => onToggleStatus?.(user)}
+              className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${user.status === "موقوف" ? "bg-[#00A63E] text-white hover:bg-[#008a33]" : "bg-[#FF8A00] text-white hover:bg-[#dd7000]"}`}
+            >
+              {user.status === "موقوف" ? (
+                <CheckCircle2 size={18} />
+              ) : (
+                <Ban size={18} />
+              )}
+              {user.status === "موقوف" ? "تفعيل الحساب" : "إيقاف الحساب"}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onDelete?.(user)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-600"
+          >
+            <Trash2 size={18} />
+            حذف المستخدم
+          </button>
+        </div>
+
         <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <DetailRow label="تاريخ الانضمام" value={user.joinDate} />
           <DetailRow label="رقم الهاتف" value={user.phone} />
@@ -397,7 +451,7 @@ const ConfirmDialog = ({
   );
 };
 
-const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete }) => {
+const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete, onOpenChat }) => {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({
     top: 0,
@@ -417,6 +471,24 @@ const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete }) => {
       label: "عرض",
       Icon: Eye,
       onClick: () => onView?.(user),
+    },
+    {
+      key: "whatsapp",
+      label: "واتساب",
+      Icon: MessageCircle,
+      onClick: () => {
+        const url = whatsappUrl(user.phone);
+        if (url) window.open(url, "_blank");
+      },
+      tone: user.phone ? "text-[#25D366]" : "text-gray-400",
+      disabled: !user.phone,
+    },
+    {
+      key: "chat",
+      label: "محادثة الموقع",
+      Icon: MessageCircle,
+      onClick: () => onOpenChat?.(user),
+      tone: "text-[#123C91]",
     },
   ];
 
@@ -565,13 +637,17 @@ const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete }) => {
   );
 };
 
-const MobileCard = ({ u, onView, onApprove, onToggleStatus, onDelete }) => (
+const MobileCard = ({ u, onView, onApprove, onToggleStatus, onDelete, onOpenChat }) => (
   <div
     className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4"
     dir="rtl"
   >
     <div className="flex items-center justify-between mb-3">
-      <UserCell name={u.name} avatarUrl={u.avatarUrl} />
+      <UserCell
+        name={u.name}
+        avatarUrl={u.avatarUrl}
+        onClick={() => onView?.(u)}
+      />
 
       <ActionsMenu
         user={u}
@@ -579,6 +655,7 @@ const MobileCard = ({ u, onView, onApprove, onToggleStatus, onDelete }) => (
         onApprove={onApprove}
         onToggleStatus={onToggleStatus}
         onDelete={onDelete}
+        onOpenChat={onOpenChat}
       />
     </div>
 
@@ -625,6 +702,12 @@ const UsersTable = ({
   const [activateUser, setActivateUser] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState("");
+
+  const navigate = useNavigate();
+
+  const handleOpenChat = (user) => {
+    navigate("/admin/messages", { state: { openUserId: user.id } });
+  };
 
   const handleView = async (user) => {
     setDetailsUser(user);
@@ -860,7 +943,11 @@ const UsersTable = ({
                     className="hover:bg-gray-50/70 transition-colors"
                   >
                     <td className="px-5 py-3.5">
-                      <UserCell name={user.name} avatarUrl={user.avatarUrl} />
+                      <UserCell
+                        name={user.name}
+                        avatarUrl={user.avatarUrl}
+                        onClick={() => handleView(user)}
+                      />
                     </td>
 
                     <td className="px-5 py-3.5">{roleBadge(user.role)}</td>
@@ -885,6 +972,7 @@ const UsersTable = ({
                         onApprove={handleApprove}
                         onToggleStatus={handleToggleStatus}
                         onDelete={handleDelete}
+                        onOpenChat={handleOpenChat}
                       />
                     </td>
                   </tr>
@@ -903,6 +991,7 @@ const UsersTable = ({
               onApprove={handleApprove}
               onToggleStatus={handleToggleStatus}
               onDelete={handleDelete}
+              onOpenChat={handleOpenChat}
             />
           ))}
         </div>
@@ -917,6 +1006,10 @@ const UsersTable = ({
         user={detailsUser}
         reportLoading={reportLoading}
         reportError={reportError}
+        onOpenChat={handleOpenChat}
+        onApprove={handleApprove}
+        onToggleStatus={handleToggleStatus}
+        onDelete={handleDelete}
       />
 
       <ConfirmDialog

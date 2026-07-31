@@ -307,7 +307,7 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
 
       <section className="w-full min-w-0 rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-sm sm:p-6 md:p-8">
         {/* Header: month title + nav */}
-        <div className="mb-5  flex items-center justify-between gap-3">
+        {/* <div className="mb-5  flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => changeMonth(-1)}
@@ -327,7 +327,7 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
           >
             <ChevronLeft size={18} />
           </button>
-        </div>
+        </div> */}
 
         {loading ? (
           <LoadingState
@@ -337,167 +337,190 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
         ) : error ? (
           <p className="py-12 text-center text-red-500">{error}</p>
         ) : (
-          <>
-            {/* Weekday headers */}
-            <div className="grid grid-cols-7 gap-0.5 xs:gap-1 sm:gap-2 mb-1 sm:mb-2 px-1 sm:px-2">
-              {WEEKDAY_HEADERS.map((name) => (
-                <span
-                  key={name}
-                  className="text-center text-[10px] sm:text-[13px] font-medium text-[#8C9198] py-1 sm:py-2 truncate"
+          <div className="flex flex-col gap-6 xl:flex-row-reverse xl:items-start xl:gap-8">
+            <div className="space-y-4 xl:w-[40%]">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => changeMonth(-1)}
+                  className="rounded-lg border p-2 text-[#123C91] shrink-0"
+                  aria-label="الشهر السابق"
                 >
-                  {name}
-                </span>
-              ))}
-            </div>
+                  <ChevronRight size={18} />
+                </button>
+                <h2 className="text-[15px] sm:text-[16px] font-semibold text-[#1F2937]">
+                  {monthLabel(monthDate)}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => changeMonth(1)}
+                  className="rounded-lg border p-2  ml-4 text-[#123C91] shrink-0"
+                  aria-label="الشهر التالي"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+              </div>
 
-            {/* Month grid */}
-            <div className="grid grid-cols-7 gap-0.5 xs:gap-1 sm:gap-2 mb-6 px-1 sm:px-0">
-              {grid.map(({ date, isCurrentMonth }) => {
-                const iso = toISODate(date);
-                const dayData = daysByDate.get(iso);
-                const hasEvent = !!dayData?.lessons?.length;
-                const isSelected = iso === selectedDate;
-                const isToday = isSameDay(date, today);
-
-                return (
-                  <button
-                    key={iso}
-                    type="button"
-                    disabled={!isCurrentMonth}
-                    onClick={() => isCurrentMonth && setSelectedDate(iso)}
-                    className="relative flex items-center justify-center py-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91] focus-visible:ring-offset-1 disabled:cursor-default"
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-1 sm:px-2">
+                {WEEKDAY_HEADERS.map((name) => (
+                  <span
+                    key={name}
+                    className="text-center text-[10px] sm:text-[13px] font-medium text-[#8C9198] py-1 sm:py-2 truncate"
                   >
-                    <span
-                      className={`
-                        flex items-center justify-center
-                        w-7 h-7 sm:w-10 sm:h-10 md:w-11 md:h-11
-                        rounded-full text-[12px] sm:text-[14px] md:text-[15px]
-                        transition-colors duration-150
-                        ${
-                          isSelected
-                            ? "bg-[#123C91] text-white [&_svg]:text-white font-semibold shadow-[0_4px_10px_rgba(18,60,145,0.35)]"
-                            : isCurrentMonth
-                              ? isToday
-                                ? "text-[#123C91] font-semibold border border-[#123C91]/40"
-                                : "text-[#1F2937] hover:bg-[#F0F4FF]"
-                              : "text-[#C7CBD1]"
-                        }
-                      `}
-                    >
-                      {date.getDate()}
-                    </span>
-                    {hasEvent && (
-                      <span
-                        aria-hidden="true"
-                        className={`absolute bottom-0 w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-[#123C91]"}`}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                    {name}
+                  </span>
+                ))}
+              </div>
 
-            {/* Selected day header */}
-            <div className="flex items-center justify-between mb-4 pt-4 px-6 border-t border-[#F1F1F1]">
-              <h3 className="text-[15px] font-semibold text-[#1F2937]">
-                {selectedDayName ? `حصص ${selectedDayName}` : "الحصص"}
-              </h3>
-              <span className="text-[13px] text-[#8C9198]">
-                {selectedDay?.lessons?.length || 0} حصة
-              </span>
-            </div>
-
-            {!selectedDay?.lessons?.length ? (
-              <p className="py-10 text-center text-[#8C9198]">
-                لا توجد حصص في هذا اليوم
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 px-6 md:grid-cols-2">
-                {selectedDay.lessons.map((rawLesson, index) => {
-                  const lesson = withDisplayStatus(rawLesson, selectedDay.date);
-                  const duration = getDurationMinutes(lesson);
-                  const isLive = ["live", "active"].includes(lesson.status);
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-6 sm:px-0">
+                {grid.map(({ date, isCurrentMonth }) => {
+                  const iso = toISODate(date);
+                  const dayData = daysByDate.get(iso);
+                  const hasEvent = !!dayData?.lessons?.length;
+                  const isSelected = iso === selectedDate;
+                  const isToday = isSameDay(date, today);
 
                   return (
-                    <article
-                      key={
-                        resolveLessonId(lesson) ||
-                        `${lesson.classroom}-${lesson.startTime}-${index}`
-                      }
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => openLessonLink(lesson)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          openLessonLink(lesson);
-                        }
-                      }}
-                      className="bg-white border border-[#E5E5E5] rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border-r-4 border-r-[#123C91] p-4 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91]"
+                    <button
+                      key={iso}
+                      type="button"
+                      disabled={!isCurrentMonth}
+                      onClick={() => isCurrentMonth && setSelectedDate(iso)}
+                      className="relative flex items-center justify-center py-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91] focus-visible:ring-offset-1 disabled:cursor-default"
                     >
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <h4 className="text-[#1F2937] font-semibold text-[15px] leading-6 flex-1">
-                          {lesson.title || lesson.classroomName}
-                        </h4>
+                      <span
+                        className={`
+                          flex items-center justify-center
+                          w-7 h-7 sm:w-10 sm:h-10 md:w-11 md:h-11
+                          rounded-full text-[12px] sm:text-[14px] md:text-[15px]
+                          transition-colors duration-150
+                          ${
+                            isSelected
+                              ? "bg-[#123C91] text-white [&_svg]:text-white font-semibold shadow-[0_4px_10px_rgba(18,60,145,0.35)]"
+                              : isCurrentMonth
+                                ? isToday
+                                  ? "text-[#123C91] font-semibold border border-[#123C91]/40"
+                                  : "text-[#1F2937] hover:bg-[#F0F4FF]"
+                                : "text-[#C7CBD1]"
+                          }
+                        `}
+                      >
+                        {date.getDate()}
+                      </span>
+                      {hasEvent && (
                         <span
-                          className={`px-3 py-1 rounded-lg text-[12px] font-medium whitespace-nowrap ${badgeClass(lesson)}`}
-                        >
-                          {STATUS_LABELS[lesson.status] || lesson.status}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center text-[#6B7280] text-[13px] mb-4">
-                        <BookOpen size={16} className="ml-2 shrink-0" />
-                        <span>
-                          {lesson.teacher?.name ||
-                            lesson.subject?.name?.ar ||
-                            lesson.subject?.name?.en ||
-                            "—"}
-                        </span>
-                      </div>
-
-                      <div className="border-t border-[#F1F1F1] mb-4" />
-
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2 text-[#8C9198] text-[13px] sm:text-[14px]">
-                          <Clock size={16} className="text-[#12C6B0]" />
-                          <span>{formatTime12(lesson.startTime)}</span>
-                          {duration && (
-                            <>
-                              <span>•</span>
-                              <span>{duration} د</span>
-                            </>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="bg-[#F3F4F6] text-[#1F2937] text-[12px] px-3 py-1 rounded-lg font-medium whitespace-nowrap">
-                            {getStudentLabel(lesson)}
-                          </span>
-
-                          {isLive && lesson.meetingLink ? (
-                            <span
-                              aria-hidden="true"
-                              className="w-7 h-7 flex items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white"
-                            >
-                              <Video size={14} />
-                            </span>
-                          ) : (
-                            <span
-                              aria-hidden="true"
-                              className="w-7 h-7 flex items-center justify-center rounded-full text-[#8C9198]"
-                            >
-                              <Info size={15} />
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </article>
+                          aria-hidden="true"
+                          className={`absolute bottom-0 w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-[#123C91]"}`}
+                        />
+                      )}
+                    </button>
                   );
                 })}
               </div>
-            )}
-          </>
+            </div>
+
+            <div className="space-y-4 xl:w-[55%]">
+              <div className="flex items-center justify-between mb-3 px-6">
+                <h3 className="text-[15px] font-semibold text-[#1F2937]">
+                  {selectedDayName ? `حصص ${selectedDayName}` : "الحصص"}
+                </h3>
+                <span className="text-[13px] text-[#8C9198]">
+                  {selectedDay?.lessons?.length || 0} حصة
+                </span>
+              </div>
+
+              {!selectedDay?.lessons?.length ? (
+                <p className="py-10 text-center text-[#8C9198]">
+                  لا توجد حصص في هذا اليوم
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-3">
+                  {selectedDay.lessons.map((rawLesson, index) => {
+                    const lesson = withDisplayStatus(rawLesson, selectedDay.date);
+                    const duration = getDurationMinutes(lesson);
+                    const isLive = ["live", "active"].includes(lesson.status);
+
+                    return (
+                      <article
+                        key={
+                          resolveLessonId(lesson) ||
+                          `${lesson.classroom}-${lesson.startTime}-${index}`
+                        }
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openLessonLink(lesson)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openLessonLink(lesson);
+                          }
+                        }}
+                        className="bg-white border border-[#E5E5E5] rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border-r-4 border-r-[#123C91] p-6 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91]"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                          <h4 className="text-[#1F2937] font-semibold text-[15px] leading-6 flex-1">
+                            {lesson.title || lesson.classroomName}
+                          </h4>
+                          <span
+                            className={`px-3 py-1 rounded-lg text-[12px] font-medium whitespace-nowrap ${badgeClass(lesson)}`}
+                          >
+                            {STATUS_LABELS[lesson.status] || lesson.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center text-[#6B7280] text-[13px] mb-4">
+                          <BookOpen size={16} className="ml-2 shrink-0" />
+                          <span>
+                            {lesson.teacher?.name ||
+                              lesson.subject?.name?.ar ||
+                              lesson.subject?.name?.en ||
+                              "—"}
+                          </span>
+                        </div>
+
+                        <div className="border-t border-[#F1F1F1] mb-4" />
+
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 text-[#8C9198] text-[13px] sm:text-[14px]">
+                            <Clock size={16} className="text-[#12C6B0]" />
+                            <span>{formatTime12(lesson.startTime)}</span>
+                            {duration && (
+                              <>
+                                <span>•</span>
+                                <span>{duration} د</span>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="bg-[#F3F4F6] text-[#1F2937] text-[12px] px-3 py-1 rounded-lg font-medium whitespace-nowrap">
+                              {getStudentLabel(lesson)}
+                            </span>
+
+                            {isLive && lesson.meetingLink ? (
+                              <span
+                                aria-hidden="true"
+                                className="w-7 h-7 flex items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white"
+                              >
+                                <Video size={14} />
+                              </span>
+                            ) : (
+                              <span
+                                aria-hidden="true"
+                                className="w-7 h-7 flex items-center justify-center rounded-full text-[#8C9198]"
+                              >
+                                <Info size={15} />
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </section>
     </div>
