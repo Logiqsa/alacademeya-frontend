@@ -2,9 +2,16 @@ export const ADMIN_ROLES = ["admin", "super-admin"];
 
 export const isAdminRole = (role) => ADMIN_ROLES.includes(role);
 
+export const APPROVED_STATUSES = ["active", "approved", "accepted"];
+
+export const isActivated = (user) => {
+  const status = String(user?.registrationStatus || user?.status || "").toLowerCase();
+  return user?.isActive === true || APPROVED_STATUSES.includes(status);
+};
+
 export const getDashboardPathByRole = (user, fallback = "/") => {
   const role = user?.role;
-  const isApproved = user?.registrationStatus === "approved";
+  const isApproved = isActivated(user);
 
   if (role === "teacher") {
     return isApproved ? "/teacher-dashboard" : "/account-state";

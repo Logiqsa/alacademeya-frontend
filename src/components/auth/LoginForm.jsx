@@ -18,7 +18,20 @@ const LoginForm = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const data = await login(credentials);
+      const rawIdentifier = credentials.email.trim();
+      const normalizedIdentifier = rawIdentifier.includes("@")
+        ? rawIdentifier.toLowerCase()
+        : rawIdentifier;
+
+      const loginPayload = {
+        password: credentials.password,
+        email: normalizedIdentifier,
+        username: normalizedIdentifier,
+        phone: normalizedIdentifier,
+        identifier: normalizedIdentifier,
+      };
+
+      const data = await login(loginPayload);
       toast.success("تم تسجيل الدخول بنجاح!");
 
       const redirectPath = getDashboardPathByRole(data?.user ?? data);

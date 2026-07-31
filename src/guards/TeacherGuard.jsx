@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { isActivated } from "../utils/roles";
 
 const TeacherGuard = ({ children }) => {
   const { user } = useContext(AuthContext);
@@ -8,10 +9,7 @@ const TeacherGuard = ({ children }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const isApproved =
-    user.isActive === true && user.registrationStatus === "active";
-
-  if (!isApproved) return <Navigate to="/pending" replace />;
+  if (!isActivated(user)) return <Navigate to="/pending" replace />;
 
   return children;
 };
