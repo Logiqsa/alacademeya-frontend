@@ -5,22 +5,22 @@ import { useNavigate } from "react-router-dom";
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type, subLabel }) => {
   const map = {
-    green: "bg-[#00A63E26] text-[#00A63E]",
+    green: "bg-[#00A63E1A] text-[#00A63E]",
     blue: "bg-[#EAF4FF] text-[#123C91]",
-    orange: "bg-[#FF8A0026] text-[#FF8A00]",
-    gray: "bg-gray-100 text-[#8C9198]",
+    orange: "bg-[#FF8A001A] text-[#FF8A00]",
+    gray: "bg-[#F3F4F6] text-[#8C9198]",
   };
   return (
     <div className="inline-flex flex-col items-start gap-1">
       <span
-        className={`inline-flex items-center justify-center px-3 py-1 text-[11px] md:text-xs font-semibold rounded-full whitespace-nowrap ${
+        className={`inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-semibold md:text-xs ${
           map[type] ?? map.gray
         }`}
       >
         {label}
       </span>
       {subLabel && (
-        <span className="text-[11px] text-[#8C9198] whitespace-nowrap">{subLabel}</span>
+        <span className="whitespace-nowrap text-[11px] text-[#8C9198]">{subLabel}</span>
       )}
     </div>
   );
@@ -36,14 +36,14 @@ const assignmentStatusBadge = (status, timeRemaining) => {
 const correctionStatusBadge = (v) => {
   if (v === "تم التصحيح") return <Badge label={v} type="green" />;
   if (v === "قيد التصحيح") return <Badge label={v} type="orange" />;
-  return <Badge label={v} type="gray" />; 
+  return <Badge label={v} type="gray" />;
 };
 
 // ─── View Action (single eye icon) ────────────────────────────────────────────
 const ViewAction = ({ assignmentId, onView }) => (
   <button
     onClick={() => onView?.(assignmentId)}
-    className="p-2 flex items-center justify-center rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-all duration-200"
+    className="flex items-center justify-center rounded-lg p-2 text-[#575F69] transition-all duration-200 hover:bg-[#EAF4FF] hover:text-[#123C91]"
     aria-label="عرض تفاصيل الواجب"
   >
     <Eye size={18} />
@@ -52,11 +52,23 @@ const ViewAction = ({ assignmentId, onView }) => (
 
 // ─── Mobile Row Field ─────────────────────────────────────────────────────────
 const MobileField = ({ label, children }) => (
-  <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-50 last:border-b-0">
-    <span className="text-xs font-medium text-[#8C9198] shrink-0">{label}</span>
-    <span className="text-sm text-[#575F69] font-medium text-left">{children}</span>
+  <div className="flex items-center justify-between gap-3 border-b border-gray-50 py-2.5 last:border-b-0">
+    <span className="shrink-0 text-xs font-medium text-[#8C9198]">{label}</span>
+    <span className="text-left text-sm font-medium text-[#575F69]">{children}</span>
   </div>
 );
+
+const TABLE_HEADERS = [
+  "عنوان الواجب",
+  "المجموعة",
+  "المادة",
+  "الحصة",
+  "موعد التسليم",
+  "تم التسليم",
+  "حالة الواجب",
+  "حالة التصحيح",
+  "الإجراءات",
+];
 
 const AssignmentsTable = ({ assignments = [], onView }) => {
   const navigate = useNavigate();
@@ -75,7 +87,7 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
     return (
       <div
         dir="rtl"
-        className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm sm:text-base text-[#575F69]"
+        className="w-full rounded-2xl border border-gray-200 bg-white py-14 text-center text-sm text-[#575F69] shadow-sm sm:text-base"
       >
         لا توجد واجبات متاحة
       </div>
@@ -83,109 +95,93 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
   }
 
   return (
-    <div dir="rtl" className="w-full">
-    
-      <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-230 text-right">
-            <thead>
-              <tr
-                style={{
-                  backgroundColor: "#F9FAFA",
-                  fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                }}
-              >
-                {[
-                  "عنوان الواجب",
-                  "المجموعة",
-                  "المادة",
-                  "الحصة",
-                  "موعد التسليم",
-                  "تم التسليم",
-                  "حالة الواجب",
-                  "حالة التصحيح",
-                  "الإجراءات",
-                ].map((header) => (
-                  <th
-                    key={header}
-                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[13px] lg:text-[14px] font-medium text-right uppercase tracking-wider whitespace-nowrap"
-                    style={{ fontWeight: 500, lineHeight: "16px" }}
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {assignments.map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td
-                    className="px-4 lg:px-6 py-3 lg:py-4"
-                    style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 500, fontSize: "16px", lineHeight: "20px" }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleView(a.id)}
-                      className="text-[#123C91] hover:underline text-right"
-                    >
-                      {a.title}
-                    </button>
-                  </td>
-
-                  {[a.group, a.subject, a.place, a.lesson, a.dueDate].map((cellData, index) => (
-                    <td
-                      key={index}
-                      className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
-                      style={{
-                        fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                        fontWeight: 400,
-                        fontSize: "14px",
-                        lineHeight: "24px",
-                      }}
-                    >
-                      {cellData || "—"}
-                    </td>
-                  ))}
-
-                  <td
-                    className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
-                    style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontSize: "14px", lineHeight: "24px" }}
-                  >
-                    {a.submitted}/{a.totalStudents}
-                  </td>
-
-                  <td className="px-4 lg:px-6 py-3 lg:py-4">
-                    {assignmentStatusBadge(a.status, a.timeRemaining)}
-                  </td>
-                  <td className="px-4 lg:px-6 py-3 lg:py-4">{correctionStatusBadge(a.correctionStatus)}</td>
-
-                  <td className="px-4 lg:px-6 py-3 lg:py-4">
-                    <ViewAction assignmentId={a.id} onView={handleView} />
-                  </td>
-                </tr>
+    <div dir="rtl" className="w-full font-['IBM_Plex_Sans_Arabic']">
+      {/* Desktop table — table-fixed with relative widths so it always fits the
+          container's width with no horizontal scroll; long text truncates instead. */}
+      <div className="hidden overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm md:block">
+        <table className="w-full table-fixed text-right">
+          <colgroup>
+            <col className="w-[15%]" />
+            <col className="w-[11%]" />
+            <col className="w-[9%]" />
+            <col className="w-[8%]" />
+            <col className="w-[11%]" />
+            <col className="w-[7%]" />
+            <col className="w-[12%]" />
+            <col className="w-[12%]" />
+            <col className="w-[9%]" />
+          </colgroup>
+          <thead>
+            <tr className="border-b border-gray-100 bg-[#F9FAFB]">
+              {TABLE_HEADERS.map((header) => (
+                <th
+                  key={header}
+                  className="truncate px-2 py-3 text-right text-[13px] font-semibold text-[#575F69] lg:px-3"
+                  title={header}
+                >
+                  {header}
+                </th>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {assignments.map((a) => (
+              <tr key={a.id} className="transition-colors hover:bg-[#F9FAFB]">
+                <td className="px-2 py-3 lg:px-3">
+                  <button
+                    type="button"
+                    onClick={() => handleView(a.id)}
+                    title={a.title}
+                    className="block w-full truncate text-right font-['Tajawal'] text-[15px] font-medium text-[#123C91] hover:underline"
+                  >
+                    {a.title}
+                  </button>
+                </td>
+
+                {[a.group, a.subject, a.lesson, a.dueDate].map((cellData, index) => (
+                  <td
+                    key={index}
+                    title={cellData || undefined}
+                    className="truncate px-2 py-3 text-[14px] leading-6 text-[#575F69] lg:px-3"
+                  >
+                    {cellData || "—"}
+                  </td>
+                ))}
+
+                <td className="truncate px-2 py-3 text-[14px] leading-6 text-[#575F69] lg:px-3">
+                  {a.submitted}/{a.totalStudents}
+                </td>
+
+                <td className="px-2 py-3 lg:px-3">
+                  {assignmentStatusBadge(a.status, a.timeRemaining)}
+                </td>
+                <td className="px-2 py-3 lg:px-3">{correctionStatusBadge(a.correctionStatus)}</td>
+
+                <td className="px-2 py-3 text-center lg:px-3">
+                  <ViewAction assignmentId={a.id} onView={handleView} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-
-      <div className="md:hidden space-y-3">
+      {/* Mobile cards */}
+      <div className="space-y-3 md:hidden">
         {assignments.map((a) => (
-          <div key={a.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <div className="flex items-center justify-between mb-2">
+          <div key={a.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="mb-2 flex items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={() => handleView(a.id)}
-                className="text-[#123C91] font-semibold text-[16px] hover:underline text-right"
-                style={{ fontFamily: "Tajawal, sans-serif" }}
+                className="text-right font-['Tajawal'] text-[16px] font-semibold text-[#123C91] hover:underline"
               >
                 {a.title}
               </button>
               <ViewAction assignmentId={a.id} onView={handleView} />
             </div>
 
-            <div className="flex items-center gap-2 mb-3">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
               {assignmentStatusBadge(a.status, a.timeRemaining)}
               {correctionStatusBadge(a.correctionStatus)}
             </div>
