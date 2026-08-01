@@ -562,7 +562,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       >
         {/* Toast نجاح */}
         {showToast && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#D6E4C3] shadow-lg rounded-xl px-4 py-3 min-w-[280px]">
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#D6E4C3] shadow-lg rounded-xl px-4 py-3 min-w-70">
             <CheckCircle2 className="text-green-600 shrink-0" size={20} />
             <p className="text-sm text-[#1A1A1A] font-medium flex-1">
               {toastMessage}

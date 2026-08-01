@@ -197,7 +197,7 @@ const AssignmentDetailsModal = ({ assignmentId, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40 p-4"
       dir="rtl"
       onClick={onClose}
     >
@@ -317,7 +317,7 @@ const SubmitAssignmentModal = ({ assignmentId, onClose, onSubmitted }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40 p-4"
       dir="rtl"
       onClick={() => !submitting && onClose()}
     >
@@ -513,8 +513,8 @@ const StudentAssignmentsTable = ({
 
             <div className="space-y-0.5">
               <MobileField label="المجموعة">{a.group}</MobileField>
-              <MobileField label="المادة">{a.subject || "--"}</MobileField>
-              <MobileField label="المكان">{a.place || "--"}</MobileField>
+              {/* <MobileField label="المادة">{a.subject || "--"}</MobileField>
+              <MobileField label="المكان">{a.place || "--"}</MobileField> */}
               <MobileField label="الحصة">{a.lesson}</MobileField>
               <MobileField label="موعد التسليم">{a.dueDate}</MobileField>
               <MobileField label="الدرجة">{a.grade ?? "--"}</MobileField>
