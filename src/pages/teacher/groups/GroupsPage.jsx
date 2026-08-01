@@ -114,7 +114,7 @@ const ActionsMenu = ({ group, onOpenDetails, onAddStudent, onShare, onOpenChat }
           >
             {[
               { key: "details", label: "التفاصيل" },
-              { key: "add-student", label: "إضافة طالب" },
+              // { key: "add-student", label: "إضافة طالب" },
               { key: "share", label: "مشاركة" },
               { key: "chat", label: "شات" },
             ].map((item, index) => (
