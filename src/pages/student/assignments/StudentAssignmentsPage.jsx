@@ -126,6 +126,8 @@ const StudentAssignmentsPage = () => {
           </p>
         </div>
 
+        
+
         <div className="mb-6">
           <StudentAssignmentStatsBar {...stats} />
         </div>

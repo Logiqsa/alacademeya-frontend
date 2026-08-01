@@ -211,8 +211,8 @@ const AssignmentsPage = () => {
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة ومتابعة جميع الواجبات
               {queryGroupName ? ` لمجموعة ${queryGroupName}` : ""}
-              {groupSubject ? `، المادة: ${groupSubject}` : ""}
-              {groupPlace ? `، المكان: ${groupPlace}` : ""}.
+              {/* {groupSubject ? `، المادة: ${groupSubject}` : ""}
+              {groupPlace ? `، المكان: ${groupPlace}` : ""}. */}
             </p>
           </div>
           <button
@@ -227,6 +227,42 @@ const AssignmentsPage = () => {
         {errorMsg && (
           <div className="mb-4 bg-[#FFE9E9] text-[#D32F2F] text-sm rounded-lg px-4 py-3">
             {errorMsg}
+          </div>
+        )}
+
+        {/* ⚠️ شريط التابات ده منطقي بس لو الصفحة مفتوحة من جوه مجموعة معينة (queryGroupId موجود) */}
+        {queryGroupId && (
+          <div className="mb-6 rounded-2xl border border-[#E5E5E5] bg-white p-3 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(`/teacher/groups/${queryGroupId}/lessons`, {
+                    state: { groupName: queryGroupName, groupSubjectName: groupSubject },
+                  })
+                }
+                className="rounded-2xl px-4 py-2 text-sm font-medium bg-white text-[#123C91] border border-[#E5E5E5] hover:bg-[#F8FAFF]"
+              >
+                الحصص
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(`/teacher/groups/${queryGroupId}/students`, {
+                    state: { groupName: queryGroupName, groupSubjectName: groupSubject },
+                  })
+                }
+                className="rounded-2xl px-4 py-2 text-sm font-medium bg-white text-[#123C91] border border-[#E5E5E5] hover:bg-[#F8FAFF]"
+              >
+                الطلاب
+              </button>
+              <button
+                type="button"
+                className="rounded-2xl px-4 py-2 text-sm font-medium bg-[#123C91] text-white"
+              >
+                الواجبات
+              </button>
+            </div>
           </div>
         )}
 
