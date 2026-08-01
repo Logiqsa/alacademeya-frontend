@@ -64,15 +64,18 @@ const GroupStudentsPage = () => {
 
     if (classroomResult.status === "fulfilled") {
       const classroom = classroomResult.value.data?.data || {};
-      setGroupName(resolveName(classroom.name) || "مجموعة");
+      const resolvedName = resolveName(classroom.name);
+      setGroupName((prev) => (resolvedName && resolvedName !== "--" ? resolvedName : prev || "مجموعة"));
       const subjectName = resolveName(classroom.subject?.name || classroom.subject);
       if (subjectName && subjectName !== "--") {
         setGroupSubject(subjectName);
       }
     } else {
       // ⚠️ TODO: GET /classrooms/:id بيرجع 404 — تأكد من الراوت الصح في الباك إند
+      // مبنمسحش الاسم اللي جاي من location.state (صفحة المجموعات) هنا —
+      // بنسيبه زي ما هو، ونرجع لـ "مجموعة" بس لو مفيش اسم حقيقي أصلاً من الأول
       console.warn("Failed to load classroom name:", classroomResult.reason);
-      setGroupName("مجموعة");
+      setGroupName((prev) => prev || "مجموعة");
     }
 
     if (studentsResult.status === "fulfilled") {
@@ -165,9 +168,9 @@ const GroupStudentsPage = () => {
             <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">
               {groupName}
             </h3>
-            <p className="text-sm font-medium leading-6 text-[#123C91] mb-3">
+            {/* <p className="text-sm font-medium leading-6 text-[#123C91] mb-3">
               المادة: {groupSubject || "—"}
-            </p>
+            </p> */}
             <p className="text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة طلاب هذه المجموعة: متابعة الحضور، الدرجات، والبيانات
               الشخصية.

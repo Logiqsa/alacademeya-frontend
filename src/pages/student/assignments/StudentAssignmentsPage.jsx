@@ -39,6 +39,19 @@ const StudentAssignmentsPage = () => {
         id: a.id,
         title: a.title,
         group: a.classroom?.name || "--",
+        subject:
+          typeof a.classroom?.subject === "string"
+            ? a.classroom?.subject
+            : a.classroom?.subject?.name?.ar ||
+              a.classroom?.subject?.name?.en ||
+              a.classroom?.subject?.name ||
+              a.classroom?.subject ||
+              "--",
+        place:
+          a.classroom?.meetingLink ||
+          a.classroom?.location ||
+          a.classroom?.address ||
+          "--",
         lesson: a.session?.title || "--",
 
         dueDate: a.dueDate

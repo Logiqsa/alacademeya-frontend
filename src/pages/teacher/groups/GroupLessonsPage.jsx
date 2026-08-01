@@ -99,6 +99,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
 
   const [groupName, setGroupName] = useState(location.state?.groupName || "");
   const [groupSubject, setGroupSubject] = useState(location.state?.groupSubjectName || "—");
+  const [groupPlace, setGroupPlace] = useState("");
   const [groupTeacher, setGroupTeacher] = useState(
     routedGroupTeacher || "—",
   );
@@ -163,7 +164,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       if (resolvedSubject && resolvedSubject !== "--") {
         setGroupSubject(resolvedSubject);
       }
-
+      setGroupPlace(
+        classroomData.meetingLink || classroomData.location || classroomData.address || "",
+      );
 
       const candidates = [classroomData.name, classroomData.title, classroomData.groupName];
       const resolved = candidates
@@ -581,6 +584,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             </h1>
             <p className="text-sm sm:text-[16px] font-medium leading-6 text-[#123C91] mb-2">
               المادة: {groupSubject || "—"}
+              {groupPlace ? ` • المكان: ${groupPlace}` : ""}
             </p>
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في

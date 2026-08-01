@@ -98,6 +98,7 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
                 {[
                   "عنوان الواجب",
                   "المجموعة",
+                  "المادة",
                   "الحصة",
                   "موعد التسليم",
                   "تم التسليم",
@@ -131,7 +132,7 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
                     </button>
                   </td>
 
-                  {[a.group, a.lesson, a.dueDate].map((cellData, index) => (
+                  {[a.group, a.subject, a.place, a.lesson, a.dueDate].map((cellData, index) => (
                     <td
                       key={index}
                       className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
@@ -142,7 +143,7 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
                         lineHeight: "24px",
                       }}
                     >
-                      {cellData}
+                      {cellData || "—"}
                     </td>
                   ))}
 
@@ -191,6 +192,8 @@ const AssignmentsTable = ({ assignments = [], onView }) => {
 
             <div className="space-y-0.5">
               <MobileField label="المجموعة">{a.group}</MobileField>
+              <MobileField label="المادة">{a.subject || "—"}</MobileField>
+              <MobileField label="المكان">{a.place || "—"}</MobileField>
               <MobileField label="الحصة">{a.lesson}</MobileField>
               <MobileField label="موعد التسليم">{a.dueDate}</MobileField>
               <MobileField label="تم التسليم">

@@ -15,7 +15,8 @@ import {
   getAssignmentSubmissions,
   getClassroomStudents,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان api.js عندك
-
+const resolveName = (val) =>
+  typeof val === "string" ? val : val?.ar || val?.en || val?.name || "--";
 const PAGE_SIZE = 6;
 
 const mapStatus = (status) => (status === "active" ? "نشط" : "منتهي");
@@ -44,6 +45,8 @@ const AssignmentsPage = () => {
 
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState(queryGroupName || "جميع المجموعات");
+  const [groupSubject, setGroupSubject] = useState(queryGroupSubjectName || "");
+  const [groupPlace, setGroupPlace] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
@@ -59,6 +62,26 @@ const AssignmentsPage = () => {
       setGroupNames(classrooms.map((c) => c.name));
       if (queryGroupName && classrooms.some((c) => c.name === queryGroupName)) {
         setFilterGroup(queryGroupName);
+      }
+
+      if (queryGroupId) {
+        const selectedClassroom = classrooms.find(
+          (c) => String(c.id || c._id) === String(queryGroupId),
+        );
+        const resolvedSubject = selectedClassroom
+          ? resolveName(selectedClassroom.subject?.name || selectedClassroom.subject)
+          : "";
+        if (!queryGroupSubjectName && resolvedSubject && resolvedSubject !== "--") {
+          setGroupSubject(resolvedSubject);
+        }
+        if (selectedClassroom) {
+          const resolvedPlace =
+            selectedClassroom.meetingLink ||
+            selectedClassroom.location ||
+            selectedClassroom.address ||
+            "";
+          setGroupPlace(resolvedPlace);
+        }
       }
 
       const perClassroom = await Promise.all(
@@ -109,6 +132,12 @@ const AssignmentsPage = () => {
                 title: a.title,
                 groupId: classroom.id || classroom._id || "",
                 group: classroom.name,
+                subject: resolveName(classroom.subject?.name || classroom.subject),
+                place:
+                  classroom.meetingLink ||
+                  classroom.location ||
+                  classroom.address ||
+                  "—",
                 lesson: a.session?.title || sessionsById[sessionId] || "-",
                 dueDate: formatDate(a.dueDate),
                 submitted: submissions.length,
@@ -182,7 +211,8 @@ const AssignmentsPage = () => {
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة ومتابعة جميع الواجبات
               {queryGroupName ? ` لمجموعة ${queryGroupName}` : ""}
-              {queryGroupSubjectName ? `، المادة: ${queryGroupSubjectName}` : ""}.
+              {groupSubject ? `، المادة: ${groupSubject}` : ""}
+              {groupPlace ? `، المكان: ${groupPlace}` : ""}.
             </p>
           </div>
           <button
