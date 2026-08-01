@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import StudentStatsBar from "../../../components/teacher/groups/students/StudentStatsBar";
 import StudentFilters from "../../../components/teacher/groups/students/StudentFilters";
@@ -41,7 +41,9 @@ const GroupStudentsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
-  const [groupName, setGroupName] = useState("مجموعة");
+  const location = useLocation();
+  const [groupName, setGroupName] = useState(location.state?.groupName || "مجموعة");
+  const [groupSubject, setGroupSubject] = useState(location.state?.groupSubjectName || "—");
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,6 +65,10 @@ const GroupStudentsPage = () => {
     if (classroomResult.status === "fulfilled") {
       const classroom = classroomResult.value.data?.data || {};
       setGroupName(resolveName(classroom.name) || "مجموعة");
+      const subjectName = resolveName(classroom.subject?.name || classroom.subject);
+      if (subjectName && subjectName !== "--") {
+        setGroupSubject(subjectName);
+      }
     } else {
       // ⚠️ TODO: GET /classrooms/:id بيرجع 404 — تأكد من الراوت الصح في الباك إند
       console.warn("Failed to load classroom name:", classroomResult.reason);
@@ -154,15 +160,47 @@ const GroupStudentsPage = () => {
         dir="rtl"
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div>
-            <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-3">
+            <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">
               {groupName}
             </h3>
+            <p className="text-sm font-medium leading-6 text-[#123C91] mb-3">
+              المادة: {groupSubject || "—"}
+            </p>
             <p className="text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة طلاب هذه المجموعة: متابعة الحضور، الدرجات، والبيانات
               الشخصية.
             </p>
+          </div>
+        </div>
+
+        <div className="mb-6 rounded-2xl border border-[#E5E5E5] bg-white p-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(`/teacher/groups/${groupId}/lessons`, { state: { groupName, groupSubjectName: groupSubject } })}
+              className="rounded-2xl px-4 py-2 text-sm font-medium bg-white text-[#123C91] border border-[#E5E5E5] hover:bg-[#F8FAFF]"
+            >
+              الحصص
+            </button>
+            <button
+              type="button"
+              className="rounded-2xl px-4 py-2 text-sm font-medium bg-[#123C91] text-white"
+            >
+              الطلاب
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  `/teacher/tasks?groupName=${encodeURIComponent(groupName)}&groupId=${encodeURIComponent(groupId)}&groupSubjectName=${encodeURIComponent(groupSubject)}`,
+                )
+              }
+              className="rounded-2xl px-4 py-2 text-sm font-medium bg-white text-[#123C91] border border-[#E5E5E5] hover:bg-[#F8FAFF]"
+            >
+              الواجبات
+            </button>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Plus } from "lucide-react";
 
 import AssignmentStatsBar from "../../../components/teacher/assignments/AssignmentStatsBar";
@@ -31,6 +31,11 @@ const formatDate = (iso) =>
 
 const AssignmentsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const urlParams = new URLSearchParams(location.search);
+  const queryGroupName = urlParams.get("groupName");
+  const queryGroupId = urlParams.get("groupId");
+  const queryGroupSubjectName = urlParams.get("groupSubjectName");
 
   const [assignments, setAssignments] = useState([]);
   const [groupNames, setGroupNames] = useState([]); // لأسماء المجموعات في فلتر الـ dropdown
@@ -38,7 +43,7 @@ const AssignmentsPage = () => {
   const [errorMsg, setErrorMsg] = useState("");
 
   const [search, setSearch] = useState("");
-  const [filterGroup, setFilterGroup] = useState("جميع المجموعات");
+  const [filterGroup, setFilterGroup] = useState(queryGroupName || "جميع المجموعات");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
@@ -52,6 +57,9 @@ const AssignmentsPage = () => {
       const classroomsRes = await getMyClassrooms();
       const classrooms = classroomsRes.data?.data || [];
       setGroupNames(classrooms.map((c) => c.name));
+      if (queryGroupName && classrooms.some((c) => c.name === queryGroupName)) {
+        setFilterGroup(queryGroupName);
+      }
 
       const perClassroom = await Promise.all(
         classrooms.map(async (classroom) => {
@@ -99,6 +107,7 @@ const AssignmentsPage = () => {
               return {
                 id: a.id,
                 title: a.title,
+                groupId: classroom.id || classroom._id || "",
                 group: classroom.name,
                 lesson: a.session?.title || sessionsById[sessionId] || "-",
                 dueDate: formatDate(a.dueDate),
@@ -130,12 +139,17 @@ const AssignmentsPage = () => {
     fetchAllAssignments();
   }, [fetchAllAssignments]);
 
-  const filtered = assignments.filter(
-    (a) =>
+  const filtered = assignments.filter((a) => {
+    const matchesGroup =
+      filterGroup === "جميع المجموعات" ||
+      a.group === filterGroup ||
+      (queryGroupId && a.groupId === queryGroupId);
+    return (
       a.title.includes(search) &&
-      (filterGroup === "جميع المجموعات" || a.group === filterGroup) &&
-      (filterStatus === "جميع الحالات" || a.status === filterStatus),
-  );
+      matchesGroup &&
+      (filterStatus === "جميع الحالات" || a.status === filterStatus)
+    );
+  });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedAssignments = filtered.slice(
@@ -163,10 +177,12 @@ const AssignmentsPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div className="order-2 sm:order-1">
             <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
-              الواجبات
+              الواجبات{queryGroupName ? ` - ${queryGroupName}` : ""}
             </h3>
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
-              إدارة ومتابعة جميع الواجبات في جميع المجموعات.
+              إدارة ومتابعة جميع الواجبات
+              {queryGroupName ? ` لمجموعة ${queryGroupName}` : ""}
+              {queryGroupSubjectName ? `، المادة: ${queryGroupSubjectName}` : ""}.
             </p>
           </div>
           <button
