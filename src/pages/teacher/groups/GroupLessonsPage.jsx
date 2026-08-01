@@ -582,10 +582,10 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             <h1 className="mb-2 text-xl font-semibold text-[#123C91] sm:text-2xl">
               {groupName || "المجموعة"}
             </h1>
-            <p className="text-sm sm:text-[16px] font-medium leading-6 text-[#123C91] mb-2">
+            {/* <p className="text-sm sm:text-[16px] font-medium leading-6 text-[#123C91] mb-2">
               المادة: {groupSubject || "—"}
               {groupPlace ? ` • المكان: ${groupPlace}` : ""}
-            </p>
+            </p> */}
             <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
               إدارة كاملة لحصص هذه المجموعة: الجدول، الواجبات، والتقييمات في
               مكان واحد.
@@ -671,35 +671,38 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           )}
         </div>
 
-        <div className="mb-6 rounded-2xl border border-[#E5E5E5] bg-white p-3 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => navigate(`/teacher/groups/${groupId}/lessons`, { state: location.state })}
-              className={`rounded-2xl px-4 py-2 text-sm font-medium ${location.pathname.includes("/lessons") ? "bg-[#123C91] text-white" : "bg-white text-[#123C91] border border-[#E5E5E5]"}`}
-            >
-              الحصص
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/teacher/groups/${groupId}/students`, { state: { groupName, groupSubjectName: groupSubject } })}
-              className={`rounded-2xl px-4 py-2 text-sm font-medium ${location.pathname.includes("/students") ? "bg-[#123C91] text-white" : "bg-white text-[#123C91] border border-[#E5E5E5]"}`}
-            >
-              الطلاب
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                navigate(
-                  `/teacher/tasks?groupName=${encodeURIComponent(groupName)}&groupId=${encodeURIComponent(groupId)}&groupSubjectName=${encodeURIComponent(groupSubject)}`,
-                )
-              }
-              className="rounded-2xl px-4 py-2 text-sm font-medium bg-white text-[#123C91] border border-[#E5E5E5]"
-            >
-              الواجبات
-            </button>
+        {/* شريط التابات (الحصص / الطلاب / الواجبات) — يظهر للمعلم بس، مش للأدمن */}
+        {!isAdmin && (
+          <div className="mb-6 rounded-2xl border border-[#E5E5E5] bg-white p-3 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(`/teacher/groups/${groupId}/lessons`, { state: location.state })}
+                className={`rounded-2xl px-4 py-2 text-sm font-medium ${location.pathname.includes("/lessons") ? "bg-[#123C91] text-white" : "bg-white text-[#123C91] border border-[#E5E5E5]"}`}
+              >
+                الحصص
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/teacher/groups/${groupId}/students`, { state: { groupName, groupSubjectName: groupSubject } })}
+                className={`rounded-2xl px-4 py-2 text-sm font-medium ${location.pathname.includes("/students") ? "bg-[#123C91] text-white" : "bg-white text-[#123C91] border border-[#E5E5E5]"}`}
+              >
+                الطلاب
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(
+                    `/teacher/tasks?groupName=${encodeURIComponent(groupName)}&groupId=${encodeURIComponent(groupId)}&groupSubjectName=${encodeURIComponent(groupSubject)}`,
+                  )
+                }
+                className="rounded-2xl px-4 py-2 text-sm font-medium bg-white text-[#123C91] border border-[#E5E5E5]"
+              >
+                الواجبات
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {isAdmin && (
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
