@@ -2,9 +2,6 @@ import { Mail, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import logo from "../../assets/icons/logo.svg";
 import fbIcon from "../../assets/icons/facebook.png";
-import twitterIcon from "../../assets/icons/twitter.png";
-import instagramIcon from "../../assets/icons/instagram.png";
-import youtubeIcon from "../../assets/icons/youtube.png";
 import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
 
 const Footer = () => {
@@ -71,15 +68,15 @@ const Footer = () => {
         <div>
           <h2 className="font-['Tajawal'] font-bold text-[24px] text-[#1F2937] mb-5">تابعنا</h2>
           <div className="flex gap-4 w-44 h-8">
-            {[fbIcon, twitterIcon, instagramIcon, youtubeIcon].map((icon, index) => (
-              <a
-                key={index}
-                href="#"
-                className="w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform duration-300"
-              >
-                <img src={icon} alt="social" className="w-full h-full object-contain" />
-              </a>
-            ))}
+            <a
+              href="https://www.facebook.com/share/1eL4DDQxiF/?mibextid=wwXIfr"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="فيسبوك"
+              className="w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform duration-300"
+            >
+              <img src={fbIcon} alt="فيسبوك" className="w-full h-full object-contain" />
+            </a>
           </div>
         </div>
       </div>
