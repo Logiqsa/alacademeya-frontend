@@ -15,7 +15,17 @@ const useContactSettings = () => {
 
     getContactSettings()
       .then((res) => {
-        if (active) setContactSettings(res.data?.data || null);
+        const data = res.data?.data;
+        if (active) {
+          setContactSettings(
+            data
+              ? {
+                  ...data,
+                  whatsappNumber: data.phone || data.whatsappNumber || "",
+                }
+              : null,
+          );
+        }
       })
       .catch(() => {
         if (active) setContactSettings(null);

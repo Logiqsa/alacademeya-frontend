@@ -110,7 +110,7 @@ function App() {
       <Routes>
         {/* Landing */}
         <Route element={<HomeLayout />}>
-          <Route index element={user ? <Navigate to={getDashboardPathByRole(user)} replace /> : <Landing />} />
+          <Route index element={<Landing />} />
           <Route path="/blogs" element={<AllBlogsPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
         </Route>

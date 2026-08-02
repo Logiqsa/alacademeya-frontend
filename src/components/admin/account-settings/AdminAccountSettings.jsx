@@ -222,7 +222,10 @@ const ContactSettingsCard = () => {
       .then((res) => {
         const data = res.data?.data;
         if (data) {
-          setForm({ email: data.email || "", whatsappNumber: data.whatsappNumber || "" });
+          setForm({
+            email: data.email || "",
+            whatsappNumber: data.phone || data.whatsappNumber || "",
+          });
         }
       })
       .catch(() => setError("تعذر تحميل إعدادات التواصل"))
@@ -246,13 +249,19 @@ const ContactSettingsCard = () => {
     try {
       const res = await updateContactSettings({
         email: form.email.trim(),
-        whatsappNumber: form.whatsappNumber.trim(),
+        phone: form.whatsappNumber.trim(),
       });
       const data = res.data?.data;
-      if (data) setForm({ email: data.email, whatsappNumber: data.whatsappNumber });
+      if (data) {
+        setForm({
+          email: data.email || "",
+          whatsappNumber: data.phone || data.whatsappNumber || "",
+        });
+      }
       toast.success(res.data?.message || "تم تحديث وسائل التواصل بنجاح");
     } catch (err) {
-      setError(err.response?.data?.message || "تعذر حفظ إعدادات التواصل");
+      const validationError = Object.values(err.response?.data?.errors || {})[0];
+      setError(validationError || err.response?.data?.message || "تعذر حفظ إعدادات التواصل");
     } finally {
       setSaving(false);
     }

@@ -21,6 +21,16 @@ const nameOf = (value) => typeof value === "string" ? value : value?.ar || value
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
 
+const idOf = (value) =>
+  typeof value === "string"
+    ? value
+    : value?.id || value?._id || value?.user?.id || value?.user?._id;
+
+const teacherNameOf = (teacher) =>
+  typeof teacher === "object" && teacher
+    ? teacher.user?.fullName || teacher.fullName || teacher.name || ""
+    : "";
+
 // بعض الـ APIs بترجع student كـ object كامل، وبعضها بيرجعه id نص بس — بنغطي الحالتين
 const resolveStudentId = (student) =>
   typeof student === "string" ? student : student?.id || student?._id;
@@ -104,6 +114,15 @@ const SessionDetailsPage = ({ role }) => {
           homeTo="/admin-dashboard"
           dynamicLabels={{ sessionId: data?.session?.title }}
           currentPageLabel={data?.session?.title || ""}
+          linkState={data ? {
+            groupName: nameOf(data.classroom?.name),
+            groupTeacher: teacherNameOf(data.classroom?.teacher),
+            groupTeacherId:
+              idOf(data.classroom?.teacher) || data.classroom?.teacherId,
+            groupSubjectName: resolveName(data.classroom?.subject?.name || data.classroom?.subject),
+            groupSubjectId: idOf(data.classroom?.subject),
+            classroomType: data.classroom?.type,
+          } : undefined}
         />
       )}
       <div className="mx-auto max-w-7xl space-y-5 p-2" dir="rtl">

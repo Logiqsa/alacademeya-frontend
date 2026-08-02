@@ -118,6 +118,7 @@ export default function Breadcrumbs({
   homeTo = "/",
   dynamicLabels = {},
   currentPageLabel = "",
+  linkState,
 }) {
   const location = useLocation();
   const params = useParams();
@@ -252,7 +253,7 @@ export default function Breadcrumbs({
               ) : (
                 <Link
                   to={crumb.path}
-                  state={location.state}
+                  state={linkState || location.state}
                   className="hover:text-[#123C91] transition-colors"
                 >
                   {crumb.label}
