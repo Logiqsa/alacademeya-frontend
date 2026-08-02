@@ -252,6 +252,7 @@ export default function Breadcrumbs({
               ) : (
                 <Link
                   to={crumb.path}
+                  state={location.state}
                   className="hover:text-[#123C91] transition-colors"
                 >
                   {crumb.label}

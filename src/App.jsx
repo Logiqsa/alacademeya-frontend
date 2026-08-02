@@ -74,6 +74,7 @@ import SubscriptionDetailsPage from "./pages/admin/subscriptions/SubscriptionDet
 import SubscriptionOrderReviewPage from "./pages/admin/subscriptions/SubscriptionOrderReviewPage";
 import AdminPaymentsPage from "./pages/admin/payments/AdminPaymentsPage";
 import PaymentDetailsPage from "./pages/admin/payments/PaymentDetailsPage";
+import TeacherSalariesPage from "./pages/admin/teacher-salaries/TeacherSalariesPage";
 import CreateCurriculumPage from "./pages/admin/curriculum/CreateCurriculumPage";
 import StudentAccountSettingsPage from "./pages/student/StudentAccountSettingsPage";
 import StudentNotifications from "./pages/student/Notifications";
@@ -205,6 +206,7 @@ function App() {
         <Route path="/admin/subscription-orders/:id" element={user ? <SubscriptionOrderReviewPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/payments" element={user ? <AdminPaymentsPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/payments/:id" element={user ? <PaymentDetailsPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/teacher-salaries" element={user ? <TeacherSalariesPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscriptions/:id" element={user ? <SubscriptionDetailsPage /> : <Navigate to="/login" replace />} />
 
         <Route path="/admin/blogs" element={user ? <BlogsPage /> : <Navigate to="/login" replace />} />

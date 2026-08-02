@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { CheckCircle2, MessageCircle, UserPlus, Users, UserCheck, UserRound, X } from "lucide-react";
 
@@ -16,6 +16,8 @@ import { AddStudentModal } from "../../../components/admin/groups/Groupstable";
 import {
   getClassroomSessions,
   getClassroom,
+  getClassrooms,
+  getMyClassrooms,
   getClassroomStudents,
   getSessionAttendance,
   getClassroomSchedule,
@@ -28,6 +30,7 @@ import {
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
+import { AuthContext } from "../../../context/AuthContext";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -83,6 +86,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = role === "admin";
+  const { user: currentUser } = useContext(AuthContext);
   const Layout = isAdmin ? AdminLayout : TeacherLayout;
   const routedGroupTeacher = location.state?.groupTeacher;
   const routedGroupTeacherId = location.state?.groupTeacherId;
@@ -144,8 +148,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     setError(null);
 
     // بنستخدم allSettled عشان لو endpoint الـ classroom فشل، الصفحة تفضل تعرض الحصص عادي
-    const [classroomResult, sessionsResult, scheduleResult, studentsResult] = await Promise.allSettled([
+    const [classroomResult, myClassroomsResult, sessionsResult, scheduleResult, studentsResult] = await Promise.allSettled([
       getClassroom(groupId),
+      isAdmin ? getClassrooms({ page: 1, limit: 1000 }) : getMyClassrooms(),
       getClassroomSessions(groupId),
       getClassroomSchedule(groupId),
       isAdmin ? getClassroomStudents(groupId) : Promise.resolve({ data: { data: [] } }),
@@ -157,8 +162,28 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       Array.isArray(scheduleResult.value.data?.data?.schedule),
     );
 
-    if (classroomResult.status === "fulfilled") {
-      const classroomData = classroomResult.value.data?.data ?? classroomResult.value.data ?? {};
+    const classroomResponseData =
+      classroomResult.status === "fulfilled"
+        ? classroomResult.value.data?.data ?? classroomResult.value.data ?? {}
+        : {};
+    const availableClassrooms =
+      myClassroomsResult.status === "fulfilled"
+        ? myClassroomsResult.value.data?.data ?? []
+        : [];
+    const matchingClassroom = Array.isArray(availableClassrooms)
+      ? availableClassrooms.find(
+          (classroom) =>
+            String(classroom.id || classroom._id) === String(groupId),
+        )
+      : null;
+    // قائمة مجموعات المعلم غالبًا ترجع teacher populated، لذلك لها الأولوية
+    // على endpoint التفاصيل الذي قد يرجع teacher كـ id فقط أو يفشل للمعلم.
+    const classroomData = matchingClassroom
+      ? { ...classroomResponseData, ...matchingClassroom }
+      : classroomResponseData;
+    const hasClassroomData = Object.keys(classroomData).length > 0;
+
+    if (hasClassroomData) {
 
       const resolvedSubject = resolveName(classroomData.subject?.name || classroomData.subject);
       if (resolvedSubject && resolvedSubject !== "--") {
@@ -178,7 +203,8 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       setGroupName((prev) => resolved || prev || "مجموعة");
       const nestedTeacherName =
         classroomData.teacher?.user?.fullName ||
-        classroomData.teacher?.fullName;
+        classroomData.teacher?.fullName ||
+        (!isAdmin && matchingClassroom ? currentUser?.fullName : null);
       const teacherId =
         typeof classroomData.teacher === "string"
           ? classroomData.teacher
@@ -251,9 +277,21 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           (typeof classroomData.teacher === "object"
             ? classroomData.teacher
             : null);
+        let teacherUserName = null;
+        if (!teacher?.user?.fullName && !teacher?.fullName) {
+          try {
+            const userResponse = await getUser(profileOrUserId);
+            const userData = userResponse.data?.data || userResponse.data;
+            teacherUserName =
+              userData?.fullName || userData?.user?.fullName || null;
+          } catch (error) {
+            console.warn("getUser for classroom teacher failed:", error);
+          }
+        }
         setGroupTeacher(
           teacher?.user?.fullName ||
             teacher?.fullName ||
+            teacherUserName ||
             nestedTeacherName ||
             routedGroupTeacher ||
             "لم يُعيّن معلم",
@@ -276,7 +314,12 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         setGroupTeacher(routedGroupTeacher || "لم يُعيّن معلم");
       }
     } else {
-      console.error("getClassroom failed:", classroomResult.reason);
+      if (classroomResult.status === "rejected") {
+        console.error("getClassroom failed:", classroomResult.reason);
+      }
+      if (myClassroomsResult.status === "rejected") {
+        console.error("getMyClassrooms failed:", myClassroomsResult.reason);
+      }
       setGroupName((prev) => prev || "مجموعة");
       setGroupTeacher((prev) => (prev && prev !== "—" ? prev : routedGroupTeacher || "لم يُعيّن معلم"));
 
@@ -454,6 +497,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     routedGroupSubjectId,
     routedGroupTeacher,
     routedGroupTeacherId,
+    currentUser?.fullName,
   ]);
 
   useEffect(() => {
@@ -805,6 +849,17 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
               lessons={paginatedLessons}
               groupId={groupId}
               role={role}
+              navigationState={{
+                groupName,
+                groupTeacher,
+                groupTeacherId:
+                  groupDetails?.teacherId || routedGroupTeacherId,
+                groupSubjectName: groupSubject,
+                groupSubjectId:
+                  groupDetails?.subjectId || routedGroupSubjectId,
+                classroomType:
+                  groupDetails?.classroomType || routedClassroomType,
+              }}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onEndSession={handleEndRequest}

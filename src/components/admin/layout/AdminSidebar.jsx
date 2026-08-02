@@ -11,6 +11,7 @@ import {
   MessageSquare,
   CreditCard,
   WalletCards,
+  Banknote,
   Bell,
   Newspaper,
   Settings,
@@ -74,6 +75,11 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       title: "المدفوعات",
       icon: WalletCards,
       path: "/admin/payments",
+    },
+    {
+      title: "رواتب المعلمين",
+      icon: Banknote,
+      path: "/admin/teacher-salaries",
     },
     {
       title: "الإشعارات",

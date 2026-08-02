@@ -191,6 +191,20 @@ export const getAdminPayments = (params) =>
 export const getAdminPaymentDetails = (id) =>
   API.get(`/admin/payments/${id}`);
 
+// ─── Admin teacher salaries ─────────────────────────────────────────────────
+export const getTeacherSalariesSummary = (params) =>
+  API.get("/admin/teacher-salaries/summary", { params });
+export const previewTeacherSalary = (payload) =>
+  API.post("/admin/teacher-salaries/preview", payload);
+export const payTeacherSalary = (payload) =>
+  API.post("/admin/teacher-salaries", payload);
+export const getTeacherSalaries = (params) =>
+  API.get("/admin/teacher-salaries", { params });
+export const getTeacherSalary = (id) =>
+  API.get(`/admin/teacher-salaries/${id}`);
+export const cancelTeacherSalary = (id, cancellationReason) =>
+  API.patch(`/admin/teacher-salaries/${id}/cancel`, { cancellationReason });
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Discounts  (NEW)
 // ──────────────────────────────────────────────────────────────────────────────

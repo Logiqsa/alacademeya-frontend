@@ -40,7 +40,7 @@ const MobileField = ({ label, children }) => (
 
 // ⚠️ لازم يتمرر groupId من الصفحة الأب (GroupLessonsPage) عشان الـ navigate
 // يبني الرابط الصح ويوصل صفحة التفاصيل بالـ groupId + lessonId الاتنين
-const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession }) => {
+const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession, navigationState }) => {
   const navigate = useNavigate();
 
   const handleView = (lessonId) => {
@@ -50,7 +50,9 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession })
       return;
     }
 
-    navigate(`/teacher/groups/${groupId}/lessons/${lessonId}`);
+    navigate(`/teacher/groups/${groupId}/lessons/${lessonId}`, {
+      state: navigationState,
+    });
   };
 
   if (lessons.length === 0) {
