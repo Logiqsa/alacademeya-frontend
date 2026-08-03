@@ -560,6 +560,7 @@ const NotificationsSection = ({
       });
       if (teacherDetails.userId) {
         await updateUser(teacherDetails.userId, {
+          status: "active",
           registrationStatus: "active",
           isActive: true,
         });

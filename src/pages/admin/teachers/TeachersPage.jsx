@@ -186,6 +186,7 @@ const TeachersPage = () => {
       await updateTeacherProfile(selectedTeacher.id, { status: "approved" });
       if (selectedTeacher.userId) {
         await updateUser(selectedTeacher.userId, {
+          status: "active",
           registrationStatus: "active",
           isActive: true,
         });

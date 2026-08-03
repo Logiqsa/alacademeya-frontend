@@ -384,6 +384,7 @@ const UsersPage = () => {
       }
 
       await updateUser(user.id, {
+        ...(user.rawRole === "teacher" ? { status: "active" } : {}),
         registrationStatus: "active",
         isActive: true,
       });
