@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
+import { AuthContext } from "../../context/AuthContext";
 import {
   getCurriculums,
   getCurriculumStages,
@@ -119,8 +120,14 @@ const isApprovedStatus = (status) =>
 const StudentDetailsPages = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
-  const { email, role, academicLevel, countryId, studentType } = state || {};
+  const email = state?.email || user?.email;
+  const role = state?.role || user?.role || "student";
+  const academicLevel = state?.academicLevel || user?.academicLevel;
+  const countryId =
+    state?.countryId || user?.country?.id || user?.country?._id || user?.country;
+  const studentType = state?.studentType || user?.studentType || "school";
 
   const [curriculumId, setCurriculumId] = useState("");
   const [stageId, setStageId] = useState("");
@@ -263,6 +270,9 @@ const StudentDetailsPages = () => {
   return (
     <AuthLayout>
       <div className="relative w-full max-w-175 mx-auto p-6">
+        <button type="button" onClick={() => navigate(-1)} className="mb-4 inline-flex items-center gap-2 text-[14px] font-medium text-[#123C91] hover:underline">
+          <ArrowRight size={17} /> رجوع
+        </button>
         <Link to="/">
           <img src={logo} alt="logo" className="w-44 h-8 mb-5 cursor-pointer" />
         </Link>

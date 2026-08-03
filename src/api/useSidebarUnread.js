@@ -1,13 +1,14 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { getNotifications } from "../services/APIService";
+import { getNotifications, getUsers } from "../services/APIService";
 import { getChatRooms } from "./chatApi";
 import { getSocket } from "./socket";
 import {
   ADMIN_NOTIFICATION_EVENT,
   getAdminLocalNotifications,
 } from "../utils/adminLocalNotifications";
+import { filterIncompleteJoinNotifications } from "../utils/incompleteRegistration";
 
 const extractList = (payload, keys) => {
   let value = payload;
@@ -47,10 +48,21 @@ export function useSidebarUnread() {
   const [unread, setUnread] = useState({ messages: false, notifications: false });
 
   const refresh = useCallback(async () => {
-    const [roomsResult, notificationsResult] = await Promise.allSettled([
+    const [roomsResult, notificationsResult, usersResult] = await Promise.allSettled([
       getChatRooms(),
       getNotifications(),
+      isAdmin ? getUsers({ limit: 100 }) : Promise.resolve(null),
     ]);
+
+    const usersPayload = usersResult.status === "fulfilled" ? usersResult.value?.data : null;
+    const users = usersPayload?.data || usersPayload?.users || [];
+    const remoteNotifications =
+      notificationsResult.status === "fulfilled"
+        ? filterIncompleteJoinNotifications(
+            extractList(notificationsResult.value.data, ["notifications"]),
+            users,
+          )
+        : [];
 
     setUnread((current) => ({
       messages:
@@ -60,7 +72,7 @@ export function useSidebarUnread() {
       notifications:
         notificationsResult.status === "fulfilled"
           ? [
-              ...extractList(notificationsResult.value.data, ["notifications"]),
+              ...remoteNotifications,
               ...(isAdmin ? getAdminLocalNotifications() : []),
             ].some((item) => {
               const isRead = item.isRead ?? item.read ?? item.status === "read";

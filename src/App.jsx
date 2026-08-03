@@ -216,6 +216,7 @@ function App() {
         {/* <Route path="/admin/subscriptions/requests/:id" element={user ? <RequestDetailsPage  /> : <Navigate to="/login" replace />} />     */}
         <Route path="/admin/subscriptions/requests/:id/activate" element={user ? <ActivateSubscriptionPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/curriculum/create" element={user ? <CreateCurriculumPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/curriculum/:curriculumId/edit" element={user ? <CreateCurriculumPage /> : <Navigate to="/login" replace />} />
         <Route path="/admin/subscriptions/add" element={user ? <AddSubscriptionPage /> : <Navigate to="/login" replace />} />
 
         {/* Fallback */}

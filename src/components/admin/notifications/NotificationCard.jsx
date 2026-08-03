@@ -1,4 +1,5 @@
 import {
+  Check,
   Eye,
   EyeOff,
   GraduationCap,
@@ -29,6 +30,7 @@ const NotificationCard = ({
   onDelete,
   personName,
   onPersonClick,
+  compact = false,
 }) => {
   const isAcademic = type === "academic";
 
@@ -129,38 +131,33 @@ const NotificationCard = ({
         </div>
 
         <button
+          type="button"
           onClick={(event) => {
             event.stopPropagation();
             onToggleRead();
           }}
-          className="
-            flex
-            items-center
-            justify-center
-            sm:justify-start
-            gap-1
-            text-[13px]
-            sm:text-[14px]
-            text-[#1F2937]
-            hover:text-[#123C91]
-            transition-colors
-            self-start
-            sm:self-center
-          "
+          aria-label={compact ? "وضع علامة كمقروءة" : undefined}
+          title={compact ? "وضع علامة كمقروءة" : undefined}
+          className={compact
+            ? "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-lg text-[#8C9198] transition-colors hover:bg-blue-50 hover:text-[#123C91] sm:self-center"
+            : "flex items-center justify-center sm:justify-start gap-1 text-[13px] sm:text-[14px] text-[#1F2937] hover:text-[#123C91] transition-colors self-start sm:self-center"
+          }
         >
-          {isRead ? (
+          {compact ? (
+            <Check size={17} />
+          ) : isRead ? (
             <EyeOff size={15} />
           ) : (
             <Eye size={15} />
           )}
 
-          <span>
+          {!compact && <span>
             {isRead
               ? "وضع علامة كغير مقروءة"
               : "وضع علامة كمقروءة"}
-          </span>
+          </span>}
         </button>
-        <button
+        {!compact && <button
           type="button"
           onClick={(event) => {
             event.stopPropagation();
@@ -171,7 +168,7 @@ const NotificationCard = ({
           className="flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-lg text-[#8C9198] transition-colors hover:bg-red-50 hover:text-red-600 sm:self-center"
         >
           <Trash2 size={17} />
-        </button>
+        </button>}
       </div>
     </div>
   );

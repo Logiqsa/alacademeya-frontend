@@ -110,7 +110,7 @@ const OtpPage = () => {
       setTimer(TIMER_START);
       setOtp(new Array(OTP_LENGTH).fill(""));
       inputRefs.current[0].focus();
-      toast.success("تم إرسال كود جديد!");
+      toast.success("تم إرسال كود جديد. تحقق من البريد غير المرغوب فيه (Spam) إذا لم تجده.");
     } catch (err) {
       const status = err.response?.status;
       const msg = err.response?.data?.message || "";
@@ -147,6 +147,9 @@ const OtpPage = () => {
         </p>
         <p className="text-[15px] font-semibold text-[#123C91] mb-6 text-center">
           {email}
+        </p>
+        <p className="mb-5 rounded-lg bg-[#FFF8E6] px-4 py-2 text-center text-[13px] text-[#7A5200]">
+          إذا لم تجد الرسالة، تحقق من مجلد البريد غير المرغوب فيه (Spam).
         </p>
 
         <div className="flex gap-3 mb-5" dir="ltr" onPaste={handlePaste}>

@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import StatsCardds from "../../../components/admin/notifications/StatsCards";
 import NotificationsSection from "../../../components/admin/notifications/NotificationsSection";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
-import { getNotifications } from "../../../services/APIService";
+import { getNotifications, getUsers } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import { mergeAdminNotifications } from "../../../utils/adminLocalNotifications";
+import { filterIncompleteJoinNotifications } from "../../../utils/incompleteRegistration";
 
 const extractList = (resData) => {
   if (!resData) return [];
@@ -22,8 +23,17 @@ const AdminNotificationss = () => {
     setLoading(true);
     setLoadError("");
     try {
-      const res = await getNotifications();
-      setNotifications(mergeAdminNotifications(extractList(res.data)));
+      const [res, usersResponse] = await Promise.all([
+        getNotifications(),
+        getUsers({ limit: 100 }).catch(() => null),
+      ]);
+      const usersBody = usersResponse?.data || {};
+      const users = usersBody.data || usersBody.users || [];
+      setNotifications(
+        mergeAdminNotifications(
+          filterIncompleteJoinNotifications(extractList(res.data), users),
+        ),
+      );
     } catch (err) {
       setLoadError(err.response?.data?.message || "تعذر تحميل الإشعارات");
     } finally {
@@ -32,6 +42,8 @@ const AdminNotificationss = () => {
   }, []);
 
   useEffect(() => {
+    // Data loading is intentionally triggered when the page mounts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNotifications();
   }, [fetchNotifications]);
 

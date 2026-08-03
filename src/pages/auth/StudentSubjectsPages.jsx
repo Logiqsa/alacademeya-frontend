@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
@@ -134,6 +135,9 @@ const StudentSubjectsPages = () => {
   return (
     <AuthLayout>
       <div className="relative w-full max-w-175 mx-auto p-6" dir="rtl">
+        <button type="button" onClick={() => navigate(-1)} className="mb-4 inline-flex items-center gap-2 text-[14px] font-medium text-[#123C91] hover:underline">
+          <ArrowRight size={17} /> رجوع
+        </button>
         <Link to="/">
           <img src={logo} alt="logo" className="w-44 h-8 mb-4 cursor-pointer" />
         </Link>
@@ -223,8 +227,7 @@ const StudentSubjectsPages = () => {
 
         <button
           onClick={handleSubmit}
-          disabled={submitting}
-          disabled={loadingSubjects}
+          disabled={submitting || loadingSubjects}
           className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >

@@ -9,7 +9,44 @@ export const isActivated = (user) => {
   return user?.isActive === true || APPROVED_STATUSES.includes(status);
 };
 
+export const isRegistrationIncomplete = (user) => {
+  const status = String(user?.registrationStatus || user?.status || "").toLowerCase();
+  return (
+    user?.profileCompleted === false ||
+    user?.isProfileComplete === false ||
+    ["incomplete", "profile_incomplete", "verified"].includes(status)
+  );
+};
+
+export const getRegistrationContinuation = (user, registrationData = {}) => {
+  if (!isRegistrationIncomplete(user)) return null;
+
+  const role = user?.role || registrationData.role;
+  const state = {
+    email: user?.email || registrationData.email,
+    role,
+    academicLevel: user?.academicLevel || registrationData.academicLevel,
+    studentType: user?.studentType || registrationData.studentType,
+    countryId:
+      user?.country?.id ||
+      user?.country?._id ||
+      user?.country ||
+      registrationData.countryId ||
+      registrationData.country,
+  };
+
+  if (role === "teacher") return { path: "/register/teacher-details", state };
+  if (role === "student" && state.studentType !== "university") {
+    return { path: "/register/student-details", state };
+  }
+  if (role === "student") return { path: "/student-dashboard", state };
+  if (role === "parent") return { path: "/parent-dashboard", state };
+  return null;
+};
+
 export const getDashboardPathByRole = (user, fallback = "/") => {
+  const continuation = getRegistrationContinuation(user);
+  if (continuation) return continuation.path;
   const role = user?.role;
   const isApproved = isActivated(user);
 

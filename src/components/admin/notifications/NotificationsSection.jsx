@@ -331,6 +331,8 @@ const NotificationsSection = ({
   loading = false,
   loadError = "",
   onChange,
+  compact = false,
+  maxItems,
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
@@ -353,6 +355,12 @@ const NotificationsSection = ({
     if (activeTab === "messages") return isMessageNotification(n);
     return true;
   });
+  const visibleNotifications = compact
+    ? filtered.filter((notification) => !notification.isRead)
+    : filtered;
+  const displayedNotifications = maxItems
+    ? visibleNotifications.slice(0, maxItems)
+    : visibleNotifications;
 
   const toggleRead = async (n) => {
     const id = n._id || n.id;
@@ -617,14 +625,16 @@ const NotificationsSection = ({
       <div className="flex items-start justify-between gap-3 mb-2">
         <div>
           <h2 className="text-[16px] font-medium text-[#1F2937]">
-            جميع الإشعارات
+            {compact ? "الإشعارات الأخيرة" : "جميع الإشعارات"}
           </h2>
-          <p className="text-[14px] sm:text-[16px] text-[#6B7280]">
-            تصفية وإدارة الإشعارات حسب النوع
-          </p>
+          {!compact && <p className="text-[14px] sm:text-[16px] text-[#6B7280]">تصفية وإدارة الإشعارات حسب النوع</p>}
         </div>
 
-        {notifications.some((n) => !n.isRead) && (
+        {compact ? (
+          <button type="button" onClick={() => navigate("/admin/notifications")} className="shrink-0 text-[14px] font-medium text-[#123C91] hover:underline">
+            عرض الكل
+          </button>
+        ) : notifications.some((n) => !n.isRead) && (
           <button
             onClick={handleMarkAllRead}
             disabled={markingAll}
@@ -636,7 +646,7 @@ const NotificationsSection = ({
         )}
       </div>
 
-      <div
+      {!compact && <div
         className="
           w-full
           bg-[#EAF4FF]
@@ -677,9 +687,9 @@ const NotificationsSection = ({
             <span>{label}</span>
           </button>
         ))}
-      </div>
+      </div>}
 
-      {activeTab === "joined" && (
+      {!compact && activeTab === "joined" && (
         <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-gray-100 bg-[#F9FAFA] p-3">
           <span className="ml-1 text-sm font-medium text-[#575F69]">
             نوع الحساب:
@@ -715,7 +725,7 @@ const NotificationsSection = ({
 
       {!loading && !loadError && (
         <div className="space-y-3">
-          {filtered.map((n) => {
+          {displayedNotifications.map((n) => {
             const id = n._id || n.id;
             return (
               <NotificationCard
@@ -742,11 +752,12 @@ const NotificationsSection = ({
                     : undefined
                 }
                 onDelete={() => handleDelete(n)}
+                compact={compact}
               />
             );
           })}
 
-          {filtered.length === 0 && (
+          {displayedNotifications.length === 0 && (
             <p className="text-center text-[14px] text-[#8C9198] py-10">
               لا توجد إشعارات لعرضها.
             </p>

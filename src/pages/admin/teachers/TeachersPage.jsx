@@ -24,6 +24,7 @@ import {
   updateUser,
 } from "../../../services/APIService";
 import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
+import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 
 const PAGE_SIZE = 8;
 
@@ -95,8 +96,11 @@ const TeachersPage = () => {
       const body = response.data?.data ?? response.data ?? [];
       const list = Array.isArray(body) ? body : body.teachers || [];
 
+      const completedTeachers = list.filter(
+        (teacher) => !hasIncompleteRegistration(teacher),
+      );
       const rows = await Promise.all(
-        list.map(async (teacher) => {
+        completedTeachers.map(async (teacher) => {
           const id = teacher.id || teacher._id;
           let summary = {};
           let missedSessions = [];

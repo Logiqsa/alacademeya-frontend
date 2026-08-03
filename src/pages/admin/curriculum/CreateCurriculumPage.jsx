@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Plus, Save, Loader2 } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
@@ -11,18 +11,82 @@ import {
   createStage,
   createGrade,
   createSubject,
+  deleteGrade,
+  deleteStage,
+  deleteSubject,
+  getCurriculum,
+  getCurriculumStages,
+  getStageGrades,
+  getSubjects,
+  updateCurriculum,
+  updateGrade,
+  updateStage as updateStageRequest,
+  updateSubject,
 } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 
 const CreateCurriculumPage = () => {
   const navigate = useNavigate();
+  const { curriculumId } = useParams();
+  const isEditing = Boolean(curriculumId);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(isEditing);
+  const [originalStructure, setOriginalStructure] = useState([]);
   const [curriculum, setCurriculum] = useState({
     name: { ar: "", en: "" },
     description: "",
     country: "",
     stages: [],
   });
+
+  const extractList = (response) => {
+    const body = response?.data?.data ?? response?.data ?? response ?? [];
+    return Array.isArray(body) ? body : body.items || body.results || [];
+  };
+  const entityId = (entity) => entity?._id || entity?.id;
+  const normalizedName = (name) =>
+    typeof name === "string"
+      ? { ar: name, en: name }
+      : { ar: name?.ar || "", en: name?.en || "" };
+
+  useEffect(() => {
+    if (!curriculumId) return;
+    const loadCurriculum = async () => {
+      setLoading(true);
+      try {
+        const [curriculumResponse, stagesResponse] = await Promise.all([
+          getCurriculum(curriculumId),
+          getCurriculumStages(curriculumId),
+        ]);
+        const data = curriculumResponse.data?.data ?? curriculumResponse.data;
+        const stages = await Promise.all(extractList(stagesResponse).map(async (stage) => {
+          const grades = await Promise.all(extractList(await getStageGrades(entityId(stage))).map(async (grade) => ({
+            ...grade,
+            id: entityId(grade),
+            name: normalizedName(grade.name),
+            subjects: extractList(await getSubjects({ grade: entityId(grade) })).map((subject) => ({
+              ...subject,
+              id: entityId(subject),
+              name: normalizedName(subject.name),
+            })),
+          })));
+          return { ...stage, id: entityId(stage), name: normalizedName(stage.name), grades };
+        }));
+        setCurriculum({
+          name: normalizedName(data.name),
+          description: data.description || "",
+          country: entityId(data.country) || data.country || "",
+          stages,
+        });
+        setOriginalStructure(stages);
+      } catch (err) {
+        toast.error(err.response?.data?.message || "تعذر تحميل بيانات المنهج");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCurriculum();
+  }, [curriculumId]);
 
   const validate = () => {
     if (!curriculum.name.ar.trim() || !curriculum.name.en.trim()) {
@@ -79,6 +143,59 @@ const CreateCurriculumPage = () => {
 
     setSaving(true);
     try {
+      if (isEditing) {
+        await updateCurriculum(curriculumId, {
+          name: curriculum.name,
+          description: curriculum.description,
+          country: curriculum.country,
+        });
+        const currentStageIds = new Set(curriculum.stages.map(entityId).filter(Boolean));
+        for (const oldStage of originalStructure) {
+          if (!currentStageIds.has(entityId(oldStage))) await deleteStage(entityId(oldStage));
+        }
+        for (const stage of curriculum.stages) {
+          const savedStage = originalStructure.find((item) => entityId(item) === entityId(stage));
+          let stageId = entityId(stage);
+          if (savedStage) {
+            await updateStageRequest(stageId, { curriculum: curriculumId, name: stage.name });
+          } else {
+            const response = await createStage({ curriculum: curriculumId, name: stage.name });
+            stageId = entityId(response.data?.data ?? response.data);
+          }
+
+          const currentGradeIds = new Set(stage.grades.map(entityId).filter(Boolean));
+          for (const oldGrade of savedStage?.grades || []) {
+            if (!currentGradeIds.has(entityId(oldGrade))) await deleteGrade(entityId(oldGrade));
+          }
+          for (const grade of stage.grades) {
+            const savedGrade = savedStage?.grades.find((item) => entityId(item) === entityId(grade));
+            let gradeId = entityId(grade);
+            if (savedGrade) {
+              await updateGrade(gradeId, { curriculum: curriculumId, stage: stageId, name: grade.name });
+            } else {
+              const response = await createGrade({ curriculum: curriculumId, stage: stageId, name: grade.name });
+              gradeId = entityId(response.data?.data ?? response.data);
+            }
+
+            const currentSubjectIds = new Set(grade.subjects.map(entityId).filter(Boolean));
+            for (const oldSubject of savedGrade?.subjects || []) {
+              if (!currentSubjectIds.has(entityId(oldSubject))) await deleteSubject(entityId(oldSubject));
+            }
+            for (const subject of grade.subjects) {
+              const payload = { curriculum: curriculumId, stage: stageId, grade: gradeId, name: subject.name };
+              if (savedGrade?.subjects.some((item) => entityId(item) === entityId(subject))) {
+                await updateSubject(entityId(subject), payload);
+              } else {
+                await createSubject(payload);
+              }
+            }
+          }
+        }
+        toast.success("تم تحديث المنهج بنجاح");
+        navigate("/admin/curriculum");
+        return;
+      }
+
       const curriculumRes = await createCurriculum({
         name: { ar: curriculum.name.ar, en: curriculum.name.en },
         country: curriculum.country,
@@ -115,7 +232,7 @@ const CreateCurriculumPage = () => {
       toast.success("تم بناء المنهج بالكامل بنجاح");
       navigate("/admin/curriculum");
     } catch (err) {
-      toast.error("حدث خطأ أثناء الحفظ");
+      toast.error(err.response?.data?.message || "حدث خطأ أثناء الحفظ");
       console.error(err);
     } finally {
       setSaving(false);
@@ -150,13 +267,19 @@ const CreateCurriculumPage = () => {
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
       <div dir="rtl" className="max-w-4xl mx-auto p-4 space-y-6 pb-20">
+        {loading ? (
+          <div className="flex min-h-80 items-center justify-center">
+            <Loader2 className="animate-spin text-[#123C91]" size={28} />
+          </div>
+        ) : (
+          <>
         <div className="flex justify-between items-center">
           <div>
             <h2 className="font-['Tajawal'] font-bold text-[24px] text-[#1F2937]">
-              إنشاء منهج جديد
+              {isEditing ? "تعديل المنهج" : "إنشاء منهج جديد"}
             </h2>
             <p className="text-[#8C9198] text-[15px]">
-              بناء هيكل المنهج والمراحل والصفوف الدراسية
+              {isEditing ? "تعديل بيانات وهيكل المنهج الدراسي" : "بناء هيكل المنهج والمراحل والصفوف الدراسية"}
             </p>
           </div>
           <button
@@ -169,7 +292,7 @@ const CreateCurriculumPage = () => {
             ) : (
               <Save size={18} />
             )}
-            {saving ? "جاري الحفظ..." : "حفظ المنهج"}
+            {saving ? "جاري الحفظ..." : isEditing ? "حفظ التعديلات" : "حفظ المنهج"}
           </button>
         </div>
 
@@ -201,6 +324,8 @@ const CreateCurriculumPage = () => {
             />
           ))}
         </div>
+          </>
+        )}
       </div>
     </AdminLayout>
   );

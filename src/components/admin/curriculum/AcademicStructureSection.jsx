@@ -168,7 +168,7 @@ const CurriculumCard = ({
             className="text-[#D92D20] cursor-pointer p-1 -m-1 hover:opacity-80"
             aria-label="حذف"
           >
-            {/* <Trash2 size={17} /> */}
+            <Trash2 size={17} />
           </button>
           <button
             type="button"
@@ -176,7 +176,7 @@ const CurriculumCard = ({
             className="text-[#575F69] cursor-pointer p-1 -m-1 hover:opacity-80"
             aria-label="تعديل"
           >
-            {/* <Pencil size={17} /> */}
+            <Pencil size={17} />
           </button>
         </div>
       </div>

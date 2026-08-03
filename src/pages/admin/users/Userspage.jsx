@@ -19,6 +19,7 @@ import {
 } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
+import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 
 const PAGE_SIZE = 6;
 const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
@@ -181,6 +182,7 @@ const UsersPage = () => {
                 );
                 return {
                   ...mapped,
+                  profileStatus: teacher.status,
                   teacherGrades: grades,
                   teacherSubjects: subjects,
                   teacherCurriculums: curriculums,
@@ -192,6 +194,7 @@ const UsersPage = () => {
               return student
                 ? {
                     ...mapped,
+                    profileStatus: student.status,
                     grade:
                       student.grade?.name?.ar ||
                       student.grade?.name?.en ||
@@ -222,7 +225,9 @@ const UsersPage = () => {
   }, [fetchUsers]);
 
   // استبعد أي مستخدم متعمله soft-delete من الجدول والإحصائيات
-  const visibleUsers = users.filter((u) => !u.isDeleted);
+  const visibleUsers = users.filter(
+    (user) => !user.isDeleted && !hasIncompleteRegistration(user),
+  );
   const gradeOptions = [
     ...new Set(
       visibleUsers

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, Upload, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { AuthContext } from "../../context/AuthContext";
@@ -301,6 +301,9 @@ const TeacherDetailsPage = () => {
   return (
     <AuthLayout>
       <div className="w-full mx-auto px-1 py-8" dir="rtl">
+        <button type="button" onClick={() => navigate(-1)} className="mb-4 inline-flex items-center gap-2 text-[14px] font-medium text-[#123C91] hover:underline">
+          <ArrowRight size={17} /> رجوع
+        </button>
         <h2
           className="text-[26px] font-bold mb-2 text-[#1F2937]"
           style={{ fontFamily: "Tajawal, sans-serif" }}

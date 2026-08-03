@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Eye, EyeOff, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect, useContext } from "react";
+import { Eye, EyeOff, ChevronDown, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
@@ -7,10 +7,13 @@ import { getArabicCountryName } from "../../utils/countryName";
 import { buildInternationalPhone } from "../../utils/phone";
 import {
   register,
+  login as loginAccount,
   verifyAccount,
   resendOtp,
   getCountries,
 } from "../../services/APIService";
+import { AuthContext } from "../../context/AuthContext";
+import { getDashboardPathByRole, getRegistrationContinuation } from "../../utils/roles";
 
 const OTP_LENGTH = 6;
 const TIMER_START = 60;
@@ -187,6 +190,7 @@ const PhoneCodeDropdown = ({ value, onChange, countries = [], loading }) => {
 
 const RegisterForm = ({ type }) => {
   const navigate = useNavigate();
+  const { setUser } = useContext(AuthContext);
   const otpRefs = useRef([]);
 
   const [countries, setCountries] = useState([]);
@@ -348,13 +352,74 @@ const RegisterForm = ({ type }) => {
       }
       await register(payload);
 
-      toast.success("تم إنشاء الحساب!");
+      toast.success("تم إنشاء الحساب. تحقق من مجلد Spam إذا لم تجد كود التفعيل.");
       setOtp(new Array(OTP_LENGTH).fill(""));
       setTimer(TIMER_START);
       setShowOtpModal(true);
     } catch (err) {
       console.error("خطأ من السيرفر (register):", err.response?.data);
-      toast.error(err.response?.data?.message || "حدثت مشكلة أثناء التسجيل");
+      const errorText = String(
+        err.response?.data?.message || err.response?.data?.error || "",
+      ).toLowerCase();
+      const accountExists =
+        [400, 409, 422].includes(err.response?.status) &&
+        ["exist", "already", "duplicate", "موجود", "مسجل", "مستخدم"].some((word) =>
+          errorText.includes(word),
+        );
+
+      if (!accountExists) {
+        toast.error(err.response?.data?.message || "حدثت مشكلة أثناء التسجيل");
+        return;
+      }
+
+      try {
+        const loginResponse = await loginAccount({
+          email: formData.email.trim().toLowerCase(),
+          identifier: formData.email.trim().toLowerCase(),
+          password: formData.password,
+        });
+        const responseData = loginResponse.data || {};
+        const existingUser = responseData.data?.user || responseData.data || responseData.user;
+        const token = responseData.token || responseData.data?.token;
+        if (token) localStorage.setItem("token", token);
+        if (existingUser) {
+          setUser(existingUser);
+          localStorage.setItem("user", JSON.stringify(existingUser));
+        }
+
+        const continuation = getRegistrationContinuation(existingUser, {
+          ...formData,
+          countryId: formData.country,
+          role: type,
+        });
+        if (continuation) {
+          toast.success("الحساب موجود بالفعل، سنكمل بيانات التسجيل الناقصة.");
+          navigate(continuation.path, { state: continuation.state });
+        } else {
+          toast.success("الحساب مكتمل بالفعل، تم تسجيل دخولك.");
+          navigate(getDashboardPathByRole(existingUser));
+        }
+      } catch (loginError) {
+        const loginMessage = String(loginError.response?.data?.message || "").toLowerCase();
+        const needsVerification =
+          loginError.response?.status === 403 ||
+          ["verify", "verification", "unverified", "تفعيل", "تحقق"].some((word) =>
+            loginMessage.includes(word),
+          );
+        if (needsVerification) {
+          try {
+            await resendOtp(formData.email);
+          } catch {
+            // The existing code may still be valid even if resending is rate-limited.
+          }
+          setOtp(new Array(OTP_LENGTH).fill(""));
+          setTimer(TIMER_START);
+          setShowOtpModal(true);
+          toast.success("الحساب موجود ولم يُفعّل بعد. أدخل كود التفعيل لإكمال التسجيل.");
+        } else {
+          toast.error("هذا الحساب موجود بالفعل. سجل الدخول بكلمة المرور الصحيحة لإكمال بياناتك.");
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -449,8 +514,14 @@ const RegisterForm = ({ type }) => {
         country: found?.code,
       });
 
-      const token = res.data?.token;
+      const token = res.data?.token || res.data?.data?.token;
+      const verifiedUser = res.data?.data?.user || res.data?.user || res.data?.data;
       if (token) localStorage.setItem("token", token);
+      if (verifiedUser && typeof verifiedUser === "object") {
+        const userWithRole = { ...verifiedUser, role: verifiedUser.role || type };
+        setUser(userWithRole);
+        localStorage.setItem("user", JSON.stringify(userWithRole));
+      }
 
       toast.success("تم تفعيل الحساب بنجاح!");
       setShowOtpModal(false);
@@ -474,7 +545,7 @@ const RegisterForm = ({ type }) => {
       setTimer(TIMER_START);
       setOtp(new Array(OTP_LENGTH).fill(""));
       otpRefs.current[0]?.focus();
-      toast.success("تم إرسال كود جديد!");
+      toast.success("تم إرسال كود جديد. تحقق من مجلد Spam إذا لم تجده.");
     } catch (err) {
       console.error("خطأ من السيرفر (resend-otp):", err.response?.data);
       toast.error(
@@ -490,6 +561,14 @@ const RegisterForm = ({ type }) => {
 
   return (
     <div className="relative w-full max-w-175 mx-auto p-6">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="mb-4 inline-flex items-center gap-2 text-[14px] font-medium text-[#123C91] hover:underline"
+      >
+        <ArrowRight size={17} />
+        رجوع
+      </button>
       <Link to="/">
         <img src={logo} alt="logo" className="w-44 h-8 mb-4 cursor-pointer" />
       </Link>
@@ -715,6 +794,9 @@ const RegisterForm = ({ type }) => {
             </p>
             <p className="font-medium text-[20px] md:text-[22px] leading-8 text-center text-[#123C91] p-2 mb-2">
               {formData.email}
+            </p>
+            <p dir="rtl" className="rounded-lg bg-[#FFF8E6] px-4 py-2 text-center text-[13px] text-[#7A5200]">
+              إذا لم تجد الرسالة، تحقق من مجلد البريد غير المرغوب فيه (Spam).
             </p>
 
             <div
