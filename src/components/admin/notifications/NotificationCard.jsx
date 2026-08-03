@@ -1,5 +1,6 @@
 import {
   Check,
+  Bell,
   Eye,
   EyeOff,
   GraduationCap,
@@ -34,7 +35,7 @@ const NotificationCard = ({
 }) => {
   const isAcademic = type === "academic";
 
-  const Icon = isAcademic ? GraduationCap : Settings;
+  const Icon = compact ? Bell : isAcademic ? GraduationCap : Settings;
 
   const safeTitle = getLocalizedText(title, "ar");
   const safeDescription = getLocalizedText(description, "ar");
@@ -54,8 +55,7 @@ const NotificationCard = ({
       className={`
         border
         border-[#E5E5E5]
-        rounded-xl
-        p-4
+        ${compact ? "rounded-lg p-3" : "rounded-xl p-4"}
         transition-all
         ${onOpen ? "cursor-pointer hover:border-[#123C91] focus:outline-none focus:ring-2 focus:ring-[#123C91]/30" : ""}
         ${
@@ -65,32 +65,39 @@ const NotificationCard = ({
         }
       `}
     >
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className={`flex items-center ${compact ? "gap-3" : "flex-col gap-4 sm:flex-row"}`}>
         <div
           className={`
-            w-10
-            h-10
+            ${compact ? "h-9 w-9" : "h-10 w-10"}
             rounded-lg
             flex
             items-center
             justify-center
             shrink-0
             ${
-              isAcademic
+              compact
+                ? "bg-white text-[#123C91] shadow-sm"
+                : isAcademic
                 ? "bg-[#E1F5EE] text-[#0F6E56]"
                 : "bg-[#E6F1FB] text-[#185FA5]"
             }
           `}
         >
-          <Icon size={18} />
+          <Icon size={compact ? 17 : 18} />
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="break-words text-[15px] font-semibold leading-6 text-[#1F2937] sm:text-[16px]">
+          <h3 className={compact
+            ? "line-clamp-1 text-[14px] font-semibold leading-5 text-[#1F2937]"
+            : "break-words text-[15px] font-semibold leading-6 text-[#1F2937] sm:text-[16px]"
+          }>
             {safeTitle}
           </h3>
 
-          <p className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-6 text-[#575F69] sm:text-[14px]">
+          <p className={compact
+            ? "mt-1 line-clamp-2 break-words text-[12px] leading-5 text-[#575F69]"
+            : "mt-2 whitespace-pre-wrap break-words text-[13px] leading-6 text-[#575F69] sm:text-[14px]"
+          }>
             {personIndex >= 0 ? (
               <>
                 {safeDescription.slice(0, personIndex)}
@@ -125,7 +132,7 @@ const NotificationCard = ({
             </button>
           )}
 
-          <span className="block mt-2 text-[12px] text-[#1F2937BF]">
+          <span className={`${compact ? "mt-1 text-[11px] text-[#8C9198]" : "mt-2 text-[12px] text-[#1F2937BF]"} block`}>
             {time}
           </span>
         </div>
@@ -139,12 +146,12 @@ const NotificationCard = ({
           aria-label={compact ? "وضع علامة كمقروءة" : undefined}
           title={compact ? "وضع علامة كمقروءة" : undefined}
           className={compact
-            ? "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-lg text-[#8C9198] transition-colors hover:bg-blue-50 hover:text-[#123C91] sm:self-center"
+            ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#D7E3F8] bg-white text-[#123C91] transition-colors hover:border-[#123C91] hover:bg-[#F0F5FF]"
             : "flex items-center justify-center sm:justify-start gap-1 text-[13px] sm:text-[14px] text-[#1F2937] hover:text-[#123C91] transition-colors self-start sm:self-center"
           }
         >
           {compact ? (
-            <Check size={17} />
+            <Check size={18} strokeWidth={2.5} />
           ) : isRead ? (
             <EyeOff size={15} />
           ) : (

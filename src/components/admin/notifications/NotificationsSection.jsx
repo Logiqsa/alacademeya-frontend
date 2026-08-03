@@ -724,7 +724,7 @@ const NotificationsSection = ({
       )}
 
       {!loading && !loadError && (
-        <div className="space-y-3">
+        <div className={compact ? "mt-4 space-y-2" : "space-y-3"}>
           {displayedNotifications.map((n) => {
             const id = n._id || n.id;
             return (

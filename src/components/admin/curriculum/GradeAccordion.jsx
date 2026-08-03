@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ChevronDown, ChevronUp, Trash2, Plus } from "lucide-react";
 import SubjectCard from "./SubjectAccordion";
 
-const GradeAccordion = ({ grade, onUpdate, onRemove }) => {
+const GradeAccordion = ({ grade, onUpdate, onRemove, onRemoveSubject }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const addSubject = () => {
@@ -23,6 +23,10 @@ const GradeAccordion = ({ grade, onUpdate, onRemove }) => {
   };
 
   const removeSubject = (subjectId) => {
+    if (onRemoveSubject) {
+      onRemoveSubject(subjectId);
+      return;
+    }
     onUpdate({
       ...grade,
       subjects: grade.subjects.filter((s) => s.id !== subjectId),

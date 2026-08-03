@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ChevronDown, ChevronUp, Trash2, Plus } from "lucide-react";
 import GradeAccordion from "./GradeAccordion";
 
-const StageAccordion = ({ stage, onUpdate, onRemove }) => {
+const StageAccordion = ({ stage, onUpdate, onRemove, onRemoveGrade, onRemoveSubject }) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const addGrade = () => {
@@ -22,6 +22,10 @@ const StageAccordion = ({ stage, onUpdate, onRemove }) => {
   };
 
   const removeGrade = (gradeId) => {
+    if (onRemoveGrade) {
+      onRemoveGrade(gradeId);
+      return;
+    }
     onUpdate({
       ...stage,
       grades: stage.grades.filter((g) => g.id !== gradeId),
@@ -93,6 +97,7 @@ const StageAccordion = ({ stage, onUpdate, onRemove }) => {
               grade={grade}
               onUpdate={(u) => updateGrade(grade.id, u)}
               onRemove={() => removeGrade(grade.id)}
+              onRemoveSubject={(subjectId) => onRemoveSubject?.(grade.id, subjectId)}
             />
           ))}
           <button
