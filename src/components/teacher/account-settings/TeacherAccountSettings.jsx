@@ -6,7 +6,8 @@ import {
   updateMyProfile,
   getCountries,
   getCurriculums,
-  getAllGrades,
+  getCurriculumStages,
+  getStageGrades,
   getSubjects,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
@@ -87,14 +88,6 @@ const LANGUAGE_OPTIONS = [
   { id: "ar", label: "العربية" },
   { id: "en", label: "الإنجليزية" },
   { id: "fr", label: "الفرنسية" },
-];
-const EXPERIENCE_OPTIONS = [
-  { id: "1", label: "أقل من سنة" },
-  { id: "3", label: "1 – 3 سنوات" },
-  { id: "5", label: "3 – 5 سنوات" },
-  { id: "5y", label: "5 سنين" },
-  { id: "8", label: "5 – 10 سنوات" },
-  { id: "10", label: "أكثر من 10 سنوات" },
 ];
 const PASSWORD_RULES = [
   { id: "len", label: "الحد الأدنى 8 أحرف", test: (p) => p.length >= 8 },
@@ -561,14 +554,21 @@ const TeacherPersonalCard = ({
 };
 
 const TeacherProfessionalCard = ({ teacher, onSaved }) => {
-  // "curriculums" و "grades" و "subjects" كلها arrays في رد السيرفر، فبنعاملهم كلهم
-  // كاختيار متعدد بشكل متسق، بدل ما نفترض إن فيه اختيار واحد بس (ده كان بيضيع باقي الصفوف عند الحفظ).
+  const entityId = (value) =>
+    typeof value === "string" ? value : value?._id || value?.id || "";
+  const currentCurriculum =
+    entityId(teacher.curriculum) || entityId(teacher.curriculums?.[0]);
+  const currentStage =
+    entityId(teacher.stage) ||
+    entityId(teacher.grades?.[0]?.stage) ||
+    entityId(teacher.grades?.[0]?.stageId);
   const buildForm = () => ({
     studyLanguage: teacher.language || "ar",
-    curriculumIds: (teacher.curriculums || []).map((c) => c._id || c.id),
-    gradeIds: (teacher.grades || []).map((g) => g._id || g.id),
-    experience: teacher.experience || "",
-    subjects: (teacher.subjects || []).map((s) => s._id || s.id),
+    curriculumId: currentCurriculum,
+    stageId: currentStage,
+    gradeIds: (teacher.grades || []).map(entityId).filter(Boolean),
+    experienceYears: teacher.experienceYears ?? teacher.experience ?? "",
+    subjects: (teacher.subjects || []).map(entityId).filter(Boolean),
   });
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -576,9 +576,11 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
   const [form, setForm] = useState(buildForm);
 
   const [curriculumOptions, setCurriculumOptions] = useState([]);
+  const [stageOptions, setStageOptions] = useState([]);
   const [gradeOptions, setGradeOptions] = useState([]);
   const [subjectOptions, setSubjectOptions] = useState([]);
   const [loadingCurriculums, setLoadingCurriculums] = useState(false);
+  const [loadingStages, setLoadingStages] = useState(false);
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
@@ -586,7 +588,6 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
     setForm(buildForm());
   }, [teacher]);
 
-  // بنحمل المناهج والصفوف والمواد مرة واحدة بمجرد فتح وضع التعديل
   useEffect(() => {
     if (!editing) return;
     if (curriculumOptions.length === 0) {
@@ -598,17 +599,40 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
         .catch(() => toast.error("تعذر تحميل قائمة المناهج"))
         .finally(() => setLoadingCurriculums(false));
     }
-    if (gradeOptions.length === 0) {
-      setLoadingGrades(true);
-      getAllGrades()
-        .then((res) =>
-          setGradeOptions(extractList(res.data).map(normalizeOption)),
-        )
-        .catch(() => toast.error("تعذر تحميل المراحل الدراسية"))
-        .finally(() => setLoadingGrades(false));
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
+
+  useEffect(() => {
+    if (!editing || !form.curriculumId) {
+      setStageOptions([]);
+      return;
+    }
+    let active = true;
+    setLoadingStages(true);
+    getCurriculumStages(form.curriculumId)
+      .then((res) => {
+        if (active) setStageOptions(extractList(res.data).map(normalizeOption));
+      })
+      .catch(() => toast.error("تعذر تحميل المراحل الدراسية"))
+      .finally(() => active && setLoadingStages(false));
+    return () => { active = false; };
+  }, [editing, form.curriculumId]);
+
+  useEffect(() => {
+    if (!editing || !form.stageId) {
+      setGradeOptions([]);
+      return;
+    }
+    let active = true;
+    setLoadingGrades(true);
+    getStageGrades(form.stageId)
+      .then((res) => {
+        if (active) setGradeOptions(extractList(res.data).map(normalizeOption));
+      })
+      .catch(() => toast.error("تعذر تحميل الصفوف الدراسية"))
+      .finally(() => active && setLoadingGrades(false));
+    return () => { active = false; };
+  }, [editing, form.stageId]);
 
   useEffect(() => {
     if (!editing) return;
@@ -650,16 +674,23 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (
+      !form.curriculumId ||
+      !form.stageId ||
+      !form.gradeIds.length ||
+      !form.subjects.length
+    ) {
+      setError("يرجى إكمال المنهج والمرحلة والصفوف والمواد الدراسية");
+      return;
+    }
     setSaving(true);
     try {
-      // ملحوظة: أسماء الحقول هنا (curriculums / grades) متطابقة مع أسماء الحقول
-      // في رد الـ GET. لو الباك إند فعليًا مستني اسم مختلف (زي curriculum/grade مفرد)
-      // محتاج تتأكد من فريق الباك إند وتظبط الأسماء دي.
       const payload = {
         language: form.studyLanguage,
-        curriculums: form.curriculumIds,
+        curriculum: form.curriculumId,
         grades: form.gradeIds,
-        experience: form.experience,
+        experienceYears:
+          form.experienceYears === "" ? undefined : Number(form.experienceYears),
         subjects: form.subjects,
       };
       await updateMyProfile(payload);
@@ -675,8 +706,6 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
 
   const langLabel = (id) =>
     LANGUAGE_OPTIONS.find((l) => l.id === id)?.label || "—";
-  const experienceLabel = (id) =>
-    EXPERIENCE_OPTIONS.find((o) => o.id === id)?.label || "—";
   const joinedNames = (arr) => {
     if (!arr?.length) return "—";
     const names = new Map();
@@ -706,12 +735,14 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
             value={joinedNames(teacher.curriculums)}
           />
           <ViewField
-            label="المرحلة الدراسية"
+            label="الصفوف الدراسية"
             value={joinedNames(teacher.grades)}
           />
           <ViewField
             label="سنوات الخبرة"
-            value={experienceLabel(teacher.experience)}
+            value={
+              teacher.experienceYears ?? teacher.experience ?? "—"
+            }
           />
           <ViewField label="المواد" value={joinedNames(teacher.subjects)} />
         </ViewGrid>
@@ -726,34 +757,56 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
             }
             placeholder="اختر اللغة"
           />
-          <MultiSelectDropdown
+          <Dropdown
             label="المنهج الدراسي"
-            value={form.curriculumIds}
+            value={form.curriculumId}
             options={curriculumOptions}
             loading={loadingCurriculums}
-            onChange={(ids) =>
-              setForm((prev) => ({ ...prev, curriculumIds: ids }))
+            onChange={(id) =>
+              setForm((prev) => ({
+                ...prev,
+                curriculumId: id,
+                stageId: "",
+                gradeIds: [],
+                subjects: [],
+              }))
             }
             placeholder="اختر المنهج الدراسي"
-            emptyLabel="لا توجد مناهج"
+          />
+          <Dropdown
+            label="المرحلة الدراسية"
+            value={form.stageId}
+            options={stageOptions}
+            loading={loadingStages}
+            disabled={!form.curriculumId}
+            onChange={(id) =>
+              setForm((prev) => ({
+                ...prev,
+                stageId: id,
+                gradeIds: [],
+                subjects: [],
+              }))
+            }
+            placeholder={form.curriculumId ? "اختر المرحلة الدراسية" : "اختر المنهج أولاً"}
           />
           <MultiSelectDropdown
-            label="المرحلة الدراسية"
+            label="الصفوف الدراسية"
             value={form.gradeIds}
             options={gradeOptions}
             loading={loadingGrades}
             onChange={(ids) =>
               setForm((prev) => ({ ...prev, gradeIds: ids, subjects: [] }))
             }
-            placeholder="اختر المرحلة الدراسية"
-            emptyLabel="لا توجد مراحل"
+            placeholder={form.stageId ? "اختر الصفوف الدراسية" : "اختر المرحلة أولاً"}
+            emptyLabel="لا توجد صفوف"
           />
-          <Dropdown
+          <TextInput
             label="سنوات الخبرة"
-            value={form.experience}
-            options={EXPERIENCE_OPTIONS}
-            onChange={(id) => setForm((prev) => ({ ...prev, experience: id }))}
-            placeholder="اختر سنوات الخبرة"
+            type="number"
+            value={form.experienceYears}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, experienceYears: e.target.value }))
+            }
           />
           <MultiSelectDropdown
             label="المواد الدراسية"
