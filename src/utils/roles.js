@@ -4,29 +4,52 @@ export const isAdminRole = (role) => ADMIN_ROLES.includes(role);
 
 export const APPROVED_STATUSES = ["active", "approved", "accepted"];
 
-const normalizedStatus = (user) =>
-  String(user?.registrationStatus || user?.status || "")
-    .trim()
-    .toLowerCase()
-    .replaceAll("_", "-");
+const normalizedStatuses = (user) =>
+  [
+    user?.registrationStatus,
+    user?.registration_status,
+    user?.profileStatus,
+    user?.status,
+  ]
+    .filter(Boolean)
+    .map((status) =>
+      String(status).trim().toLowerCase().replaceAll("_", "-"),
+    );
 
 export const isActivated = (user) => {
-  const status = normalizedStatus(user);
-  return user?.isActive === true || APPROVED_STATUSES.includes(status);
+  const registrationStatus = String(
+    user?.registrationStatus || user?.registration_status || "",
+  )
+    .trim()
+    .toLowerCase();
+  const registrationIsActive =
+    APPROVED_STATUSES.includes(registrationStatus) && user?.isActive !== false;
+
+  if (!registrationIsActive) return false;
+  if (user?.role !== "teacher") return true;
+
+  const teacherStatus = String(user?.status || user?.profileStatus || "")
+    .trim()
+    .toLowerCase();
+  return APPROVED_STATUSES.includes(teacherStatus);
 };
 
 export const isRegistrationIncomplete = (user) => {
-  const status = normalizedStatus(user);
+  if (isActivated(user)) return false;
+  const statuses = normalizedStatuses(user);
   return (
     user?.profileCompleted === false ||
     user?.isProfileComplete === false ||
-    ["incomplete", "profile-incomplete", "pending-profile", "verified"].includes(status)
+    statuses.some((status) =>
+      ["incomplete", "profile-incomplete", "pending-profile", "verified"].includes(status),
+    )
   );
 };
 
 export const isAwaitingApproval = (user) =>
-  ["pending", "pending-review", "pending-approval", "under-review"].includes(
-    normalizedStatus(user),
+  !isActivated(user) &&
+  normalizedStatuses(user).some((status) =>
+    ["pending", "pending-review", "pending-approval", "under-review"].includes(status),
   );
 
 export const getRegistrationContinuation = (user, registrationData = {}) => {
@@ -62,7 +85,7 @@ export const getDashboardPathByRole = (user, fallback = "/") => {
   if (role === "teacher") {
     return isApproved || isPendingReview
       ? "/teacher-dashboard"
-      : "/account-state";
+      : "/pending";
   }
 
   if (role === "student") {

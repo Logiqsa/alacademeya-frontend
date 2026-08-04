@@ -8,10 +8,13 @@ import {
   getCurriculums,
   getCurriculumStages,
   getStageGrades,
+  getGrade,
   getSubjects,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
+import { AccountStatusBadge } from "../../account-settings/AccountRegistrationStatus";
+import PhoneDisplay from "../../account-settings/PhoneDisplay";
 import {
   getCountryId,
   resolveCountryLabel,
@@ -61,6 +64,8 @@ const extractList = (resData) => {
 const normalizeOption = (item) => ({
   id: item._id || item.id || item.value || item.code,
   code: item.code || item.countryCode,
+  phoneCode: item.phoneCode || item.dialCode || item.callingCode,
+  flagUrl: item.flagUrl || item.flag,
   label:
     item.nameAr ||
     item.arabicName ||
@@ -335,97 +340,61 @@ const Dropdown = ({
   );
 };
 
-// دروبداون اختيار متعدد عام - بنستخدمه للمواد، الصفوف، والمناهج
-const MultiSelectDropdown = ({
+const InlineMultiSelect = ({
   label,
   value = [],
-  options,
+  options = [],
   loading,
+  disabled,
   onChange,
-  placeholder = "اختر",
-  emptyLabel = "لا توجد بيانات",
+  placeholder,
 }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
   const toggle = (option) => {
     const ids = option.ids ?? [option.id];
-    const allSelected = ids.every((id) => value.includes(id));
-    if (allSelected) onChange(value.filter((id) => !ids.includes(id)));
-    else onChange([...new Set([...value, ...ids])]);
+    const hasSelectedId = ids.some((id) => value.includes(id));
+    onChange(
+      hasSelectedId
+        ? value.filter((id) => !ids.includes(id))
+        : [...new Set([...value, ...ids])],
+    );
   };
-  const selectedLabels = options
-    .filter((o) => (o.ids ?? [o.id]).some((id) => value.includes(id)))
-    .map((o) => o.label)
-    .join("، ");
+
   return (
-    <div ref={ref} className="relative">
-      <label className="block text-xs text-(--text-light) mb-1.5">
-        {label}
-      </label>
-      <button
-        type="button"
-        onClick={() => !loading && setOpen((o) => !o)}
-        className="w-full min-h-11 px-3.5 py-2 rounded-lg border border-(--border-light) bg-(--bg-section) text-sm text-right flex items-center justify-between gap-2 transition-colors cursor-pointer hover:border-(--primary)"
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs text-(--text-light)">{label}</label>
+      <div
+        className={`flex min-h-12 flex-wrap items-center gap-2 rounded-lg border border-(--border-light) bg-(--bg-section) px-3 py-2 ${
+          disabled ? "pointer-events-none opacity-50" : ""
+        }`}
       >
-        <span
-          className={
-            selectedLabels ? "text-(--text-dark)" : "text-(--text-light)"
-          }
-        >
-          {loading ? "جاري التحميل..." : selectedLabels || placeholder}
-        </span>
         {loading ? (
-          <Loader2 size={14} className="animate-spin text-(--text-light)" />
+          <span className="inline-flex items-center gap-2 text-sm text-(--text-light)">
+            <Loader2 size={14} className="animate-spin" />
+            جاري تحميل المواد...
+          </span>
+        ) : options.length === 0 ? (
+          <span className="text-sm text-(--text-light)">{placeholder}</span>
         ) : (
-          <ChevronDown
-            size={16}
-            className={`text-(--text-light) transition-transform shrink-0 ${open ? "rotate-180" : ""}`}
-          />
-        )}
-      </button>
-      {open && !loading && (
-        <ul className="absolute z-20 top-full right-0 left-0 mt-1 max-h-56 overflow-y-auto bg-(--white) border border-(--border-light) rounded-lg shadow-lg">
-          {options.length === 0 && (
-            <li className="px-3.5 py-2.5 text-sm text-(--text-light)">
-              {emptyLabel}
-            </li>
-          )}
-          {options.map((opt) => {
-            const checked = (opt.ids ?? [opt.id]).every((id) => value.includes(id));
+          options.map((option) => {
+            const ids = option.ids ?? [option.id];
+            const selected = ids.some((id) => value.includes(id));
             return (
-              <li
-                key={opt.id}
-                onClick={() => toggle(opt)}
-                className="px-3.5 py-2.5 text-sm cursor-pointer hover:bg-(--bg-section) text-(--text-dark) flex items-center justify-between"
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => toggle(option)}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  selected
+                    ? "border-(--primary) bg-(--primary) text-white"
+                    : "border-(--border-light) bg-white text-(--text-light) hover:border-(--primary)"
+                }`}
               >
-                {opt.label}
-                <span
-                  className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${checked ? "bg-(--primary) border-(--primary)" : "border-(--border-light)"}`}
-                >
-                  {checked && (
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                      <path
-                        d="M1 4L3.5 6.5L9 1"
-                        stroke="white"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </span>
-              </li>
+                {option.label}
+              </button>
             );
-          })}
-        </ul>
-      )}
+          })
+        )}
+      </div>
     </div>
   );
 };
@@ -505,7 +474,14 @@ const TeacherPersonalCard = ({
           <ViewField label="الاسم الكامل" value={teacher.fullName} />
           <ViewField label="اسم المستخدم" value={teacher.username} />
           <ViewField label="البريد الإلكتروني" value={teacher.email} />
-          <ViewField label="رقم الهاتف" value={teacher.phone} />
+          <ViewField label="رقم الهاتف" value={
+            <PhoneDisplay
+              phone={teacher.phone}
+              country={teacher.country}
+              countryCode={teacher.countryCode}
+              options={countryOptions}
+            />
+          } />
           <ViewField label="الدولة" value={countryLabel} />
         </ViewGrid>
       ) : (
@@ -601,6 +577,28 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
   }, [editing]);
 
   useEffect(() => {
+    if (!editing || form.stageId || !form.gradeIds.length) return;
+    let active = true;
+
+    getGrade(form.gradeIds[0])
+      .then((res) => {
+        if (!active) return;
+        const grade = res?.data?.data ?? res?.data ?? {};
+        const stageId = entityId(grade.stage) || entityId(grade.stageId);
+        if (stageId) {
+          setForm((previous) => ({ ...previous, stageId }));
+        }
+      })
+      .catch(() => {
+        // The saved grades and subjects remain selected even if stage lookup fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [editing, form.gradeIds, form.stageId]);
+
+  useEffect(() => {
     if (!editing || !form.curriculumId) {
       setStageOptions([]);
       return;
@@ -650,9 +648,33 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
     )
       .then((results) => {
         if (active) {
-          setSubjectOptions(
-            groupOptionsByLabel(results.flat().map(normalizeOption)),
+          const groupedSubjects = groupOptionsByLabel(
+            results.flat().map(normalizeOption),
           );
+          setSubjectOptions(groupedSubjects);
+
+          const currentSubjectNames = new Set(
+            (teacher.subjects || [])
+              .map((subject) => pickName(subject?.name).trim().toLocaleLowerCase("ar"))
+              .filter(Boolean),
+          );
+          const currentSubjectIds = new Set(
+            (teacher.subjects || []).map(entityId).filter(Boolean),
+          );
+          const resolvedIds = groupedSubjects
+            .filter(
+              (option) =>
+                currentSubjectNames.has(option.label.trim().toLocaleLowerCase("ar")) ||
+                (option.ids ?? [option.id]).some((id) => currentSubjectIds.has(id)),
+            )
+            .flatMap((option) => option.ids ?? [option.id]);
+
+          if (resolvedIds.length) {
+            setForm((previous) => ({
+              ...previous,
+              subjects: [...new Set([...previous.subjects, ...resolvedIds])],
+            }));
+          }
         }
       })
       .catch(() => toast.error("تعذر تحميل المواد الدراسية"))
@@ -727,7 +749,7 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
       />
       {!editing ? (
         <ViewGrid>
-          <ViewField label="اللغة" value={langLabel(teacher.language)} />
+          <ViewField label="لغة التدريس" value={langLabel(teacher.language)} />
           <ViewField
             label="المنهج الدراسي"
             value={joinedNames(teacher.curriculums)}
@@ -747,7 +769,7 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
       ) : (
         <EditBox>
           <Dropdown
-            label="اللغة"
+            label="لغة التدريس"
             value={form.studyLanguage}
             options={LANGUAGE_OPTIONS}
             onChange={(id) =>
@@ -787,16 +809,16 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
             }
             placeholder={form.curriculumId ? "اختر المرحلة الدراسية" : "اختر المنهج أولاً"}
           />
-          <MultiSelectDropdown
+          <InlineMultiSelect
             label="الصفوف الدراسية"
             value={form.gradeIds}
             options={gradeOptions}
             loading={loadingGrades}
+            disabled={!form.stageId}
             onChange={(ids) =>
               setForm((prev) => ({ ...prev, gradeIds: ids, subjects: [] }))
             }
             placeholder={form.stageId ? "اختر الصفوف الدراسية" : "اختر المرحلة أولاً"}
-            emptyLabel="لا توجد صفوف"
           />
           <TextInput
             label="سنوات الخبرة"
@@ -806,14 +828,14 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
               setForm((prev) => ({ ...prev, experienceYears: e.target.value }))
             }
           />
-          <MultiSelectDropdown
+          <InlineMultiSelect
             label="المواد الدراسية"
             value={form.subjects}
             options={subjectOptions}
             loading={loadingSubjects}
+            disabled={!form.gradeIds.length}
             onChange={(ids) => setForm((prev) => ({ ...prev, subjects: ids }))}
-            placeholder="اختر المواد الدراسية"
-            emptyLabel="لا توجد مواد"
+            placeholder={form.gradeIds.length ? "لا توجد مواد" : "اختر الصفوف أولاً"}
           />
         </EditBox>
       )}
@@ -959,7 +981,6 @@ const TeacherAccountSettings = () => {
       const userData = extractUser(res.data);
       if (userData) {
         setTeacher(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
         updateUser?.(userData);
       }
     } catch (err) {
@@ -986,7 +1007,6 @@ const TeacherAccountSettings = () => {
   const handleTimezoneUpdated = (updatedTimezone) => {
     setTeacher((prev) => {
       const next = { ...prev, ...updatedTimezone };
-      localStorage.setItem("user", JSON.stringify(next));
       updateUser?.(next);
       return next;
     });
@@ -1032,6 +1052,7 @@ const TeacherAccountSettings = () => {
               {teacher.email}
             </p>
           </div>
+          <AccountStatusBadge />
         </div>
       </div>
 

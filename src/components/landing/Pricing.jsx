@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Check, Crown, Loader2, AlertCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 // ⚠️ عدّل المسار ده حسب مكان ملف الـ api عندك في المشروع
 import { getAllPackages } from "../../services/APIService";
+import { AuthContext } from "../../context/AuthContext";
 
 // باقة التجربة المجانية مش باقة حقيقية من الباك إند، ثابتة تسويقياً فقط
 const FREE_TRIAL_PLAN = {
@@ -10,13 +12,8 @@ const FREE_TRIAL_PLAN = {
   sub: "مثالية للتجربة والتعرف على المنصة",
   price: "مجانية",
   period: "وصول محدود لمدة 7 أيام",
-  features: [
-    "حضور حصة تجريبية مجانية",
-    "تصفح المواد والمدرسين",
-    "مشاهدة جدول الدروس",
-    "التواصل مع الإدارة فقط",
-  ],
-  button: "ابدأ مجانا الآن",
+  features: ["حضور حصة تجريبية مجانية", "التواصل مع الإدارة فقط"],
+  button: "ابدأ الآن",
   variant: "outline",
   isPopular: false,
 };
@@ -43,13 +40,16 @@ const mapApiPackage = (pkg, isAnnual, isPopular) => {
       "تقييمات وتقارير أداء",
       "تواصل ولي الأمر مع المدرس",
     ],
-    button: isPopular ? "الترقية للباقة المتقدمة" : "اشترك الآن",
+    button: "ابدأ الآن",
     variant: isPopular ? "solid" : "outline",
     isPopular,
   };
 };
 
 const Pricing = () => {
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext) || {};
+  const isLoggedIn = Boolean(user || localStorage.getItem("token"));
   const [isAnnual, setIsAnnual] = useState(false);
   const [apiPackages, setApiPackages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,7 +107,9 @@ const Pricing = () => {
           <button
             onClick={() => setIsAnnual(!isAnnual)}
             className={`relative w-14 h-7 rounded-full p-1 flex items-center transition-colors duration-300 ${
-              isAnnual ? "bg-[#123C91] text-white [&_svg]:text-white" : "bg-gray-300"
+              isAnnual
+                ? "bg-[#123C91] text-white [&_svg]:text-white"
+                : "bg-gray-300"
             }`}
           >
             <div
@@ -147,11 +149,11 @@ const Pricing = () => {
         )}
 
         {!loading && (
-          <div className="grid md:grid-cols-3 gap-6 items-stretch">
+          <div className="flex flex-wrap items-stretch justify-center gap-6">
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className={`flex flex-col relative p-6 rounded-2xl border transition-shadow ${plan.isPopular ? "border-[#123C91] shadow-2xl" : "border-[#1F293733] bg-[#FFFFFF]"}`}
+                className={`relative flex w-full max-w-sm flex-col rounded-2xl border p-6 transition-shadow md:basis-[calc(33.333%-1rem)] ${plan.isPopular ? "border-[#123C91] shadow-2xl" : "border-[#1F293733] bg-[#FFFFFF]"}`}
               >
                 {plan.isPopular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#EAF4FF] text-[#123C91] text-xs font-bold px-4 py-1 rounded-full border border-[#123C91] flex items-center gap-1">
@@ -188,11 +190,15 @@ const Pricing = () => {
                   ))}
                 </ul>
 
-                <button
-                  className={`h-12 rounded-lg font-['Tajawal'] font-medium text-[16px] transition-all ${plan.variant === "solid" ? "bg-[#123C91] text-white [&_svg]:text-white" : "bg-white text-[#123C91] border border-[#123C91] hover:bg-[#123C91] hover:text-white hover:[&_svg]:text-white"}`}
-                >
-                  {plan.button}
-                </button>
+                {!isLoggedIn && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/select-account-type")}
+                    className={`h-12 rounded-lg font-['Tajawal'] font-medium text-[16px] transition-all ${plan.variant === "solid" ? "bg-[#123C91] text-white [&_svg]:text-white" : "bg-white text-[#123C91] border border-[#123C91] hover:bg-[#123C91] hover:text-white hover:[&_svg]:text-white"}`}
+                  >
+                    ابدأ الآن
+                  </button>
+                )}
               </div>
             ))}
           </div>

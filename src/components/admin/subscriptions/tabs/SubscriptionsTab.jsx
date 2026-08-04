@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Eye, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getAllSubscriptions } from "../../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
+import EntityProfileModal from "../../users/EntityProfileModal";
 
 const PAGE_SIZE = 6;
 
@@ -83,12 +84,16 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
 );
 
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
-const SubCard = ({ s, onView }) => (
+const SubCard = ({ s, onView, onStudentClick }) => (
   <div className="p-4 flex flex-col gap-2.5">
     <div className="flex items-start justify-between gap-2">
-      <span className="font-['Tajawal'] font-semibold text-[15px] text-[#1F2937]">
+      <button
+        type="button"
+        onClick={onStudentClick}
+        className="font-['Tajawal'] font-semibold text-[15px] text-[#123C91] hover:underline"
+      >
         {s.student}
-      </span>
+      </button>
       <RowActions onView={onView} />
     </div>
     <div className="flex items-center justify-between text-[13px]">
@@ -149,6 +154,7 @@ const flattenSubscriptions = (subscriptions) => {
         rowId: item.id ?? item._id ?? `${sub.id || sub._id}-${index}`,
         subscriptionId: sub.id || sub._id,
         student: studentName,
+        studentEntity: sub.student,
         subject: item.subject?.name?.ar ?? item.subject?.name?.en ?? "--",
         package: item.package?.name ?? "--",
         discount: item.discount ? `${item.discount} جنيه` : "--",
@@ -168,6 +174,7 @@ const SubscriptionsTab = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [profileStudent, setProfileStudent] = useState(null);
 
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
@@ -249,6 +256,7 @@ const SubscriptionsTab = () => {
                   onView={() =>
                     navigate(`/admin/subscriptions/${s.subscriptionId}`)
                   }
+                  onStudentClick={() => setProfileStudent(s.studentEntity)}
                 />
               ))}
             </div>
@@ -284,7 +292,13 @@ const SubscriptionsTab = () => {
                       className="hover:bg-gray-50/70 transition-colors"
                     >
                       <td className="px-5 py-3.5 font-['Tajawal'] font-semibold text-[15px] text-[#1F2937] whitespace-nowrap">
-                        {s.student}
+                        <button
+                          type="button"
+                          onClick={() => setProfileStudent(s.studentEntity)}
+                          className="text-[#123C91] hover:underline"
+                        >
+                          {s.student}
+                        </button>
                       </td>
                       <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
                         {s.subject}
@@ -307,9 +321,7 @@ const SubscriptionsTab = () => {
                       <td className="px-5 py-3.5">
                         <RowActions
                           onView={() =>
-                            navigate(
-                              `/admin/subscriptions/${s.subscriptionId}`,
-                            )
+                            navigate(`/admin/subscriptions/${s.subscriptionId}`)
                           }
                         />
                       </td>
@@ -321,7 +333,11 @@ const SubscriptionsTab = () => {
           </>
         )}
       </div>
-
+      <EntityProfileModal
+        entity={profileStudent}
+        role="student"
+        onClose={() => setProfileStudent(null)}
+      />
     </div>
   );
 };

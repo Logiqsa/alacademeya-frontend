@@ -4,6 +4,7 @@ import {
   getCurriculumStages,
   getStageGrades,
 } from "../../../services/APIService";
+import PhoneDisplay from "../../account-settings/PhoneDisplay";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -451,7 +452,14 @@ export const ParentProfileCard = ({
           <ViewField label="الاسم الكامل" value={parent?.fullName} />
           <ViewField label="اسم المستخدم" value={parent?.username} />
           <ViewField label="البريد الإلكتروني" value={parent?.email} />
-          <ViewField label="رقم الهاتف" value={parent?.phone} />
+          <ViewField label="رقم الهاتف" value={
+            <PhoneDisplay
+              phone={parent?.phone}
+              country={parent?.countryId}
+              countryCode={parent?.countryCode}
+              options={countries}
+            />
+          } />
           <ViewField label="الدولة" value={countryDisplay} />
         </ViewGrid>
       ) : (

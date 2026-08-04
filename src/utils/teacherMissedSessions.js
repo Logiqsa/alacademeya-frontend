@@ -1,5 +1,6 @@
 import {
   getClassrooms,
+  getClassroomSchedule,
   getClassroomSessions,
 } from "../services/APIService";
 
@@ -10,6 +11,48 @@ const nameOf = (value) => {
   if (!value) return "المجموعة";
   if (typeof value === "string") return value;
   return value.ar || value.en || value.name?.ar || value.name?.en || "المجموعة";
+};
+
+const DAY_INDEX = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+const dateKey = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
+const scheduleSlots = (response, classroom) => {
+  const data = response?.data?.data ?? response?.data ?? {};
+  const value =
+    data.schedule ?? classroom?.schedule?.schedule ?? classroom?.schedule;
+  return Array.isArray(value) ? value : [];
+};
+
+const firstRelevantDate = (teacher, classroom, scheduleResponse) => {
+  const scheduleData =
+    scheduleResponse?.data?.data ?? scheduleResponse?.data ?? {};
+  const candidates = [
+    classroom.teacherAssignedAt,
+    classroom.teacherJoinedAt,
+    classroom.assignedAt,
+    scheduleData.createdAt,
+    classroom.createdAt,
+    teacher.createdAt,
+    teacher.user?.createdAt,
+  ]
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()));
+  return candidates.length
+    ? new Date(Math.max(...candidates.map((date) => date.getTime())))
+    : new Date();
 };
 
 const belongsToTeacher = (classroom, teacherIds) => {
@@ -26,11 +69,9 @@ const belongsToTeacher = (classroom, teacherIds) => {
 };
 
 export const getTeacherMissedSessions = async (teacher) => {
-  const teacherIds = [
-    idOf(teacher),
-    idOf(teacher.user),
-    teacher.userId,
-  ].filter(Boolean);
+  const teacherIds = [idOf(teacher), idOf(teacher.user), teacher.userId].filter(
+    Boolean,
+  );
   if (!teacherIds.length) return [];
 
   const classroomResults = await Promise.allSettled(
@@ -56,9 +97,7 @@ export const getTeacherMissedSessions = async (teacher) => {
     belongsToTeacher(classroom, teacherIds),
   );
   const responseHasTeacherReferences = returnedClassrooms.some(
-    (classroom) =>
-      classroom.teacher ||
-      classroom.substituteTeacher,
+    (classroom) => classroom.teacher || classroom.substituteTeacher,
   );
   // بعض نسخ الـ API تطبق فلتر teacher في السيرفر لكنها لا تعيد teacher populated.
   // لو الاستجابة فيها مراجع معلمين بالفعل فلا نستخدم مجموعات غير مطابقة.
@@ -68,59 +107,82 @@ export const getTeacherMissedSessions = async (teacher) => {
       ? []
       : returnedClassrooms;
 
-  const sessionResults = await Promise.allSettled(
-    classrooms.map((classroom) =>
-      getClassroomSessions(idOf(classroom)),
+  const [sessionResults, scheduleResults] = await Promise.all([
+    Promise.allSettled(
+      classrooms.map((classroom) => getClassroomSessions(idOf(classroom))),
     ),
-  );
+    Promise.allSettled(
+      classrooms.map((classroom) => getClassroomSchedule(idOf(classroom))),
+    ),
+  ]);
 
   const seen = new Set();
-  return sessionResults.flatMap((result, index) => {
-    if (result.status !== "fulfilled") return [];
-    const classroom = classrooms[index];
-    const sessionsBody = result.value.data?.data ?? result.value.data ?? [];
-    const sessions = Array.isArray(sessionsBody)
-      ? sessionsBody
-      : sessionsBody.sessions || [];
+  return scheduleResults
+    .flatMap((scheduleResult, index) => {
+      const classroom = classrooms[index];
+      const sessionResult = sessionResults[index];
+      if (sessionResult?.status !== "fulfilled") return [];
+      const scheduleResponse =
+        scheduleResult.status === "fulfilled" ? scheduleResult.value : null;
+      const sessionsBody =
+        sessionResult.value.data?.data ?? sessionResult.value.data ?? [];
+      const sessions = Array.isArray(sessionsBody)
+        ? sessionsBody
+        : sessionsBody.sessions || [];
+      const createdSessionDays = new Set(
+        sessions
+          .map((session) =>
+            dateKey(
+              session.scheduledDate ||
+                session.scheduledAt ||
+                session.startAt ||
+                session.date,
+            ),
+          )
+          .filter(Boolean),
+      );
+      const start = firstRelevantDate(teacher, classroom, scheduleResponse);
+      const now = new Date();
 
-    return sessions.flatMap((session) => {
-      const sessionId = idOf(session);
-      if (sessionId && seen.has(sessionId)) return [];
+      return scheduleSlots(scheduleResponse, classroom).flatMap((slot) => {
+        const weekday = DAY_INDEX[String(slot.day || "").toLowerCase()];
+        const [hour, minute] = String(slot.startTime || "")
+          .split(":")
+          .map(Number);
+        if (
+          weekday === undefined ||
+          !Number.isFinite(hour) ||
+          !Number.isFinite(minute)
+        )
+          return [];
 
-      const scheduledValue =
-        session.scheduledDate ||
-        session.scheduledAt ||
-        session.startAt ||
-        session.startTime ||
-        session.date;
-      const scheduledAt = new Date(scheduledValue);
-      const isPast =
-        !Number.isNaN(scheduledAt.getTime()) &&
-        scheduledAt.getTime() < Date.now();
-      const status = String(session.status || "").toLowerCase();
-      // missed = لم يبدأ في الموعد/بدأ متأخرًا، أما not_started و
-      // expired_schedule فتعني أن الموعد انتهى من غير عقد الحصة.
-      const isMissed =
-        ["missed", "not_started", "expired_schedule", "absent"].includes(
-          status,
-        ) ||
-        (isPast && ["scheduled", "upcoming", "pending"].includes(status));
-      if (!isMissed) return [];
-
-      if (sessionId) seen.add(sessionId);
-      return [{
-        id: sessionId || `${index}-${scheduledValue}`,
-        title: session.title || "حصة",
-        classroomId: idOf(classroom),
-        classroomName: nameOf(classroom.name),
-        scheduledAt: Number.isNaN(scheduledAt.getTime())
-          ? null
-          : scheduledAt.toISOString(),
-      }];
-    });
-  }).sort(
-    (a, b) =>
-      new Date(b.scheduledAt || 0).getTime() -
-      new Date(a.scheduledAt || 0).getTime(),
-  );
+        const occurrence = new Date(start);
+        occurrence.setHours(hour, minute, 0, 0);
+        occurrence.setDate(
+          occurrence.getDate() + ((weekday - occurrence.getDay() + 7) % 7),
+        );
+        const absences = [];
+        while (occurrence < now) {
+          const key = dateKey(occurrence);
+          const absenceId = `${idOf(classroom)}-${key}-${slot.startTime}`;
+          if (!createdSessionDays.has(key) && !seen.has(absenceId)) {
+            seen.add(absenceId);
+            absences.push({
+              id: absenceId,
+              title: "لم يتم إنشاء الحصة",
+              classroomId: idOf(classroom),
+              classroomName: nameOf(classroom.name),
+              scheduledAt: occurrence.toISOString(),
+            });
+          }
+          occurrence.setDate(occurrence.getDate() + 7);
+        }
+        return absences;
+      });
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.scheduledAt || 0).getTime() -
+        new Date(a.scheduledAt || 0).getTime(),
+    );
 };

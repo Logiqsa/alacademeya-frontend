@@ -24,9 +24,9 @@ import {
   updateTeacherProfile,
   updateUser,
 } from "../../../services/APIService";
-import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 import { getTeacherCvUrl } from "../../../utils/teacherCv";
+import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 
 const PAGE_SIZE = 8;
 
@@ -41,16 +41,11 @@ const formatHours = (minutes = 0) =>
   }).format(Number(minutes || 0) / 60)} ساعة`;
 
 const teacherName = (teacher) =>
-  teacher.user?.fullName ||
-  teacher.fullName ||
-  teacher.name ||
-  "—";
+  teacher.user?.fullName || teacher.fullName || teacher.name || "—";
 
-const teacherEmail = (teacher) =>
-  teacher.user?.email || teacher.email || "—";
+const teacherEmail = (teacher) => teacher.user?.email || teacher.email || "—";
 
-const teacherPhone = (teacher) =>
-  teacher.user?.phone || teacher.phone || "—";
+const teacherPhone = (teacher) => teacher.user?.phone || teacher.phone || "—";
 
 const whatsappUrl = (phone) => {
   const number = String(phone || "")
@@ -105,16 +100,16 @@ const TeachersPage = () => {
         completedTeachers.map(async (teacher) => {
           const id = teacher.id || teacher._id;
           let summary = {};
-          let missedSessions = [];
-          const [reportResult, missedResult] = await Promise.allSettled([
+          let absences = [];
+          const [reportResult, absencesResult] = await Promise.allSettled([
             getTeacherMonthlyReport(id, month),
             getTeacherMissedSessions(teacher),
           ]);
           if (reportResult.status === "fulfilled") {
             summary = reportResult.value.data?.data?.summary || {};
           }
-          if (missedResult.status === "fulfilled") {
-            missedSessions = missedResult.value;
+          if (absencesResult.status === "fulfilled") {
+            absences = absencesResult.value;
           }
 
           return {
@@ -129,22 +124,17 @@ const TeachersPage = () => {
             phone: teacherPhone(teacher),
             monthlyMinutes: summary.totalTeachingMinutes ?? 0,
             completedSessions: summary.completedSessions ?? 0,
-            experience:
-              teacher.experienceYears ?? teacher.experience ?? "—",
+            experience: teacher.experienceYears ?? teacher.experience ?? "—",
             subjects: listLabel(teacher.subjects ?? teacher.subject),
             grades: listLabel(teacher.grades ?? teacher.grade),
-            curricula: listLabel(
-              teacher.curriculums ?? teacher.curriculum,
-            ),
+            curricula: listLabel(teacher.curriculums ?? teacher.curriculum),
             status:
-              teacher.status === "approved"
-                ? "معتمد"
-                : teacher.status || "—",
+              teacher.status === "approved" ? "معتمد" : teacher.status || "—",
             isApproved: teacher.status === "approved",
             cvUrl: getTeacherCvUrl(teacher),
             createdAt: teacher.createdAt || teacher.user?.createdAt,
             raw: teacher,
-            missedSessions,
+            absences,
           };
         }),
       );
@@ -235,7 +225,9 @@ const TeachersPage = () => {
               <Users size={24} />
             </div>
             <div>
-              <p className="text-xl font-bold text-gray-800">{teachers.length}</p>
+              <p className="text-xl font-bold text-gray-800">
+                {teachers.length}
+              </p>
               <p className="mt-1 text-sm text-gray-500">إجمالي المعلمين</p>
             </div>
           </div>
@@ -304,8 +296,19 @@ const TeachersPage = () => {
                 <table className="w-full text-right">
                   <thead className="bg-[#F9FAFA]">
                     <tr>
-                      {["اسم المعلم", "البريد الإلكتروني", "رقم الهاتف", "الساعات الشهرية", "الحصص المكتملة", "غياب / لم تبدأ في الموعد", "الإجراءات"].map((header) => (
-                        <th key={header} className="whitespace-nowrap px-6 py-4 text-[13px] font-medium text-[#575F69]">
+                      {[
+                        "اسم المعلم",
+                        "البريد الإلكتروني",
+                        "رقم الهاتف",
+                        "الساعات الشهرية",
+                        "الحصص المكتملة",
+                        "الغياب",
+                        "الإجراءات",
+                      ].map((header) => (
+                        <th
+                          key={header}
+                          className="whitespace-nowrap px-6 py-4 text-[13px] font-medium text-[#575F69]"
+                        >
                           {header}
                         </th>
                       ))}
@@ -323,16 +326,31 @@ const TeachersPage = () => {
                             {teacher.name}
                           </button>
                         </td>
-                        <td className="px-6 py-4 text-sm text-[#575F69]" dir="ltr">{teacher.email}</td>
-                        <td className="px-6 py-4 text-sm text-[#575F69]" dir="ltr">{teacher.phone}</td>
-                        <td className="px-6 py-4 font-semibold text-[#123C91]">{formatHours(teacher.monthlyMinutes)}</td>
+                        <td
+                          className="px-6 py-4 text-sm text-[#575F69]"
+                          dir="ltr"
+                        >
+                          {teacher.email}
+                        </td>
+                        <td
+                          className="px-6 py-4 text-sm text-[#575F69]"
+                          dir="ltr"
+                        >
+                          {teacher.phone}
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-[#123C91]">
+                          {formatHours(teacher.monthlyMinutes)}
+                        </td>
                         <td className="px-6 py-4 text-sm">
                           <button
                             type="button"
                             onClick={() =>
-                              navigate(`/admin/teachers/${teacher.id}/sessions/completed`, {
-                                state: { teacherName: teacher.name },
-                              })
+                              navigate(
+                                `/admin/teachers/${teacher.id}/sessions/completed`,
+                                {
+                                  state: { teacherName: teacher.name },
+                                },
+                              )
                             }
                             className="font-semibold text-[#123C91] hover:underline"
                           >
@@ -343,13 +361,14 @@ const TeachersPage = () => {
                           <button
                             type="button"
                             onClick={() =>
-                              navigate(`/admin/teachers/${teacher.id}/sessions/missed`, {
-                                state: { teacherName: teacher.name },
-                              })
+                              navigate(
+                                `/admin/teachers/${teacher.id}/sessions/missed`,
+                                { state: { teacherName: teacher.name } },
+                              )
                             }
                             className="font-semibold text-amber-700 hover:underline"
                           >
-                            {teacher.missedSessions.length}
+                            {teacher.absences.length}
                           </button>
                         </td>
                         <td className="px-6 py-4 text-sm">
@@ -362,7 +381,9 @@ const TeachersPage = () => {
                               قبول الطلب
                             </button>
                           ) : (
-                            <span className="text-sm text-[#10B981]">معتمد</span>
+                            <span className="text-sm text-[#10B981]">
+                              معتمد
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -374,7 +395,10 @@ const TeachersPage = () => {
 
             <div className="space-y-3 md:hidden">
               {visible.map((teacher) => (
-                <div key={teacher.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div
+                  key={teacher.id}
+                  className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                >
                   <button
                     type="button"
                     onClick={() => openTeacherDetails(teacher)}
@@ -382,22 +406,42 @@ const TeachersPage = () => {
                   >
                     {teacher.name}
                   </button>
-                  <p className="mt-1 break-all text-xs text-[#8C9198]" dir="ltr">{teacher.email}</p>
+                  <p
+                    className="mt-1 break-all text-xs text-[#8C9198]"
+                    dir="ltr"
+                  >
+                    {teacher.email}
+                  </p>
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div className="rounded-lg bg-blue-50 p-3">
                       <p className="text-xs text-[#575F69]">الساعات الشهرية</p>
-                      <p className="mt-1 font-semibold text-[#123C91]">{formatHours(teacher.monthlyMinutes)}</p>
+                      <p className="mt-1 font-semibold text-[#123C91]">
+                        {formatHours(teacher.monthlyMinutes)}
+                      </p>
                     </div>
                     <div className="rounded-lg bg-gray-50 p-3">
                       <p className="text-xs text-[#575F69]">الحصص المكتملة</p>
-                      <p className="mt-1 font-semibold text-[#1F2937]">{teacher.completedSessions}</p>
+                      <p className="mt-1 font-semibold text-[#1F2937]">
+                        {teacher.completedSessions}
+                      </p>
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div className="rounded-lg bg-amber-50 p-3">
-                      <p className="text-xs text-[#575F69]">غياب / لم تبدأ في الموعد</p>
-                      <p className="mt-1 font-semibold text-amber-700">{teacher.missedSessions.length}</p>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/admin/teachers/${teacher.id}/sessions/missed`,
+                          { state: { teacherName: teacher.name } },
+                        )
+                      }
+                      className="rounded-lg bg-amber-50 p-3 text-right"
+                    >
+                      <p className="text-xs text-[#575F69]">الغياب</p>
+                      <p className="mt-1 font-semibold text-amber-700">
+                        {teacher.absences.length}
+                      </p>
+                    </button>
                     <div className="rounded-lg bg-white p-3 text-sm text-[#575F69]">
                       <p className="text-xs text-[#575F69]">الحالة</p>
                       <p className="mt-1 font-semibold text-[#1F2937]">
@@ -458,8 +502,14 @@ const TeachersPage = () => {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <DetailItem label="رقم الهاتف" value={selectedTeacher.phone} />
-                <DetailItem label="حالة المعلم" value={selectedTeacher.status} />
-                <DetailItem label="سنوات الخبرة" value={selectedTeacher.experience} />
+                <DetailItem
+                  label="حالة المعلم"
+                  value={selectedTeacher.status}
+                />
+                <DetailItem
+                  label="سنوات الخبرة"
+                  value={selectedTeacher.experience}
+                />
                 <DetailItem label="المواد" value={selectedTeacher.subjects} />
                 <DetailItem label="الصفوف" value={selectedTeacher.grades} />
                 <DetailItem label="المناهج" value={selectedTeacher.curricula} />
@@ -493,9 +543,13 @@ const TeachersPage = () => {
                 {selectedTeacher.cvUrl && <ExternalLink size={16} />}
               </a>
 
-              <div className={`mt-5 grid grid-cols-1 gap-3 ${
-                selectedTeacher.isApproved ? "sm:grid-cols-2" : "sm:grid-cols-3"
-              }`}>
+              <div
+                className={`mt-5 grid grid-cols-1 gap-3 ${
+                  selectedTeacher.isApproved
+                    ? "sm:grid-cols-2"
+                    : "sm:grid-cols-3"
+                }`}
+              >
                 {!selectedTeacher.isApproved && (
                   <button
                     type="button"
@@ -549,7 +603,6 @@ const TeachersPage = () => {
             </div>
           </div>
         )}
-
       </div>
     </AdminLayout>
   );

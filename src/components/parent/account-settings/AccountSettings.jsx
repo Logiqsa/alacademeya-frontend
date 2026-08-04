@@ -18,6 +18,7 @@ import {
 } from "./ProfileCards";
 import { getArabicCountryName } from "../../../utils/countryName";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
+import { AccountStatusBadge } from "../../account-settings/AccountRegistrationStatus";
 
 const getFlagUrl = (code) =>
   code ? `https://flagcdn.com/w40/${code.toLowerCase()}.png` : null;
@@ -325,6 +326,7 @@ const AccountSettings = () => {
               </p>
             )}
           </div>
+          <AccountStatusBadge />
         </div>
 
         {/* Tabs */}

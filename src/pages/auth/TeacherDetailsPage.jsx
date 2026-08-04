@@ -287,7 +287,6 @@ const TeacherDetailsPage = () => {
           updatedUser?.registrationStatus || "pending",
       };
       setUser(patched);
-      localStorage.setItem("user", JSON.stringify(patched));
 
       navigate("/pending");
     } catch (err) {

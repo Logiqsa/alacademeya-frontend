@@ -43,6 +43,9 @@ const SEGMENT_LABELS = {
 
   classrooms: "الفصول",
   sessions: "الجلسات",
+  teachers: "المعلمين",
+  completed: "المكتملة",
+  missed: "لم تُعقد",
   files: "الملفات",
   blogs: "المدونه", 
   edit:"تعديل",
@@ -119,6 +122,7 @@ export default function Breadcrumbs({
   dynamicLabels = {},
   currentPageLabel = "",
   linkState,
+  nonClickableSegments = [],
 }) {
   const location = useLocation();
   const params = useParams();
@@ -164,6 +168,7 @@ export default function Breadcrumbs({
   );
 
   const segments = location.pathname.split("/").filter(Boolean);
+  const nonClickableSet = new Set(nonClickableSegments);
 
   if (segments.length === 0) return null; // في الصفحة الرئيسية مفيش داعي لبريدكرمب
 
@@ -209,7 +214,7 @@ export default function Breadcrumbs({
         label,
         // الـ id لوحده غالبًا مش صفحة موجودة فعليًا (زي /admin/groups/:groupId من
         // غير /lessons بعده)، فمنخليهوش قابل للضغط عشان مايرجعش لمسار غلط
-        clickable: !isDynamic,
+        clickable: !isDynamic && !nonClickableSet.has(segment),
       };
     })
     .filter(Boolean);

@@ -1,8 +1,17 @@
-import { CheckCircle, Mail, MessageCircle } from "lucide-react";
+import { useContext, useEffect, useState } from "react";
+import { CheckCircle, Loader2, Mail, MessageCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
+import { AuthContext } from "../../context/AuthContext";
+import { getMyProfile } from "../../services/APIService";
+import {
+  getDatabaseAccountDashboard,
+  getDatabaseUserFromAccountState,
+  isDatabaseAccountActivated,
+} from "../../utils/accountState";
+import { isActivated } from "../../utils/roles";
 
 const MESSAGES = {
   student: {
@@ -25,12 +34,72 @@ const MESSAGES = {
   },
 };
 
+const accountStatusLabel = (user) => {
+  const status = String(user?.registrationStatus || user?.status || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", "-");
+  if (["pending-profile", "profile-incomplete", "incomplete"].includes(status)) {
+    return "الملف الشخصي غير مكتمل";
+  }
+  if (isActivated(user)) {
+    return "الحساب مفعّل";
+  }
+  return "قيد المراجعة";
+};
+
 const PendingPage = () => {
   const navigate = useNavigate();
-  const role = new URLSearchParams(window.location.search).get("role") || "student";
+  const { updateUser } = useContext(AuthContext) || {};
+  const [checkingAccount, setCheckingAccount] = useState(true);
+  const [databaseUser, setDatabaseUser] = useState(null);
+  const role =
+    databaseUser?.role ||
+    new URLSearchParams(window.location.search).get("role") ||
+    "student";
   const content = MESSAGES[role] || MESSAGES.student;
   const { contactSettings } = useContactSettings();
   const whatsappUrl = whatsappLink(contactSettings?.whatsappNumber);
+
+  useEffect(() => {
+    let active = true;
+
+    getMyProfile()
+      .then((response) => {
+        if (!active) return;
+
+        const freshUser = getDatabaseUserFromAccountState(response);
+        setDatabaseUser(freshUser);
+        updateUser?.(freshUser);
+
+        if (!isDatabaseAccountActivated(response)) return;
+
+        const dashboard = getDatabaseAccountDashboard({ data: freshUser });
+        if (!dashboard) return;
+
+        navigate(dashboard, { replace: true });
+      })
+      .catch(() => {
+        // Keep the pending page visible when the live status cannot be loaded.
+      })
+      .finally(() => {
+        if (active) setCheckingAccount(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [navigate, updateUser]);
+
+  if (checkingAccount) {
+    return (
+      <AuthLayout>
+        <div className="flex min-h-80 items-center justify-center" dir="rtl">
+          <Loader2 className="animate-spin text-[#123C91]" size={28} />
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>
@@ -55,6 +124,10 @@ const PendingPage = () => {
         <p className="text-[14px] text-[#6B7280] text-center mb-8">
           {content.desc}
         </p>
+
+        <div className="mb-5 inline-flex rounded-full bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800">
+          حالة الحساب: {accountStatusLabel(databaseUser)}
+        </div>
 
         {/* Steps */}
         <div className="w-full bg-[#F9FAFA] rounded-xl border border-[#1F293733] p-5 mb-8">
@@ -105,19 +178,16 @@ const PendingPage = () => {
           </div>
         )}
 
-        {/* <button
-          onClick={() => navigate("/login")}
-          className="w-full h-14 rounded-xl bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px]"
-          style={{ fontFamily: "Tajawal, sans-serif" }}
-        >
-          العودة لتسجيل الدخول
-        </button> */}
-
         <button
-          onClick={() => navigate("/account-state")}
-          className="w-full h-14 rounded-xl bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px]"
+          onClick={() => {
+            const dashboard = databaseUser
+              ? getDatabaseAccountDashboard({ data: databaseUser })
+              : null;
+            navigate(dashboard || "/");
+          }}
+          className="w-full h-14 rounded-xl bg-[#123C91] !text-white [&_svg]:!text-white font-medium text-[16px]"
         >
-          متابعة حالة الحساب
+          الرئيسية
         </button>
       </div>
     </AuthLayout>

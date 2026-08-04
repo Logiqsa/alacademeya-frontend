@@ -8,24 +8,15 @@ import reviewTimeIcon from "../../assets/icons/review-time.svg";
 import { AuthContext } from "../../context/AuthContext";
 import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
 import { getAccountState } from "../../services/APIService";
-
-const DASHBOARD_BY_ROLE = {
-  student: "/student-dashboard",
-  teacher: "/teacher-dashboard",
-  parent: "/parent-dashboard",
-  admin: "/admin-dashboard",
-};
-
-const accountData = (response) => response?.data?.data || response?.data || {};
-
-const isActivated = (data) => {
-  const status = String(data.registrationStatus || data.status || "").toLowerCase();
-  return data.isActive === true || ["active", "approved", "accepted"].includes(status);
-};
+import {
+  getDatabaseAccountDashboard,
+  getDatabaseUserFromAccountState,
+  isDatabaseAccountActivated,
+} from "../../utils/accountState";
 
 const AccountStatePage = () => {
   const navigate = useNavigate();
-  const { user, logout, updateUser } = useContext(AuthContext);
+  const { logout, updateUser } = useContext(AuthContext);
   const { contactSettings } = useContactSettings();
   const whatsappUrl = whatsappLink(contactSettings?.whatsappNumber);
 
@@ -36,21 +27,13 @@ const AccountStatePage = () => {
       .then((response) => {
         if (!active) return;
 
-        const data = accountData(response);
-        if (!isActivated(data)) return;
+        if (!isDatabaseAccountActivated(response)) return;
 
-        const responseUser = data.user && typeof data.user === "object" ? data.user : {};
-        const role = responseUser.role || data.role || user?.role;
-        const dashboard = DASHBOARD_BY_ROLE[role];
+        const databaseUser = getDatabaseUserFromAccountState(response);
+        const dashboard = getDatabaseAccountDashboard(response);
         if (!dashboard) return;
 
-        updateUser?.({
-          ...user,
-          ...responseUser,
-          isActive: true,
-          registrationStatus: "active",
-          role,
-        });
+        updateUser?.(databaseUser);
         navigate(dashboard, { replace: true });
       })
       .catch(() => {
@@ -60,7 +43,7 @@ const AccountStatePage = () => {
     return () => {
       active = false;
     };
-  }, [navigate, updateUser, user]);
+  }, [navigate, updateUser]);
 
   return (
     <AuthLayout>

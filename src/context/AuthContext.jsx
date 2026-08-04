@@ -1,5 +1,6 @@
-import { createContext, useState, useEffect } from "react";
-import { login as loginApi } from "../services/APIService";
+import { createContext, useCallback, useState, useEffect } from "react";
+import { getMyProfile, login as loginApi } from "../services/APIService";
+import { getDatabaseUserFromAccountState } from "../utils/accountState";
 
 export const AuthContext = createContext();
 
@@ -28,6 +29,54 @@ const restoreUser = () => {
   return role ? { ...parsedUser, role } : parsedUser;
 };
 
+const withoutStoredAccountState = (storedUser) => {
+  if (!storedUser || typeof storedUser !== "object") return storedUser;
+  const ordinaryData = { ...storedUser };
+  [
+    "status",
+    "registrationStatus",
+    "registration_status",
+    "profileStatus",
+    "isActive",
+    "profileCompleted",
+    "isProfileComplete",
+  ].forEach((field) => delete ordinaryData[field]);
+  return ordinaryData;
+};
+
+const userDataForStorage = (source) => {
+  if (!source || typeof source !== "object") return null;
+  const allowedFields = [
+    "id",
+    "_id",
+    "userId",
+    "profileId",
+    "fullName",
+    "name",
+    "username",
+    "email",
+    "phone",
+    "role",
+    "country",
+    "countryCode",
+    "academicLevel",
+    "studentType",
+    "timezone",
+  ];
+
+  return Object.fromEntries(
+    allowedFields
+      .filter((field) => source[field] !== undefined && source[field] !== null)
+      .map((field) => [field, source[field]]),
+  );
+};
+
+const persistUser = (source) => {
+  const storedUser = userDataForStorage(source);
+  if (storedUser) localStorage.setItem("user", JSON.stringify(storedUser));
+  else localStorage.removeItem("user");
+};
+
 export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
@@ -36,20 +85,47 @@ export const AuthContextProvider = ({ children }) => {
       return null;
     }
   });
+  const [checkingAccountState, setCheckingAccountState] = useState(() =>
+    Boolean(localStorage.getItem("token")),
+  );
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        const parsedUser = restoreUser();
-        setUser(parsedUser);
-        localStorage.setItem("user", JSON.stringify(parsedUser));
-      } catch (error) {
-        console.error("خطأ في قراءة بيانات المستخدم:", error);
-        localStorage.removeItem("user");
-        setUser(null);
-      }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      return;
     }
+
+    let active = true;
+    const ordinaryUser = withoutStoredAccountState(restoreUser());
+
+    getMyProfile()
+      .then((response) => {
+        if (!active) return;
+        const databaseUser = getDatabaseUserFromAccountState(response);
+        const freshUser = { ...ordinaryUser, ...databaseUser };
+        setUser(freshUser);
+        persistUser(freshUser);
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (error.response?.status === 401) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          setUser(null);
+          return;
+        }
+
+        // Never keep an old activation decision when the backend check fails.
+        setUser(ordinaryUser);
+        persistUser(ordinaryUser);
+      })
+      .finally(() => {
+        if (active) setCheckingAccountState(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const login = async (credentials) => {
@@ -70,7 +146,7 @@ export const AuthContextProvider = ({ children }) => {
     console.log("البيانات التي سيتم حفظها:", finalUser);
 
     setUser(finalUser);
-    localStorage.setItem("user", JSON.stringify(finalUser));
+    persistUser(finalUser);
 
     if (token) {
       localStorage.setItem("token", token);
@@ -79,19 +155,19 @@ export const AuthContextProvider = ({ children }) => {
     return { user: finalUser, token };
   };
 
-  const updateUser = (updatedUser) => {
+  const updateUser = useCallback((updatedUser) => {
     setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-  };
+    persistUser(updatedUser);
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, updateUser, checkingAccountState }}>
       {children}
     </AuthContext.Provider>
   );

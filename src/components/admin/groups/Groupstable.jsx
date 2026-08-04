@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, Users, X, ChevronDown, ClipboardList, BookOpen, Search, MessageCircle, UserPlus } from "lucide-react";
+import { MoreVertical, Users, X, ChevronDown, ClipboardList, BookOpen, Search, MessageCircle, UserPlus, Trash2, AlertTriangle } from "lucide-react";
 import {
   getTeachers,
   getAllStudents,
@@ -15,6 +15,7 @@ import {
   updateClassroom,
   updateClassroomSubstituteTeacher,
   createSubscription,
+  deleteClassroom,
 } from "../../../services/APIService"; 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -296,6 +297,76 @@ const ModalFooter = ({ onClose, confirmLabel, onConfirm, loading, disabled }) =>
     </button>
   </div>
 );
+
+const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleClose = () => {
+    setError("");
+    onClose();
+  };
+
+  const handleDelete = async () => {
+    if (!group?.id || submitting) return;
+
+    setSubmitting(true);
+    setError("");
+    try {
+      await deleteClassroom(group.id);
+      await onChanged?.();
+      handleClose();
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "تعذر حذف المجموعة، حاول مرة أخرى.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal open={open} onClose={submitting ? () => {} : handleClose} title="حذف المجموعة">
+      <div className="flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4">
+        <AlertTriangle className="mt-0.5 shrink-0 text-red-600" size={21} />
+        <div>
+          <p className="font-['Tajawal'] text-[15px] font-semibold text-red-800">
+            هل تريد حذف مجموعة «{group?.name}»؟
+          </p>
+          <p className="mt-1 text-[13px] leading-6 text-red-700">
+            لا يمكن التراجع عن هذا الإجراء بعد تأكيد الحذف.
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[13px] text-red-700">
+          {error}
+        </p>
+      )}
+
+      <div className="mt-5 flex gap-3">
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={submitting}
+          className="flex-1 rounded-xl bg-red-600 py-3 text-[14px] font-medium !text-white hover:bg-red-700 disabled:opacity-60"
+        >
+          {submitting ? "جارٍ الحذف..." : "تأكيد الحذف"}
+        </button>
+        <button
+          type="button"
+          onClick={handleClose}
+          disabled={submitting}
+          className="flex-1 rounded-xl border border-[#E5E5E5] py-3 text-[14px] font-medium text-[#123C91] hover:border-[#123C91] disabled:opacity-60"
+        >
+          إلغاء
+        </button>
+      </div>
+    </Modal>
+  );
+};
 
 // ─── Add Student Modal ─────────────────────────────────────────────────────────
 export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
@@ -815,6 +886,7 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onO
     { key: "attendance", label: "سجل الحضور", Icon: ClipboardList, isNav: true },
     { key: "add-student", label: "إضافة طالب", Icon: UserPlus },
     { key: "assign-teacher", label: "تعيين معلم", Icon: Users },
+    { key: "delete", label: "حذف المجموعة", Icon: Trash2, danger: true },
   ];
 
   const updatePosition = () => {
@@ -902,15 +974,15 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onO
             }}
             className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-[1000] overflow-hidden"
           >
-            {items.map(({ key, label, Icon, isNav, nav }, i) => (
+            {items.map(({ key, label, Icon, isNav, nav, danger }, i) => (
               <div key={key}>
                 {i > 0 && <div className="h-px bg-[#F3F4F6] mx-2" />}
                 <button
                   onClick={() => handleClick({ key, isNav, nav })}
-                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#F3F4F6] transition-colors font-['IBM_Plex_Sans_Arabic'] text-right
-                    ${isNav || nav ? "text-[#123C91] font-medium" : "text-[#374151]"}`}
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-[13px] transition-colors font-['IBM_Plex_Sans_Arabic'] text-right
+                    ${danger ? "text-red-600 hover:bg-red-50" : isNav || nav ? "text-[#123C91] font-medium hover:bg-[#F3F4F6]" : "text-[#374151] hover:bg-[#F3F4F6]"}`}
                 >
-                  <Icon size={15} className={isNav || nav ? "text-[#123C91]" : "text-[#6B7280]"} />
+                  <Icon size={15} className={danger ? "text-red-600" : isNav || nav ? "text-[#123C91]" : "text-[#6B7280]"} />
                   {label}
                 </button>
               </div>
@@ -1077,6 +1149,12 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
       />
       <AssignSubstituteModal
         open={modal?.type === "assign-substitute"}
+        onClose={closeModal}
+        group={modal?.group}
+        onChanged={onChanged}
+      />
+      <DeleteGroupModal
+        open={modal?.type === "delete"}
         onClose={closeModal}
         group={modal?.group}
         onChanged={onChanged}

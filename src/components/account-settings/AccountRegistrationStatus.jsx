@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { ArrowLeft, CircleAlert, Clock3 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import { isActivated } from "../../utils/roles";
 
 const normalizeStatus = (value) =>
   String(value || "")
@@ -40,6 +41,14 @@ const settingsPathByRole = {
 const statusDetails = (user) => {
   const status = getAccountRegistrationStatus(user);
 
+  if (isActivated(user)) {
+    return {
+      type: "active",
+      label: "الحساب مفعّل",
+      description: "تمت الموافقة على حسابك ويمكنك استخدام جميع الخدمات المتاحة.",
+    };
+  }
+
   if (profilePendingStatuses.has(status) || user?.profileCompleted === false) {
     return {
       type: "profile",
@@ -56,18 +65,7 @@ const statusDetails = (user) => {
       label: "الحساب قيد المراجعة",
       description: "تم استلام بياناتك. انتظر موافقة الإدارة لتفعيل حسابك.",
       action: "متابعة حالة الحساب",
-      to: "/account-state",
-    };
-  }
-
-  if (
-    user?.isActive === true ||
-    ["active", "approved", "accepted"].includes(status)
-  ) {
-    return {
-      type: "active",
-      label: "الحساب مفعّل",
-      description: "تمت الموافقة على حسابك ويمكنك استخدام جميع الخدمات المتاحة.",
+      to: "/pending",
     };
   }
 
@@ -108,7 +106,7 @@ export const AccountStatusNotice = () => {
       {!alreadyOnTarget && (
         <Link
           to={details.to}
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#123C91] px-4 py-2 text-sm font-semibold text-white"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#123C91] px-4 py-2 text-sm font-semibold !text-white"
         >
           {details.action}
           <ArrowLeft size={16} />
@@ -118,35 +116,24 @@ export const AccountStatusNotice = () => {
   );
 };
 
-export const AccountStatusCard = () => {
+export const AccountStatusBadge = () => {
   const { user } = useContext(AuthContext) || {};
   if (!user) return null;
 
   const details = statusDetails(user);
   const colors = {
-    active: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    profile: "border-amber-200 bg-amber-50 text-amber-900",
-    review: "border-blue-200 bg-blue-50 text-blue-900",
-    unknown: "border-gray-200 bg-gray-50 text-gray-700",
+    active: "bg-emerald-100 text-emerald-700",
+    profile: "bg-amber-100 text-amber-800",
+    review: "bg-blue-100 text-blue-700",
+    unknown: "bg-gray-100 text-gray-600",
   };
 
   return (
-    <section
-      className={`rounded-2xl border p-5 ${colors[details.type]}`}
-      dir="rtl"
+    <span
+      className={`mr-auto inline-flex shrink-0 items-center rounded-full px-3 py-1.5 text-xs font-bold ${colors[details.type]}`}
+      title={details.description}
     >
-      <p className="mb-1 text-sm font-medium">حالة الحساب</p>
-      <h2 className="text-lg font-bold">{details.label}</h2>
-      <p className="mt-1 text-sm opacity-80">{details.description}</p>
-      {details.to && (
-        <Link
-          to={details.to}
-          className="mt-3 inline-flex items-center gap-2 text-sm font-bold underline underline-offset-4"
-        >
-          {details.action}
-          <ArrowLeft size={15} />
-        </Link>
-      )}
-    </section>
+      {details.label}
+    </span>
   );
 };

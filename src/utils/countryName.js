@@ -15,6 +15,8 @@ export const getArabicCountryName = (country) => {
 export const countryOption = (country) => ({
   id: country.id || country._id,
   code: country.code || country.countryCode,
+  phoneCode: country.phoneCode || country.dialCode || country.callingCode,
+  flagUrl: country.flagUrl || country.flag,
   label: getArabicCountryName(country),
 });
 

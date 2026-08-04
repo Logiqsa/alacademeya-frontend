@@ -7,6 +7,7 @@ import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
   getClassrooms,
   getClassroomSessions,
+  getTeacher,
 } from "../../../services/APIService";
 import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 
@@ -25,8 +26,31 @@ const TeacherSessionsPage = () => {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const teacherName = location.state?.teacherName || "المعلم";
+  const [teacherName, setTeacherName] = useState(
+    location.state?.teacherName || "",
+  );
   const isMissed = sessionStatus === "missed";
+
+  useEffect(() => {
+    if (location.state?.teacherName) return;
+
+    let active = true;
+    getTeacher(teacherId)
+      .then((response) => {
+        if (!active) return;
+        const data = response.data?.data ?? response.data ?? {};
+        const name =
+          data.user?.fullName || data.fullName || data.name || "المعلم";
+        setTeacherName(name);
+      })
+      .catch(() => {
+        if (active) setTeacherName("المعلم");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [location.state?.teacherName, teacherId]);
 
   useEffect(() => {
     let active = true;
@@ -34,7 +58,10 @@ const TeacherSessionsPage = () => {
       setLoading(true);
       try {
         if (isMissed) {
-          const missed = await getTeacherMissedSessions({ id: teacherId });
+          const teacherResponse = await getTeacher(teacherId).catch(() => null);
+          const teacher = teacherResponse?.data?.data ??
+            teacherResponse?.data ?? { id: teacherId };
+          const missed = await getTeacherMissedSessions(teacher);
           if (active) setSessions(missed);
           return;
         }
@@ -66,9 +93,7 @@ const TeacherSessionsPage = () => {
             ? []
             : returnedClassrooms;
         const results = await Promise.allSettled(
-          classrooms.map((classroom) =>
-            getClassroomSessions(idOf(classroom)),
-          ),
+          classrooms.map((classroom) => getClassroomSessions(idOf(classroom))),
         );
         const completed = results.flatMap((result, index) => {
           if (result.status !== "fulfilled") return [];
@@ -97,10 +122,15 @@ const TeacherSessionsPage = () => {
 
   return (
     <AdminLayout>
-      <Breadcrumbs homeTo="/admin-dashboard" />
+      <Breadcrumbs
+        homeTo="/admin-dashboard"
+        dynamicLabels={{ teacherId: teacherName || "المعلم" }}
+        nonClickableSegments={["sessions"]}
+      />
       <div className="w-full p-2 text-right" dir="rtl">
         <h1 className="text-xl font-semibold text-[#123C91] sm:text-[24px]">
-          {isMissed ? "الحصص التي لم تُعقد" : "الحصص المكتملة"} - {teacherName}
+          {isMissed ? "الحصص التي لم تُعقد" : "الحصص المكتملة"} -{" "}
+          {teacherName || "المعلم"}
         </h1>
         <p className="mt-2 text-sm text-[#575F69]">
           {isMissed
@@ -123,11 +153,16 @@ const TeacherSessionsPage = () => {
               <table className="w-full text-right">
                 <thead className="bg-[#F9FAFA]">
                   <tr>
-                    {["اسم الحصة", "المجموعة", "التاريخ والوقت", "الحالة"].map((header) => (
-                      <th key={header} className="whitespace-nowrap px-6 py-4 text-sm font-medium text-[#575F69]">
-                        {header}
-                      </th>
-                    ))}
+                    {["اسم الحصة", "المجموعة", "التاريخ والوقت", "الحالة"].map(
+                      (header) => (
+                        <th
+                          key={header}
+                          className="whitespace-nowrap px-6 py-4 text-sm font-medium text-[#575F69]"
+                        >
+                          {header}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -147,7 +182,9 @@ const TeacherSessionsPage = () => {
                             {session.title}
                           </button>
                         ) : (
-                          <span className="text-[#1F2937]">{session.title}</span>
+                          <span className="text-[#1F2937]">
+                            {session.title}
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -155,9 +192,12 @@ const TeacherSessionsPage = () => {
                           <button
                             type="button"
                             onClick={() =>
-                              navigate(`/admin/groups/${session.classroomId}/lessons`, {
-                                state: { groupName: session.classroomName },
-                              })
+                              navigate(
+                                `/admin/groups/${session.classroomId}/lessons`,
+                                {
+                                  state: { groupName: session.classroomName },
+                                },
+                              )
                             }
                             className="font-medium text-[#123C91] hover:underline"
                           >
@@ -169,18 +209,23 @@ const TeacherSessionsPage = () => {
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-[#575F69]">
                         {session.scheduledAt
-                          ? new Date(session.scheduledAt).toLocaleString("ar-EG", {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            })
+                          ? new Date(session.scheduledAt).toLocaleString(
+                              "ar-EG",
+                              {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              },
+                            )
                           : "—"}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          isMissed
-                            ? "bg-red-50 text-red-500"
-                            : "bg-green-100 text-green-700"
-                        }`}>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            isMissed
+                              ? "bg-red-50 text-red-500"
+                              : "bg-green-100 text-green-700"
+                          }`}
+                        >
                           {isMissed ? "لم تُعقد" : "مكتملة"}
                         </span>
                       </td>

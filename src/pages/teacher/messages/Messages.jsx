@@ -29,6 +29,26 @@ export default function TeacherMessages() {
   const openedFromLink = useRef(false);
 
   useEffect(() => {
+    if (
+      loading ||
+      openedFromLink.current ||
+      !location.state?.openSupportConversation
+    ) {
+      return;
+    }
+
+    openedFromLink.current = true;
+    startSupportConversation().then((roomId) => {
+      if (roomId) {
+        setActiveFilter("admin");
+        setShowChatOnMobile(true);
+      } else {
+        openedFromLink.current = false;
+      }
+    });
+  }, [loading, location.state, startSupportConversation]);
+
+  useEffect(() => {
     if (loading || openedFromLink.current) return;
     const classroomId =
       location.state?.openClassroomId ?? searchParams.get("classroom");

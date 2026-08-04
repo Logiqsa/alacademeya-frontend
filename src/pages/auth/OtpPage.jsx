@@ -89,7 +89,6 @@ const OtpPage = () => {
 
       if (token) localStorage.setItem("token", token);
       if (userData) {
-        localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
       }
 

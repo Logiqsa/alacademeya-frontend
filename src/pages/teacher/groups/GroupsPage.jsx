@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
-import { MoreVertical } from "lucide-react";
+import { MessageCircle, MoreVertical } from "lucide-react";
 
 import GroupStatsBar from "../../../components/teacher/groups/GroupStatsBar";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
@@ -411,8 +411,20 @@ const GroupsPage = () => {
         ) : error ? (
           <div className="text-center py-10 text-red-500">{error}</div>
         ) : groups.length === 0 ? (
-          <div className="text-center py-10 text-[#575F69] bg-white rounded-2xl border border-gray-200">
-            لا توجد مجموعات بعد، ابدأ بإنشاء مجموعتك الأولى.
+          <div className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white px-4 py-10 text-center text-[#575F69]">
+            <p>في انتظار إنشاء مجموعة من الإدارة.</p>
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/teacher/messages", {
+                  state: { openSupportConversation: true },
+                })
+              }
+              className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[#123C91] px-5 py-3 text-sm font-semibold text-white hover:bg-[#0f327a]"
+            >
+              <MessageCircle size={18} />
+              تواصل مع الإدارة
+            </button>
           </div>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-[#E5E5E5] bg-white shadow-sm">

@@ -384,7 +384,6 @@ const RegisterForm = ({ type }) => {
         if (token) localStorage.setItem("token", token);
         if (existingUser) {
           setUser(existingUser);
-          localStorage.setItem("user", JSON.stringify(existingUser));
         }
 
         const continuation = getRegistrationContinuation(existingUser, {
@@ -520,7 +519,6 @@ const RegisterForm = ({ type }) => {
       if (verifiedUser && typeof verifiedUser === "object") {
         const userWithRole = { ...verifiedUser, role: verifiedUser.role || type };
         setUser(userWithRole);
-        localStorage.setItem("user", JSON.stringify(userWithRole));
       }
 
       toast.success("تم تفعيل الحساب بنجاح!");

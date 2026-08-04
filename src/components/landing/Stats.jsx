@@ -1,5 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInView } from "framer-motion";
+import {
+  getLandingStats,
+  LANDING_STATS_EVENT,
+  LANDING_STATS_STORAGE_KEY,
+} from "../../utils/landingStats";
 
 const Counter = ({ value, label, duration = 2 }) => {
   const nodeRef = useRef(null);
@@ -58,6 +63,24 @@ const Counter = ({ value, label, duration = 2 }) => {
 };
 
 export default function Stats() {
+  const [stats, setStats] = useState(getLandingStats);
+
+  useEffect(() => {
+    const refresh = (event) => {
+      if (!event.key || event.key === LANDING_STATS_STORAGE_KEY) {
+        setStats(getLandingStats());
+      }
+    };
+    window.addEventListener("storage", refresh);
+    window.addEventListener(LANDING_STATS_EVENT, refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener(LANDING_STATS_EVENT, refresh);
+    };
+  }, []);
+
+  const formatted = (value) => Number(value || 0).toLocaleString("en-US");
+
   return (
     <section className="w-full bg-[#1F2937] flex justify-center items-center">
       <div
@@ -69,10 +92,10 @@ export default function Stats() {
           items-center
         "
       >
-        <Counter value="40" label="معلم" />
-        <Counter value="12,000" label="طالب" />
-        <Counter value="1,000" label="دورة تدريبية" />
-        <Counter value="97%" label="رضا العلماء" />
+        <Counter value={formatted(stats.teachers)} label="معلم" />
+        <Counter value={formatted(stats.students)} label="طالب" />
+        <Counter value={formatted(stats.courses)} label="دورة تدريبية" />
+        <Counter value={`${formatted(stats.satisfaction)}%`} label="رضا المعلمين" />
       </div>
     </section>
   );

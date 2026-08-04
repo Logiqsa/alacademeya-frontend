@@ -9,7 +9,6 @@ import {
 
 const TeacherGuard = ({ children }) => {
   const { user } = useContext(AuthContext);
-  console.log("TeacherGuard user:", user);
 
   if (!user) return <Navigate to="/login" replace />;
 

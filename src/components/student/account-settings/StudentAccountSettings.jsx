@@ -13,6 +13,8 @@ import {
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
+import { AccountStatusBadge } from "../../account-settings/AccountRegistrationStatus";
+import PhoneDisplay from "../../account-settings/PhoneDisplay";
 import {
   getCountryId,
   resolveCountryLabel,
@@ -74,6 +76,8 @@ const pickName = (name) => {
 const normalizeOption = (item) => ({
   id: item.id || item._id || item.value || item.code,
   code: item.code || item.countryCode,
+  phoneCode: item.phoneCode || item.dialCode || item.callingCode,
+  flagUrl: item.flagUrl || item.flag,
   label:
     item.nameAr ||
     item.arabicName ||
@@ -445,7 +449,14 @@ const StudentPersonalCard = ({
             value={formatDateDisplay(student.birthDate)}
           />
           <ViewField label="الدولة" value={countryLabel} />
-          <ViewField label="رقم الهاتف" value={student.phone} />
+          <ViewField label="رقم الهاتف" value={
+            <PhoneDisplay
+              phone={student.phone}
+              country={student.country}
+              countryCode={student.countryCode}
+              options={countryOptions}
+            />
+          } />
         </ViewGrid>
       ) : (
         <EditBox>
@@ -812,7 +823,6 @@ const StudentAccountSettings = () => {
       const studentData = extractStudent(res.data);
       if (studentData) {
         setStudent(studentData);
-        localStorage.setItem("user", JSON.stringify(studentData));
         updateUser?.(studentData);
       }
     } catch (err) {
@@ -839,7 +849,6 @@ const StudentAccountSettings = () => {
   const handleProfileUpdated = (updatedStudent) => {
     setStudent((prev) => {
       const next = { ...prev, ...updatedStudent };
-      localStorage.setItem("user", JSON.stringify(next));
       updateUser?.(next);
       return next;
     });
@@ -894,6 +903,7 @@ const StudentAccountSettings = () => {
               {student.email}
             </p>
           </div>
+          <AccountStatusBadge />
         </div>
       </div>
 

@@ -10,7 +10,9 @@ import {
   resolveCountryLabel,
 } from "../../../utils/countryName";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
+import PhoneDisplay from "../../account-settings/PhoneDisplay";
 import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
+import LandingStatsSettings from "../dashboard/LandingStatsSettings";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -451,7 +453,14 @@ const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged })
           <ViewField label="الاسم الكامل" value={admin.fullName} />
           <ViewField label="اسم المستخدم" value={admin.username} />
           <ViewField label="البريد الإلكتروني" value={admin.email} />
-          <ViewField label="رقم الهاتف" value={admin.phone} />
+          <ViewField label="رقم الهاتف" value={
+            <PhoneDisplay
+              phone={admin.phone}
+              country={admin.country}
+              countryCode={admin.countryCode}
+              options={countryOptions}
+            />
+          } />
           <ViewField label="الدولة" value={countryLabel} />
         </ViewGrid>
       ) : (
@@ -628,8 +637,6 @@ const AdminAccountSettings = () => {
       const userData = extractUser(res.data);
       if (userData) {
         setAdmin(userData);
-        // نخزّن آخر نسخة من المستخدم محليًا
-        localStorage.setItem("user", JSON.stringify(userData));
         updateUser?.(userData);
       }
     } catch (err) {
@@ -655,7 +662,6 @@ const AdminAccountSettings = () => {
   const handleProfileUpdated = (updatedUser) => {
     setAdmin((prev) => {
       const next = { ...prev, ...updatedUser };
-      localStorage.setItem("user", JSON.stringify(next));
       updateUser?.(next);
       return next;
     });
@@ -732,6 +738,7 @@ const AdminAccountSettings = () => {
         onUpdated={handleProfileUpdated}
       />
       <ContactSettingsCard />
+      <LandingStatsSettings />
     </div>
   );
 };

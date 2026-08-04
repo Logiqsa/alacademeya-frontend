@@ -76,7 +76,7 @@ const RegisterSuccessPage = () => {
                 </div>
 
                 <button
-                    onClick={() => navigate("/account-state", { state: { role } })}
+                    onClick={() => navigate("/pending", { state: { role } })}
                     className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] mb-3"
                     style={{ fontFamily: "Tajawal, sans-serif" }}
                 >

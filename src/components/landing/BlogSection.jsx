@@ -219,14 +219,16 @@ const BlogSection = () => {
                     </div>
                 )}
 
-                <div className="text-center mt-12">
-                    <Link
-                        to="/blogs"
-                        className="inline-block px-8 py-3 border-2 border-[#E5E5E5] text-[#575F69] rounded-lg font-bold"
-                    >
-                        عرض كل المقالات
-                    </Link>
-                </div>
+                {!loading && !error && posts.length > 0 && (
+                    <div className="text-center mt-12">
+                        <Link
+                            to="/blogs"
+                            className="inline-block px-8 py-3 border-2 border-[#E5E5E5] text-[#575F69] rounded-lg font-bold"
+                        >
+                            عرض كل المقالات
+                        </Link>
+                    </div>
+                )}
             </div>
         </section>
     );

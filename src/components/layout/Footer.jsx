@@ -1,5 +1,5 @@
-import { Mail, MessageCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MdEmail } from "react-icons/md";
+import { FaWhatsapp } from "react-icons/fa";
 import logo from "../../assets/icons/logo.svg";
 import fbIcon from "../../assets/icons/facebook.png";
 import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
@@ -57,9 +57,29 @@ const Footer = () => {
         {(contactSettings?.email || contactSettings?.whatsappNumber) && (
           <div>
             <h2 className="font-['Tajawal'] font-bold text-[24px] text-[#1F2937] mb-5">تواصل معنا</h2>
-            <div className="space-y-3" dir="ltr">
-              {contactSettings.email && <a href={`mailto:${contactSettings.email}`} className="flex items-center gap-2 text-[#123C91] hover:text-[#12C6B0]"><Mail size={18} />{contactSettings.email}</a>}
-              {contactSettings.whatsappNumber && <a href={whatsappLink(contactSettings.whatsappNumber)} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[#123C91] hover:text-[#12C6B0]"><MessageCircle size={18} />{contactSettings.whatsappNumber}</a>}
+            <div className="space-y-3">
+              {contactSettings.email && (
+                <a
+                  href={`mailto:${contactSettings.email}`}
+                  className="flex items-center gap-2 text-[#123C91] hover:text-[#12C6B0]"
+                  dir="ltr"
+                >
+                  <MdEmail size={20} className="shrink-0" />
+                  <span>{contactSettings.email}</span>
+                </a>
+              )}
+              {contactSettings.whatsappNumber && (
+                <a
+                  href={whatsappLink(contactSettings.whatsappNumber)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-[#123C91] hover:text-[#25D366]"
+                  dir="ltr"
+                >
+                  <FaWhatsapp size={20} className="shrink-0 text-[#25D366]" />
+                  <span>{contactSettings.whatsappNumber}</span>
+                </a>
+              )}
             </div>
           </div>
         )}
