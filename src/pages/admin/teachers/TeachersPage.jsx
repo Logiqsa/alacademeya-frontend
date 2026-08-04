@@ -7,6 +7,7 @@ import {
   MessagesSquare,
   Search,
   CheckCircle2,
+  XCircle,
   ExternalLink,
   Users,
   X,
@@ -84,7 +85,8 @@ const TeachersPage = () => {
   const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [approvingTeacher, setApprovingTeacher] = useState(false);
-  const month = useMemo(currentMonth, []);
+  const [rejectingTeacher, setRejectingTeacher] = useState(false);
+  const month = useMemo(() => currentMonth(), []);
 
   const loadTeachers = useCallback(async () => {
     setLoading(true);
@@ -129,8 +131,13 @@ const TeachersPage = () => {
             grades: listLabel(teacher.grades ?? teacher.grade),
             curricula: listLabel(teacher.curriculums ?? teacher.curriculum),
             status:
-              teacher.status === "approved" ? "معتمد" : teacher.status || "—",
+              teacher.status === "approved"
+                ? "مقبول"
+                : teacher.status === "rejected"
+                  ? "مرفوض"
+                  : "في انتظار المراجعة",
             isApproved: teacher.status === "approved",
+            isRejected: teacher.status === "rejected",
             cvUrl: getTeacherCvUrl(teacher),
             createdAt: teacher.createdAt || teacher.user?.createdAt,
             raw: teacher,
@@ -155,6 +162,7 @@ const TeachersPage = () => {
   }, [month]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTeachers();
   }, [loadTeachers]);
 
@@ -188,6 +196,7 @@ const TeachersPage = () => {
         ...selectedTeacher,
         status: "معتمد",
         isApproved: true,
+        isRejected: false,
       };
       setSelectedTeacher(approvedTeacher);
       setTeachers((current) =>
@@ -200,6 +209,38 @@ const TeachersPage = () => {
       toast.error(error.response?.data?.message || "تعذر اعتماد المعلم");
     } finally {
       setApprovingTeacher(false);
+    }
+  };
+
+  const handleRejectTeacher = async () => {
+    if (!selectedTeacher || selectedTeacher.isApproved) return;
+    if (!window.confirm("هل تريد رفض طلب هذا المعلم؟")) return;
+    setRejectingTeacher(true);
+    try {
+      await updateTeacherProfile(selectedTeacher.id, { status: "rejected" });
+      if (selectedTeacher.userId) {
+        await updateUser(selectedTeacher.userId, {
+          registrationStatus: "rejected",
+          isActive: false,
+        });
+      }
+      const rejectedTeacher = {
+        ...selectedTeacher,
+        status: "مرفوض",
+        isApproved: false,
+        isRejected: true,
+      };
+      setSelectedTeacher(rejectedTeacher);
+      setTeachers((current) =>
+        current.map((teacher) =>
+          teacher.id === rejectedTeacher.id ? rejectedTeacher : teacher,
+        ),
+      );
+      toast.success("تم رفض طلب المعلم");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر رفض طلب المعلم");
+    } finally {
+      setRejectingTeacher(false);
     }
   };
 
@@ -372,19 +413,11 @@ const TeachersPage = () => {
                           </button>
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          {!teacher.isApproved ? (
-                            <button
-                              type="button"
-                              onClick={() => openTeacherDetails(teacher)}
-                              className="rounded-lg border border-[#123C91] px-3 py-2 text-sm font-semibold text-[#123C91] hover:bg-[#EAF4FF]"
-                            >
-                              قبول الطلب
-                            </button>
-                          ) : (
-                            <span className="text-sm text-[#10B981]">
-                              معتمد
-                            </span>
-                          )}
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${teacher.isApproved ? "bg-emerald-50 text-emerald-700" : teacher.isRejected ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}
+                          >
+                            {teacher.status}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -445,19 +478,10 @@ const TeachersPage = () => {
                     <div className="rounded-lg bg-white p-3 text-sm text-[#575F69]">
                       <p className="text-xs text-[#575F69]">الحالة</p>
                       <p className="mt-1 font-semibold text-[#1F2937]">
-                        {teacher.isApproved ? "معتمد" : "بانتظار الموافقة"}
+                        {teacher.status}
                       </p>
                     </div>
                   </div>
-                  {!teacher.isApproved && (
-                    <button
-                      type="button"
-                      onClick={() => openTeacherDetails(teacher)}
-                      className="mt-3 w-full rounded-xl border border-[#123C91] py-3 text-sm font-semibold text-[#123C91] hover:bg-[#EAF4FF]"
-                    >
-                      قبول الطلب
-                    </button>
-                  )}
                 </div>
               ))}
             </div>
@@ -547,23 +571,40 @@ const TeachersPage = () => {
                 className={`mt-5 grid grid-cols-1 gap-3 ${
                   selectedTeacher.isApproved
                     ? "sm:grid-cols-2"
-                    : "sm:grid-cols-3"
+                    : selectedTeacher.isRejected
+                      ? "sm:grid-cols-2"
+                      : "sm:grid-cols-4"
                 }`}
               >
-                {!selectedTeacher.isApproved && (
-                  <button
-                    type="button"
-                    disabled={approvingTeacher}
-                    onClick={handleApproveTeacher}
-                    className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {approvingTeacher ? (
-                      <Loader2 size={18} className="animate-spin" />
-                    ) : (
-                      <CheckCircle2 size={18} />
-                    )}
-                    اعتماد المعلم
-                  </button>
+                {!selectedTeacher.isApproved && !selectedTeacher.isRejected && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={approvingTeacher}
+                      onClick={handleApproveTeacher}
+                      className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {approvingTeacher ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={18} />
+                      )}
+                      اعتماد المعلم
+                    </button>
+                    <button
+                      type="button"
+                      disabled={rejectingTeacher || approvingTeacher}
+                      onClick={handleRejectTeacher}
+                      className="flex h-12 items-center justify-center gap-2 rounded-xl bg-red-600 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+                    >
+                      {rejectingTeacher ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <XCircle size={18} />
+                      )}
+                      رفض الطلب
+                    </button>
+                  </>
                 )}
                 <a
                   href={whatsappUrl(selectedTeacher.phone) || undefined}

@@ -1,7 +1,20 @@
 import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, Users, X, ChevronDown, ClipboardList, BookOpen, Search, MessageCircle, UserPlus, Trash2, AlertTriangle } from "lucide-react";
+import {
+  MoreVertical,
+  Users,
+  X,
+  ChevronDown,
+  ClipboardList,
+  BookOpen,
+  Search,
+  MessageCircle,
+  UserPlus,
+  Trash2,
+  AlertTriangle,
+  CalendarClock,
+} from "lucide-react";
 import {
   getTeachers,
   getAllStudents,
@@ -16,7 +29,7 @@ import {
   updateClassroomSubstituteTeacher,
   createSubscription,
   deleteClassroom,
-} from "../../../services/APIService"; 
+} from "../../../services/APIService";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const resolveName = (val) =>
@@ -145,7 +158,9 @@ const filterActiveTeachers = (list) =>
     const isActive = t.isActive ?? user.isActive;
     const registrationStatus = t.registrationStatus ?? user.registrationStatus;
     const isDeleted = t.isDeleted ?? user.isDeleted ?? false;
-    return isActive === true && registrationStatus === "active" && isDeleted !== true;
+    return (
+      isActive === true && registrationStatus === "active" && isDeleted !== true
+    );
   });
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
@@ -158,7 +173,9 @@ const Badge = ({ label, type }) => {
     gray: "bg-gray-100 text-[#8C9198]",
   };
   return (
-    <span className={`inline-flex items-center justify-center px-3 py-1 text-[11px] md:text-xs font-semibold rounded-full whitespace-nowrap ${map[type] ?? map.gray}`}>
+    <span
+      className={`inline-flex items-center justify-center px-3 py-1 text-[11px] md:text-xs font-semibold rounded-full whitespace-nowrap ${map[type] ?? map.gray}`}
+    >
       {label}
     </span>
   );
@@ -174,9 +191,19 @@ const statusBadge = (status) => {
 
 // ─── Select Field ─────────────────────────────────────────────────────────────
 // allowClear: لو true، أول اختيار (الـ placeholder) بيبقى قابل للاختيار (بيتستخدم كـ "مسح الفلتر")
-const SelectField = ({ label, options, placeholder, value, onChange, disabled, allowClear }) => (
+const SelectField = ({
+  label,
+  options,
+  placeholder,
+  value,
+  onChange,
+  disabled,
+  allowClear,
+}) => (
   <div className="mb-3">
-    <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">{label}</label>
+    <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">
+      {label}
+    </label>
     <div className="relative">
       <select
         value={value ?? ""}
@@ -184,12 +211,19 @@ const SelectField = ({ label, options, placeholder, value, onChange, disabled, a
         disabled={disabled}
         className="w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] appearance-none text-right text-[#1F2937] disabled:opacity-60"
       >
-        <option value="" disabled={!allowClear}>{placeholder}</option>
+        <option value="" disabled={!allowClear}>
+          {placeholder}
+        </option>
         {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
         ))}
       </select>
-      <ChevronDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
+      <ChevronDown
+        size={14}
+        className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]"
+      />
     </div>
   </div>
 );
@@ -197,7 +231,17 @@ const SelectField = ({ label, options, placeholder, value, onChange, disabled, a
 // ─── Student Combobox ─────────────────────────────────────────────────────────
 // خانة بحث بالاسم بتفتح قايمة نتائج، ولما تختار طالب اسمه بيظهر جوه الخانة نفسها
 // بدل السيليكت المنفصل.
-const StudentCombobox = ({ label, search, onSearchChange, options, selectedId, onSelect, placeholder, disabled, emptyLabel }) => {
+const StudentCombobox = ({
+  label,
+  search,
+  onSearchChange,
+  options,
+  selectedId,
+  onSelect,
+  placeholder,
+  disabled,
+  emptyLabel,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -225,7 +269,9 @@ const StudentCombobox = ({ label, search, onSearchChange, options, selectedId, o
 
   return (
     <div className="mb-3" ref={containerRef}>
-      <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">{label}</label>
+      <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">
+        {label}
+      </label>
       <div className="relative">
         <input
           type="text"
@@ -237,12 +283,17 @@ const StudentCombobox = ({ label, search, onSearchChange, options, selectedId, o
           autoComplete="off"
           className="w-full h-11 pr-10 pl-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] text-right text-[#1F2937] disabled:opacity-60"
         />
-        <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]" />
+        <Search
+          size={15}
+          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]"
+        />
 
         {isOpen && !disabled && (
           <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-[#E5E5E5] rounded-lg shadow-lg">
             {options.length === 0 ? (
-              <div className="px-4 py-2.5 text-[13px] text-[#9CA3AF] font-['IBM_Plex_Sans_Arabic'] text-right">{emptyLabel}</div>
+              <div className="px-4 py-2.5 text-[13px] text-[#9CA3AF] font-['IBM_Plex_Sans_Arabic'] text-right">
+                {emptyLabel}
+              </div>
             ) : (
               options.map((o) => (
                 <button
@@ -268,12 +319,22 @@ const Modal = ({ open, onClose, title, children }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl" dir="rtl">
+      <div
+        className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl"
+        dir="rtl"
+      >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-['Tajawal'] font-semibold text-[17px] text-[#1F2937]">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#6B7280] transition-colors">
+          <h3 className="font-['Tajawal'] font-semibold text-[17px] text-[#1F2937]">
+            {title}
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#6B7280] transition-colors"
+          >
             <X size={15} />
           </button>
         </div>
@@ -283,7 +344,13 @@ const Modal = ({ open, onClose, title, children }) => {
   );
 };
 
-const ModalFooter = ({ onClose, confirmLabel, onConfirm, loading, disabled }) => (
+const ModalFooter = ({
+  onClose,
+  confirmLabel,
+  onConfirm,
+  loading,
+  disabled,
+}) => (
   <div className="flex gap-3 mt-5">
     <button
       onClick={onConfirm}
@@ -292,7 +359,10 @@ const ModalFooter = ({ onClose, confirmLabel, onConfirm, loading, disabled }) =>
     >
       {loading ? "جاري الحفظ..." : confirmLabel}
     </button>
-    <button onClick={onClose} className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:border-[#123C91] transition-colors">
+    <button
+      onClick={onClose}
+      className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:border-[#123C91] transition-colors"
+    >
       إلغاء
     </button>
   </div>
@@ -318,8 +388,7 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
       handleClose();
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          "تعذر حذف المجموعة، حاول مرة أخرى.",
+        err.response?.data?.message || "تعذر حذف المجموعة، حاول مرة أخرى.",
       );
     } finally {
       setSubmitting(false);
@@ -327,7 +396,11 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
   };
 
   return (
-    <Modal open={open} onClose={submitting ? () => {} : handleClose} title="حذف المجموعة">
+    <Modal
+      open={open}
+      onClose={submitting ? () => {} : handleClose}
+      title="حذف المجموعة"
+    >
       <div className="flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4">
         <AlertTriangle className="mt-0.5 shrink-0 text-red-600" size={21} />
         <div>
@@ -418,17 +491,49 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         // ⚠️ debug مؤقت: افتحي الكونسول وشوفي شكل الـ raw data فعليًا.
         // لو الـ array اللي جوّاها فاضي أو الحقول مختلفة، ده معناه extractList
         // محتاجة keys إضافية تتظبط على شكل الـ response الحقيقي عندك.
-        if (allRes.status === "fulfilled") console.log("[AddStudentModal] getAllStudents raw:", allRes.value?.data);
-        else console.error("[AddStudentModal] getAllStudents rejected:", allRes.reason);
+        if (allRes.status === "fulfilled")
+          console.log(
+            "[AddStudentModal] getAllStudents raw:",
+            allRes.value?.data,
+          );
+        else
+          console.error(
+            "[AddStudentModal] getAllStudents rejected:",
+            allRes.reason,
+          );
 
-        if (gradesRes.status === "fulfilled") console.log("[AddStudentModal] getAllGrades raw:", gradesRes.value?.data);
-        else console.error("[AddStudentModal] getAllGrades rejected:", gradesRes.reason);
+        if (gradesRes.status === "fulfilled")
+          console.log(
+            "[AddStudentModal] getAllGrades raw:",
+            gradesRes.value?.data,
+          );
+        else
+          console.error(
+            "[AddStudentModal] getAllGrades rejected:",
+            gradesRes.reason,
+          );
 
-        if (curriculumsRes.status === "fulfilled") console.log("[AddStudentModal] getCurriculums raw:", curriculumsRes.value?.data);
-        else console.error("[AddStudentModal] getCurriculums rejected:", curriculumsRes.reason);
+        if (curriculumsRes.status === "fulfilled")
+          console.log(
+            "[AddStudentModal] getCurriculums raw:",
+            curriculumsRes.value?.data,
+          );
+        else
+          console.error(
+            "[AddStudentModal] getCurriculums rejected:",
+            curriculumsRes.reason,
+          );
 
-        if (classroomRes.status === "rejected") console.error("[AddStudentModal] getClassroomStudents rejected:", classroomRes.reason);
-        if (packagesRes.status === "rejected") console.error("[AddStudentModal] getAllPackages rejected:", packagesRes.reason);
+        if (classroomRes.status === "rejected")
+          console.error(
+            "[AddStudentModal] getClassroomStudents rejected:",
+            classroomRes.reason,
+          );
+        if (packagesRes.status === "rejected")
+          console.error(
+            "[AddStudentModal] getAllPackages rejected:",
+            packagesRes.reason,
+          );
 
         let all =
           allRes.status === "fulfilled"
@@ -442,10 +547,16 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
               page: 1,
               limit: 1000,
             });
-            console.log("[AddStudentModal] getUsers(student) fallback raw:", usersResponse?.data);
+            console.log(
+              "[AddStudentModal] getUsers(student) fallback raw:",
+              usersResponse?.data,
+            );
             all = extractList(usersResponse, ["users", "results", "items"]);
           } catch (usersError) {
-            console.error("[AddStudentModal] getUsers student fallback failed:", usersError);
+            console.error(
+              "[AddStudentModal] getUsers student fallback failed:",
+              usersError,
+            );
           }
         }
 
@@ -456,7 +567,9 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
           classroomRes.status === "fulfilled"
             ? extractList(classroomRes.value, ["students", "results", "items"])
             : [];
-        setClassroomStudentIds(new Set(currentStudents.flatMap(studentIdentityIds)));
+        setClassroomStudentIds(
+          new Set(currentStudents.flatMap(studentIdentityIds)),
+        );
 
         setPackages(
           packagesRes.status === "fulfilled"
@@ -472,7 +585,11 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
 
         const curriculums =
           curriculumsRes.status === "fulfilled"
-            ? extractList(curriculumsRes.value, ["curriculums", "results", "items"])
+            ? extractList(curriculumsRes.value, [
+                "curriculums",
+                "results",
+                "items",
+              ])
             : [];
 
         const stageResponses = await Promise.allSettled(
@@ -486,7 +603,9 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
             ? extractList(result.value, ["stages", "results", "items"])
             : [],
         );
-        const stagesFromGrades = loadedGrades.map((grade) => grade?.stage).filter(Boolean);
+        const stagesFromGrades = loadedGrades
+          .map((grade) => grade?.stage)
+          .filter(Boolean);
         const combinedStages = [...loadedStages, ...stagesFromGrades];
 
         // ⚠️ لو المرحلة جاية كـ id خام (string) مش object فيه name (يعني مش populated
@@ -494,7 +613,9 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         // المستخدم في GroupsPage.jsx لحل نفس المشكلة بالظبط
         const rawStageIds = [
           ...new Set(
-            combinedStages.filter((stage) => typeof stage === "string").map(String),
+            combinedStages
+              .filter((stage) => typeof stage === "string")
+              .map(String),
           ),
         ];
         const stageFetchResults = await Promise.allSettled(
@@ -504,7 +625,8 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
           stageFetchResults.map((result, idx) => {
             const id = rawStageIds[idx];
             if (result.status !== "fulfilled") return [id, null];
-            const stageData = result.value?.data?.data ?? result.value?.data ?? null;
+            const stageData =
+              result.value?.data?.data ?? result.value?.data ?? null;
             return [id, stageData];
           }),
         );
@@ -518,7 +640,9 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
             new Map(
               resolvedStages
                 .map((stage) => [
-                  String(resolveEntityId(stage) || resolveName(stage?.name ?? stage)),
+                  String(
+                    resolveEntityId(stage) || resolveName(stage?.name ?? stage),
+                  ),
                   stage,
                 ])
                 .filter(([id]) => id && id !== "--"),
@@ -530,13 +654,18 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
           setError("تعذر تحميل قائمة الطلاب");
         } else if (packagesRes.status === "rejected") {
           setError("تعذر تحميل قائمة الباقات");
-        } else if (curriculumsRes.status === "rejected" && gradesRes.status === "rejected") {
+        } else if (
+          curriculumsRes.status === "rejected" &&
+          gradesRes.status === "rejected"
+        ) {
           setError("تعذر تحميل المراحل والصفوف");
         }
       } catch (err) {
         console.error("[AddStudentModal] load failed unexpectedly:", err);
         if (!cancelled) {
-          setError("حصل خطأ أثناء تحميل بيانات المودال — افتحي الـ Console وابعتيلي رسالة الخطأ");
+          setError(
+            "حصل خطأ أثناء تحميل بيانات المودال — افتحي الـ Console وابعتيلي رسالة الخطأ",
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -566,7 +695,8 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       .filter((grade) => {
         if (!stageFilter) return true;
         const stage = grade?.stage;
-        const stageValue = resolveEntityId(stage) || resolveName(stage?.name ?? stage);
+        const stageValue =
+          resolveEntityId(stage) || resolveName(stage?.name ?? stage);
         return String(stageValue) === String(stageFilter);
       })
       .map((grade) => ({
@@ -591,7 +721,8 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       const isAlreadyInClassroom = studentIdentityIds(s).some((id) =>
         classroomStudentIds.has(id),
       );
-      const matchesSearch = !q || resolvePersonName(s).toLowerCase().includes(q);
+      const matchesSearch =
+        !q || resolvePersonName(s).toLowerCase().includes(q);
       const studentGrade = resolveStudentGrade(s);
       const gradeRecord = grades.find(
         (grade) =>
@@ -607,7 +738,9 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         !gradeFilter ||
         String(resolveEntityId(studentGrade) || resolveGradeName(s)) ===
           String(gradeFilter);
-      return !isAlreadyInClassroom && matchesSearch && matchesStage && matchesGrade;
+      return (
+        !isAlreadyInClassroom && matchesSearch && matchesStage && matchesGrade
+      );
     });
   }, [students, classroomStudentIds, grades, search, stageFilter, gradeFilter]);
 
@@ -645,7 +778,10 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       onChanged?.();
       onClose();
     } catch (err) {
-      console.error("createSubscription (add student) failed:", err.response?.data || err);
+      console.error(
+        "createSubscription (add student) failed:",
+        err.response?.data || err,
+      );
       setError(err.response?.data?.message || "حدث خطأ أثناء إضافة الطالب");
     } finally {
       setSubmitting(false);
@@ -676,7 +812,10 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         label="الطالب"
         search={search}
         onSearchChange={setSearch}
-        options={filteredStudents.map((s) => ({ value: resolveStudentId(s), label: resolvePersonName(s) }))}
+        options={filteredStudents.map((s) => ({
+          value: resolveStudentId(s),
+          label: resolvePersonName(s),
+        }))}
         selectedId={selectedStudent}
         onSelect={(option) => {
           setSelectedStudent(option?.value || "");
@@ -701,7 +840,12 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         disabled={loading}
       />
       {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
-      <ModalFooter onClose={onClose} confirmLabel="إضافة" onConfirm={handleSubmit} loading={submitting} />
+      <ModalFooter
+        onClose={onClose}
+        confirmLabel="إضافة"
+        onConfirm={handleSubmit}
+        loading={submitting}
+      />
     </Modal>
   );
 };
@@ -743,7 +887,10 @@ const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
       onChanged?.();
       onClose();
     } catch (err) {
-      console.error("updateClassroom (assign teacher) failed:", err.response?.data || err);
+      console.error(
+        "updateClassroom (assign teacher) failed:",
+        err.response?.data || err,
+      );
       setError(err.response?.data?.message || "حدث خطأ أثناء تعيين المعلم");
     } finally {
       setSubmitting(false);
@@ -755,13 +902,21 @@ const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
       <SelectField
         label="المعلم"
         placeholder={loading ? "جاري التحميل..." : "اختر المعلم"}
-        options={teachers.map((t) => ({ value: resolvePersonId(t), label: resolvePersonName(t) }))}
+        options={teachers.map((t) => ({
+          value: resolvePersonId(t),
+          label: resolvePersonName(t),
+        }))}
         value={selectedTeacher}
         onChange={setSelectedTeacher}
         disabled={loading}
       />
       {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
-      <ModalFooter onClose={onClose} confirmLabel="تعيين المعلم" onConfirm={handleSubmit} loading={submitting} />
+      <ModalFooter
+        onClose={onClose}
+        confirmLabel="تعيين المعلم"
+        onConfirm={handleSubmit}
+        loading={submitting}
+      />
     </Modal>
   );
 };
@@ -806,7 +961,10 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
       onChanged?.();
       onClose();
     } catch (err) {
-      console.error("updateClassroomSubstituteTeacher failed:", err.response?.data || err);
+      console.error(
+        "updateClassroomSubstituteTeacher failed:",
+        err.response?.data || err,
+      );
       const apiMessage = err.response?.data?.message;
       const apiCode = err.response?.data?.code || err.response?.data?.error;
       setError(
@@ -827,8 +985,13 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
       onChanged?.();
       onClose();
     } catch (err) {
-      console.error("remove substitute teacher failed:", err.response?.data || err);
-      setError(err.response?.data?.message || "حدث خطأ أثناء إزالة المعلم البديل");
+      console.error(
+        "remove substitute teacher failed:",
+        err.response?.data || err,
+      );
+      setError(
+        err.response?.data?.message || "حدث خطأ أثناء إزالة المعلم البديل",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -838,7 +1001,10 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
     <Modal open={open} onClose={onClose} title="تعيين معلم بديل">
       {group?.teacher && (
         <div className="bg-[#FEF3C7] border border-[#FCD34D] rounded-lg px-3 py-2 mb-4 flex items-center justify-between">
-          <span className="text-[12px] text-[#92400E]">المعلم الحالي: <strong className="text-[#78350F]">{group.teacher}</strong></span>
+          <span className="text-[12px] text-[#92400E]">
+            المعلم الحالي:{" "}
+            <strong className="text-[#78350F]">{group.teacher}</strong>
+          </span>
         </div>
       )}
       {group?.substituteTeacher && (
@@ -849,13 +1015,21 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
       <SelectField
         label="المعلم البديل"
         placeholder={loading ? "جاري التحميل..." : "اختر المعلم البديل"}
-        options={teachers.map((t) => ({ value: resolvePersonId(t), label: resolvePersonName(t) }))}
+        options={teachers.map((t) => ({
+          value: resolvePersonId(t),
+          label: resolvePersonName(t),
+        }))}
         value={selectedTeacher}
         onChange={setSelectedTeacher}
         disabled={loading}
       />
       {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
-      <ModalFooter onClose={onClose} confirmLabel="حفظ المعلم البديل" onConfirm={handleSubmit} loading={submitting} />
+      <ModalFooter
+        onClose={onClose}
+        confirmLabel="حفظ المعلم البديل"
+        onConfirm={handleSubmit}
+        loading={submitting}
+      />
       {group?.substituteTeacherId && (
         <button
           type="button"
@@ -874,7 +1048,14 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
 const MENU_WIDTH = 190;
 const MENU_GAP = 6;
 
-const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onOpenChat }) => {
+const ActionsDropdown = ({
+  group,
+  onAction,
+  onOpenAttendance,
+  onOpenLessons,
+  onOpenChat,
+  onOpenSchedule,
+}) => {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -882,8 +1063,24 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onO
 
   const items = [
     { key: "lessons", label: "عرض الحصص", Icon: BookOpen, nav: "lessons" },
-    { key: "chat", label: "فتح محادثة المجموعة", Icon: MessageCircle, nav: "chat" },
-    { key: "attendance", label: "سجل الحضور", Icon: ClipboardList, isNav: true },
+    {
+      key: "schedule",
+      label: "إنشاء أو تعديل الجدول",
+      Icon: CalendarClock,
+      nav: "schedule",
+    },
+    {
+      key: "chat",
+      label: "فتح محادثة المجموعة",
+      Icon: MessageCircle,
+      nav: "chat",
+    },
+    {
+      key: "attendance",
+      label: "سجل الحضور",
+      Icon: ClipboardList,
+      isNav: true,
+    },
     { key: "add-student", label: "إضافة طالب", Icon: UserPlus },
     { key: "assign-teacher", label: "تعيين معلم", Icon: Users },
     { key: "delete", label: "حذف المجموعة", Icon: Trash2, danger: true },
@@ -919,8 +1116,10 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onO
 
     const handleOutside = (e) => {
       if (
-        btnRef.current && !btnRef.current.contains(e.target) &&
-        menuRef.current && !menuRef.current.contains(e.target)
+        btnRef.current &&
+        !btnRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
       ) {
         setOpen(false);
       }
@@ -941,6 +1140,8 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onO
     setOpen(false);
     if (item.nav === "lessons") {
       onOpenLessons(group);
+    } else if (item.nav === "schedule") {
+      onOpenSchedule(group);
     } else if (item.nav === "chat") {
       onOpenChat(group);
     } else if (item.isNav) {
@@ -982,7 +1183,16 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onO
                   className={`w-full flex items-center gap-2 px-4 py-2.5 text-[13px] transition-colors font-['IBM_Plex_Sans_Arabic'] text-right
                     ${danger ? "text-red-600 hover:bg-red-50" : isNav || nav ? "text-[#123C91] font-medium hover:bg-[#F3F4F6]" : "text-[#374151] hover:bg-[#F3F4F6]"}`}
                 >
-                  <Icon size={15} className={danger ? "text-red-600" : isNav || nav ? "text-[#123C91]" : "text-[#6B7280]"} />
+                  <Icon
+                    size={15}
+                    className={
+                      danger
+                        ? "text-red-600"
+                        : isNav || nav
+                          ? "text-[#123C91]"
+                          : "text-[#6B7280]"
+                    }
+                  />
                   {label}
                 </button>
               </div>
@@ -998,12 +1208,19 @@ const ActionsDropdown = ({ group, onAction, onOpenAttendance, onOpenLessons, onO
 const MobileField = ({ label, children }) => (
   <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-50 last:border-b-0">
     <span className="text-xs font-medium text-[#8C9198] shrink-0">{label}</span>
-    <span className="text-sm text-[#575F69] font-medium text-left">{children}</span>
+    <span className="text-sm text-[#575F69] font-medium text-left">
+      {children}
+    </span>
   </div>
 );
 
 // ─── Main Table ───────────────────────────────────────────────────────────────
-const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged }) => {
+const GroupTable = ({
+  groups = [],
+  onOpenAttendance,
+  onOpenDetails,
+  onChanged,
+}) => {
   const navigate = useNavigate();
   const [modal, setModal] = useState(null);
 
@@ -1036,6 +1253,10 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
     });
   };
 
+  const handleOpenSchedule = (group) => {
+    navigate(`/admin/groups/${group.id}/schedule`);
+  };
+
   // ✅ لينك اسم المجموعة -> صفحة التفاصيل.
   // مفيش صفحة "تفاصيل مجموعة" منفصلة في الراوتس حالياً، فبنستخدم صفحة الحصص
   // (اللي موجودة أصلاً وشغالة). لو عندك صفحة تفاصيل تانية، مرر onOpenDetails
@@ -1061,7 +1282,10 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
 
   if (groups.length === 0) {
     return (
-      <div dir="rtl" className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]">
+      <div
+        dir="rtl"
+        className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]"
+      >
         لا توجد مجموعات متاحة
       </div>
     );
@@ -1076,14 +1300,31 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
             <table className="w-full text-right">
               <thead>
                 <tr style={{ backgroundColor: "#F9FAFA" }}>
-                  {["اسم المجموعة", "المعلم", "المادة", "المرحلة", "الصف", "الطلاب", "الحالة", "الإجراءات"].map((h) => (
-                    <th key={h} className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[13px] font-medium text-right whitespace-nowrap">{h}</th>
+                  {[
+                    "اسم المجموعة",
+                    "المعلم",
+                    "المادة",
+                    "المرحلة",
+                    "الصف",
+                    "الطلاب",
+                    "الحالة",
+                    "الإجراءات",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[13px] font-medium text-right whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {groups.map((g) => (
-                  <tr key={g.id} className="hover:bg-gray-50/80 transition-colors">
+                  <tr
+                    key={g.id}
+                    className="hover:bg-gray-50/80 transition-colors"
+                  >
                     <td className="px-4 lg:px-6 py-3 lg:py-4 font-['Tajawal'] font-medium text-[15px]">
                       <button
                         type="button"
@@ -1094,12 +1335,28 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
                       </button>
                     </td>
                     {[g.teacher, g.subject, g.stage, g.grade].map((v, i) => (
-                      <td key={i} className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[14px] whitespace-nowrap">{v ?? "--"}</td>
+                      <td
+                        key={i}
+                        className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[14px] whitespace-nowrap"
+                      >
+                        {v ?? "--"}
+                      </td>
                     ))}
-                    <td className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[14px] whitespace-nowrap">{g.enrolled}/{g.capacity}</td>
-                    <td className="px-4 lg:px-6 py-3 lg:py-4">{statusBadge(g.status)}</td>
+                    <td className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[14px] whitespace-nowrap">
+                      {g.enrolled}/{g.capacity}
+                    </td>
                     <td className="px-4 lg:px-6 py-3 lg:py-4">
-                      <ActionsDropdown group={g} onAction={openAction} onOpenAttendance={handleOpenAttendance} onOpenLessons={handleOpenLessons} onOpenChat={handleOpenChat} />
+                      {statusBadge(g.status)}
+                    </td>
+                    <td className="px-4 lg:px-6 py-3 lg:py-4">
+                      <ActionsDropdown
+                        group={g}
+                        onAction={openAction}
+                        onOpenAttendance={handleOpenAttendance}
+                        onOpenLessons={handleOpenLessons}
+                        onOpenChat={handleOpenChat}
+                        onOpenSchedule={handleOpenSchedule}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -1111,7 +1368,10 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
         {/* Mobile */}
         <div className="md:hidden space-y-3">
           {groups.map((g) => (
-            <div key={g.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+            <div
+              key={g.id}
+              className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4"
+            >
               <div className="flex items-center justify-between mb-2">
                 <button
                   type="button"
@@ -1120,15 +1380,26 @@ const GroupTable = ({ groups = [], onOpenAttendance, onOpenDetails, onChanged })
                 >
                   {g.name}
                 </button>
-                <ActionsDropdown group={g} onAction={openAction} onOpenAttendance={handleOpenAttendance} onOpenLessons={handleOpenLessons} onOpenChat={handleOpenChat} />
+                <ActionsDropdown
+                  group={g}
+                  onAction={openAction}
+                  onOpenAttendance={handleOpenAttendance}
+                  onOpenLessons={handleOpenLessons}
+                  onOpenChat={handleOpenChat}
+                  onOpenSchedule={handleOpenSchedule}
+                />
               </div>
-              <div className="flex items-center gap-2 mb-3">{statusBadge(g.status)}</div>
+              <div className="flex items-center gap-2 mb-3">
+                {statusBadge(g.status)}
+              </div>
               <div className="space-y-0.5">
                 <MobileField label="المعلم">{g.teacher ?? "--"}</MobileField>
                 <MobileField label="المادة">{g.subject}</MobileField>
                 <MobileField label="المرحلة">{g.stage}</MobileField>
                 <MobileField label="الصف">{g.grade}</MobileField>
-                <MobileField label="الطلاب">{g.enrolled}/{g.capacity}</MobileField>
+                <MobileField label="الطلاب">
+                  {g.enrolled}/{g.capacity}
+                </MobileField>
               </div>
             </div>
           ))}

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -264,8 +264,12 @@ export default function ForgotPassword() {
                   <p className="font-medium text-[20px] md:text-[22px] leading-8 text-center text-[#123C91] p-2 mb-2">
                     {email}
                   </p>
-                  <p dir="rtl" className="rounded-lg bg-[#FFF8E6] px-4 py-2 text-center text-[13px] text-[#7A5200]">
-                    إذا لم تجد الرسالة، تحقق من مجلد البريد غير المرغوب فيه (Spam).
+                  <p
+                    dir="rtl"
+                    className="rounded-xl border-2 border-amber-300 bg-[#FFF8E6] px-4 py-3 text-center text-[14px] font-bold text-[#6B4700] shadow-sm"
+                  >
+                    إذا لم تجد الرسالة، تحقق من مجلد البريد غير المرغوب فيه
+                    (Spam).
                   </p>
 
                   <div

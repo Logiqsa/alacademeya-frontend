@@ -49,8 +49,7 @@ const isPostponedLesson = (lesson) =>
   String(lesson.title || "").includes("مؤجلة");
 
 const badgeClass = (lesson) => {
-  if (isPostponedLesson(lesson))
-    return "bg-orange-100 text-orange-700";
+  if (isPostponedLesson(lesson)) return "bg-orange-100 text-orange-700";
   if (lesson.status === "completed") return "bg-blue-100 text-[#123C91]";
   if (lesson.status === "missed") return "bg-orange-100 text-orange-700";
   if (["not_started", "expired_schedule"].includes(lesson.status))
@@ -98,7 +97,12 @@ const getStudentLabel = (lesson) => {
 // فبنجرب كل الاحتمالات الشائعة بدل ما نعتمد على lesson.id لوحده (وده كان بيرجع
 // undefined ويودي على /sessions/null)
 const resolveLessonId = (lesson) =>
-  lesson.id || lesson._id || lesson.sessionId || lesson.session?.id || lesson.session?._id || lesson.session;
+  lesson.id ||
+  lesson._id ||
+  lesson.sessionId ||
+  lesson.session?.id ||
+  lesson.session?._id ||
+  lesson.session;
 
 const resolveClassroomId = (value) =>
   typeof value === "string" ? value : value?.id || value?._id || "";
@@ -124,7 +128,9 @@ const filterBeforeEnrollment = (days, enrollmentStarts) =>
   days.map((day) => ({
     ...day,
     lessons: (day.lessons || []).filter((lesson) => {
-      const joinedAt = enrollmentStarts.get(resolveClassroomId(lesson.classroom));
+      const joinedAt = enrollmentStarts.get(
+        resolveClassroomId(lesson.classroom),
+      );
       if (!joinedAt) return true;
       const scheduledAt = new Date(
         lesson.scheduledDate || `${day.date}T${lesson.startTime || "00:00"}`,
@@ -155,7 +161,8 @@ const monthLabel = (date) =>
   );
 
 const pad2 = (n) => String(n).padStart(2, "0");
-const toISODate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const toISODate = (d) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const isSameDay = (a, b) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
@@ -209,7 +216,10 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
         const rawDays = Array.isArray(list) ? list : [];
         const subscriptions = subscriptionsResponse?.data?.data;
         const nextDays = Array.isArray(subscriptions)
-          ? filterBeforeEnrollment(rawDays, buildEnrollmentStarts(subscriptions))
+          ? filterBeforeEnrollment(
+              rawDays,
+              buildEnrollmentStarts(subscriptions),
+            )
           : rawDays;
         setDays(nextDays);
 
@@ -287,7 +297,13 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
       return;
     }
     if (["scheduled", "postponed"].includes(lesson.status)) {
-      toast("لم تبدأ الحصة بعد، يرجى الدخول في الموعد المحدد لها.", { icon: "⏰" });
+      if (role === "teacher") {
+        openDetails(lesson);
+        return;
+      }
+      toast("لم تبدأ الحصة بعد، يرجى الدخول في الموعد المحدد لها.", {
+        icon: "⏰",
+      });
       return;
     }
     openDetails(lesson);
@@ -300,7 +316,9 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
     >
       {!hideHeader && (
         <>
-          <h1 className="mb-2 text-2xl font-semibold text-[#123C91]">{title}</h1>
+          <h1 className="mb-2 text-2xl font-semibold text-[#123C91]">
+            {title}
+          </h1>
           <p className="mb-6 text-[#575F69]">{subtitle}</p>
         </>
       )}
@@ -413,7 +431,10 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
               ) : (
                 <div className="grid grid-cols-1 gap-3">
                   {selectedDay.lessons.map((rawLesson, index) => {
-                    const lesson = withDisplayStatus(rawLesson, selectedDay.date);
+                    const lesson = withDisplayStatus(
+                      rawLesson,
+                      selectedDay.date,
+                    );
                     const duration = getDurationMinutes(lesson);
                     const isLive = ["live", "active"].includes(lesson.status);
 

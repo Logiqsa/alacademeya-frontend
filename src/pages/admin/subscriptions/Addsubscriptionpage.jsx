@@ -11,6 +11,7 @@ import {
   getAvailableClassrooms,
   getAllPackages,
   getAllDiscounts,
+  getAllSubscriptions,
   createSubscription,
 } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
@@ -311,6 +312,7 @@ const AddSubscriptionPage = () => {
   const [studentProfile, setStudentProfile] = useState(null); // فيه curriculum/grade
   const [studentLoading, setStudentLoading] = useState(false);
   const [studentError, setStudentError] = useState("");
+  const [subscribedSubjectIds, setSubscribedSubjectIds] = useState(new Set());
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -333,14 +335,54 @@ const AddSubscriptionPage = () => {
   useEffect(() => {
     if (!selectedStudentId) {
       setStudentProfile(null);
+      setSubscribedSubjectIds(new Set());
       return;
     }
     const fetchProfile = async () => {
       setStudentLoading(true);
       setStudentError("");
       try {
-        const res = await getStudent(selectedStudentId);
-        setStudentProfile(res.data.data);
+        const [profileResponse, subscriptionsResponse] = await Promise.all([
+          getStudent(selectedStudentId),
+          getAllSubscriptions({ student: selectedStudentId }),
+        ]);
+        setStudentProfile(profileResponse.data.data);
+
+        const subscriptionsBody =
+          subscriptionsResponse.data?.data ?? subscriptionsResponse.data ?? [];
+        const subscriptions = Array.isArray(subscriptionsBody)
+          ? subscriptionsBody
+          : subscriptionsBody.subscriptions || [];
+        const terminalStatuses = new Set([
+          "expired",
+          "ended",
+          "completed",
+          "cancelled",
+          "rejected",
+        ]);
+        const unavailableSubjectIds = subscriptions
+          .filter((subscription) => {
+            const subscriptionStudentId = idOf(subscription.student);
+            return (
+              !subscriptionStudentId ||
+              String(subscriptionStudentId) === String(selectedStudentId)
+            );
+          })
+          .filter(
+            (subscription) =>
+              !terminalStatuses.has(String(subscription.status).toLowerCase()),
+          )
+          .flatMap(
+            (subscription) =>
+              subscription.items || subscription.subjectSubscriptions || [],
+          )
+          .filter(
+            (item) => !terminalStatuses.has(String(item.status).toLowerCase()),
+          )
+          .map((item) => idOf(item.subject))
+          .filter(Boolean)
+          .map(String);
+        setSubscribedSubjectIds(new Set(unavailableSubjectIds));
       } catch (err) {
         setStudentError(
           err?.response?.data?.message || "تعذر تحميل بيانات الطالب",
@@ -394,8 +436,8 @@ const AddSubscriptionPage = () => {
     () =>
       allSubjects
         .map((s) => ({ id: idOf(s), name: nameOf(s) || "مادة" }))
-        .filter((s) => s.id),
-    [allSubjects],
+        .filter((s) => s.id && !subscribedSubjectIds.has(String(s.id))),
+    [allSubjects, subscribedSubjectIds],
   );
 
   // لما الطالب يتغيّر، شيلي المواد المختارة اللي كانت خاصة بطالب سابق
@@ -705,11 +747,17 @@ const AddSubscriptionPage = () => {
             اختر الطالب، ثم حدد المواد التي تريد إضافتها للاشتراك
           </p>
 
-          {(studentsError || subjectsError || metaError || allTeachersError) && (
+          {(studentsError ||
+            subjectsError ||
+            metaError ||
+            allTeachersError) && (
             <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-[13px]">
               <AlertCircle size={15} />
               <span>
-                {studentsError || subjectsError || metaError || allTeachersError}
+                {studentsError ||
+                  subjectsError ||
+                  metaError ||
+                  allTeachersError}
               </span>
             </div>
           )}

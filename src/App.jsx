@@ -560,6 +560,16 @@ function App() {
           }
         />
         <Route
+          path="/admin/groups/:groupId/schedule"
+          element={
+            user ? (
+              <CreateSchedulePage role="admin" />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
           path="/admin/schedule"
           element={
             user ? <AdminSchedulePage /> : <Navigate to="/login" replace />
