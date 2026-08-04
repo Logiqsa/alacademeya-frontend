@@ -4,19 +4,30 @@ export const isAdminRole = (role) => ADMIN_ROLES.includes(role);
 
 export const APPROVED_STATUSES = ["active", "approved", "accepted"];
 
+const normalizedStatus = (user) =>
+  String(user?.registrationStatus || user?.status || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", "-");
+
 export const isActivated = (user) => {
-  const status = String(user?.registrationStatus || user?.status || "").toLowerCase();
+  const status = normalizedStatus(user);
   return user?.isActive === true || APPROVED_STATUSES.includes(status);
 };
 
 export const isRegistrationIncomplete = (user) => {
-  const status = String(user?.registrationStatus || user?.status || "").toLowerCase();
+  const status = normalizedStatus(user);
   return (
     user?.profileCompleted === false ||
     user?.isProfileComplete === false ||
-    ["incomplete", "profile_incomplete", "verified"].includes(status)
+    ["incomplete", "profile-incomplete", "pending-profile", "verified"].includes(status)
   );
 };
+
+export const isAwaitingApproval = (user) =>
+  ["pending", "pending-review", "pending-approval", "under-review"].includes(
+    normalizedStatus(user),
+  );
 
 export const getRegistrationContinuation = (user, registrationData = {}) => {
   if (!isRegistrationIncomplete(user)) return null;
@@ -35,12 +46,9 @@ export const getRegistrationContinuation = (user, registrationData = {}) => {
       registrationData.country,
   };
 
-  if (role === "teacher") return { path: "/register/teacher-details", state };
-  if (role === "student" && state.studentType !== "university") {
-    return { path: "/register/student-details", state };
-  }
-  if (role === "student") return { path: "/student-dashboard", state };
-  if (role === "parent") return { path: "/parent-dashboard", state };
+  if (role === "teacher") return { path: "/teacher/settings", state };
+  if (role === "student") return { path: "/student/settings", state };
+  if (role === "parent") return { path: "/parent/settings", state };
   return null;
 };
 
@@ -49,13 +57,18 @@ export const getDashboardPathByRole = (user, fallback = "/") => {
   if (continuation) return continuation.path;
   const role = user?.role;
   const isApproved = isActivated(user);
+  const isPendingReview = isAwaitingApproval(user);
 
   if (role === "teacher") {
-    return isApproved ? "/teacher-dashboard" : "/account-state";
+    return isApproved || isPendingReview
+      ? "/teacher-dashboard"
+      : "/account-state";
   }
 
   if (role === "student") {
-    return isApproved ? "/student-dashboard" : "/register/success";
+    return isApproved || isPendingReview
+      ? "/student-dashboard"
+      : "/register/success";
   }
 
   if (role === "parent") {

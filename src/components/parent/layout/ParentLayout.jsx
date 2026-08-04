@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import ParentSidebar from "./ParentSidebar";
 import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
+import { AccountStatusNotice } from "../../account-settings/AccountRegistrationStatus";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -37,6 +38,7 @@ const ParentLayout = ({ children }) => {
 
       <main className="flex-1 h-full overflow-y-auto p-4 md:p-6">
          <Breadcrumbs homeTo="/parent-dashboard" />
+        <AccountStatusNotice />
         {children}
       </main>
 

@@ -38,7 +38,7 @@ export default function Hero() {
             <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
               <button
                 type="button"
-                onClick={() => navigate("/register")}
+                onClick={() => navigate("/select-account-type")}
                 className="w-full sm:w-50 h-14 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-medium text-lg"
               >
                 ابدأ الآن

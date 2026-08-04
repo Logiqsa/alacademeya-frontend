@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import TeacherSidebar from "./TeacherSidebar";
 import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
+import { AccountStatusNotice } from "../../account-settings/AccountRegistrationStatus";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -44,6 +45,8 @@ const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel }) =
            dynamicLabels={breadcrumbLabels}
            currentPageLabel={breadcrumbCurrentLabel}
          />
+
+        <AccountStatusNotice />
 
         {children}
       </main>

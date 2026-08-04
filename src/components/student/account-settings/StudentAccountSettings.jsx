@@ -613,7 +613,7 @@ const StudentAcademicCard = ({ student, onUpdated }) => {
             value={pickName(student.curriculum?.name)}
           />
           <ViewField
-            label="اللغة المفضلة"
+            label="لغة الدراسة"
             value={langLabel(student.studyLanguage)}
           />
         </ViewGrid>
@@ -659,7 +659,7 @@ const StudentAcademicCard = ({ student, onUpdated }) => {
             }
           />
           <Dropdown
-            label="اللغة المفضلة"
+            label="لغة الدراسة"
             value={form.studyLanguage}
             options={LANGUAGE_OPTIONS}
             onChange={(id) =>

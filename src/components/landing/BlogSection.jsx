@@ -163,7 +163,7 @@ const BlogSection = () => {
 
                 {!loading && !error && posts.length === 0 && (
                     <p className="text-center text-gray-400 font-['IBM_Plex_Sans_Arabic']">
-                        لسه مفيش مقالات منشورة
+                        لا توجد مقالات منشورة حتى الآن
                     </p>
                 )}
 

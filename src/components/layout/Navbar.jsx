@@ -3,7 +3,7 @@ import logo from "../../assets/icons/logo.svg";
 import { Menu, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { isAdminRole } from "../../utils/roles";
+import { getDashboardPathByRole } from "../../utils/roles";
 
 // ── الـ role بيحدد الداشبورد ──────────────────────────────────────────────
 // admin / super-admin → /admin-dashboard
@@ -15,50 +15,7 @@ import { isAdminRole } from "../../utils/roles";
 // (isActive / registrationStatus / status) جوه الـ AuthContext، من غير ما
 // نضرب أي API إضافي (زي /auth/account-state اللي بترجع 404 حالياً).
 const goToDashboard = (user, navigate) => {
-  const role = user?.role;
-
-  if (isAdminRole(role)) {
-    navigate("/admin-dashboard");
-    return;
-  }
-
-  // if (role === "teacher") {
-  //   navigate(user?.registrationStatus === "approved" ? "/teacher-dashboard" : "/account-state");
-  //   return;
-  // }
-
-
-  if (role === "teacher") {
-    const isApproved =
-      user?.isActive === true ||
-      user?.registrationStatus === "active" ||
-      user?.status === "approved";
-
-    navigate(isApproved ? "/teacher-dashboard" : "/account-state");
-    return;
-  }
-
-  if (role === "student") {
-    const isApproved =
-      user?.isActive === true ||
-      user?.registrationStatus === "active" ||
-      user?.status === "approved";
-
-    navigate(isApproved ? "/student-dashboard" : "/account-state");
-    return;
-  }
-
-  if (role === "parent") {
-    navigate("/parent-dashboard");
-    return;
-  }
-
-  const isPending =
-    user?.status === "pending" ||
-    String(user?.registrationStatus || "").startsWith("pending") ||
-    user?.isActive === false;
-
-  navigate(isPending || user ? "/account-state" : "/");
+  navigate(getDashboardPathByRole(user));
 };
 
 const Navbar = () => {
