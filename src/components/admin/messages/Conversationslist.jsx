@@ -39,7 +39,8 @@ export default function ConversationsLists({
       setUsers(
         list.filter(
           (user) =>
-            !user.isDeleted && ["student", "teacher", "parent"].includes(user.role),
+            !user.isDeleted &&
+            ["student", "teacher", "parent"].includes(user.role),
         ),
       );
     } catch {
@@ -105,12 +106,19 @@ export default function ConversationsLists({
       {/* Search */}
       <div className="px-3 pb-2.5 sm:px-4 sm:pb-3">
         <div className="relative">
-          <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={mode === "chat" ? "ابحث عن معلم او مجموعة..." : "ابحث عن معلم او طالب..."}
+            placeholder={
+              mode === "chat"
+                ? "ابحث عن معلم او مجموعة..."
+                : "ابحث عن معلم او طالب..."
+            }
             className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-3 pr-9 text-[13px] text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic'] sm:py-2 sm:text-sm"
           />
         </div>
@@ -142,7 +150,9 @@ export default function ConversationsLists({
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
               <Inbox size={18} className="text-gray-300" />
             </div>
-            <p className="text-sm text-gray-400 font-['IBM_Plex_Sans_Arabic']">لا توجد محادثات مطابقة</p>
+            <p className="text-sm text-gray-400 font-['IBM_Plex_Sans_Arabic']">
+              لا توجد محادثات مطابقة
+            </p>
           </div>
         ) : (
           filtered.map((c) => (
@@ -164,20 +174,28 @@ export default function ConversationsLists({
                     {c.avatarInitial}
                   </span>
                   <div className="min-w-0 text-right">
-                    <p className="truncate text-sm font-semibold text-slate-800">{c.name}</p>
+                    <p className="truncate text-sm font-semibold text-slate-800">
+                      {c.name}
+                    </p>
                     {mode === "monitor" && (
-                      <p className="truncate text-[11px] text-gray-400">معلم ←&nbsp;ولي أمر</p>
+                      <p className="truncate text-[11px] text-gray-400">
+                        معلم ←&nbsp;ولي أمر
+                      </p>
                     )}
                     {mode === "chat" && (
-                      <p className="truncate text-[11px] text-gray-400">{c.role}</p>
+                      <p className="truncate text-[11px] text-gray-400">
+                        {c.role}
+                      </p>
                     )}
                   </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="whitespace-nowrap text-xs text-gray-400">{c.lastMessageTime}</span>
+                  <span className="whitespace-nowrap text-xs text-gray-400">
+                    {c.lastMessageTime}
+                  </span>
                   {c.unreadCount > 0 && (
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white text-[11px] font-semibold text-white">
+                    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white shadow-sm">
                       {c.unreadCount}
                     </span>
                   )}
@@ -185,51 +203,100 @@ export default function ConversationsLists({
               </div>
 
               {/* Preview */}
-              <p className="mt-1.5 truncate text-xs text-gray-500 text-right">{c.lastMessagePreview}</p>
+              <p className="mt-1.5 truncate text-xs text-gray-500 text-right">
+                {c.lastMessagePreview}
+              </p>
             </button>
           ))
         )}
       </div>
 
       {showNewChat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 p-4" dir="rtl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 p-4"
+          dir="rtl"
+        >
           <div className="flex max-h-[620px] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 p-4">
               <div>
-                <h3 className="font-semibold text-slate-800">محادثة دعم جديدة</h3>
-                <p className="mt-0.5 text-xs text-gray-400">اختر المستخدم الذي تريد مراسلته</p>
+                <h3 className="font-semibold text-slate-800">
+                  محادثة دعم جديدة
+                </h3>
+                <p className="mt-0.5 text-xs text-gray-400">
+                  اختر المستخدم الذي تريد مراسلته
+                </p>
               </div>
-              <button type="button" onClick={() => setShowNewChat(false)} className="rounded-full p-2 text-gray-500 hover:bg-gray-100" aria-label="إغلاق">
+              <button
+                type="button"
+                onClick={() => setShowNewChat(false)}
+                className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
+                aria-label="إغلاق"
+              >
                 <X size={18} />
               </button>
             </div>
             <div className="p-4">
               <div className="relative">
-                <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="ابحث بالاسم أو البريد الإلكتروني..." className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pr-9 pl-3 text-sm focus:border-[#123C91] focus:outline-none" autoFocus />
+                <Search
+                  size={16}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  placeholder="ابحث بالاسم أو البريد الإلكتروني..."
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pr-9 pl-3 text-sm focus:border-[#123C91] focus:outline-none"
+                  autoFocus
+                />
               </div>
             </div>
             <div className="min-h-40 flex-1 overflow-y-auto px-3 pb-4">
               {usersLoading ? (
-                <p className="py-10 text-center text-sm text-gray-400">جاري تحميل المستخدمين...</p>
+                <p className="py-10 text-center text-sm text-gray-400">
+                  جاري تحميل المستخدمين...
+                </p>
               ) : error ? (
-                <p className="py-10 text-center text-sm text-red-500">{error}</p>
+                <p className="py-10 text-center text-sm text-red-500">
+                  {error}
+                </p>
               ) : matchingUsers.length === 0 ? (
-                <p className="py-10 text-center text-sm text-gray-400">لا يوجد مستخدمون مطابقون</p>
-              ) : matchingUsers.map((user) => {
-                const id = user.id ?? user._id;
-                const name = user.fullName ?? user.name ?? user.username ?? "مستخدم";
-                return (
-                  <button key={id} type="button" onClick={() => createChat(user)} disabled={creatingId !== null} className="flex w-full items-center gap-3 rounded-xl p-3 text-right hover:bg-blue-50 disabled:opacity-60">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white font-bold text-white">{name.trim().charAt(0)}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-slate-800">{name}</span>
-                      <span className="block truncate text-xs text-gray-400">{roleLabel[user.role] ?? user.role}{user.email ? ` · ${user.email}` : ""}</span>
-                    </span>
-                    {creatingId === id && <span className="text-xs text-[#123C91]">جاري الإنشاء...</span>}
-                  </button>
-                );
-              })}
+                <p className="py-10 text-center text-sm text-gray-400">
+                  لا يوجد مستخدمون مطابقون
+                </p>
+              ) : (
+                matchingUsers.map((user) => {
+                  const id = user.id ?? user._id;
+                  const name =
+                    user.fullName ?? user.name ?? user.username ?? "مستخدم";
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => createChat(user)}
+                      disabled={creatingId !== null}
+                      className="flex w-full items-center gap-3 rounded-xl p-3 text-right hover:bg-blue-50 disabled:opacity-60"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white font-bold text-white">
+                        {name.trim().charAt(0)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-slate-800">
+                          {name}
+                        </span>
+                        <span className="block truncate text-xs text-gray-400">
+                          {roleLabel[user.role] ?? user.role}
+                          {user.email ? ` · ${user.email}` : ""}
+                        </span>
+                      </span>
+                      {creatingId === id && (
+                        <span className="text-xs text-[#123C91]">
+                          جاري الإنشاء...
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

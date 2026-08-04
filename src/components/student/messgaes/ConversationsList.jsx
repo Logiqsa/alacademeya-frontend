@@ -24,13 +24,13 @@ export default function ConversationsList({
   const filtered = conversations.filter((c) => {
     const matchesFilter = activeFilter === "all" || c.category === activeFilter;
     const matchesSearch =
-      c.name.includes(searchQuery) || (c.teacherName ?? "").includes(searchQuery);
+      c.name.includes(searchQuery) ||
+      (c.teacherName ?? "").includes(searchQuery);
     return matchesFilter && matchesSearch;
   });
 
   return (
     <div className="flex w-full flex-col md:max-w-85 md:border-r md:border-gray-100">
-
       <div className="flex items-center justify-between p-4 pb-3">
         <h2 className="text-base font-bold text-slate-800">المحادثات</h2>
         <button
@@ -46,7 +46,10 @@ export default function ConversationsList({
 
       <div className="px-4 pb-3">
         <div className="relative">
-          <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={searchQuery}
@@ -76,7 +79,9 @@ export default function ConversationsList({
 
       <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-4">
         {filtered.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-gray-400">لا توجد محادثات مطابقة</p>
+          <p className="px-4 py-6 text-center text-sm text-gray-400">
+            لا توجد محادثات مطابقة
+          </p>
         ) : (
           filtered.map((c) => (
             <button
@@ -97,7 +102,9 @@ export default function ConversationsList({
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="truncate text-sm font-semibold text-slate-800">
                     {c.name}
-                    <span className="mr-1 font-normal text-gray-400">({c.role})</span>
+                    <span className="mr-1 font-normal text-gray-400">
+                      ({c.role})
+                    </span>
                   </span>
                   <span className="shrink-0 text-[11px] text-gray-400">
                     {c.lastMessageTime}
@@ -115,7 +122,7 @@ export default function ConversationsList({
                     {c.lastMessagePreview || "لا توجد رسائل بعد"}
                   </p>
                   {c.unreadCount > 0 && (
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-900 text-[11px] font-semibold text-white">
+                    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white shadow-sm">
                       {c.unreadCount}
                     </span>
                   )}

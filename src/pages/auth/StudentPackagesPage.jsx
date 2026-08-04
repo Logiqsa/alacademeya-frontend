@@ -96,11 +96,19 @@ const StudentPackagesPage = () => {
           return [subject.id, packages];
         });
         setPackagesBySubject(Object.fromEntries(entries));
+        const initialSelections = state?.initialSelections || {};
         setSelections(
           Object.fromEntries(
-            entries
-              .filter(([, packages]) => packages[0])
-              .map(([id, packages]) => [id, packages[0].id]),
+            entries.flatMap(([id, packages]) => {
+              if (!packages[0]) return [];
+              const requestedPackage = initialSelections[id];
+              const selectedPackage = packages.some(
+                (packageOption) => packageOption.id === requestedPackage,
+              )
+                ? requestedPackage
+                : packages[0].id;
+              return [[id, selectedPackage]];
+            }),
           ),
         );
       } catch (error) {

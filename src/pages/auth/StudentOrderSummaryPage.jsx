@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import {
+  cancelSubscriptionOrder,
   completeStudentProfile,
   createSubscriptionOrder,
   startSubscriptionOrderCheckout,
@@ -21,6 +22,7 @@ const StudentOrderSummaryPage = () => {
   const { state } = useLocation();
   const [loading, setLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [editingOrder, setEditingOrder] = useState(false);
   const [order, setOrder] = useState(state?.order || null);
   const items = useMemo(() => state?.orderItems || [], [state]);
 
@@ -96,6 +98,43 @@ const StudentOrderSummaryPage = () => {
         toast.error(error.response?.data?.message || "تعذر بدء عملية الدفع");
       }
       setCheckoutLoading(false);
+    }
+  };
+
+  const editOrder = async () => {
+    if (!order?.id || !["created", "pending"].includes(order.paymentStatus))
+      return;
+
+    setEditingOrder(true);
+    try {
+      await cancelSubscriptionOrder(order.id);
+      if (
+        localStorage.getItem("lastSubscriptionOrderId") === String(order.id)
+      ) {
+        localStorage.removeItem("lastSubscriptionOrderId");
+      }
+
+      const initialSelections = Object.fromEntries(
+        items.map((item) => [item.subject, item.package]),
+      );
+      const studentId = state?.studentId;
+      const packagesPath = state?.parentFlow
+        ? `/parent/students/${studentId}/subscription/packages`
+        : "/register/packages";
+
+      navigate(packagesPath, {
+        replace: true,
+        state: {
+          ...(state || {}),
+          order: null,
+          orderItems: undefined,
+          initialSelections,
+          currency: order.currency || state?.currency,
+        },
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر فتح الطلب للتعديل");
+      setEditingOrder(false);
     }
   };
 
@@ -185,17 +224,29 @@ const StudentOrderSummaryPage = () => {
           )}
 
           {order && (
-            <button
-              disabled={checkoutLoading}
-              onClick={checkout}
-              className="w-full h-12 mt-5 rounded-lg bg-[#123C91] text-white disabled:opacity-60"
-            >
-              {checkoutLoading
-                ? "جاري التحويل للدفع..."
-                : order.paymentStatus === "pending"
-                  ? "متابعة الدفع"
-                  : "الدفع الآن"}
-            </button>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <button
+                disabled={checkoutLoading || editingOrder}
+                onClick={checkout}
+                className="h-12 rounded-lg bg-[#123C91] text-white disabled:opacity-60"
+              >
+                {checkoutLoading
+                  ? "جاري التحويل للدفع..."
+                  : order.paymentStatus === "pending"
+                    ? "متابعة الدفع"
+                    : "الدفع الآن"}
+              </button>
+              {["created", "pending"].includes(order.paymentStatus) && (
+                <button
+                  type="button"
+                  disabled={editingOrder || checkoutLoading}
+                  onClick={editOrder}
+                  className="h-12 rounded-lg border border-[#123C91] bg-white font-semibold text-[#123C91] disabled:opacity-60"
+                >
+                  {editingOrder ? "جاري فتح التعديل..." : "تعديل الطلب"}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

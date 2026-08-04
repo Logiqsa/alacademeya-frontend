@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { getSocket } from "./socket";
-import { getChatRooms, getRoomMessages, sendMessageApi, startSupportRoom } from "./chatApi";
+import {
+  getChatRooms,
+  getRoomMessages,
+  sendMessageApi,
+  startSupportRoom,
+} from "./chatApi";
 
 const normalizeRoom = (room) => ({
   id: room.id ?? room._id,
@@ -38,6 +43,8 @@ const normalizeRoom = (room) => ({
   avatarInitial: (room.displayName ?? room.name ?? "?").trim().charAt(0),
   studentName: room.studentName ?? null,
   unreadCount: room.unreadCount ?? 0,
+  lastActivityAt:
+    room.lastMessageAt ?? room.updatedAt ?? room.createdAt ?? null,
   lastMessageTime: room.lastMessageAt
     ? new Date(room.lastMessageAt).toLocaleTimeString("ar-EG", {
         hour: "2-digit",
@@ -48,6 +55,13 @@ const normalizeRoom = (room) => ({
   lastMessagePreview: room.lastMessage ?? "",
   messages: [],
 });
+
+const sortByLatestActivity = (rooms) =>
+  [...rooms].sort(
+    (first, second) =>
+      new Date(second.lastActivityAt || 0).getTime() -
+      new Date(first.lastActivityAt || 0).getTime(),
+  );
 
 const normalizeMessage = (msg, currentUserId) => {
   const senderId = msg.sender?._id ?? msg.sender?.id ?? msg.sender;
@@ -64,7 +78,11 @@ const normalizeMessage = (msg, currentUserId) => {
         minute: "2-digit",
         hour12: true,
       })
-    : new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit", hour12: true });
+    : new Date().toLocaleTimeString("ar-EG", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
 
   return {
     id: msg._id ?? msg.id,
@@ -84,7 +102,9 @@ export function useChatRooms(currentUserId) {
 
   const fetchRooms = useCallback(async () => {
     const res = await getChatRooms();
-    return (res.data?.data ?? res.data?.rooms ?? res.data ?? []).map(normalizeRoom);
+    return sortByLatestActivity(
+      (res.data?.data ?? res.data?.rooms ?? res.data ?? []).map(normalizeRoom),
+    );
   }, []);
 
   useEffect(() => {
@@ -102,7 +122,9 @@ export function useChatRooms(currentUserId) {
         if (isMounted) setLoading(false);
       }
     })();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [fetchRooms]);
 
   useEffect(() => {
@@ -118,20 +140,23 @@ export function useChatRooms(currentUserId) {
       if (String(senderId) === String(currentUserId)) return;
 
       setConversations((prev) =>
-        prev.map((c) => {
-          if (c.id !== roomId) return c;
-          const exists = c.messages.some((m) => m.id === normalized.id);
-          if (exists) return c;
-          const alreadyOpen = c.id === currentRoomRef.current;
+        sortByLatestActivity(
+          prev.map((c) => {
+            if (String(c.id) !== String(roomId)) return c;
+            const exists = c.messages.some((m) => m.id === normalized.id);
+            if (exists) return c;
+            const alreadyOpen = String(c.id) === String(currentRoomRef.current);
 
-          return {
-            ...c,
-            messages: [...c.messages, normalized],
-            lastMessagePreview: normalized.text,
-            lastMessageTime: normalized.time,
-            unreadCount: alreadyOpen ? c.unreadCount : c.unreadCount + 1,
-          };
-        })
+            return {
+              ...c,
+              messages: [...c.messages, normalized],
+              lastMessagePreview: normalized.text,
+              lastMessageTime: normalized.time,
+              lastActivityAt: rawMsg.createdAt || new Date().toISOString(),
+              unreadCount: alreadyOpen ? 0 : c.unreadCount + 1,
+            };
+          }),
+        ),
       );
     };
 
@@ -139,37 +164,43 @@ export function useChatRooms(currentUserId) {
     return () => socket.off("newMessage", handleNewMessage);
   }, [currentUserId]);
 
-  const openConversation = useCallback(async (roomId) => {
-    setActiveId(roomId);
-    currentRoomRef.current = roomId;
+  const openConversation = useCallback(
+    async (roomId) => {
+      setActiveId(roomId);
+      currentRoomRef.current = roomId;
 
-    // لو roomId فاضي (null) يبقى المستخدم رجع للقائمة فقط — مفيش حاجة تانية مطلوبة
-    if (!roomId) return;
+      // لو roomId فاضي (null) يبقى المستخدم رجع للقائمة فقط — مفيش حاجة تانية مطلوبة
+      if (!roomId) return;
 
-    const socket = getSocket();
-    socket.emit("joinRoom", roomId);
+      const socket = getSocket();
+      socket.emit("joinRoom", roomId);
 
-    setConversations((prev) =>
-      prev.map((c) => (c.id === roomId ? { ...c, unreadCount: 0 } : c))
-    );
+      setConversations((prev) =>
+        prev.map((c) => (c.id === roomId ? { ...c, unreadCount: 0 } : c)),
+      );
 
-    setConversations((prev) => {
-      const room = prev.find((c) => c.id === roomId);
-      if (room && room.messages.length === 0) {
-        getRoomMessages(roomId)
-          .then((res) => {
-            const msgs = (
-              res.data?.data ?? res.data?.messages ?? res.data ?? []
-            ).map((m) => normalizeMessage(m, currentUserId));
-            setConversations((p) =>
-              p.map((c) => (c.id === roomId ? { ...c, messages: msgs } : c))
-            );
-          })
-          .catch((err) => console.error("فشل تحميل الرسائل:", err));
-      }
-      return prev;
-    });
-  }, [currentUserId]);
+      setConversations((prev) => {
+        const room = prev.find((c) => c.id === roomId);
+        if (room && room.messages.length === 0) {
+          getRoomMessages(roomId)
+            .then((res) => {
+              const msgs = (
+                res.data?.data ??
+                res.data?.messages ??
+                res.data ??
+                []
+              ).map((m) => normalizeMessage(m, currentUserId));
+              setConversations((p) =>
+                p.map((c) => (c.id === roomId ? { ...c, messages: msgs } : c)),
+              );
+            })
+            .catch((err) => console.error("فشل تحميل الرسائل:", err));
+        }
+        return prev;
+      });
+    },
+    [currentUserId],
+  );
 
   const leaveConversation = useCallback((roomId) => {
     if (!roomId) return;
@@ -197,16 +228,19 @@ export function useChatRooms(currentUserId) {
     };
 
     setConversations((prev) =>
-      prev.map((c) =>
-        c.id === roomId
-          ? {
-              ...c,
-              messages: [...c.messages, optimisticMessage],
-              lastMessagePreview: text,
-              lastMessageTime: now,
-            }
-          : c
-      )
+      sortByLatestActivity(
+        prev.map((c) =>
+          String(c.id) === String(roomId)
+            ? {
+                ...c,
+                messages: [...c.messages, optimisticMessage],
+                lastMessagePreview: text,
+                lastMessageTime: now,
+                lastActivityAt: new Date().toISOString(),
+              }
+            : c,
+        ),
+      ),
     );
 
     try {
@@ -231,11 +265,11 @@ export function useChatRooms(currentUserId) {
                   messages: c.messages.map((m) =>
                     m.id === tempId
                       ? { ...m, id: realId, time: realTime, status: "sent" }
-                      : m
+                      : m,
                   ),
                 }
-              : c
-          )
+              : c,
+          ),
         );
       }
     } catch (err) {
@@ -245,32 +279,41 @@ export function useChatRooms(currentUserId) {
         prev.map((c) =>
           c.id === roomId
             ? { ...c, messages: c.messages.filter((m) => m.id !== tempId) }
-            : c
-        )
+            : c,
+        ),
       );
     }
   }, []);
 
-  const startSupportConversation = useCallback(async (userId = currentUserId) => {
-    try {
-      // ✅ الباك إند مستني حقل "userId" (مش "participants") — راجع Postman collection
-      const res = await startSupportRoom({
-        userId,
-      });
-      const created = res.data?.data ?? res.data;
-      const newRoomId =
-        created?.id ?? created?._id ?? created?.room?.id ?? created?.room?._id;
+  const startSupportConversation = useCallback(
+    async (userId = currentUserId) => {
+      try {
+        // ✅ الباك إند مستني حقل "userId" (مش "participants") — راجع Postman collection
+        const res = await startSupportRoom({
+          userId,
+        });
+        const created = res.data?.data ?? res.data;
+        const newRoomId =
+          created?.id ??
+          created?._id ??
+          created?.room?.id ??
+          created?.room?._id;
 
-      const rooms = await fetchRooms();
-      setConversations(rooms);
+        const rooms = await fetchRooms();
+        setConversations(rooms);
 
-      if (newRoomId) await openConversation(newRoomId);
-      return newRoomId;
-    } catch (err) {
-      console.error("فشل بدء محادثة الدعم:", err.response?.data ?? err.message);
-      return null;
-    }
-  }, [fetchRooms, openConversation, currentUserId]);
+        if (newRoomId) await openConversation(newRoomId);
+        return newRoomId;
+      } catch (err) {
+        console.error(
+          "فشل بدء محادثة الدعم:",
+          err.response?.data ?? err.message,
+        );
+        return null;
+      }
+    },
+    [fetchRooms, openConversation, currentUserId],
+  );
 
   return {
     conversations,
