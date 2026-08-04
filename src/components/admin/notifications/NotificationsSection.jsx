@@ -21,7 +21,9 @@ import {
   markAllNotificationsRead,
   deleteNotification,
   getTeachers,
+  getAllStudents,
   getUsers,
+  updateStudentProfile,
   updateTeacherProfile,
   updateUser,
 } from "../../../services/APIService";
@@ -162,22 +164,28 @@ const notificationUserRole = (notification) => {
       if (["super-admin", "super_admin"].includes(normalized)) return "admin";
       if (["معلم", "teacher"].includes(normalized)) return "teacher";
       if (["طالب", "student"].includes(normalized)) return "student";
-      if (["ولي أمر", "ولي امر", "parent"].includes(normalized)) return "parent";
+      if (["ولي أمر", "ولي امر", "parent"].includes(normalized))
+        return "parent";
       if (["مشرف", "admin"].includes(normalized)) return "admin";
       return normalized;
     }
   }
 
-  const searchable = [
-    localizedText(notification.title),
-    descOf(notification),
-  ]
+  const searchable = [localizedText(notification.title), descOf(notification)]
     .join(" ")
     .toLowerCase();
-  if (searchable.includes("معلم") || searchable.includes("teacher")) return "teacher";
-  if (searchable.includes("طالب") || searchable.includes("student")) return "student";
-  if (searchable.includes("ولي أمر") || searchable.includes("ولي امر") || searchable.includes("parent")) return "parent";
-  if (searchable.includes("مشرف") || searchable.includes("admin")) return "admin";
+  if (searchable.includes("معلم") || searchable.includes("teacher"))
+    return "teacher";
+  if (searchable.includes("طالب") || searchable.includes("student"))
+    return "student";
+  if (
+    searchable.includes("ولي أمر") ||
+    searchable.includes("ولي امر") ||
+    searchable.includes("parent")
+  )
+    return "parent";
+  if (searchable.includes("مشرف") || searchable.includes("admin"))
+    return "admin";
   return "";
 };
 
@@ -208,8 +216,11 @@ const notificationUserName = (notification) => {
 
   const content = descOf(notification);
   return (
-    content.match(/(?:المستخدم|اسم المستخدم|انضم)\s*[:：-]?\s*(.+?)(?:\s+إلى|\s+للمنصة|$)/)?.[1]?.trim() ||
-    ""
+    content
+      .match(
+        /(?:المستخدم|اسم المستخدم|انضم)\s*[:：-]?\s*(.+?)(?:\s+إلى|\s+للمنصة|$)/,
+      )?.[1]
+      ?.trim() || ""
   );
 };
 
@@ -280,9 +291,7 @@ const isTeacherAbsenceNotification = (notification) => {
 const listLabel = (value) => {
   const list = Array.isArray(value) ? value : value ? [value] : [];
   const names = list
-    .map((item) =>
-      localizedText(item?.name ?? item),
-    )
+    .map((item) => localizedText(item?.name ?? item))
     .filter(Boolean);
   return [...new Set(names)].join("، ") || "—";
 };
@@ -421,15 +430,14 @@ const NotificationsSection = ({
       if (isNewUserNotification(notification)) {
         const response = await getUsers({ limit: 100 });
         const body = response.data ?? {};
-        const users = body.data || body.users || (Array.isArray(body) ? body : []);
+        const users =
+          body.data || body.users || (Array.isArray(body) ? body : []);
         const wantedId = notificationUserId(notification);
         const wantedName = notificationUserName(notification);
         const user = users.find(
           (item) =>
-            (wantedId &&
-              String(item.id || item._id) === String(wantedId)) ||
-            (wantedName &&
-              (item.fullName || item.name) === wantedName),
+            (wantedId && String(item.id || item._id) === String(wantedId)) ||
+            (wantedName && (item.fullName || item.name) === wantedName),
         );
 
         if (!user) {
@@ -438,8 +446,11 @@ const NotificationsSection = ({
         }
 
         let teacherProfile = null;
+        let studentProfile = null;
         if (user.role === "teacher") {
-          const teachersResponse = await getTeachers({ user: user.id || user._id });
+          const teachersResponse = await getTeachers({
+            user: user.id || user._id,
+          });
           const teachersBody =
             teachersResponse.data?.data ?? teachersResponse.data ?? [];
           const teacherProfiles = Array.isArray(teachersBody)
@@ -450,34 +461,52 @@ const NotificationsSection = ({
             teacherProfiles.find((profile) => {
               const profileUserId =
                 profile.user?.id || profile.user?._id || profile.user;
-              return (
-                profileUserId &&
-                String(profileUserId) === String(userId)
-              );
+              return profileUserId && String(profileUserId) === String(userId);
             }) || null;
         }
+        if (user.role === "student") {
+          const studentsResponse = await getAllStudents({
+            user: user.id || user._id,
+          });
+          const studentsBody =
+            studentsResponse.data?.data ?? studentsResponse.data ?? [];
+          const studentProfiles = Array.isArray(studentsBody)
+            ? studentsBody
+            : studentsBody.students || [];
+          studentProfile = studentProfiles[0] || null;
+        }
+
+        const registrationStatus = String(
+          user.registrationStatus || "",
+        ).toLowerCase();
 
         setTeacherDetails({
           userId: user.id || user._id,
           teacherId: teacherProfile?.id || teacherProfile?._id,
+          studentId: studentProfile?.id || studentProfile?._id,
           name: user.fullName || user.name,
           email: user.email,
           phone: user.phone,
           username: user.username,
-          role: {
-            teacher: "معلم",
-            student: "طالب",
-            parent: "ولي أمر",
-            admin: "مشرف",
-            "super-admin": "مشرف عام",
-          }[user.role] || user.role,
+          role:
+            {
+              teacher: "معلم",
+              student: "طالب",
+              parent: "ولي أمر",
+              admin: "مشرف",
+              "super-admin": "مشرف عام",
+            }[user.role] || user.role,
           status:
             teacherProfile?.status === "approved"
               ? "معتمد"
-              : user.isActive === false
-                ? "موقوف"
-                : teacherProfile?.status || "نشط",
+              : registrationStatus !== "active"
+                ? "معلق"
+                : user.isActive === false
+                  ? "موقوف"
+                  : teacherProfile?.status || "نشط",
           isApproved: teacherProfile?.status === "approved",
+          canApproveAccount:
+            registrationStatus !== "active" || user.isActive === false,
           experience:
             teacherProfile?.experienceYears ?? teacherProfile?.experience,
           subjects: listLabel(
@@ -493,54 +522,50 @@ const NotificationsSection = ({
         return;
       }
 
-        const response = await getTeachers({ limit: 100 });
-        const body = response.data?.data ?? response.data ?? [];
-        const teachers = Array.isArray(body) ? body : body.teachers || [];
-        const wantedId = notificationTeacherId(notification);
-        const wantedName = notificationTeacherName(notification);
-        const teacher = teachers.find((item) => {
-          const profileId = item.id || item._id;
-          const userId = item.user?.id || item.user?._id || item.user;
-          const fullName = item.user?.fullName || item.fullName || item.name;
-          return (
-            (wantedId &&
-              [profileId, userId].some(
-                (id) => id && String(id) === String(wantedId),
-              )) ||
-            (wantedName && fullName === wantedName)
-          );
-        });
+      const response = await getTeachers({ limit: 100 });
+      const body = response.data?.data ?? response.data ?? [];
+      const teachers = Array.isArray(body) ? body : body.teachers || [];
+      const wantedId = notificationTeacherId(notification);
+      const wantedName = notificationTeacherName(notification);
+      const teacher = teachers.find((item) => {
+        const profileId = item.id || item._id;
+        const userId = item.user?.id || item.user?._id || item.user;
+        const fullName = item.user?.fullName || item.fullName || item.name;
+        return (
+          (wantedId &&
+            [profileId, userId].some(
+              (id) => id && String(id) === String(wantedId),
+            )) ||
+          (wantedName && fullName === wantedName)
+        );
+      });
 
-        if (!teacher) {
-          toast.error("تعذر العثور على بيانات المعلم المرتبط بالإشعار");
-          return;
-        }
+      if (!teacher) {
+        toast.error("تعذر العثور على بيانات المعلم المرتبط بالإشعار");
+        return;
+      }
 
-        setTeacherDetails({
-          teacherId: teacher.id || teacher._id,
-          userId:
-            teacher.user?.id ||
-            teacher.user?._id ||
-            (typeof teacher.user === "string" ? teacher.user : null) ||
-            teacher.userId,
-          name: teacher.user?.fullName || teacher.fullName || teacher.name,
-          email: teacher.user?.email || teacher.email,
-          phone: teacher.user?.phone || teacher.phone,
-          username: teacher.user?.username || teacher.username,
-          status:
-            teacher.status === "approved" ? "معتمد" : teacher.status,
-          isApproved: teacher.status === "approved",
-          experience:
-            teacher.experienceYears ?? teacher.experience,
-          subjects: listLabel(teacher.subjects ?? teacher.subject),
-          grades: listLabel(teacher.grades ?? teacher.grade),
-          curricula: listLabel(
-            teacher.curriculums ?? teacher.curriculum,
-          ),
-          cvUrl: getTeacherCvUrl(teacher),
-          role: "معلم",
-          isTeacher: true,
-        });
+      setTeacherDetails({
+        teacherId: teacher.id || teacher._id,
+        userId:
+          teacher.user?.id ||
+          teacher.user?._id ||
+          (typeof teacher.user === "string" ? teacher.user : null) ||
+          teacher.userId,
+        name: teacher.user?.fullName || teacher.fullName || teacher.name,
+        email: teacher.user?.email || teacher.email,
+        phone: teacher.user?.phone || teacher.phone,
+        username: teacher.user?.username || teacher.username,
+        status: teacher.status === "approved" ? "معتمد" : teacher.status,
+        isApproved: teacher.status === "approved",
+        experience: teacher.experienceYears ?? teacher.experience,
+        subjects: listLabel(teacher.subjects ?? teacher.subject),
+        grades: listLabel(teacher.grades ?? teacher.grade),
+        curricula: listLabel(teacher.curriculums ?? teacher.curriculum),
+        cvUrl: getTeacherCvUrl(teacher),
+        role: "معلم",
+        isTeacher: true,
+      });
     } catch (err) {
       toast.error(err.response?.data?.message || "تعذر تحميل تفاصيل المعلم");
     } finally {
@@ -549,34 +574,39 @@ const NotificationsSection = ({
   };
 
   const handleApproveTeacher = async () => {
-    if (
-      !teacherDetails?.isTeacher ||
-      !teacherDetails.teacherId ||
-      teacherDetails.isApproved
-    ) {
-      return;
-    }
+    if (!teacherDetails?.userId) return;
+    const needsTeacherApproval =
+      teacherDetails.isTeacher &&
+      teacherDetails.teacherId &&
+      !teacherDetails.isApproved;
+    if (!teacherDetails.canApproveAccount && !needsTeacherApproval) return;
 
     setApprovingTeacher(true);
     try {
-      await updateTeacherProfile(teacherDetails.teacherId, {
-        status: "approved",
-      });
-      if (teacherDetails.userId) {
-        await updateUser(teacherDetails.userId, {
-          status: "active",
-          registrationStatus: "active",
-          isActive: true,
+      if (needsTeacherApproval) {
+        await updateTeacherProfile(teacherDetails.teacherId, {
+          status: "approved",
         });
       }
+      if (teacherDetails.studentId) {
+        await updateStudentProfile(teacherDetails.studentId, {
+          status: "approved",
+        });
+      }
+      await updateUser(teacherDetails.userId, {
+        ...(teacherDetails.isTeacher ? { status: "active" } : {}),
+        registrationStatus: "active",
+        isActive: true,
+      });
       setTeacherDetails((current) => ({
         ...current,
-        status: "معتمد",
+        status: current.isTeacher ? "معتمد" : "نشط",
         isApproved: true,
+        canApproveAccount: false,
       }));
-      toast.success("تم اعتماد المعلم وتفعيل حسابه");
+      toast.success("تم قبول الطلب وتفعيل الحساب");
     } catch (err) {
-      toast.error(err.response?.data?.message || "تعذر اعتماد المعلم");
+      toast.error(err.response?.data?.message || "تعذر تفعيل الحساب");
     } finally {
       setApprovingTeacher(false);
     }
@@ -605,9 +635,7 @@ const NotificationsSection = ({
       } else {
         await deleteNotification(id);
       }
-      onChange?.(
-        notifications.filter((n) => (n._id || n.id) !== id),
-      );
+      onChange?.(notifications.filter((n) => (n._id || n.id) !== id));
       toast.success("تم حذف الإشعار");
     } catch (err) {
       toast.error(err.response?.data?.message || "تعذر حذف الإشعار");
@@ -632,27 +660,38 @@ const NotificationsSection = ({
           <h2 className="text-[16px] font-medium text-[#1F2937]">
             {compact ? "الإشعارات الأخيرة" : "جميع الإشعارات"}
           </h2>
-          {!compact && <p className="text-[14px] sm:text-[16px] text-[#6B7280]">تصفية وإدارة الإشعارات حسب النوع</p>}
+          {!compact && (
+            <p className="text-[14px] sm:text-[16px] text-[#6B7280]">
+              تصفية وإدارة الإشعارات حسب النوع
+            </p>
+          )}
         </div>
 
         {compact ? (
-          <button type="button" onClick={() => navigate("/admin/notifications")} className="shrink-0 text-[14px] font-medium text-[#123C91] hover:underline">
+          <button
+            type="button"
+            onClick={() => navigate("/admin/notifications")}
+            className="shrink-0 text-[14px] font-medium text-[#123C91] hover:underline"
+          >
             عرض الكل
           </button>
-        ) : notifications.some((n) => !n.isRead) && (
-          <button
-            onClick={handleMarkAllRead}
-            disabled={markingAll}
-            className="shrink-0 flex items-center gap-1.5 text-[13px] text-[#123C91] hover:underline disabled:opacity-60"
-          >
-            {markingAll && <Loader2 size={14} className="animate-spin" />}
-            تحديد الكل كمقروء
-          </button>
+        ) : (
+          notifications.some((n) => !n.isRead) && (
+            <button
+              onClick={handleMarkAllRead}
+              disabled={markingAll}
+              className="shrink-0 flex items-center gap-1.5 text-[13px] text-[#123C91] hover:underline disabled:opacity-60"
+            >
+              {markingAll && <Loader2 size={14} className="animate-spin" />}
+              تحديد الكل كمقروء
+            </button>
+          )
         )}
       </div>
 
-      {!compact && <div
-        className="
+      {!compact && (
+        <div
+          className="
           w-full
           bg-[#EAF4FF]
           rounded-full
@@ -664,12 +703,12 @@ const NotificationsSection = ({
           sm:grid-cols-5
           gap-1
         "
-      >
-        {tabs.map(({ icon: Icon, key, label }) => (
-          <button
-            key={key}
-            onClick={() => setActiveTab(key)}
-            className={`
+        >
+          {tabs.map(({ icon: Icon, key, label }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`
               flex
               items-center
               justify-center
@@ -687,12 +726,13 @@ const NotificationsSection = ({
                   : "text-[#1F2937]"
               }
             `}
-          >
-            <Icon size={15} />
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>}
+            >
+              <Icon size={15} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {!compact && activeTab === "joined" && (
         <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-gray-100 bg-[#F9FAFA] p-3">
@@ -742,7 +782,8 @@ const NotificationsSection = ({
                 isRead={n.isRead}
                 onToggleRead={() => toggleRead(n)}
                 onOpen={
-                  isUserDetailsNotification(n) || getNotificationTarget(n, "admin")
+                  isUserDetailsNotification(n) ||
+                  getNotificationTarget(n, "admin")
                     ? () => handleOpen(n)
                     : undefined
                 }
@@ -815,15 +856,24 @@ const NotificationsSection = ({
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <DetailItem label="رقم الهاتف" value={teacherDetails.phone} />
-              <DetailItem label="اسم المستخدم" value={teacherDetails.username} />
+              <DetailItem
+                label="اسم المستخدم"
+                value={teacherDetails.username}
+              />
               <DetailItem label="نوع الحساب" value={teacherDetails.role} />
               <DetailItem label="حالة الحساب" value={teacherDetails.status} />
               {teacherDetails.isTeacher && (
                 <>
-                  <DetailItem label="سنوات الخبرة" value={teacherDetails.experience} />
+                  <DetailItem
+                    label="سنوات الخبرة"
+                    value={teacherDetails.experience}
+                  />
                   <DetailItem label="المواد" value={teacherDetails.subjects} />
                   <DetailItem label="الصفوف" value={teacherDetails.grades} />
-                  <DetailItem label="المناهج" value={teacherDetails.curricula} />
+                  <DetailItem
+                    label="المناهج"
+                    value={teacherDetails.curricula}
+                  />
                 </>
               )}
             </div>
@@ -851,38 +901,48 @@ const NotificationsSection = ({
               </a>
             )}
 
-            <div className={`mt-5 grid grid-cols-1 gap-3 ${
-              teacherDetails.isTeacher &&
-              !teacherDetails.isApproved &&
-              teacherDetails.teacherId
-                ? "sm:grid-cols-3"
-                : "sm:grid-cols-2"
-            }`}>
-              {teacherDetails.isTeacher &&
+            <div
+              className={`mt-5 grid grid-cols-1 gap-3 ${
+                teacherDetails.isTeacher &&
                 !teacherDetails.isApproved &&
-                teacherDetails.teacherId && (
-                  <button
-                    type="button"
-                    disabled={approvingTeacher}
-                    onClick={handleApproveTeacher}
-                    className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {approvingTeacher ? (
-                      <Loader2 size={18} className="animate-spin" />
-                    ) : (
-                      <CheckCircle2 size={18} />
-                    )}
-                    اعتماد المعلم
-                  </button>
-                )}
+                teacherDetails.teacherId
+                  ? "sm:grid-cols-3"
+                  : teacherDetails.canApproveAccount
+                    ? "sm:grid-cols-3"
+                    : "sm:grid-cols-2"
+              }`}
+            >
+              {(teacherDetails.canApproveAccount ||
+                (teacherDetails.isTeacher &&
+                  !teacherDetails.isApproved &&
+                  teacherDetails.teacherId)) && (
+                <button
+                  type="button"
+                  disabled={approvingTeacher}
+                  onClick={handleApproveTeacher}
+                  className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {approvingTeacher ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={18} />
+                  )}
+                  {teacherDetails.isTeacher
+                    ? "اعتماد المعلم وتفعيل الحساب"
+                    : "قبول الطلب وتفعيل الحساب"}
+                </button>
+              )}
               <a
                 href={whatsappUrl(teacherDetails.phone) || undefined}
-                target={whatsappUrl(teacherDetails.phone) ? "_blank" : undefined}
+                target={
+                  whatsappUrl(teacherDetails.phone) ? "_blank" : undefined
+                }
                 rel="noopener noreferrer"
                 aria-disabled={!whatsappUrl(teacherDetails.phone)}
                 onClick={(event) => {
                   event.stopPropagation();
-                  if (!whatsappUrl(teacherDetails.phone)) event.preventDefault();
+                  if (!whatsappUrl(teacherDetails.phone))
+                    event.preventDefault();
                 }}
                 className={`flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold !text-white ${
                   whatsappUrl(teacherDetails.phone)

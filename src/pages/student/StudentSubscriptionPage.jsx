@@ -7,7 +7,7 @@ import SubscriptionFilters from "../../components/parent/subscription/Subscripti
 import SubscriptionTable from "../../components/parent/subscription/SubscriptionTable";
 import SubscriptionOrdersPanel from "../../components/subscription/SubscriptionOrdersPanel";
 import { AuthContext } from "../../context/AuthContext";
-import { getMySubscriptions } from "../../services/APIService";
+import { getMyProfile, getMySubscriptions } from "../../services/APIService";
 
 const STATUS_LABELS = {
   active: "نشطة",
@@ -27,9 +27,7 @@ const localizedName = (value) => {
 const formatDate = (value) => {
   if (!value) return "--";
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "--"
-    : date.toLocaleDateString("en-GB");
+  return Number.isNaN(date.getTime()) ? "--" : date.toLocaleDateString("en-GB");
 };
 
 const numberOrNull = (value) => {
@@ -46,15 +44,12 @@ const extractSubscriptions = (response) => {
 
 const subscriptionRows = (subscription, studentName) => {
   const subscriptionId = subscription.id || subscription._id;
-  const items =
-    subscription.items || subscription.subjectSubscriptions || [];
+  const items = subscription.items || subscription.subjectSubscriptions || [];
   const groupSize = Math.max(items.length, 1);
   const startDate = formatDate(
     subscription.startDate || subscription.createdAt,
   );
-  const endDate = formatDate(
-    subscription.endDate || subscription.expiresAt,
-  );
+  const endDate = formatDate(subscription.endDate || subscription.expiresAt);
 
   const mapItem = (item, index) => {
     const subjectId =
@@ -62,9 +57,7 @@ const subscriptionRows = (subscription, studentName) => {
         ? item.subject
         : item.subject?.id || item.subject?._id;
     const subjectName = localizedName(item.subject?.name || item.subject);
-    const total = numberOrNull(
-      item.totalSessions ?? item.package?.sessions,
-    );
+    const total = numberOrNull(item.totalSessions ?? item.package?.sessions);
     const explicitUsed = numberOrNull(
       item.usedSessions ?? item.consumedSessions,
     );
@@ -87,8 +80,7 @@ const subscriptionRows = (subscription, studentName) => {
       stage: "",
       subjectId,
       subjectName,
-      teacherName:
-        item.teacher?.user?.fullName || item.teacher?.fullName || "",
+      teacherName: item.teacher?.user?.fullName || item.teacher?.fullName || "",
       packageName: localizedName(item.package?.name || item.package),
       totalHours: total != null ? `${total} حصة` : "--",
       consumed: used != null ? `${used} حصة` : "--",
@@ -129,6 +121,7 @@ const StudentSubscriptionPage = () => {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [openingAddSubject, setOpeningAddSubject] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -155,31 +148,28 @@ const StudentSubscriptionPage = () => {
     };
   }, []);
 
-  const rows = useMemo(
-    () => {
-      const allRows = subscriptions.flatMap((subscription) =>
-        subscriptionRows(
-          subscription,
-          subscription.student?.user?.fullName ||
-            subscription.student?.fullName ||
-            user?.fullName ||
-            "الطالب",
-        ),
-      );
-      const activeSubjects = new Set(
-        allRows
-          .filter((row) => row.rawStatus === "active")
-          .map((row) => String(row.subjectId || row.subjectName)),
-      );
+  const rows = useMemo(() => {
+    const allRows = subscriptions.flatMap((subscription) =>
+      subscriptionRows(
+        subscription,
+        subscription.student?.user?.fullName ||
+          subscription.student?.fullName ||
+          user?.fullName ||
+          "الطالب",
+      ),
+    );
+    const activeSubjects = new Set(
+      allRows
+        .filter((row) => row.rawStatus === "active")
+        .map((row) => String(row.subjectId || row.subjectName)),
+    );
 
-      return allRows.filter(
-        (row) =>
-          !["ended", "expired", "completed"].includes(row.rawStatus) ||
-          !activeSubjects.has(String(row.subjectId || row.subjectName)),
-      );
-    },
-    [subscriptions, user?.fullName],
-  );
+    return allRows.filter(
+      (row) =>
+        !["ended", "expired", "completed"].includes(row.rawStatus) ||
+        !activeSubjects.has(String(row.subjectId || row.subjectName)),
+    );
+  }, [subscriptions, user?.fullName]);
 
   const statusOptions = [...new Set(rows.map((row) => row.status))];
   const matchingRows = rows.filter((row) => {
@@ -213,11 +203,34 @@ const StudentSubscriptionPage = () => {
   const activeSourceSubscription = rows.find(
     (row) => row.rawStatus === "active" && row.groupId,
   );
-  const addSubject = () => {
-    if (!activeSourceSubscription?.groupId) return;
-    navigate(
-      `/student/subscriptions/${activeSourceSubscription.groupId}/add-subject`,
-    );
+  const addSubject = async () => {
+    if (activeSourceSubscription?.groupId) {
+      navigate(
+        `/student/subscriptions/${activeSourceSubscription.groupId}/add-subject`,
+      );
+      return;
+    }
+
+    setOpeningAddSubject(true);
+    try {
+      const response = await getMyProfile();
+      const profile = response.data?.data ?? response.data;
+      const studentId = profile?.id || profile?._id;
+      if (!studentId) throw new Error("STUDENT_PROFILE_ID_MISSING");
+      navigate("/register/packages", {
+        state: {
+          studentId,
+          skipProfileCreation: true,
+          selectedSubjects: [],
+        },
+      });
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "تعذر فتح المواد المتاحة للاشتراك",
+      );
+      setOpeningAddSubject(false);
+    }
   };
 
   return (
@@ -235,14 +248,19 @@ const StudentSubscriptionPage = () => {
               تابع وجدّد باقتك لكل مادة بشكل مستقل من حسابك مباشرة.
             </p>
           </div>
-          {activeSourceSubscription && (
+          {!loading && !error && (
             <button
               type="button"
               onClick={addSubject}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#123C91] px-5 text-sm font-semibold text-white"
+              disabled={openingAddSubject}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#123C91] px-5 text-sm font-semibold !text-white disabled:opacity-60"
             >
-              <Plus size={17} />
-              إضافة مادة
+              {openingAddSubject ? (
+                <Loader2 size={17} className="animate-spin" />
+              ) : (
+                <Plus size={17} />
+              )}
+              {openingAddSubject ? "جارٍ فتح المواد..." : "إضافة مادة"}
             </button>
           )}
         </header>

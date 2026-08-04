@@ -1,5 +1,15 @@
-import { FileText, GraduationCap, UserRound, X } from "lucide-react";
+import { useState } from "react";
+import {
+  CheckCircle2,
+  FileText,
+  GraduationCap,
+  Loader2,
+  UserRound,
+  X,
+} from "lucide-react";
+import toast from "react-hot-toast";
 import { getTeacherCvUrl } from "../../../utils/teacherCv";
+import { updateStudentProfile, updateUser } from "../../../services/APIService";
 
 const text = (value) => {
   if (!value) return "—";
@@ -27,6 +37,8 @@ const Detail = ({ label, value }) => (
 );
 
 const EntityProfileModal = ({ entity, role = "student", onClose }) => {
+  const [approving, setApproving] = useState(false);
+  const [approvedUserId, setApprovedUserId] = useState("");
   if (!entity) return null;
   const user =
     entity.user && typeof entity.user === "object" ? entity.user : entity;
@@ -34,6 +46,43 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   const name =
     user.fullName || entity.fullName || text(user.name || entity.name);
   const cvUrl = isTeacher ? getTeacherCvUrl(entity) : "";
+  const currentUserId = user.id || user._id;
+  const registrationStatus = String(
+    user.registrationStatus || user.registration_status || "",
+  ).toLowerCase();
+  const canApprove =
+    !isTeacher &&
+    String(approvedUserId) !== String(currentUserId) &&
+    (user.isActive === false ||
+      [
+        "pending",
+        "pending-review",
+        "pending-approval",
+        "under-review",
+      ].includes(registrationStatus.replaceAll("_", "-")));
+
+  const approveStudent = async () => {
+    if (!window.confirm("هل تريد قبول طلب الطالب وتفعيل حسابه؟")) return;
+    const userId = user.id || user._id;
+    const profileId = entity.id || entity._id;
+    if (!userId) return toast.error("معرّف المستخدم غير متاح");
+    setApproving(true);
+    try {
+      if (profileId && entity.user) {
+        await updateStudentProfile(profileId, { status: "approved" });
+      }
+      await updateUser(userId, {
+        registrationStatus: "active",
+        isActive: true,
+      });
+      setApprovedUserId(userId);
+      toast.success("تم قبول طلب الطالب وتفعيل الحساب");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر تفعيل حساب الطالب");
+    } finally {
+      setApproving(false);
+    }
+  };
 
   return (
     <div
@@ -64,6 +113,21 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
             {user.email || "—"}
           </p>
         </div>
+        {canApprove && (
+          <button
+            type="button"
+            onClick={approveStudent}
+            disabled={approving}
+            className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold !text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {approving ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <CheckCircle2 size={18} />
+            )}
+            {approving ? "جارٍ تفعيل الحساب..." : "قبول الطلب وتفعيل الحساب"}
+          </button>
+        )}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Detail label="رقم الهاتف" value={user.phone} />
           <Detail label="اسم المستخدم" value={user.username} />
