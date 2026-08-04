@@ -131,7 +131,22 @@ export const updateStudent = (studentId, payload) =>
 
 // ─── User Profile ─────────────────────────────────────────────────────────────
 export const getMyProfile = () => API.get("/users/me");
-export const updateMyProfile = (payload) => API.patch("/users/me", payload);
+export const updateMyProfile = (payload = {}) => {
+  // Account and approval state is controlled by the backend/admin only. Some
+  // profile responses contain these fields, so never echo them back when a
+  // caller builds an update payload from an existing profile object.
+  const editablePayload = { ...payload };
+  [
+    "status",
+    "registrationStatus",
+    "registration_status",
+    "isActive",
+    "isVerified",
+    "profileStatus",
+  ].forEach((field) => delete editablePayload[field]);
+
+  return API.patch("/users/me", editablePayload);
+};
 export const getUserTimezones = () => API.get("/users/timezones");
 export const updateMyTimezone = (payload) =>
   API.patch("/users/me/timezone", payload);
