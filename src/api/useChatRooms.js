@@ -114,6 +114,8 @@ export function useChatRooms(currentUserId) {
         const rooms = await fetchRooms();
         if (isMounted) {
           setConversations(rooms);
+          const socket = getSocket();
+          rooms.forEach((room) => socket.emit("joinRoom", room.id));
           // لا نحدد أي محادثة تلقائيًا — تفضل فاضية لحد ما المستخدم يضغط (زي واتساب)
         }
       } catch (err) {
@@ -204,8 +206,8 @@ export function useChatRooms(currentUserId) {
 
   const leaveConversation = useCallback((roomId) => {
     if (!roomId) return;
-    const socket = getSocket();
-    socket.emit("leaveRoom", roomId);
+    // Keep listening to this room so the rooms list continues to receive
+    // unread messages after the user returns from the open chat.
     if (currentRoomRef.current === roomId) currentRoomRef.current = null;
   }, []);
 
@@ -301,6 +303,8 @@ export function useChatRooms(currentUserId) {
 
         const rooms = await fetchRooms();
         setConversations(rooms);
+        const socket = getSocket();
+        rooms.forEach((room) => socket.emit("joinRoom", room.id));
 
         if (newRoomId) await openConversation(newRoomId);
         return newRoomId;

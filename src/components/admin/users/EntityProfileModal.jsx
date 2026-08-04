@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CheckCircle2,
   FileText,
@@ -11,6 +11,11 @@ import toast from "react-hot-toast";
 import { getTeacherCvUrl } from "../../../utils/teacherCv";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import { UserDetailsModal } from "./Userstable";
+import {
+  getAllSubscriptions,
+  getClassroomStudents,
+  getClassrooms,
+} from "../../../services/APIService";
 
 const text = (value) => {
   if (!value) return "—";
@@ -28,6 +33,24 @@ const languageLabel = (value) =>
   ({ ar: "العربية", en: "الإنجليزية" })[String(value || "").toLowerCase()] ||
   value ||
   "—";
+const extractList = (response, keys = []) => {
+  const payload = response?.data?.data ?? response?.data ?? [];
+  if (Array.isArray(payload)) return payload;
+  for (const key of keys) {
+    if (Array.isArray(payload?.[key])) return payload[key];
+  }
+  return [];
+};
+const classroomGroup = (classroom) => {
+  if (!classroom || typeof classroom !== "object") return null;
+  const id = classroom.id || classroom._id;
+  if (!id) return null;
+  return {
+    id,
+    name: text(classroom.name),
+    status: classroom.status,
+  };
+};
 const Detail = ({ label, value }) => (
   <div className="rounded-xl bg-[#F9FAFA] px-4 py-3">
     <p className="text-xs text-[#8C9198]">{label}</p>
@@ -40,10 +63,126 @@ const Detail = ({ label, value }) => (
 const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   const [approving, setApproving] = useState(false);
   const [approvedUserId, setApprovedUserId] = useState("");
+  const [studentGroups, setStudentGroups] = useState([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const isTeacher = role === "teacher";
+  const studentProfileId = entity?.id || entity?._id;
+
+  useEffect(() => {
+    if (!entity || isTeacher || !studentProfileId) return undefined;
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setGroupsLoading(true);
+      setStudentGroups([]);
+      Promise.allSettled([
+        getAllSubscriptions({ student: studentProfileId, limit: 1000 }),
+        getClassrooms({ student: studentProfileId, limit: 1000 }),
+      ])
+        .then(async ([subscriptionsResult, classroomsResult]) => {
+          if (!active) return;
+
+          const subscriptions =
+            subscriptionsResult.status === "fulfilled"
+              ? extractList(subscriptionsResult.value, [
+                  "subscriptions",
+                  "results",
+                  "items",
+                ])
+              : [];
+          const subscribedClassrooms = subscriptions.flatMap((subscription) =>
+            (subscription.items || [])
+              .map((item) => classroomGroup(item.classroom))
+              .filter(Boolean),
+          );
+          const filteredClassrooms =
+            classroomsResult.status === "fulfilled"
+              ? extractList(classroomsResult.value, [
+                  "classrooms",
+                  "results",
+                  "items",
+                ])
+                  .map(classroomGroup)
+                  .filter(Boolean)
+              : [];
+          let groups = [...subscribedClassrooms, ...filteredClassrooms];
+
+          if (groups.length === 0) {
+            const identityIds = new Set(
+              [
+                studentProfileId,
+                entity?.user?.id,
+                entity?.user?._id,
+                entity?.user,
+              ]
+                .filter(
+                  (id) => typeof id === "string" || typeof id === "number",
+                )
+                .map(String),
+            );
+            const allClassroomsResponse = await getClassrooms({ limit: 1000 });
+            const allClassrooms = extractList(allClassroomsResponse, [
+              "classrooms",
+              "results",
+              "items",
+            ]);
+            const membershipResults = await Promise.allSettled(
+              allClassrooms.map(async (classroom) => {
+                const classroomId = classroom.id || classroom._id;
+                if (!classroomId) return null;
+                const membersResponse = await getClassroomStudents(
+                  classroomId,
+                  {
+                    limit: 1000,
+                  },
+                );
+                const members = extractList(membersResponse, [
+                  "students",
+                  "results",
+                  "items",
+                ]);
+                const hasStudent = members.some((member) =>
+                  [
+                    member?.id,
+                    member?._id,
+                    member?.student?.id,
+                    member?.student?._id,
+                    member?.user?.id,
+                    member?.user?._id,
+                    member?.user,
+                  ]
+                    .filter(Boolean)
+                    .map(String)
+                    .some((id) => identityIds.has(id)),
+                );
+                return hasStudent ? classroomGroup(classroom) : null;
+              }),
+            );
+            groups = membershipResults
+              .filter((result) => result.status === "fulfilled")
+              .map((result) => result.value)
+              .filter(Boolean);
+          }
+
+          setStudentGroups([
+            ...new Map(
+              groups.map((group) => [String(group.id), group]),
+            ).values(),
+          ]);
+        })
+        .catch(() => active && setStudentGroups([]))
+        .finally(() => active && setGroupsLoading(false));
+    }, 0);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [entity, isTeacher, studentProfileId]);
+
   if (!entity) return null;
   const user =
     entity.user && typeof entity.user === "object" ? entity.user : entity;
-  const isTeacher = role === "teacher";
   const name =
     user.fullName || entity.fullName || text(user.name || entity.name);
   const cvUrl = isTeacher ? getTeacherCvUrl(entity) : "";
@@ -107,6 +246,8 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           stage: text(entity.stage ?? entity.academicLevel),
           grade: text(entity.grade),
           package: text(entity.package),
+          groups: studentGroups,
+          groupsLoading,
         }}
         onApprove={canApprove && !approving ? approveStudent : undefined}
       />

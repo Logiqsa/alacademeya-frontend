@@ -19,6 +19,12 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { getArabicCountryName } from "../../../utils/countryName";
+import {
+  getAllStudents,
+  getAllSubscriptions,
+  getClassroomStudents,
+  getClassrooms,
+} from "../../../services/APIService";
 const getCurrentMonth = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -53,6 +59,43 @@ const listNames = (value) => {
     .map((item) => localizedName(item?.name ?? item))
     .filter(Boolean);
   return [...new Set(names)].join("، ") || "--";
+};
+
+const extractApiList = (response, keys = []) => {
+  let value = response?.data ?? response;
+  for (let depth = 0; depth < 4 && value && !Array.isArray(value); depth += 1) {
+    const knownList = keys.map((key) => value?.[key]).find(Array.isArray);
+    if (knownList) return knownList;
+    value = value?.data;
+  }
+  return Array.isArray(value) ? value : [];
+};
+
+const entityId = (value) =>
+  typeof value === "string" ? value : value?.id || value?._id || "";
+
+const studentIds = (student) =>
+  new Set(
+    [
+      entityId(student),
+      entityId(student?.student),
+      entityId(student?.studentProfile),
+      entityId(student?.user),
+      student?.studentId,
+    ]
+      .filter(Boolean)
+      .map(String),
+  );
+
+const classroomSummary = (classroom) => {
+  if (!classroom || typeof classroom !== "object") return null;
+  const id = entityId(classroom);
+  if (!id) return null;
+  return {
+    id,
+    name: localizedName(classroom.name) || "مجموعة بدون اسم",
+    status: classroom.status,
+  };
 };
 
 const fileUrl = (value) => {
@@ -177,6 +220,8 @@ export const UserDetailsModal = ({
   onToggleStatus,
   onDelete,
 }) => {
+  const navigate = useNavigate();
+
   if (!open || !user) return null;
 
   const isTeacher = user.role === "معلم";
@@ -193,7 +238,7 @@ export const UserDetailsModal = ({
     >
       <div
         className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-xl ${
-          isTeacher ? "max-w-4xl sm:p-7" : "max-w-sm"
+          isTeacher ? "max-w-4xl sm:p-7" : "max-w-2xl sm:p-7"
         }`}
         dir="rtl"
       >
@@ -313,6 +358,42 @@ export const UserDetailsModal = ({
         {isStudent && (
           <div className="grid grid-cols-2 gap-2 mb-2">
             <DetailRow label="الصف" value={user.grade || "—"} />
+          </div>
+        )}
+
+        {isStudent && (user.groupsLoading || Array.isArray(user.groups)) && (
+          <div className="mb-3 rounded-xl border border-[#E5E7EB] bg-[#F9FAFA] p-4">
+            <p className="mb-3 text-sm font-semibold text-[#1F2937]">
+              مجموعات الطالب
+            </p>
+            {user.groupsLoading ? (
+              <p className="text-sm text-[#8C9198]">جاري تحميل المجموعات...</p>
+            ) : user.groups?.length ? (
+              <div className="flex flex-wrap gap-2">
+                {user.groups.map((group) => (
+                  <button
+                    type="button"
+                    key={group.id}
+                    onClick={() => {
+                      onClose?.();
+                      navigate(`/admin/groups/${group.id}/lessons`);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#123C91] transition-colors hover:border-[#123C91] hover:bg-blue-100"
+                  >
+                    {group.name}
+                    {group.status && (
+                      <small className="font-medium text-[#6B7280]">
+                        ({group.status})
+                      </small>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[#8C9198]">
+                الطالب غير مضاف إلى أي مجموعة حاليًا.
+              </p>
+            )}
           </div>
         )}
 
@@ -736,8 +817,128 @@ const UsersTable = ({
   };
 
   const handleView = async (user) => {
-    setDetailsUser(user);
+    setDetailsUser(
+      user.role === "طالب"
+        ? { ...user, groups: [], groupsLoading: true }
+        : user,
+    );
     setReportError("");
+
+    if (user.role === "طالب") {
+      try {
+        const studentsResponse = await getAllStudents({
+          user: user.id,
+          page: 1,
+          limit: 100,
+        });
+        const students = extractApiList(studentsResponse, [
+          "students",
+          "results",
+          "items",
+        ]);
+        const studentProfile =
+          students.find((student) =>
+            studentIds(student).has(String(user.id)),
+          ) || students[0];
+        const profileId = entityId(studentProfile) || user.studentId || user.id;
+        const identities = studentIds(studentProfile);
+        identities.add(String(user.id));
+        identities.add(String(profileId));
+
+        const [subscriptionsResult, classroomsResult] =
+          await Promise.allSettled([
+            getAllSubscriptions({ student: profileId, page: 1, limit: 1000 }),
+            getClassrooms({ student: profileId, page: 1, limit: 1000 }),
+          ]);
+        const subscriptions =
+          subscriptionsResult.status === "fulfilled"
+            ? extractApiList(subscriptionsResult.value, [
+                "subscriptions",
+                "results",
+                "items",
+              ])
+            : [];
+        const matchingSubscriptions = subscriptions.filter((subscription) => {
+          const subscriptionIds = studentIds(subscription.student);
+          return (
+            subscriptionIds.size === 0 ||
+            [...subscriptionIds].some((id) => identities.has(id))
+          );
+        });
+        const subscriptionGroups = matchingSubscriptions.flatMap(
+          (subscription) =>
+            (subscription.items || [])
+              .map((item) => classroomSummary(item.classroom))
+              .filter(Boolean),
+        );
+        const classroomGroups =
+          classroomsResult.status === "fulfilled"
+            ? extractApiList(classroomsResult.value, [
+                "classrooms",
+                "results",
+                "items",
+              ])
+                .map(classroomSummary)
+                .filter(Boolean)
+            : [];
+        let groups = [...subscriptionGroups, ...classroomGroups];
+
+        // The classrooms endpoint does not consistently support filtering by
+        // student. As a reliable admin fallback, inspect the actual members of
+        // each classroom and keep only classrooms containing this student.
+        if (groups.length === 0) {
+          const allClassroomsResponse = await getClassrooms({
+            page: 1,
+            limit: 1000,
+          });
+          const allClassrooms = extractApiList(allClassroomsResponse, [
+            "classrooms",
+            "results",
+            "items",
+          ]);
+          const membershipResults = await Promise.allSettled(
+            allClassrooms.map(async (classroom) => {
+              const classroomId = entityId(classroom);
+              if (!classroomId) return null;
+              const membersResponse = await getClassroomStudents(classroomId, {
+                page: 1,
+                limit: 1000,
+              });
+              const members = extractApiList(membersResponse, [
+                "students",
+                "results",
+                "items",
+              ]);
+              const hasStudent = members.some((member) =>
+                [...studentIds(member)].some((id) => identities.has(id)),
+              );
+              return hasStudent ? classroomSummary(classroom) : null;
+            }),
+          );
+          groups = membershipResults
+            .filter((result) => result.status === "fulfilled")
+            .map((result) => result.value)
+            .filter(Boolean);
+        }
+
+        const uniqueGroups = [
+          ...new Map(groups.map((group) => [String(group.id), group])).values(),
+        ];
+
+        setDetailsUser((current) =>
+          current?.id === user.id
+            ? { ...current, groups: uniqueGroups, groupsLoading: false }
+            : current,
+        );
+      } catch {
+        setDetailsUser((current) =>
+          current?.id === user.id
+            ? { ...current, groups: [], groupsLoading: false }
+            : current,
+        );
+      }
+      return;
+    }
 
     if (user.role !== "معلم") {
       return;

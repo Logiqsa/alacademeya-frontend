@@ -164,7 +164,9 @@ export default function ConversationsLists({
                 ${
                   c.id === activeId
                     ? "border-blue-200 bg-blue-50"
-                    : "border-gray-100 bg-white hover:bg-gray-50"
+                    : c.unreadCount > 0
+                      ? "border-red-200 bg-red-50/80 ring-1 ring-red-100"
+                      : "border-gray-100 bg-white hover:bg-gray-50"
                 }`}
             >
               {/* Top row */}

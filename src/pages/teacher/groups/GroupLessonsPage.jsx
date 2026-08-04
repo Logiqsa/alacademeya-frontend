@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback, useContext } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { CheckCircle2, MessageCircle, UserPlus, Users, UserCheck, UserRound, X } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  MessageCircle,
+  UserPlus,
+  Users,
+  UserCheck,
+  UserRound,
+  X,
+} from "lucide-react";
 
 import LessonStatsBar from "../../../components/teacher/groups/lessons/LessonStatsBar";
 import LessonsTable from "../../../components/teacher/groups/lessons/LessonsTable";
@@ -70,14 +79,14 @@ const teacherProfileMatches = (teacher, ids) => {
 const hasTeacherProfileData = (teacher) =>
   Boolean(
     teacher?.user ||
-      teacher?.subjects ||
-      teacher?.subject ||
-      teacher?.grades ||
-      teacher?.grade ||
-      teacher?.curriculums ||
-      teacher?.curriculum ||
-      teacher?.experienceYears != null ||
-      teacher?.experience != null,
+    teacher?.subjects ||
+    teacher?.subject ||
+    teacher?.grades ||
+    teacher?.grade ||
+    teacher?.curriculums ||
+    teacher?.curriculum ||
+    teacher?.experienceYears != null ||
+    teacher?.experience != null,
   );
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -102,11 +111,11 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   );
 
   const [groupName, setGroupName] = useState(location.state?.groupName || "");
-  const [groupSubject, setGroupSubject] = useState(location.state?.groupSubjectName || "—");
-  const [groupPlace, setGroupPlace] = useState("");
-  const [groupTeacher, setGroupTeacher] = useState(
-    routedGroupTeacher || "—",
+  const [groupSubject, setGroupSubject] = useState(
+    location.state?.groupSubjectName || "—",
   );
+  const [groupPlace, setGroupPlace] = useState("");
+  const [groupTeacher, setGroupTeacher] = useState(routedGroupTeacher || "—");
   const [groupStudents, setGroupStudents] = useState([]);
   const [groupDetails, setGroupDetails] = useState(null);
   const [showSubstituteModal, setShowSubstituteModal] = useState(false);
@@ -130,9 +139,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     if (!location.state?.showSuccessToast) return;
     let hideTimer;
     const showTimer = window.setTimeout(() => {
-      setToastMessage(
-        location.state.successMessage || "تم إنشاء الحصة بنجاح",
-      );
+      setToastMessage(location.state.successMessage || "تم إنشاء الحصة بنجاح");
       setShowToast(true);
       navigate(location.pathname, { replace: true, state: {} });
       hideTimer = window.setTimeout(() => setShowToast(false), 4000);
@@ -148,27 +155,35 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     setError(null);
 
     // بنستخدم allSettled عشان لو endpoint الـ classroom فشل، الصفحة تفضل تعرض الحصص عادي
-    const [classroomResult, myClassroomsResult, sessionsResult, scheduleResult, studentsResult] = await Promise.allSettled([
+    const [
+      classroomResult,
+      myClassroomsResult,
+      sessionsResult,
+      scheduleResult,
+      studentsResult,
+    ] = await Promise.allSettled([
       getClassroom(groupId),
       isAdmin ? getClassrooms({ page: 1, limit: 1000 }) : getMyClassrooms(),
       getClassroomSessions(groupId),
       getClassroomSchedule(groupId),
-      isAdmin ? getClassroomStudents(groupId) : Promise.resolve({ data: { data: [] } }),
+      isAdmin
+        ? getClassroomStudents(groupId)
+        : Promise.resolve({ data: { data: [] } }),
     ]);
 
     setHasSchedule(
       scheduleResult.status === "fulfilled" &&
-      scheduleResult.value.data?.data?.isActive !== false &&
-      Array.isArray(scheduleResult.value.data?.data?.schedule),
+        scheduleResult.value.data?.data?.isActive !== false &&
+        Array.isArray(scheduleResult.value.data?.data?.schedule),
     );
 
     const classroomResponseData =
       classroomResult.status === "fulfilled"
-        ? classroomResult.value.data?.data ?? classroomResult.value.data ?? {}
+        ? (classroomResult.value.data?.data ?? classroomResult.value.data ?? {})
         : {};
     const availableClassrooms =
       myClassroomsResult.status === "fulfilled"
-        ? myClassroomsResult.value.data?.data ?? []
+        ? (myClassroomsResult.value.data?.data ?? [])
         : [];
     const matchingClassroom = Array.isArray(availableClassrooms)
       ? availableClassrooms.find(
@@ -184,19 +199,25 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     const hasClassroomData = Object.keys(classroomData).length > 0;
 
     if (hasClassroomData) {
-
-      const resolvedSubject = resolveName(classroomData.subject?.name || classroomData.subject);
+      const resolvedSubject = resolveName(
+        classroomData.subject?.name || classroomData.subject,
+      );
       if (resolvedSubject && resolvedSubject !== "--") {
         setGroupSubject(resolvedSubject);
       }
       setGroupPlace(
-        classroomData.meetingLink || classroomData.location || classroomData.address || "",
+        classroomData.meetingLink ||
+          classroomData.location ||
+          classroomData.address ||
+          "",
       );
 
-      const candidates = [classroomData.name, classroomData.title, classroomData.groupName];
-      const resolved = candidates
-        .map(resolveName)
-        .find((n) => n && n !== "--");
+      const candidates = [
+        classroomData.name,
+        classroomData.title,
+        classroomData.groupName,
+      ];
+      const resolved = candidates.map(resolveName).find((n) => n && n !== "--");
 
       // لو الـ API رجّع اسم فعلي بنستخدمه، غير كده بنسيب اللي جالنا من صفحة الجدول (location.state)
       // أو نرجع لـ "مجموعة" بس لو مفيش أي مصدر تاني للاسم
@@ -212,8 +233,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       const teacherUserId =
         typeof classroomData.teacher?.user === "string"
           ? classroomData.teacher.user
-          : classroomData.teacher?.user?.id ||
-            classroomData.teacher?.user?._id;
+          : classroomData.teacher?.user?.id || classroomData.teacher?.user?._id;
       const substituteTeacherId =
         typeof classroomData.substituteTeacher === "string"
           ? classroomData.substituteTeacher
@@ -301,14 +321,10 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           const userResponse = await getUser(teacherUserId);
           const teacherUser = userResponse.data?.data || userResponse.data;
           setGroupTeacher(
-            teacherUser?.fullName ||
-              routedGroupTeacher ||
-              "لم يُعيّن معلم",
+            teacherUser?.fullName || routedGroupTeacher || "لم يُعيّن معلم",
           );
         } catch {
-          setGroupTeacher(
-            routedGroupTeacher || "لم يُعيّن معلم",
-          );
+          setGroupTeacher(routedGroupTeacher || "لم يُعيّن معلم");
         }
       } else if (!nestedTeacherName) {
         setGroupTeacher(routedGroupTeacher || "لم يُعيّن معلم");
@@ -321,7 +337,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         console.error("getMyClassrooms failed:", myClassroomsResult.reason);
       }
       setGroupName((prev) => prev || "مجموعة");
-      setGroupTeacher((prev) => (prev && prev !== "—" ? prev : routedGroupTeacher || "لم يُعيّن معلم"));
+      setGroupTeacher((prev) =>
+        prev && prev !== "—" ? prev : routedGroupTeacher || "لم يُعيّن معلم",
+      );
 
       // ✅ الإصلاح الأساسي: getClassroom بترجع 404 عندك (endpoint لازم يتأكد منه في بوستمان).
       // من غير السطر ده، groupDetails كانت بتفضل null للأبد، وAddStudentModal
@@ -329,16 +347,17 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       // `if (!open || !group) return;`) — فمكانتش بتجيب طلاب ولا مراحل ولا صفوف.
       // هنا بنعمل fallback بالبيانات اللي جايه من صفحة المجموعات (location.state)
       // عشان الـ group تفضل موجودة حتى لو تفاصيل المجموعة الكاملة فشلت تتحمل.
-      setGroupDetails((prev) =>
-        prev || {
-          id: groupId,
-          teacherId: routedGroupTeacherId,
-          teacher: routedGroupTeacher || "—",
-          subjectId: routedGroupSubjectId,
-          classroomType: routedClassroomType || "group",
-          substituteTeacherId: undefined,
-          substituteTeacher: undefined,
-        },
+      setGroupDetails(
+        (prev) =>
+          prev || {
+            id: groupId,
+            teacherId: routedGroupTeacherId,
+            teacher: routedGroupTeacher || "—",
+            subjectId: routedGroupSubjectId,
+            classroomType: routedClassroomType || "group",
+            substituteTeacherId: undefined,
+            substituteTeacher: undefined,
+          },
       );
     }
 
@@ -369,7 +388,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             const packageNames = [
               ...new Set(
                 matchingItems
-                  .map(({ item }) => resolveName(item.package?.name || item.package))
+                  .map(({ item }) =>
+                    resolveName(item.package?.name || item.package),
+                  )
                   .filter((name) => name && name !== "--"),
               ),
             ];
@@ -421,8 +442,12 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         const attResult = attendanceResults[index];
         if (attResult.status === "fulfilled") {
           const records = attResult.value.data?.data || [];
-          attendance = records.filter((r) => r.status === "present" || r.status === "late").length;
-          absence = records.filter((r) => r.status === "absent" || r.status === "excused").length;
+          attendance = records.filter(
+            (r) => r.status === "present" || r.status === "late",
+          ).length;
+          absence = records.filter(
+            (r) => r.status === "absent" || r.status === "excused",
+          ).length;
         } else {
           console.error(
             `getSessionAttendance failed for session ${s.id}:`,
@@ -451,20 +476,24 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           rawStatus: s.status,
           date: s.scheduledDate
             ? new Date(s.scheduledDate).toLocaleDateString("ar-EG", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
             : "--",
-          time: s.startAt || s.scheduledDate
-            ? new Date(s.startAt || s.scheduledDate).toLocaleTimeString("ar-EG", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-              timeZone: "Africa/Cairo",
-            })
-            : "--",
+          time:
+            s.startAt || s.scheduledDate
+              ? new Date(s.startAt || s.scheduledDate).toLocaleTimeString(
+                  "ar-EG",
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                    timeZone: "Africa/Cairo",
+                  },
+                )
+              : "--",
           duration:
             typeof s.duration === "number"
               ? `${s.duration} دقيقة`
@@ -474,10 +503,10 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           status: isPostponed
             ? "مؤجلة"
             : isMissed
-            ? "لم تُعقد"
-            : ["scheduled", "upcoming"].includes(s.status)
-              ? "مجدولة — لم تبدأ بعد"
-              : STATUS_LABELS[s.status] || s.status || "--",
+              ? "لم تُعقد"
+              : ["scheduled", "upcoming"].includes(s.status)
+                ? "مجدولة — لم تبدأ بعد"
+                : STATUS_LABELS[s.status] || s.status || "--",
           // بيستخدم بس لحساب "أقرب حصة قادمة" في العنوان، مش بيتعرض في الجدول
           _sortDate: new Date(s.scheduledDate || s.startAt || 0),
         };
@@ -554,11 +583,12 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       username: user.username,
       role: "طالب",
       status: user.isActive === false ? "موقوف" : "نشط",
-      joinDate: student.groupJoinedAt || student.createdAt || user.createdAt
-        ? new Date(
-            student.groupJoinedAt || student.createdAt || user.createdAt,
-          ).toLocaleDateString("ar-EG")
-        : "—",
+      joinDate:
+        student.groupJoinedAt || student.createdAt || user.createdAt
+          ? new Date(
+              student.groupJoinedAt || student.createdAt || user.createdAt,
+            ).toLocaleDateString("ar-EG")
+          : "—",
       stage: resolveName(student.stage?.name || student.stage),
       grade: resolveName(student.grade?.name || student.grade),
       package: student.groupPackage || "لا توجد باقة فعالة",
@@ -662,7 +692,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
                 {hasSchedule ? "تعديل جدول المجموعة" : "مواعيد الحصص"}
               </button>
               <button
-                onClick={() => navigate(`/teacher/groups/${groupId}/lessons/new`)}
+                onClick={() =>
+                  navigate(`/teacher/groups/${groupId}/lessons/new`)
+                }
                 className="w-full sm:w-40 h-12 rounded-lg bg-[#123C91] text-white [&_svg]:text-white flex items-center justify-center font-['Tajawal'] font-medium text-[16px] leading-5.5"
               >
                 إنشاء حصة جديدة
@@ -671,6 +703,16 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           )}
           {isAdmin && (
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <button
+                type="button"
+                onClick={() => navigate(`/admin/groups/${groupId}/schedule`)}
+                className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF]"
+              >
+                <CalendarClock size={20} />
+                <span>
+                  {hasSchedule ? "تعديل جدول المجموعة" : "إنشاء جدول المجموعة"}
+                </span>
+              </button>
               <button
                 type="button"
                 onClick={() => setShowAddStudentModal(true)}
@@ -721,14 +763,22 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => navigate(`/teacher/groups/${groupId}/lessons`, { state: location.state })}
+                onClick={() =>
+                  navigate(`/teacher/groups/${groupId}/lessons`, {
+                    state: location.state,
+                  })
+                }
                 className={`rounded-2xl px-4 py-2 text-sm font-medium ${location.pathname.includes("/lessons") ? "bg-[#123C91] text-white" : "bg-white text-[#123C91] border border-[#E5E5E5]"}`}
               >
                 الحصص
               </button>
               <button
                 type="button"
-                onClick={() => navigate(`/teacher/groups/${groupId}/students`, { state: { groupName, groupSubjectName: groupSubject } })}
+                onClick={() =>
+                  navigate(`/teacher/groups/${groupId}/students`, {
+                    state: { groupName, groupSubjectName: groupSubject },
+                  })
+                }
                 className={`rounded-2xl px-4 py-2 text-sm font-medium ${location.pathname.includes("/students") ? "bg-[#123C91] text-white" : "bg-white text-[#123C91] border border-[#E5E5E5]"}`}
               >
                 الطلاب
@@ -755,9 +805,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
                 <UserRound size={17} />
                 معلم المجموعة
               </div>
-              <p className="font-semibold text-[#1F2937]">
-                {groupTeacher}
-              </p>
+              <p className="font-semibold text-[#1F2937]">{groupTeacher}</p>
             </div>
             <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4">
               <div className="mb-3 flex items-center gap-2 text-sm text-[#8C9198]">
@@ -773,12 +821,17 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
                       onClick={() => openStudentDetails(student)}
                       className="rounded-full bg-[#EAF4FF] px-3 py-1.5 text-xs font-medium text-[#123C91]"
                     >
-                      {student.user?.fullName || student.fullName || student.name || "طالب"}
+                      {student.user?.fullName ||
+                        student.fullName ||
+                        student.name ||
+                        "طالب"}
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[#9CA3AF]">لا يوجد طلاب في المجموعة</p>
+                <p className="text-sm text-[#9CA3AF]">
+                  لا يوجد طلاب في المجموعة
+                </p>
               )}
             </div>
           </div>
@@ -852,11 +905,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
               navigationState={{
                 groupName,
                 groupTeacher,
-                groupTeacherId:
-                  groupDetails?.teacherId || routedGroupTeacherId,
+                groupTeacherId: groupDetails?.teacherId || routedGroupTeacherId,
                 groupSubjectName: groupSubject,
-                groupSubjectId:
-                  groupDetails?.subjectId || routedGroupSubjectId,
+                groupSubjectId: groupDetails?.subjectId || routedGroupSubjectId,
                 classroomType:
                   groupDetails?.classroomType || routedClassroomType,
               }}
@@ -866,7 +917,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             />
           )}
         </div>
-
       </div>
 
       {endTarget && (
@@ -887,9 +937,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       {showSubstituteModal && (
         <SubstituteTeacherModal
           groupId={groupDetails?.id || groupId}
-          primaryTeacherId={
-            groupDetails?.teacherId || routedGroupTeacherId
-          }
+          primaryTeacherId={groupDetails?.teacherId || routedGroupTeacherId}
           primaryTeacherName={groupTeacher}
           currentTeacherId={groupDetails?.substituteTeacherId}
           currentTeacherName={groupDetails?.substituteTeacher}

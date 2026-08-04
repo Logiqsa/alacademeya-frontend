@@ -195,6 +195,7 @@ const UsersPage = () => {
               return student
                 ? {
                     ...mapped,
+                    studentId: student.id || student._id,
                     profileStatus: student.status,
                     grade:
                       student.grade?.name?.ar ||
