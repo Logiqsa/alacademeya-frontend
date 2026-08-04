@@ -12,6 +12,7 @@ import {
   User,
   UserPlus,
   CheckCircle2,
+  ExternalLink,
   X,
 } from "lucide-react";
 import NotificationCard from "./NotificationCard";
@@ -33,6 +34,7 @@ import {
   getNotificationChatState,
   getNotificationTarget,
 } from "../../../utils/notificationTarget";
+import { getTeacherCvUrl } from "../../../utils/teacherCv";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -485,6 +487,7 @@ const NotificationsSection = ({
           curricula: listLabel(
             teacherProfile?.curriculums ?? teacherProfile?.curriculum,
           ),
+          cvUrl: getTeacherCvUrl(teacherProfile),
           isTeacher: user.role === "teacher",
         });
         return;
@@ -534,6 +537,7 @@ const NotificationsSection = ({
           curricula: listLabel(
             teacher.curriculums ?? teacher.curriculum,
           ),
+          cvUrl: getTeacherCvUrl(teacher),
           role: "معلم",
           isTeacher: true,
         });
@@ -823,6 +827,29 @@ const NotificationsSection = ({
                 </>
               )}
             </div>
+
+            {teacherDetails.isTeacher && (
+              <a
+                href={teacherDetails.cvUrl || undefined}
+                target={teacherDetails.cvUrl ? "_blank" : undefined}
+                rel="noopener noreferrer"
+                aria-disabled={!teacherDetails.cvUrl}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!teacherDetails.cvUrl) event.preventDefault();
+                }}
+                className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold ${
+                  teacherDetails.cvUrl
+                    ? "border-[#123C91] text-[#123C91] hover:bg-blue-50"
+                    : "cursor-not-allowed border-gray-200 text-gray-400"
+                }`}
+              >
+                {teacherDetails.cvUrl
+                  ? "عرض السيرة الذاتية (CV)"
+                  : "السيرة الذاتية غير متاحة"}
+                {teacherDetails.cvUrl && <ExternalLink size={16} />}
+              </a>
+            )}
 
             <div className={`mt-5 grid grid-cols-1 gap-3 ${
               teacherDetails.isTeacher &&

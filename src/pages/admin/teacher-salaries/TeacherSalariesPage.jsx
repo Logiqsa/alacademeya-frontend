@@ -13,6 +13,16 @@ const current = new Date();
 const money = (value) => `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
 const date = (value) => value ? new Date(value).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" }) : "—";
 const teacherName = (teacher) => teacher?.user?.fullName || teacher?.fullName || "—";
+const isApprovedTeacher = (teacher) => {
+  const status = String(
+    teacher?.status ||
+      teacher?.registrationStatus ||
+      teacher?.user?.registrationStatus ||
+      teacher?.user?.status ||
+      "",
+  ).toLowerCase();
+  return status === "approved";
+};
 const paymentLabels = { cash: "نقدي", "bank-transfer": "تحويل بنكي", wallet: "محفظة", instapay: "إنستاباي", other: "أخرى" };
 const referenceFields = {
   instapay: { label: "رقم أو معرّف إنستاباي", placeholder: "مثال: 01000000000 أو username@instapay", required: true },
@@ -59,9 +69,11 @@ export default function TeacherSalariesPage() {
     setLoading(true); setError("");
     try {
       const response = tab === "summary"
-        ? await getTeacherSalariesSummary({ month, year, page, limit: LIMIT })
-        : await getTeacherSalaries({ month, year, status: status || undefined, page, limit: LIMIT });
-      setItems(response.data?.data || []); setPagination(response.data?.pagination || null);
+        ? await getTeacherSalariesSummary({ month, year, teacherStatus: "approved", page, limit: LIMIT })
+        : await getTeacherSalaries({ month, year, teacherStatus: "approved", status: status || undefined, page, limit: LIMIT });
+      const salaries = response.data?.data || [];
+      setItems(salaries.filter((item) => isApprovedTeacher(item.teacher)));
+      setPagination(response.data?.pagination || null);
     } catch (e) { setError(errorMessage(e, "تعذر تحميل بيانات الرواتب")); }
     finally { setLoading(false); }
   }, [tab, month, year, page, status]);

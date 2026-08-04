@@ -7,6 +7,7 @@ import {
   MessagesSquare,
   Search,
   CheckCircle2,
+  ExternalLink,
   Users,
   X,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import {
 } from "../../../services/APIService";
 import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
+import { getTeacherCvUrl } from "../../../utils/teacherCv";
 
 const PAGE_SIZE = 8;
 
@@ -139,6 +141,7 @@ const TeachersPage = () => {
                 ? "معتمد"
                 : teacher.status || "—",
             isApproved: teacher.status === "approved",
+            cvUrl: getTeacherCvUrl(teacher),
             createdAt: teacher.createdAt || teacher.user?.createdAt,
             raw: teacher,
             missedSessions,
@@ -469,6 +472,26 @@ const TeachersPage = () => {
                   value={selectedTeacher.completedSessions}
                 />
               </div>
+
+              <a
+                href={selectedTeacher.cvUrl || undefined}
+                target={selectedTeacher.cvUrl ? "_blank" : undefined}
+                rel="noopener noreferrer"
+                aria-disabled={!selectedTeacher.cvUrl}
+                onClick={(event) => {
+                  if (!selectedTeacher.cvUrl) event.preventDefault();
+                }}
+                className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold ${
+                  selectedTeacher.cvUrl
+                    ? "border-[#123C91] text-[#123C91] hover:bg-blue-50"
+                    : "cursor-not-allowed border-gray-200 text-gray-400"
+                }`}
+              >
+                {selectedTeacher.cvUrl
+                  ? "عرض السيرة الذاتية (CV)"
+                  : "السيرة الذاتية غير متاحة"}
+                {selectedTeacher.cvUrl && <ExternalLink size={16} />}
+              </a>
 
               <div className={`mt-5 grid grid-cols-1 gap-3 ${
                 selectedTeacher.isApproved ? "sm:grid-cols-2" : "sm:grid-cols-3"
