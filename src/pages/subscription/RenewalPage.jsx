@@ -5,11 +5,14 @@ import toast from "react-hot-toast";
 
 import ParentLayout from "../../components/parent/layout/ParentLayout";
 import StudentLayout from "../../components/student/layout/StudentLayout";
+import CurrencySelector from "../../components/subscription/CurrencySelector";
 import {
   createRenewalSubscriptionOrder,
+  getExchangeRates,
   getSubscriptionRenewOptions,
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
+import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 
@@ -59,6 +62,8 @@ const RenewalPage = ({ role }) => {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState("");
   const [order, setOrder] = useState(null);
+  const [currencies, setCurrencies] = useState([]);
+  const [currency, setCurrency] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -67,8 +72,21 @@ const RenewalPage = ({ role }) => {
       try {
         setLoading(true);
         setError("");
-        const response = await getSubscriptionRenewOptions(id);
-        if (active) setDetails(responseData(response));
+        const [response, ratesResponse] = await Promise.all([
+          getSubscriptionRenewOptions(id),
+          getExchangeRates(),
+        ]);
+        if (active) {
+          setDetails(responseData(response));
+          const rates = responseData(ratesResponse);
+          const availableRates = Array.isArray(rates) ? rates : [];
+          setCurrencies(availableRates);
+          setCurrency(
+            availableRates.find((rate) => rate.isBaseCurrency)?.currency ||
+              availableRates[0]?.currency ||
+              "",
+          );
+        }
       } catch (requestError) {
         if (active) {
           setError(
@@ -110,10 +128,15 @@ const RenewalPage = ({ role }) => {
       toast.error("اختر باقة لمادة واحدة على الأقل");
       return;
     }
+    if (!currency) return toast.error("اختر عملة الدفع");
 
     try {
       setCreating(true);
-      const response = await createRenewalSubscriptionOrder(id, selectedItems);
+      const response = await createRenewalSubscriptionOrder(
+        id,
+        selectedItems,
+        currency,
+      );
       const createdOrder = responseData(response);
       setOrder(createdOrder);
       localStorage.setItem("lastSubscriptionOrderId", createdOrder.id);
@@ -310,7 +333,7 @@ const RenewalPage = ({ role }) => {
                         </span>
                       </div>
                       <strong className="text-[#123C91]">
-                        {money(item.finalPrice)}
+                        {formatMoney(item.finalPrice, order.currency)}
                       </strong>
                     </div>
                   ))}
@@ -318,9 +341,14 @@ const RenewalPage = ({ role }) => {
                 <div className="mt-4 flex items-center justify-between rounded-xl bg-[#F8FAFC] p-4 text-lg font-bold">
                   <span>الإجمالي المؤكد</span>
                   <span className="text-[#123C91]">
-                    {money(order.totalAmount)}
+                    {formatMoney(order.totalAmount, order.currency)}
                   </span>
                 </div>
+                {formatEgpEquivalent(order.totalAmount, order) && (
+                  <p className="mt-2 text-left text-sm text-[#667085]">
+                    ما يعادله {formatEgpEquivalent(order.totalAmount, order)}
+                  </p>
+                )}
                 <button
                   type="button"
                   disabled={checkoutLoading}
@@ -336,16 +364,23 @@ const RenewalPage = ({ role }) => {
               </div>
             ) : (
               items.length > 0 && (
-                <button
-                  type="button"
-                  disabled={creating || !selectedItems.length}
-                  onClick={createOrder}
-                  className="mt-6 h-12 w-full rounded-xl bg-[#123C91] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {creating
-                    ? "جاري إنشاء طلب التجديد..."
-                    : "إنشاء طلب التجديد وعرض السعر"}
-                </button>
+                <>
+                  <CurrencySelector
+                    currencies={currencies}
+                    value={currency}
+                    onChange={setCurrency}
+                  />
+                  <button
+                    type="button"
+                    disabled={creating || !selectedItems.length || !currency}
+                    onClick={createOrder}
+                    className="mt-6 h-12 w-full rounded-xl bg-[#123C91] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {creating
+                      ? "جاري إنشاء طلب التجديد..."
+                      : "إنشاء طلب التجديد وعرض السعر"}
+                  </button>
+                </>
               )
             )}
           </>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import {
   getCurriculums,
@@ -70,7 +70,6 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
   const [stages, setStages] = useState([]);
   const [grades, setGrades] = useState([]);
   const [allSubjects, setAllSubjects] = useState([]);
-  const [subjectSearch, setSubjectSearch] = useState("");
   const [errors, setErrors] = useState({});
 
   const [loadingCurriculums, setLoadingCurriculums] = useState(false);
@@ -194,16 +193,6 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
     if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
   };
 
-  const selectedSubjectObjects = allSubjects.filter((s) =>
-    (data.subjects || []).includes(s.id),
-  );
-
-  const filteredSubjects = allSubjects.filter(
-    (s) =>
-      s.name.toLowerCase().includes(subjectSearch.toLowerCase()) &&
-      !(data.subjects || []).includes(s.id),
-  );
-
   const validate = () => {
     const next = {};
     if (!data.curriculum) next.curriculum = "المنهج الدراسي مطلوب";
@@ -288,69 +277,40 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
           المواد المفضلة
         </label>
 
-        {selectedSubjectObjects.length > 0 && (
+        {!data.grade ? (
+          <p className="rounded-lg bg-[#F9FAFA] p-4 text-sm text-[#8C9198]">
+            اختر الصف أولاً
+          </p>
+        ) : loadingSubjects ? (
+          <p className="rounded-lg bg-[#F9FAFA] p-4 text-sm text-[#8C9198]">
+            جاري تحميل المواد...
+          </p>
+        ) : allSubjects.length ? (
           <div className="flex flex-wrap gap-2">
-            {selectedSubjectObjects.map((sub) => (
-              <span
-                key={sub.id}
-                className="bg-[#EFF6FF] text-[#1E4FAE] px-3 py-1 rounded-full text-[13px] font-medium flex items-center gap-2"
-              >
-                {sub.name}
+            {allSubjects.map((subject) => {
+              const selected = (data.subjects || []).includes(subject.id);
+              return (
                 <button
-                  onClick={() => toggleSubject(sub.id)}
-                  className="hover:text-red-500 text-base leading-none"
+                  key={subject.id}
+                  type="button"
+                  onClick={() => toggleSubject(subject.id)}
+                  aria-pressed={selected}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                    selected
+                      ? "border-[#123C91] bg-[#123C91] text-white"
+                      : "border-[#D1D5DB] bg-white text-[#1F2937] hover:border-[#123C91]"
+                  }`}
                 >
-                  ×
+                  {subject.name}
                 </button>
-              </span>
-            ))}
+              );
+            })}
           </div>
+        ) : (
+          <p className="rounded-lg bg-[#F9FAFA] p-4 text-sm text-[#8C9198]">
+            لا توجد مواد متاحة لهذا الصف
+          </p>
         )}
-
-        <input
-          type="text"
-          value={subjectSearch}
-          onChange={(e) => setSubjectSearch(e.target.value)}
-          className={`w-full h-11 sm:h-12 px-4 border rounded-lg bg-[#F9FAFA]
-            font-['IBM_Plex_Sans_Arabic'] text-[13px] sm:text-[14px]
-            placeholder:text-[#8C9198] focus:outline-none focus:ring-2
-            disabled:opacity-60 disabled:cursor-not-allowed
-            ${errors.subjects ? "border-red-400 focus:ring-red-300" : "border-[#E5E5E5] focus:ring-[#123C91]"}`}
-          placeholder={
-            !data.grade
-              ? "اختر الصف أولاً"
-              : loadingSubjects
-                ? "جاري تحميل المواد..."
-                : "ابدأ بكتابة اسم المادة..."
-          }
-          disabled={!data.grade || loadingSubjects}
-        />
-
-        {subjectSearch && filteredSubjects.length > 0 && (
-          <ul className="border border-[#E5E5E5] rounded-lg bg-white shadow-sm max-h-40 overflow-y-auto">
-            {filteredSubjects.map((sub) => (
-              <li
-                key={sub.id}
-                onClick={() => {
-                  toggleSubject(sub.id);
-                  setSubjectSearch("");
-                }}
-                className="px-4 py-2.5 cursor-pointer hover:bg-[#F0F4FC] text-[13px] sm:text-[14px] text-[#1F2937]"
-              >
-                {sub.name}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {subjectSearch &&
-          filteredSubjects.length === 0 &&
-          data.grade &&
-          !loadingSubjects && (
-            <p className="text-[13px] text-[#8C9198] text-right px-1">
-              لا توجد مواد مطابقة
-            </p>
-          )}
 
         {errors.subjects && (
           <p className="text-red-500 text-[12px] mt-1 text-right">

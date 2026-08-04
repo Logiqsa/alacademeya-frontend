@@ -10,6 +10,11 @@ import {
   getMyStudentsSubscriptions,
   getMyStudents,
 } from "../../services/APIService";
+import {
+  currencyCodeOf,
+  formatEgpEquivalent,
+  formatMoney,
+} from "../../utils/currencyDisplay";
 
 const STATUS_MAP = {
   active: "نشطة",
@@ -84,10 +89,8 @@ const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
       item.package?.name ||
       "—";
     const teacherName = item.teacher?.user?.fullName || "";
-    const totalSessions =
-      item.totalSessions ?? item.package?.sessions;
-    const usedSessions =
-      item.usedSessions ?? item.consumedSessions;
+    const totalSessions = item.totalSessions ?? item.package?.sessions;
+    const usedSessions = item.usedSessions ?? item.consumedSessions;
     const remainingSessions =
       item.remainingSessions ??
       (totalSessions != null && usedSessions != null
@@ -110,14 +113,10 @@ const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
           : item.subject?.id || item.subject?._id,
       teacherName,
 
-      totalHours:
-        totalSessions != null ? `${totalSessions} حصة` : "--",
-      totalSessions:
-        totalSessions != null ? Number(totalSessions) : null,
-      consumed:
-        usedSessions != null ? `${usedSessions} حصة` : "--",
-      remaining:
-        remainingSessions != null ? `${remainingSessions} حصة` : "--",
+      totalHours: totalSessions != null ? `${totalSessions} حصة` : "--",
+      totalSessions: totalSessions != null ? Number(totalSessions) : null,
+      consumed: usedSessions != null ? `${usedSessions} حصة` : "--",
+      remaining: remainingSessions != null ? `${remainingSessions} حصة` : "--",
       remainingSessions:
         remainingSessions != null ? Number(remainingSessions) : null,
       duration: "حتى نفاد الحصص",
@@ -127,9 +126,20 @@ const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
         ? new Date(itemEndDate).toLocaleDateString("en-GB")
         : "حتى نفاد الحصص",
       amount:
-        item.finalPrice != null
-          ? `EGP ${item.finalPrice.toLocaleString()}`
-          : "--",
+        item.finalPrice != null ? (
+          <span className="whitespace-nowrap">
+            <span className="block">
+              {formatMoney(item.finalPrice, currencyCodeOf(sub))}
+            </span>
+            {formatEgpEquivalent(item.finalPrice, sub) && (
+              <small className="block text-[#8C9198]">
+                يعادل {formatEgpEquivalent(item.finalPrice, sub)}
+              </small>
+            )}
+          </span>
+        ) : (
+          "--"
+        ),
       status: mapStatus(item.status || sub.status),
       rawStatus: item.status || sub.status,
       studentId,

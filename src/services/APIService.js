@@ -164,17 +164,27 @@ export const createSubscriptionOrder = (items, studentId, currency) =>
     ...(studentId ? { student: studentId } : {}),
     ...(currency ? { currency } : {}),
   });
-export const createRenewalSubscriptionOrder = (sourceSubscription, items) =>
+export const createRenewalSubscriptionOrder = (
+  sourceSubscription,
+  items,
+  currency,
+) =>
   API.post("/subscription-orders", {
     orderType: "renewal",
     sourceSubscription,
     items,
+    ...(currency ? { currency } : {}),
   });
-export const createAddSubjectSubscriptionOrder = (sourceSubscription, items) =>
+export const createAddSubjectSubscriptionOrder = (
+  sourceSubscription,
+  items,
+  currency,
+) =>
   API.post("/subscription-orders", {
     orderType: "add_subject",
     sourceSubscription,
     items,
+    ...(currency ? { currency } : {}),
   });
 export const getSubscriptionOrder = (id) =>
   API.get(`/subscription-orders/${id}`);

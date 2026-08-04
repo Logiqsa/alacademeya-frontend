@@ -5,12 +5,15 @@ import toast from "react-hot-toast";
 
 import ParentLayout from "../../components/parent/layout/ParentLayout";
 import StudentLayout from "../../components/student/layout/StudentLayout";
+import CurrencySelector from "../../components/subscription/CurrencySelector";
 import {
   createAddSubjectSubscriptionOrder,
+  getExchangeRates,
   getMySubscriptions,
   getStudentSubscriptionOptions,
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
+import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 const asSubscriptions = (response) => {
@@ -55,6 +58,8 @@ const AddSubjectPage = ({ role }) => {
   const [subjects, setSubjects] = useState([]);
   const [selectedPackages, setSelectedPackages] = useState({});
   const [order, setOrder] = useState(null);
+  const [currencies, setCurrencies] = useState([]);
+  const [currency, setCurrency] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -81,8 +86,12 @@ const AddSubjectPage = ({ role }) => {
         const studentId = entityId(source.student);
         if (!studentId) throw new Error("STUDENT_NOT_FOUND");
 
-        const optionsResponse = await getStudentSubscriptionOptions(studentId);
+        const [optionsResponse, ratesResponse] = await Promise.all([
+          getStudentSubscriptionOptions(studentId),
+          getExchangeRates(),
+        ]);
         const options = responseData(optionsResponse);
+        const rates = responseData(ratesResponse);
         const activeSubjectIds = new Set(
           subscriptions
             .filter(
@@ -100,6 +109,13 @@ const AddSubjectPage = ({ role }) => {
 
         if (!active) return;
         setStudent(options?.student || source.student);
+        const availableRates = Array.isArray(rates) ? rates : [];
+        setCurrencies(availableRates);
+        setCurrency(
+          availableRates.find((rate) => rate.isBaseCurrency)?.currency ||
+            availableRates[0]?.currency ||
+            "",
+        );
         setSubjects(
           (options?.subjects || []).filter(
             (subject) => !activeSubjectIds.has(String(entityId(subject))),
@@ -154,11 +170,13 @@ const AddSubjectPage = ({ role }) => {
       toast.error("اختر باقة لمادة واحدة على الأقل");
       return;
     }
+    if (!currency) return toast.error("اختر عملة الدفع");
     try {
       setCreating(true);
       const response = await createAddSubjectSubscriptionOrder(
         sourceSubscriptionId,
         selectedItems,
+        currency,
       );
       const createdOrder = responseData(response);
       setOrder(createdOrder);
@@ -318,7 +336,7 @@ const AddSubjectPage = ({ role }) => {
                         </span>
                       </div>
                       <strong className="text-[#123C91]">
-                        {money(item.finalPrice)}
+                        {formatMoney(item.finalPrice, order.currency)}
                       </strong>
                     </div>
                   ))}
@@ -326,9 +344,14 @@ const AddSubjectPage = ({ role }) => {
                 <div className="mt-4 flex justify-between rounded-xl bg-[#F8FAFC] p-4 text-lg font-bold">
                   <span>الإجمالي المؤكد</span>
                   <span className="text-[#123C91]">
-                    {money(order.totalAmount)}
+                    {formatMoney(order.totalAmount, order.currency)}
                   </span>
                 </div>
+                {formatEgpEquivalent(order.totalAmount, order) && (
+                  <p className="mt-2 text-left text-sm text-[#667085]">
+                    ما يعادله {formatEgpEquivalent(order.totalAmount, order)}
+                  </p>
+                )}
                 <button
                   type="button"
                   disabled={checkoutLoading}
@@ -344,14 +367,23 @@ const AddSubjectPage = ({ role }) => {
               </div>
             ) : (
               subjects.length > 0 && (
-                <button
-                  type="button"
-                  disabled={creating || !selectedItems.length}
-                  onClick={createOrder}
-                  className="mt-6 h-12 w-full rounded-xl bg-[#123C91] font-semibold text-white disabled:opacity-50"
-                >
-                  {creating ? "جاري إنشاء الطلب..." : "إنشاء الطلب وعرض السعر"}
-                </button>
+                <>
+                  <CurrencySelector
+                    currencies={currencies}
+                    value={currency}
+                    onChange={setCurrency}
+                  />
+                  <button
+                    type="button"
+                    disabled={creating || !selectedItems.length || !currency}
+                    onClick={createOrder}
+                    className="mt-6 h-12 w-full rounded-xl bg-[#123C91] font-semibold text-white disabled:opacity-50"
+                  >
+                    {creating
+                      ? "جاري إنشاء الطلب..."
+                      : "إنشاء الطلب وعرض السعر"}
+                  </button>
+                </>
               )
             )}
           </>
