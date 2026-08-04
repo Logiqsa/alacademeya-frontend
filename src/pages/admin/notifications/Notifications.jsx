@@ -4,6 +4,7 @@ import NotificationsSection from "../../../components/admin/notifications/Notifi
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import {
   getAllStudents,
+  getAdminSubscriptionOrder,
   getNotifications,
   getUsers,
 } from "../../../services/APIService";
@@ -68,6 +69,86 @@ const enrichSubscriptionNotifications = (notifications, students) => {
   });
 };
 
+const notificationText = (notification) =>
+  String(
+    notification.description ||
+      notification.message ||
+      notification.body ||
+      notification.data?.message ||
+      "",
+  );
+
+const paymentOrderId = (notification) => {
+  const sources = [notification, notification.data, notification.metadata];
+  for (const source of sources) {
+    if (!source) continue;
+    const orderId =
+      idOf(source.orderId) ||
+      idOf(source.subscriptionOrderId) ||
+      idOf(source.order) ||
+      idOf(source.subscriptionOrder);
+    if (orderId) return String(orderId);
+  }
+  return notificationText(notification).match(/\b[a-f\d]{24}\b/i)?.[0] || "";
+};
+
+const enrichPaymentNotifications = async (notifications) => {
+  const paymentNotifications = notifications.filter((notification) => {
+    const searchable = [
+      notification.key,
+      notification.type,
+      notification.title,
+      notificationText(notification),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return (
+      searchable.includes("payment") ||
+      searchable.includes("دفعة") ||
+      searchable.includes("تم دفع")
+    );
+  });
+  const orderIds = [
+    ...new Set(paymentNotifications.map(paymentOrderId).filter(Boolean)),
+  ];
+  const orderEntries = await Promise.all(
+    orderIds.map(async (orderId) => {
+      try {
+        const response = await getAdminSubscriptionOrder(orderId);
+        return [orderId, response.data?.data ?? response.data];
+      } catch {
+        return [orderId, null];
+      }
+    }),
+  );
+  const ordersById = new Map(orderEntries);
+
+  return notifications.map((notification) => {
+    const orderId = paymentOrderId(notification);
+    const order = ordersById.get(orderId);
+    if (!order) return notification;
+    const personName =
+      order.student?.user?.fullName ||
+      order.student?.fullName ||
+      order.studentName ||
+      order.user?.fullName;
+    if (!personName) return notification;
+
+    const amount = notificationText(notification).match(
+      /تم دفع\s+(.+?)\s+للطلب/i,
+    )?.[1];
+    return {
+      ...notification,
+      title: "تم استلام دفعة جديدة",
+      description: amount
+        ? `تم دفع ${amount} بواسطة ${personName}`
+        : `تم استلام دفعة جديدة من ${personName}`,
+      data: { ...notification.data, studentName: personName },
+    };
+  });
+};
+
 const AdminNotificationss = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,14 +166,13 @@ const AdminNotificationss = () => {
       const usersBody = usersResponse?.data || {};
       const users = usersBody.data || usersBody.users || [];
       const students = extractList(studentsResponse?.data);
-      setNotifications(
-        mergeAdminNotifications(
-          enrichSubscriptionNotifications(
-            filterIncompleteJoinNotifications(extractList(res.data), users),
-            students,
-          ),
-        ),
+      const baseNotifications = enrichSubscriptionNotifications(
+        filterIncompleteJoinNotifications(extractList(res.data), users),
+        students,
       );
+      const enrichedNotifications =
+        await enrichPaymentNotifications(baseNotifications);
+      setNotifications(mergeAdminNotifications(enrichedNotifications));
     } catch (err) {
       setLoadError(err.response?.data?.message || "تعذر تحميل الإشعارات");
     } finally {

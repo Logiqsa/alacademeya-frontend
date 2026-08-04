@@ -126,7 +126,7 @@ const SubscriptionOrderStatusPage = () => {
   const labels = [
     ["تم اختيار الباقة", true],
     ["الدفع قيد الانتظار", ["pending", "paid"].includes(order?.paymentStatus)],
-    ["تم تأكيد الدفع", paid],
+    ["تم استلام الدفع", paid],
     [
       "مراجعة الإدارة",
       paid && ["waiting_admin", "approved"].includes(order?.approvalStatus),
@@ -149,7 +149,9 @@ const SubscriptionOrderStatusPage = () => {
             )}
           </div>
           <h1 className="text-xl font-bold text-center">حالة طلب الاشتراك</h1>
-          <p className="text-sm text-gray-500 text-center mt-2 mb-6">
+          <p
+            className={`mt-2 mb-6 text-center text-sm ${paid ? "font-bold text-emerald-700" : "text-gray-500"}`}
+          >
             {!orderId
               ? "رابط العودة لا يحتوي على رقم الطلب"
               : loading
@@ -159,9 +161,24 @@ const SubscriptionOrderStatusPage = () => {
                   : paid
                     ? order.approvalStatus === "waiting_admin"
                       ? "تم استلام الدفع — بانتظار موافقة الأكاديمية"
-                      : "تم تأكيد الدفع"
+                      : "تم استلام الدفع بنجاح"
                     : "لم يتم تأكيد الدفع بعد"}
           </p>
+          {paid && (
+            <div className="mb-6 rounded-xl border-2 border-emerald-300 bg-emerald-50 px-4 py-4 text-center shadow-sm">
+              <div className="flex items-center justify-center gap-2 text-emerald-700">
+                <CheckCircle size={22} />
+                <strong className="text-base font-bold sm:text-lg">
+                  تم استلام الدفع بنجاح
+                </strong>
+              </div>
+              {order?.approvalStatus === "waiting_admin" && (
+                <p className="mt-2 text-sm font-semibold text-emerald-800/80">
+                  طلبك الآن بانتظار مراجعة وموافقة الإدارة
+                </p>
+              )}
+            </div>
+          )}
           {!loading && orderId && (
             <div>
               {order && (
@@ -184,20 +201,30 @@ const SubscriptionOrderStatusPage = () => {
                 </div>
               )}
               <div className="space-y-4">
-                {labels.map(([label, done]) => (
-                  <div key={label} className="flex items-center gap-3">
-                    <span
-                      className={`w-5 h-5 rounded-full border-2 ${done ? "bg-[#123C91] border-[#123C91]" : "bg-white border-gray-300"}`}
-                    />
-                    <span
-                      className={
-                        done ? "font-medium text-[#123C91]" : "text-gray-400"
-                      }
+                {labels.map(([label, done]) => {
+                  const isPaymentReceived = label === "تم استلام الدفع";
+                  return (
+                    <div
+                      key={label}
+                      className={`flex items-center gap-3 rounded-lg px-2 py-1.5 ${isPaymentReceived && done ? "border border-emerald-200 bg-emerald-50" : ""}`}
                     >
-                      {label}
-                    </span>
-                  </div>
-                ))}
+                      <span
+                        className={`w-5 h-5 rounded-full border-2 ${isPaymentReceived && done ? "border-emerald-600 bg-emerald-600" : done ? "bg-[#123C91] border-[#123C91]" : "bg-white border-gray-300"}`}
+                      />
+                      <span
+                        className={
+                          isPaymentReceived && done
+                            ? "text-base font-extrabold text-emerald-700"
+                            : done
+                              ? "font-medium text-[#123C91]"
+                              : "text-gray-400"
+                        }
+                      >
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

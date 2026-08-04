@@ -5,7 +5,7 @@ import ConversationsList from "../../../components/student/messgaes/Conversation
 import ChatBox from "../../../components/student/messgaes/ChatBox";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import { useChatRooms } from "../../../api/useChatRooms";
-import { AuthContext } from "../../../context/AuthContext"; 
+import { AuthContext } from "../../../context/AuthContext";
 
 export default function StudentMessages() {
   const { user } = useContext(AuthContext);
@@ -29,6 +29,26 @@ export default function StudentMessages() {
   const openedFromLink = useRef(false);
 
   useEffect(() => {
+    if (
+      loading ||
+      openedFromLink.current ||
+      !location.state?.openSupportConversation
+    ) {
+      return;
+    }
+
+    openedFromLink.current = true;
+    startSupportConversation().then((roomId) => {
+      if (roomId) {
+        setActiveFilter("admin");
+        setShowChatOnMobile(true);
+      } else {
+        openedFromLink.current = false;
+      }
+    });
+  }, [loading, location.state, startSupportConversation]);
+
+  useEffect(() => {
     if (loading || openedFromLink.current) return;
     const roomId = location.state?.openRoomId ?? searchParams.get("room");
     const classroomId =
@@ -42,8 +62,7 @@ export default function StudentMessages() {
       conversations.find(
         (item) =>
           (roomId && String(item.id) === String(roomId)) ||
-          (classroomId &&
-            String(item.classroomId) === String(classroomId)),
+          (classroomId && String(item.classroomId) === String(classroomId)),
       ) ??
       conversations.find((item) => {
         if (
@@ -118,7 +137,6 @@ export default function StudentMessages() {
           </div>
         ) : (
           <div className="flex min-h-0 min-w-0 flex-1 gap-0 md:gap-4">
-
             {/* قائمة المحادثات */}
             <div
               className={`
@@ -172,7 +190,6 @@ export default function StudentMessages() {
                 />
               </div>
             )}
-
           </div>
         )}
       </div>

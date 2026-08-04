@@ -29,6 +29,26 @@ export default function Messages() {
   const openedFromLink = useRef(false);
 
   useEffect(() => {
+    if (
+      loading ||
+      openedFromLink.current ||
+      !location.state?.openSupportConversation
+    ) {
+      return;
+    }
+
+    openedFromLink.current = true;
+    startSupportConversation().then((roomId) => {
+      if (roomId) {
+        setActiveFilter("admin");
+        setShowChatOnMobile(true);
+      } else {
+        openedFromLink.current = false;
+      }
+    });
+  }, [loading, location.state, startSupportConversation]);
+
+  useEffect(() => {
     if (loading || openedFromLink.current) return;
     const roomId = location.state?.openRoomId ?? searchParams.get("room");
     const classroomId =
@@ -110,7 +130,6 @@ export default function Messages() {
           </div>
         ) : (
           <div className="flex min-h-0 min-w-0 flex-1 gap-0 md:gap-4">
-
             {/* قائمة المحادثات */}
             <div
               className={`
@@ -164,7 +183,6 @@ export default function Messages() {
                 />
               </div>
             )}
-
           </div>
         )}
       </div>

@@ -42,7 +42,7 @@ export const isDatabaseAccountActivated = (response) => {
     user.registrationStatus || user.registration_status,
   );
   const userIsActive =
-    activeStatuses.includes(registrationStatus) && user.isActive !== false;
+    user.isActive === true && activeStatuses.includes(registrationStatus);
 
   if (!userIsActive) return false;
   if ((user.role || profile.role) !== "teacher") return true;

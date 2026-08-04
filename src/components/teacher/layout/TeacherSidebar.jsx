@@ -22,7 +22,11 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
     { title: "الجدول", icon: scheduleIcon, path: "/teacher/schedule" },
     { title: "الواجبات", icon: messagesIcon, path: "/teacher/tasks" },
     { title: "الرسائل", icon: messagesIcon, path: "/teacher/messages" },
-    { title: "الإشعارات", icon: notificationsIcon, path: "/teacher/notifications" },
+    {
+      title: "الإشعارات",
+      icon: notificationsIcon,
+      path: "/teacher/notifications",
+    },
     // { title: "الأرباح", icon: subscriptionIcon, path: "/teacher/earnings" },
     { title: "الإعدادات", icon: settingsIcon, path: "/teacher/settings" },
   ];
@@ -39,6 +43,12 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
+  };
+
+  const openAdminChat = () => {
+    navigate("/teacher/messages", {
+      state: { openSupportConversation: true },
+    });
   };
 
   return (
@@ -64,7 +74,11 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
       <div className="relative flex items-center justify-between px-6 border-b border-[#FFFFFF14]">
         {isOpen && (
           <Link to="/" aria-label="الذهاب إلى الصفحة الرئيسية">
-            <img src={logo} alt="الأكاديمية" className="object-contain w-36 h-8" />
+            <img
+              src={logo}
+              alt="الأكاديمية"
+              className="object-contain w-36 h-8"
+            />
           </Link>
         )}
 
@@ -81,7 +95,11 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
             transition
           "
         >
-          <img src={toggleIcon} alt="toggle" className="object-contain w-7 h-7" />
+          <img
+            src={toggleIcon}
+            alt="toggle"
+            className="object-contain w-7 h-7"
+          />
         </button>
       </div>
 
@@ -103,34 +121,38 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
               font-['IBM_Plex_Sans_Arabic']
               font-medium
               text-[16px]
-              ${isActive
-                ? "bg-[#FFFFFF] text-primary border-r-4 border-[#12C6B0] shadow-sm"
-                : "text-white hover:bg-white/10"
+              ${
+                isActive
+                  ? "bg-[#FFFFFF] text-primary border-r-4 border-[#12C6B0] shadow-sm"
+                  : "text-white hover:bg-white/10"
               }
             `}
           >
             {({ isActive }) => (
               <>
                 <span className="relative shrink-0">
-                <img
-                  src={item.icon}
-                  alt={item.title}
-                  className={`block w-5 h-5 transition-all duration-200 ${
-                    isActive ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200" : ""
-                  }`}
-                  style={
-                    isActive
-                      ? {
-                          filter:
-                            "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
-                        }
-                      : {}
-                  }
-                />
-                {((item.path === "/teacher/messages" && unread.messages) ||
-                  (item.path === "/teacher/notifications" && unread.notifications)) && (
-                  <span className="absolute -left-1 -top-1 h-3 w-3 rounded-full border-2 border-[#1F2937] bg-red-500" />
-                )}
+                  <img
+                    src={item.icon}
+                    alt={item.title}
+                    className={`block w-5 h-5 transition-all duration-200 ${
+                      isActive
+                        ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
+                        : ""
+                    }`}
+                    style={
+                      isActive
+                        ? {
+                            filter:
+                              "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
+                          }
+                        : {}
+                    }
+                  />
+                  {((item.path === "/teacher/messages" && unread.messages) ||
+                    (item.path === "/teacher/notifications" &&
+                      unread.notifications)) && (
+                    <span className="absolute -left-1 -top-1 h-3 w-3 rounded-full border-2 border-[#1F2937] bg-red-500" />
+                  )}
                 </span>
 
                 {isOpen && <span>{item.title}</span>}
@@ -142,6 +164,15 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
 
       {/* Logout */}
       <div className="p-3 border-t border-[#FFFFFF14]">
+        <button
+          type="button"
+          onClick={openAdminChat}
+          title="تواصل مع الإدارة"
+          className={`mb-2 flex w-full items-center rounded-lg bg-[#123C91] px-3 py-2.5 font-['IBM_Plex_Sans_Arabic'] text-sm font-semibold text-white transition-colors hover:bg-[#1649A8] ${isOpen ? "gap-3 justify-start" : "justify-center"}`}
+        >
+          <img src={messagesIcon} alt="" className="h-5 w-5" />
+          {isOpen && <span>تواصل مع الإدارة</span>}
+        </button>
         <button
           onClick={handleLogout}
           className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${

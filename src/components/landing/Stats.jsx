@@ -11,25 +11,27 @@ const Counter = ({ value, label, duration = 2 }) => {
   const isInView = useInView(nodeRef, { once: true, margin: "-50px" });
 
   useEffect(() => {
-    if (isInView) {
-      let start = 0;
-      const numericValue = parseInt(value.replace(/[^0-9]/g, ""));
-      const increment = numericValue / (duration * 60);
+    if (!isInView || !nodeRef.current) return undefined;
 
-      let current = start;
-      const timer = setInterval(() => {
-        current += increment;
+    const numericValue = parseInt(value.replace(/[^0-9]/g, ""));
+    const increment = numericValue / (duration * 60);
+    let current = 0;
+    nodeRef.current.textContent = "0";
 
-        if (current >= numericValue) {
-          nodeRef.current.textContent = value;
-          clearInterval(timer);
-        } else {
-          nodeRef.current.textContent =
-            Math.floor(current).toLocaleString() +
-            (value.includes("%") ? "%" : "");
-        }
-      }, 1000 / 60);
-    }
+    const timer = window.setInterval(() => {
+      current += increment;
+
+      if (current >= numericValue) {
+        if (nodeRef.current) nodeRef.current.textContent = value;
+        window.clearInterval(timer);
+      } else if (nodeRef.current) {
+        nodeRef.current.textContent =
+          Math.floor(current).toLocaleString() +
+          (value.includes("%") ? "%" : "");
+      }
+    }, 1000 / 60);
+
+    return () => window.clearInterval(timer);
   }, [isInView, value, duration]);
 
   return (
@@ -95,7 +97,10 @@ export default function Stats() {
         <Counter value={formatted(stats.teachers)} label="معلم" />
         <Counter value={formatted(stats.students)} label="طالب" />
         <Counter value={formatted(stats.courses)} label="دورة تدريبية" />
-        <Counter value={`${formatted(stats.satisfaction)}%`} label="رضا المعلمين" />
+        <Counter
+          value={`${formatted(stats.satisfaction)}%`}
+          label="رضا المعلمين"
+        />
       </div>
     </section>
   );

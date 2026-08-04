@@ -8,8 +8,12 @@ import StudentLayout from "../../components/student/layout/StudentLayout";
 import CurrencySelector from "../../components/subscription/CurrencySelector";
 import {
   createAddSubjectSubscriptionOrder,
+  getAllPackages,
+  getAllSubjects,
   getExchangeRates,
+  getMyStudentsSubscriptions,
   getMySubscriptions,
+  getStudent,
   getStudentSubscriptionOptions,
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
@@ -72,9 +76,10 @@ const AddSubjectPage = ({ role }) => {
       try {
         setLoading(true);
         setError("");
-        const subscriptionsResponse = await getMySubscriptions({
-          status: "active",
-        });
+        const subscriptionsResponse =
+          role === "parent"
+            ? await getMyStudentsSubscriptions()
+            : await getMySubscriptions();
         const subscriptions = asSubscriptions(subscriptionsResponse);
         const source = subscriptions.find(
           (subscription) =>
@@ -86,21 +91,59 @@ const AddSubjectPage = ({ role }) => {
         const studentId = entityId(source.student);
         if (!studentId) throw new Error("STUDENT_NOT_FOUND");
 
-        const [optionsResponse, ratesResponse] = await Promise.all([
+        const profileResponse = await getStudent(studentId);
+        const profileData = responseData(profileResponse);
+        const profile = profileData?.student || profileData;
+        const curriculumId = entityId(profile?.curriculum);
+        const stageId = entityId(profile?.stage);
+        const gradeId = entityId(profile?.grade);
+        if (!gradeId) throw new Error("STUDENT_GRADE_MISSING");
+        const subjectParams = {
+          ...(curriculumId ? { curriculum: curriculumId } : {}),
+          ...(stageId ? { stage: stageId } : {}),
+          ...(gradeId ? { grade: gradeId } : {}),
+        };
+
+        const [
+          optionsResponse,
+          ratesResponse,
+          subjectsResponse,
+          packagesResponse,
+        ] = await Promise.all([
           getStudentSubscriptionOptions(studentId),
           getExchangeRates(),
+          getAllSubjects(subjectParams),
+          getAllPackages({ isActive: true, limit: 100 }),
         ]);
         const options = responseData(optionsResponse);
         const rates = responseData(ratesResponse);
+        const gradeSubjects = responseData(subjectsResponse);
+        const packagesData = responseData(packagesResponse);
+        const availablePackages = Array.isArray(packagesData)
+          ? packagesData
+          : packagesData?.packages || [];
+        const optionSubjects = options?.subjects || [];
+        const optionsBySubject = new Map(
+          optionSubjects.map((subject) => [String(entityId(subject)), subject]),
+        );
         const activeSubjectIds = new Set(
           subscriptions
             .filter(
               (subscription) =>
-                String(entityId(subscription.student)) === String(studentId),
+                String(entityId(subscription.student)) === String(studentId) &&
+                !["expired", "ended", "completed", "cancelled"].includes(
+                  String(subscription.status || "").toLowerCase(),
+                ),
             )
             .flatMap(
               (subscription) =>
                 subscription.items || subscription.subjectSubscriptions || [],
+            )
+            .filter(
+              (item) =>
+                !["expired", "ended", "completed", "cancelled"].includes(
+                  String(item.status || "").toLowerCase(),
+                ),
             )
             .map((item) => entityId(item.subject))
             .filter(Boolean)
@@ -108,7 +151,7 @@ const AddSubjectPage = ({ role }) => {
         );
 
         if (!active) return;
-        setStudent(options?.student || source.student);
+        setStudent(profile || options?.student || source.student);
         const availableRates = Array.isArray(rates) ? rates : [];
         setCurrencies(availableRates);
         setCurrency(
@@ -116,8 +159,21 @@ const AddSubjectPage = ({ role }) => {
             availableRates[0]?.currency ||
             "",
         );
+        const subjectsForGrade = Array.isArray(gradeSubjects)
+          ? gradeSubjects
+          : gradeSubjects?.subjects || [];
+        const mergedSubjects = subjectsForGrade.map((subject) => {
+          const option = optionsBySubject.get(String(entityId(subject)));
+          return {
+            ...subject,
+            packages:
+              option?.packages?.length > 0
+                ? option.packages
+                : availablePackages,
+          };
+        });
         setSubjects(
-          (options?.subjects || []).filter(
+          mergedSubjects.filter(
             (subject) => !activeSubjectIds.has(String(entityId(subject))),
           ),
         );
@@ -128,7 +184,9 @@ const AddSubjectPage = ({ role }) => {
             ? "الاشتراك النشط المطلوب غير موجود."
             : requestError.message === "STUDENT_NOT_FOUND"
               ? "تعذر تحديد الطالب صاحب الاشتراك."
-              : null;
+              : requestError.message === "STUDENT_GRADE_MISSING"
+                ? "الصف الدراسي غير محدد في ملف الطالب. حدّث بياناته أولاً."
+                : null;
         setError(
           localMessage ||
             requestErrorMessage(
@@ -145,7 +203,7 @@ const AddSubjectPage = ({ role }) => {
     return () => {
       active = false;
     };
-  }, [sourceSubscriptionId]);
+  }, [role, sourceSubscriptionId]);
 
   const selectedItems = useMemo(
     () =>
