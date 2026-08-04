@@ -7,16 +7,51 @@ import { getArabicCountryName } from "../../utils/countryName";
 import { buildInternationalPhone } from "../../utils/phone";
 import {
   register,
-  login as loginAccount,
   verifyAccount,
   resendOtp,
   getCountries,
 } from "../../services/APIService";
 import { AuthContext } from "../../context/AuthContext";
-import { getDashboardPathByRole, getRegistrationContinuation } from "../../utils/roles";
 
 const OTP_LENGTH = 6;
 const TIMER_START = 60;
+
+const REGISTER_ERROR_MESSAGES = {
+  EMAIL_ALREADY_EXISTS: "البريد الإلكتروني مستخدم بالفعل",
+  EMAIL_EXISTS: "البريد الإلكتروني مستخدم بالفعل",
+  DUPLICATE_EMAIL: "البريد الإلكتروني مستخدم بالفعل",
+  PHONE_ALREADY_EXISTS: "رقم الهاتف مستخدم بالفعل",
+  PHONE_EXISTS: "رقم الهاتف مستخدم بالفعل",
+  DUPLICATE_PHONE: "رقم الهاتف مستخدم بالفعل",
+  USERNAME_ALREADY_EXISTS: "اسم المستخدم مستخدم بالفعل",
+  USERNAME_EXISTS: "اسم المستخدم مستخدم بالفعل",
+  DUPLICATE_USERNAME: "اسم المستخدم مستخدم بالفعل",
+};
+
+const registerErrorMessage = (error) => {
+  const body = error.response?.data || {};
+  const candidates = [
+    body.code,
+    body.errorCode,
+    body.message,
+    ...Object.values(body.errors || {}),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const normalized = String(candidate).trim().toUpperCase();
+    if (REGISTER_ERROR_MESSAGES[normalized]) {
+      return REGISTER_ERROR_MESSAGES[normalized];
+    }
+    if (normalized.includes("EMAIL") && normalized.includes("EXIST"))
+      return REGISTER_ERROR_MESSAGES.EMAIL_ALREADY_EXISTS;
+    if (normalized.includes("PHONE") && normalized.includes("EXIST"))
+      return REGISTER_ERROR_MESSAGES.PHONE_ALREADY_EXISTS;
+    if (normalized.includes("USERNAME") && normalized.includes("EXIST"))
+      return REGISTER_ERROR_MESSAGES.USERNAME_ALREADY_EXISTS;
+  }
+
+  return body.message || body.error || "حدثت مشكلة أثناء التسجيل";
+};
 
 const getFlagUrl = (code) => {
   if (!code) return null;
@@ -352,73 +387,15 @@ const RegisterForm = ({ type }) => {
       }
       await register(payload);
 
-      toast.success("تم إنشاء الحساب. تحقق من مجلد Spam إذا لم تجد كود التفعيل.");
+      toast.success(
+        "تم إنشاء الحساب. تحقق من مجلد Spam إذا لم تجد كود التفعيل.",
+      );
       setOtp(new Array(OTP_LENGTH).fill(""));
       setTimer(TIMER_START);
       setShowOtpModal(true);
     } catch (err) {
       console.error("خطأ من السيرفر (register):", err.response?.data);
-      const errorText = String(
-        err.response?.data?.message || err.response?.data?.error || "",
-      ).toLowerCase();
-      const accountExists =
-        [400, 409, 422].includes(err.response?.status) &&
-        ["exist", "already", "duplicate", "موجود", "مسجل", "مستخدم"].some((word) =>
-          errorText.includes(word),
-        );
-
-      if (!accountExists) {
-        toast.error(err.response?.data?.message || "حدثت مشكلة أثناء التسجيل");
-        return;
-      }
-
-      try {
-        const loginResponse = await loginAccount({
-          email: formData.email.trim().toLowerCase(),
-          identifier: formData.email.trim().toLowerCase(),
-          password: formData.password,
-        });
-        const responseData = loginResponse.data || {};
-        const existingUser = responseData.data?.user || responseData.data || responseData.user;
-        const token = responseData.token || responseData.data?.token;
-        if (token) localStorage.setItem("token", token);
-        if (existingUser) {
-          setUser(existingUser);
-        }
-
-        const continuation = getRegistrationContinuation(existingUser, {
-          ...formData,
-          countryId: formData.country,
-          role: type,
-        });
-        if (continuation) {
-          toast.success("الحساب موجود بالفعل، سنكمل بيانات التسجيل الناقصة.");
-          navigate(continuation.path, { state: continuation.state });
-        } else {
-          toast.success("الحساب مكتمل بالفعل، تم تسجيل دخولك.");
-          navigate(getDashboardPathByRole(existingUser));
-        }
-      } catch (loginError) {
-        const loginMessage = String(loginError.response?.data?.message || "").toLowerCase();
-        const needsVerification =
-          loginError.response?.status === 403 ||
-          ["verify", "verification", "unverified", "تفعيل", "تحقق"].some((word) =>
-            loginMessage.includes(word),
-          );
-        if (needsVerification) {
-          try {
-            await resendOtp(formData.email);
-          } catch {
-            // The existing code may still be valid even if resending is rate-limited.
-          }
-          setOtp(new Array(OTP_LENGTH).fill(""));
-          setTimer(TIMER_START);
-          setShowOtpModal(true);
-          toast.success("الحساب موجود ولم يُفعّل بعد. أدخل كود التفعيل لإكمال التسجيل.");
-        } else {
-          toast.error("هذا الحساب موجود بالفعل. سجل الدخول بكلمة المرور الصحيحة لإكمال بياناتك.");
-        }
-      }
+      toast.error(registerErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -514,10 +491,14 @@ const RegisterForm = ({ type }) => {
       });
 
       const token = res.data?.token || res.data?.data?.token;
-      const verifiedUser = res.data?.data?.user || res.data?.user || res.data?.data;
+      const verifiedUser =
+        res.data?.data?.user || res.data?.user || res.data?.data;
       if (token) localStorage.setItem("token", token);
       if (verifiedUser && typeof verifiedUser === "object") {
-        const userWithRole = { ...verifiedUser, role: verifiedUser.role || type };
+        const userWithRole = {
+          ...verifiedUser,
+          role: verifiedUser.role || type,
+        };
         setUser(userWithRole);
       }
 
@@ -793,7 +774,10 @@ const RegisterForm = ({ type }) => {
             <p className="font-medium text-[20px] md:text-[22px] leading-8 text-center text-[#123C91] p-2 mb-2">
               {formData.email}
             </p>
-            <p dir="rtl" className="rounded-lg bg-[#FFF8E6] px-4 py-2 text-center text-[13px] text-[#7A5200]">
+            <p
+              dir="rtl"
+              className="rounded-lg bg-[#FFF8E6] px-4 py-2 text-center text-[13px] text-[#7A5200]"
+            >
               إذا لم تجد الرسالة، تحقق من مجلد البريد غير المرغوب فيه (Spam).
             </p>
 
