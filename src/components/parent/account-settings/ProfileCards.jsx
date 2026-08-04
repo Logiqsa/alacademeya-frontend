@@ -382,6 +382,7 @@ export const ParentProfileCard = ({
     fullName: parent?.fullName || "",
     username: parent?.username || "",
     email: parent?.email || "",
+    phone: parent?.phone || "",
     countryId: resolveCountryId(),
   });
 
@@ -402,7 +403,6 @@ export const ParentProfileCard = ({
     setEditing(false);
   };
 
-  const selectedCountry = countries.find((c) => c.id === form.countryId);
   const countryDisplay = (() => {
     const current = countries.find((c) => c.id === resolveCountryId());
     return current?.name || parent?.countryName || "—";
@@ -417,12 +417,8 @@ export const ParentProfileCard = ({
         fullName: form.fullName,
         username: form.username,
         email: form.email,
+        phone: form.phone,
       };
-      if (form.countryId && selectedCountry) {
-        payload.country = selectedCountry.id;
-        payload.countryCode = selectedCountry.code;
-        payload.countryName = selectedCountry.name;
-      }
       // Only an email change requires a fresh login — username/fullName/country
       // changing on their own must not log the parent out.
       const changedSensitive = payload.email !== (parent?.email || "");
@@ -437,8 +433,6 @@ export const ParentProfileCard = ({
       setSaving(false);
     }
   };
-
-  const { code: phoneCode, rest: phoneRest } = splitPhone(parent?.phone);
 
   return (
     <form
@@ -478,18 +472,11 @@ export const ParentProfileCard = ({
             onChange={handleChange("email")}
             type="email"
           />
-          <Dropdown
-            label="الدولة"
-            value={form.countryId}
-            options={countries.map((c) => ({ id: c.id, label: c.name }))}
-            onChange={(id) => setForm((prev) => ({ ...prev, countryId: id }))}
-            loading={loadingCountries}
-            placeholder="اختر الدولة"
-          />
-          <LockedPhoneField
+          <TextInput
             label="رقم الهاتف"
-            code={phoneCode}
-            number={phoneRest}
+            value={form.phone}
+            onChange={handleChange("phone")}
+            type="tel"
           />
         </EditBox>
       )}

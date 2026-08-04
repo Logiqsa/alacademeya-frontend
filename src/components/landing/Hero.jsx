@@ -1,7 +1,19 @@
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import heroImage from "../../assets/small dashbord.svg";
 import heroBg from "../../assets/hero.png";
+import { AuthContext } from "../../context/AuthContext";
 
 export default function Hero() {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleExplore = () => {
+    const aboutSection = document.getElementById("features");
+    aboutSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", "/#features");
+  };
+
   return (
     <section className="relative w-full overflow-hidden" id="home">
       <img
@@ -22,10 +34,24 @@ export default function Hero() {
             منصة متكاملة تدير الاشتراكات، الحصص، الامتحانات، حضور وغياب الطلاب，
             وتضمن تواصلًا آمنًا بين الجميع في نظام ذكي ومحمي بالكامل.
           </p>
-          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-            <button className="w-full sm:w-50 h-14 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-medium text-lg">ابدأ الآن</button>
-            <button className="w-full sm:w-50 h-14 border border-[#1F2937]/20 bg-white text-[#123C91] rounded-lg font-medium text-lg">استكشف المنصة</button>
-          </div>
+          {!user && (
+            <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <button
+                type="button"
+                onClick={() => navigate("/register")}
+                className="w-full sm:w-50 h-14 bg-[#123C91] text-white [&_svg]:text-white rounded-lg font-medium text-lg"
+              >
+                ابدأ الآن
+              </button>
+              <button
+                type="button"
+                onClick={handleExplore}
+                className="w-full sm:w-50 h-14 border border-[#1F2937]/20 bg-white text-[#123C91] rounded-lg font-medium text-lg"
+              >
+                استكشف المنصة
+              </button>
+            </div>
+          )}
         </div>
 
         {/* IMAGE SIDE */}

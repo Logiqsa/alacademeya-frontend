@@ -372,6 +372,7 @@ const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged })
     fullName: admin.fullName || "",
     username: admin.username || "",
     email: admin.email || "",
+    phone: admin.phone || "",
     countryId: getCountryId(admin.country),
   });
 
@@ -408,7 +409,7 @@ const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged })
         fullName: form.fullName,
         username: form.username,
         email: form.email,
-        country: form.countryId,
+        phone: form.phone,
       };
 
       const emailChanged = form.email.trim() !== (admin.email || "").trim();
@@ -471,14 +472,12 @@ const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged })
             onChange={handleChange("email")}
             type="email"
           />
-          <Dropdown
-            label="الدولة"
-            value={form.countryId}
-            options={countryOptions}
-            onChange={(id) => setForm((prev) => ({ ...prev, countryId: id }))}
-            placeholder="اختر الدولة"
+          <TextInput
+            label="رقم الهاتف"
+            value={form.phone}
+            onChange={handleChange("phone")}
+            type="tel"
           />
-          <LockedPhoneField label="رقم الهاتف" value={admin.phone} />
         </EditBox>
       )}
 

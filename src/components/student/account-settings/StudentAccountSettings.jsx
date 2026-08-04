@@ -372,6 +372,8 @@ const StudentPersonalCard = ({
   const buildForm = () => ({
     fullName: student.fullName || "",
     username: student.username || "",
+    email: student.email || "",
+    phone: student.phone || "",
     countryId: getCountryId(student.country),
     birthDate: toDateInputValue(student.birthDate),
   });
@@ -400,8 +402,8 @@ const StudentPersonalCard = ({
       const payload = {
         fullName: form.fullName,
         username: form.username,
-        country: form.countryId,
-        birthDate: form.birthDate,
+        email: form.email,
+        phone: form.phone,
       };
       const res = await updateMyProfile(payload);
       const updatedStudent = extractStudent(res.data) || payload;
@@ -458,20 +460,17 @@ const StudentPersonalCard = ({
             onChange={handleChange("username")}
           />
           <TextInput
-            label="تاريخ الميلاد"
-            value={form.birthDate}
-            onChange={handleChange("birthDate")}
-            type="date"
+            label="البريد الإلكتروني"
+            value={form.email}
+            onChange={handleChange("email")}
+            type="email"
           />
-          <Dropdown
-            label="الدولة"
-            value={form.countryId}
-            options={countryOptions}
-            loading={loadingCountries}
-            onChange={(id) => setForm((prev) => ({ ...prev, countryId: id }))}
-            placeholder="اختر الدولة"
+          <TextInput
+            label="رقم الهاتف"
+            value={form.phone}
+            onChange={handleChange("phone")}
+            type="tel"
           />
-          <LockedPhoneField label="رقم الهاتف" value={student.phone} />
         </EditBox>
       )}
       {editing && (
@@ -596,9 +595,8 @@ const StudentAcademicCard = ({ student, onUpdated }) => {
     >
       <SectionHeader
         title="البيانات الأكاديمية"
-        subtitle="هذا القسم يحتوي على بياناتك التعليمية الأساسية، والتي تُستخدم لإدارة حصصك ومتابعة رحلتك التعليمية داخل المنصة."
+        subtitle="هذه البيانات تحت إدارة ولي الأمر ولا يمكن تعديلها من حساب الطالب."
         editing={editing}
-        onEditClick={() => setEditing(true)}
       />
       {!editing ? (
         <ViewGrid>

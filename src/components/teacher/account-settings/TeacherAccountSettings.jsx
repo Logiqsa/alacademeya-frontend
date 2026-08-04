@@ -440,6 +440,7 @@ const TeacherPersonalCard = ({
     fullName: teacher.fullName || "",
     username: teacher.username || "",
     email: teacher.email || "",
+    phone: teacher.phone || "",
     countryId: getCountryId(teacher.country),
   });
   const [editing, setEditing] = useState(false);
@@ -475,7 +476,7 @@ const TeacherPersonalCard = ({
         fullName: form.fullName,
         username: form.username,
         email: form.email,
-        country: form.countryId,
+        phone: form.phone,
       };
       await updateMyProfile(payload);
       toast.success("تم تعديل البيانات بنجاح");
@@ -525,15 +526,12 @@ const TeacherPersonalCard = ({
             onChange={handleChange("email")}
             type="email"
           />
-          <Dropdown
-            label="الدولة"
-            value={form.countryId}
-            options={countryOptions}
-            loading={loadingCountries}
-            onChange={(id) => setForm((prev) => ({ ...prev, countryId: id }))}
-            placeholder="اختر الدولة"
+          <TextInput
+            label="رقم الهاتف"
+            value={form.phone}
+            onChange={handleChange("phone")}
+            type="tel"
           />
-          <LockedPhoneField label="رقم الهاتف" value={teacher.phone} />
         </EditBox>
       )}
       {editing && (
@@ -687,7 +685,7 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
     try {
       const payload = {
         language: form.studyLanguage,
-        curriculum: form.curriculumId,
+        curriculums: [form.curriculumId],
         grades: form.gradeIds,
         experienceYears:
           form.experienceYears === "" ? undefined : Number(form.experienceYears),
