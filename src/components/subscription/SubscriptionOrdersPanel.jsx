@@ -30,8 +30,7 @@ const ORDER_TYPE_LABELS = {
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 
-const money = (value) =>
-  `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
+const money = (value) => `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
 
 const SubscriptionOrdersPanel = () => {
   const navigate = useNavigate();
@@ -46,15 +45,11 @@ const SubscriptionOrdersPanel = () => {
       const data = responseData(response);
       setOrders(
         Array.isArray(data)
-          ? data.filter(
-              (order) => order.approvalStatus !== "approved",
-            )
+          ? data.filter((order) => order.approvalStatus !== "approved")
           : [],
       );
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "تعذر تحميل طلبات الاشتراك",
-      );
+      toast.error(error.response?.data?.message || "تعذر تحميل طلبات الاشتراك");
     } finally {
       setLoading(false);
     }
@@ -69,16 +64,15 @@ const SubscriptionOrdersPanel = () => {
     setPayingId(orderId);
     try {
       const response = await startSubscriptionOrderCheckout(orderId);
-      const purchaseUrl = responseData(response)?.purchaseUrl;
+      const checkoutData = responseData(response);
+      const purchaseUrl = checkoutData?.paymentUrl || checkoutData?.purchaseUrl;
       if (!purchaseUrl) throw new Error("PURCHASE_URL_MISSING");
       window.location.assign(purchaseUrl);
     } catch (error) {
       if (error.response?.status === 409) {
         navigate(`/subscription-orders/${orderId}/status`);
       } else {
-        toast.error(
-          error.response?.data?.message || "تعذر بدء عملية الدفع",
-        );
+        toast.error(error.response?.data?.message || "تعذر بدء عملية الدفع");
       }
       setPayingId("");
     }
@@ -128,8 +122,7 @@ const SubscriptionOrdersPanel = () => {
                     </h3>
                     {order.orderType && (
                       <span className="rounded-full bg-violet-50 px-3 py-1 text-xs text-violet-700">
-                        {ORDER_TYPE_LABELS[order.orderType] ||
-                          order.orderType}
+                        {ORDER_TYPE_LABELS[order.orderType] || order.orderType}
                       </span>
                     )}
                     <span className="rounded-full bg-[#EAF4FF] px-3 py-1 text-xs text-[#123C91]">

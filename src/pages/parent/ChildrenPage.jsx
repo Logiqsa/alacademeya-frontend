@@ -25,9 +25,7 @@ const ChildrenPage = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ordersByStudent, setOrdersByStudent] = useState({});
-  const [subscribedStudentIds, setSubscribedStudentIds] = useState(
-    new Set(),
-  );
+  const [subscribedStudentIds, setSubscribedStudentIds] = useState(new Set());
   const [payingOrderId, setPayingOrderId] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -37,13 +35,13 @@ const ChildrenPage = () => {
       try {
         const [studentsRes, statsRes, ordersRes, subscriptionsRes] =
           await Promise.all([
-          getMyStudents(),
-          getStudentsStatistics(),
-          getMySubscriptionOrders().catch(() => ({ data: { data: [] } })),
-          getMyStudentsSubscriptions().catch(() => ({
-            data: { data: [] },
-          })),
-        ]);
+            getMyStudents(),
+            getStudentsStatistics(),
+            getMySubscriptionOrders().catch(() => ({ data: { data: [] } })),
+            getMyStudentsSubscriptions().catch(() => ({
+              data: { data: [] },
+            })),
+          ]);
         setStudents(studentsRes.data?.data || []);
         setStats(statsRes.data?.data || null);
 
@@ -113,16 +111,13 @@ const ChildrenPage = () => {
     const order = ordersByStudent[studentId];
 
     if (!order || !["created", "pending"].includes(order.paymentStatus)) {
-      navigate(
-        `/parent/students/${studentId}/subscription/packages`,
-        {
-          state: {
-            parentFlow: true,
-            skipProfileCreation: true,
-            studentId,
-          },
+      navigate(`/parent/students/${studentId}/subscription/packages`, {
+        state: {
+          parentFlow: true,
+          skipProfileCreation: true,
+          studentId,
         },
-      );
+      });
       return;
     }
 
@@ -130,7 +125,9 @@ const ChildrenPage = () => {
     try {
       const response = await startSubscriptionOrderCheckout(order.id);
       const purchaseUrl =
+        response.data?.data?.paymentUrl ||
         response.data?.data?.purchaseUrl ||
+        response.data?.paymentUrl ||
         response.data?.purchaseUrl;
       if (!purchaseUrl) throw new Error("PURCHASE_URL_MISSING");
       window.location.assign(purchaseUrl);
@@ -206,7 +203,6 @@ const ChildrenPage = () => {
                   setStudents((prev) => prev.filter((s) => s.id !== removedId))
                 }
               />
-
             </>
           )}
         </div>

@@ -26,8 +26,7 @@ const nameOf = (value) => {
   if (typeof value === "string") return value;
   return value.ar || value.en || value.name?.ar || value.name?.en || "—";
 };
-const money = (value) =>
-  `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
+const money = (value) => `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
 
 const ERROR_MESSAGES = {
   SOURCE_SUBSCRIPTION_REQUIRED: "بيانات الاشتراك الحالي غير مكتملة.",
@@ -82,8 +81,7 @@ const AddSubjectPage = ({ role }) => {
         const studentId = entityId(source.student);
         if (!studentId) throw new Error("STUDENT_NOT_FOUND");
 
-        const optionsResponse =
-          await getStudentSubscriptionOptions(studentId);
+        const optionsResponse = await getStudentSubscriptionOptions(studentId);
         const options = responseData(optionsResponse);
         const activeSubjectIds = new Set(
           subscriptions
@@ -93,9 +91,7 @@ const AddSubjectPage = ({ role }) => {
             )
             .flatMap(
               (subscription) =>
-                subscription.items ||
-                subscription.subjectSubscriptions ||
-                [],
+                subscription.items || subscription.subjectSubscriptions || [],
             )
             .map((item) => entityId(item.subject))
             .filter(Boolean)
@@ -181,7 +177,8 @@ const AddSubjectPage = ({ role }) => {
     try {
       setCheckoutLoading(true);
       const response = await startSubscriptionOrderCheckout(order.id);
-      const purchaseUrl = responseData(response)?.purchaseUrl;
+      const checkoutData = responseData(response);
+      const purchaseUrl = checkoutData?.paymentUrl || checkoutData?.purchaseUrl;
       if (!purchaseUrl) throw new Error("PURCHASE_URL_MISSING");
       window.location.assign(purchaseUrl);
     } catch (requestError) {
@@ -189,9 +186,7 @@ const AddSubjectPage = ({ role }) => {
         navigate(`/subscription-orders/${order.id}/status`);
         return;
       }
-      toast.error(
-        requestErrorMessage(requestError, "تعذر بدء عملية الدفع"),
-      );
+      toast.error(requestErrorMessage(requestError, "تعذر بدء عملية الدفع"));
       setCheckoutLoading(false);
     }
   };
@@ -355,9 +350,7 @@ const AddSubjectPage = ({ role }) => {
                   onClick={createOrder}
                   className="mt-6 h-12 w-full rounded-xl bg-[#123C91] font-semibold text-white disabled:opacity-50"
                 >
-                  {creating
-                    ? "جاري إنشاء الطلب..."
-                    : "إنشاء الطلب وعرض السعر"}
+                  {creating ? "جاري إنشاء الطلب..." : "إنشاء الطلب وعرض السعر"}
                 </button>
               )
             )}

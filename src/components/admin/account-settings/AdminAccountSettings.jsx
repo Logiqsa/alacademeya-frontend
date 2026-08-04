@@ -1,8 +1,22 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
-import { Pencil, Eye, EyeOff, ChevronDown, Loader2, Mail, MessageCircle } from "lucide-react";
+import {
+  Pencil,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  Loader2,
+  Mail,
+  MessageCircle,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { getContactSettings, getCountries, getMyProfile, updateContactSettings, updateMyProfile } from "../../../services/APIService";
+import {
+  getContactSettings,
+  getCountries,
+  getMyProfile,
+  updateContactSettings,
+  updateMyProfile,
+} from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext"; // عدّل المسار حسب مشروعك
 import {
   countryOption,
@@ -13,6 +27,7 @@ import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 import PhoneDisplay from "../../account-settings/PhoneDisplay";
 import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 import LandingStatsSettings from "../dashboard/LandingStatsSettings";
+import ExchangeRatesSettings from "./ExchangeRatesSettings";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -262,36 +277,75 @@ const ContactSettingsCard = () => {
       }
       toast.success(res.data?.message || "تم تحديث وسائل التواصل بنجاح");
     } catch (err) {
-      const validationError = Object.values(err.response?.data?.errors || {})[0];
-      setError(validationError || err.response?.data?.message || "تعذر حفظ إعدادات التواصل");
+      const validationError = Object.values(
+        err.response?.data?.errors || {},
+      )[0];
+      setError(
+        validationError ||
+          err.response?.data?.message ||
+          "تعذر حفظ إعدادات التواصل",
+      );
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6"
+    >
       <SectionHeader
         title="إعدادات التواصل"
         subtitle="تظهر هذه البيانات في الصفحة الرئيسية وصفحات متابعة الطلب."
       />
       {loading ? (
-        <div className="flex justify-center py-8"><Loader2 className="animate-spin text-(--primary)" /></div>
+        <div className="flex justify-center py-8">
+          <Loader2 className="animate-spin text-(--primary)" />
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-sm text-(--text-light)"><Mail size={16} />البريد الإلكتروني</label>
-            <input type="email" dir="ltr" value={form.email} onChange={(e) => setForm((old) => ({ ...old, email: e.target.value }))} placeholder="support@example.com" className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) outline-none focus:border-(--primary)" />
+            <label className="mb-1.5 flex items-center gap-2 text-sm text-(--text-light)">
+              <Mail size={16} />
+              البريد الإلكتروني
+            </label>
+            <input
+              type="email"
+              dir="ltr"
+              value={form.email}
+              onChange={(e) =>
+                setForm((old) => ({ ...old, email: e.target.value }))
+              }
+              placeholder="support@example.com"
+              className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) outline-none focus:border-(--primary)"
+            />
           </div>
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-sm text-(--text-light)"><MessageCircle size={16} />رقم واتساب</label>
-            <input type="tel" dir="ltr" value={form.whatsappNumber} onChange={(e) => setForm((old) => ({ ...old, whatsappNumber: e.target.value }))} placeholder="+201001234567" className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) outline-none focus:border-(--primary)" />
+            <label className="mb-1.5 flex items-center gap-2 text-sm text-(--text-light)">
+              <MessageCircle size={16} />
+              رقم واتساب
+            </label>
+            <input
+              type="tel"
+              dir="ltr"
+              value={form.whatsappNumber}
+              onChange={(e) =>
+                setForm((old) => ({ ...old, whatsappNumber: e.target.value }))
+              }
+              placeholder="+201001234567"
+              className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) outline-none focus:border-(--primary)"
+            />
           </div>
         </div>
       )}
       {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
       {!loading && (
-        <button type="submit" disabled={saving} className="mt-5 flex items-center gap-2 rounded-lg bg-(--primary) px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={saving}
+          className="mt-5 flex items-center gap-2 rounded-lg bg-(--primary) px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
           {saving && <Loader2 size={14} className="animate-spin" />}
           حفظ إعدادات التواصل
         </button>
@@ -369,7 +423,12 @@ const Dropdown = ({
 /* Cards                                                               */
 /* ------------------------------------------------------------------ */
 
-const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged }) => {
+const AdminPersonalCard = ({
+  admin,
+  countryOptions,
+  onUpdated,
+  onEmailChanged,
+}) => {
   const buildForm = () => ({
     fullName: admin.fullName || "",
     username: admin.username || "",
@@ -453,14 +512,17 @@ const AdminPersonalCard = ({ admin, countryOptions, onUpdated, onEmailChanged })
           <ViewField label="الاسم الكامل" value={admin.fullName} />
           <ViewField label="اسم المستخدم" value={admin.username} />
           <ViewField label="البريد الإلكتروني" value={admin.email} />
-          <ViewField label="رقم الهاتف" value={
-            <PhoneDisplay
-              phone={admin.phone}
-              country={admin.country}
-              countryCode={admin.countryCode}
-              options={countryOptions}
-            />
-          } />
+          <ViewField
+            label="رقم الهاتف"
+            value={
+              <PhoneDisplay
+                phone={admin.phone}
+                country={admin.country}
+                countryCode={admin.countryCode}
+                options={countryOptions}
+              />
+            }
+          />
           <ViewField label="الدولة" value={countryLabel} />
         </ViewGrid>
       ) : (
@@ -694,7 +756,7 @@ const AdminAccountSettings = () => {
 
   return (
     <div className="space-y-5" dir="rtl">
-       <Breadcrumbs homeTo="/admin-dashboard" />
+      <Breadcrumbs homeTo="/admin-dashboard" />
       {/* Page title */}
       <div
         className="max-w-7xl mx-auto p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
@@ -738,6 +800,7 @@ const AdminAccountSettings = () => {
         onUpdated={handleProfileUpdated}
       />
       <ContactSettingsCard />
+      <ExchangeRatesSettings />
       <LandingStatsSettings />
     </div>
   );

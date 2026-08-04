@@ -67,6 +67,13 @@ export const getContactSettings = () => API.get("/contact-settings");
 export const updateContactSettings = (payload) =>
   API.patch("/contact-settings", payload);
 
+// ─── Exchange rates ─────────────────────────────────────────────────────────
+export const getExchangeRates = () => API.get("/exchange-rates");
+export const createExchangeRate = (payload) =>
+  API.post("/exchange-rates", payload);
+export const updateExchangeRate = (currency, payload) =>
+  API.patch(`/exchange-rates/${currency}`, payload);
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Curriculums
 // ──────────────────────────────────────────────────────────────────────────────
@@ -154,7 +161,7 @@ export const getSubscriptionRenewOptions = (id) =>
 export const createSubscriptionOrder = (items, studentId, currency) =>
   API.post("/subscription-orders", {
     items,
-    ...(studentId ? { studentId } : {}),
+    ...(studentId ? { student: studentId } : {}),
     ...(currency ? { currency } : {}),
   });
 export const createRenewalSubscriptionOrder = (sourceSubscription, items) =>
@@ -163,10 +170,7 @@ export const createRenewalSubscriptionOrder = (sourceSubscription, items) =>
     sourceSubscription,
     items,
   });
-export const createAddSubjectSubscriptionOrder = (
-  sourceSubscription,
-  items,
-) =>
+export const createAddSubjectSubscriptionOrder = (sourceSubscription, items) =>
   API.post("/subscription-orders", {
     orderType: "add_subject",
     sourceSubscription,
@@ -174,8 +178,7 @@ export const createAddSubjectSubscriptionOrder = (
   });
 export const getSubscriptionOrder = (id) =>
   API.get(`/subscription-orders/${id}`);
-export const getMySubscriptionOrders = () =>
-  API.get("/subscription-orders/my");
+export const getMySubscriptionOrders = () => API.get("/subscription-orders/my");
 export const startSubscriptionOrderCheckout = (id) =>
   API.post(`/subscription-orders/${id}/checkout`);
 export const getPendingSubscriptionOrders = (params) =>
@@ -188,8 +191,7 @@ export const approveSubscriptionOrder = (id, items) =>
 // ─── Admin payments ──────────────────────────────────────────────────────────
 export const getAdminPayments = (params) =>
   API.get("/admin/payments", { params });
-export const getAdminPaymentDetails = (id) =>
-  API.get(`/admin/payments/${id}`);
+export const getAdminPaymentDetails = (id) => API.get(`/admin/payments/${id}`);
 
 // ─── Admin teacher salaries ─────────────────────────────────────────────────
 export const getTeacherSalariesSummary = (params) =>

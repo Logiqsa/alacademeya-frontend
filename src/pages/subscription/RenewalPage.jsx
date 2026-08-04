@@ -19,8 +19,7 @@ const localizedName = (value) => {
   return value.ar || value.en || value.name?.ar || value.name?.en || "—";
 };
 
-const money = (value) =>
-  `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
+const money = (value) => `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
 
 const STATUS_LABELS = {
   active: "نشط",
@@ -130,7 +129,8 @@ const RenewalPage = ({ role }) => {
     try {
       setCheckoutLoading(true);
       const response = await startSubscriptionOrderCheckout(order.id);
-      const purchaseUrl = responseData(response)?.purchaseUrl;
+      const checkoutData = responseData(response);
+      const purchaseUrl = checkoutData?.paymentUrl || checkoutData?.purchaseUrl;
       if (!purchaseUrl) throw new Error("Missing checkout URL");
       window.location.assign(purchaseUrl);
     } catch (requestError) {
@@ -157,9 +157,7 @@ const RenewalPage = ({ role }) => {
           رجوع
         </button>
         <header className="mb-6">
-          <h1 className="text-2xl font-bold text-[#123C91]">
-            تجديد الاشتراك
-          </h1>
+          <h1 className="text-2xl font-bold text-[#123C91]">تجديد الاشتراك</h1>
           <p className="mt-2 text-sm text-[#667085]">
             اختر المواد والباقات التي تريد تجديدها، ثم راجع السعر المؤكد من
             الخادم قبل الدفع.
@@ -207,9 +205,7 @@ const RenewalPage = ({ role }) => {
                   <article
                     key={item.id || subjectId}
                     className={`rounded-2xl border bg-white p-5 shadow-sm ${
-                      highlighted
-                        ? "border-[#123C91]"
-                        : "border-[#E5E7EB]"
+                      highlighted ? "border-[#123C91]" : "border-[#E5E7EB]"
                     }`}
                   >
                     <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
@@ -308,9 +304,7 @@ const RenewalPage = ({ role }) => {
                       className="flex items-center justify-between gap-3 p-4"
                     >
                       <div>
-                        <strong className="text-sm">
-                          {item.subjectName}
-                        </strong>
+                        <strong className="text-sm">{item.subjectName}</strong>
                         <span className="mt-1 block text-xs text-[#667085]">
                           {item.packageName} · {item.sessions} حصة
                         </span>
