@@ -109,8 +109,9 @@ const Badge = ({ label, type }) => {
 
   return (
     <span
-      className={`inline-flex min-w-18 items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${map[type] ?? map.gray
-        }`}
+      className={`inline-flex min-w-18 items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+        map[type] ?? map.gray
+      }`}
     >
       {label}
     </span>
@@ -150,7 +151,9 @@ const UserCell = ({ name, avatarUrl, onClick }) => (
     className="flex items-center gap-2.5 text-left transition-colors hover:text-[#123C91]"
   >
     <Avatar name={name} avatarUrl={avatarUrl} size={8} />
-    <span className="text-sm font-medium text-[#1A1A1A] font-['Tajawal']">{name}</span>
+    <span className="text-sm font-medium text-[#1A1A1A] font-['Tajawal']">
+      {name}
+    </span>
   </button>
 );
 
@@ -189,8 +192,9 @@ export const UserDetailsModal = ({
       }}
     >
       <div
-        className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-xl ${isTeacher ? "max-w-4xl sm:p-7" : "max-w-sm"
-          }`}
+        className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-xl ${
+          isTeacher ? "max-w-4xl sm:p-7" : "max-w-sm"
+        }`}
         dir="rtl"
       >
         <div className="flex items-center justify-between mb-4">
@@ -232,26 +236,29 @@ export const UserDetailsModal = ({
           onClick={(event) => {
             if (!userWhatsappUrl) event.preventDefault();
           }}
-          className={`mb-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${userWhatsappUrl
-            ? "bg-[#25D366] text-white hover:bg-[#20bd5a]"
-            : "cursor-not-allowed bg-gray-100 text-gray-400"
-            }`}
+          className={`mb-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+            userWhatsappUrl
+              ? "bg-[#25D366] text-white hover:bg-[#20bd5a]"
+              : "cursor-not-allowed bg-gray-100 text-gray-400"
+          }`}
         >
           <MessageCircle size={18} />
           تواصل عبر واتساب
         </a>
 
         <div className="grid gap-3 mb-4 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => onOpenChat?.(user)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#EAF4FF] px-4 py-3 text-sm font-semibold text-[#123C91] transition-colors hover:bg-[#dbe7fc]"
-          >
-            <MessageCircle size={18} />
-            فتح محادثة الموقع
-          </button>
+          {onOpenChat && (
+            <button
+              type="button"
+              onClick={() => onOpenChat?.(user)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#EAF4FF] px-4 py-3 text-sm font-semibold text-[#123C91] transition-colors hover:bg-[#dbe7fc]"
+            >
+              <MessageCircle size={18} />
+              فتح محادثة الموقع
+            </button>
+          )}
 
-          {user.status === "معلق" && (
+          {user.status === "معلق" && onApprove && (
             <button
               type="button"
               onClick={() => onApprove?.(user)}
@@ -262,29 +269,32 @@ export const UserDetailsModal = ({
             </button>
           )}
 
-          {(user.status === "نشط" || user.status === "موقوف") && (
+          {(user.status === "نشط" || user.status === "موقوف") &&
+            onToggleStatus && (
+              <button
+                type="button"
+                onClick={() => onToggleStatus?.(user)}
+                className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${user.status === "موقوف" ? "bg-[#00A63E] text-white hover:bg-[#008a33]" : "bg-[#FF8A00] text-white hover:bg-[#dd7000]"}`}
+              >
+                {user.status === "موقوف" ? (
+                  <CheckCircle2 size={18} />
+                ) : (
+                  <Ban size={18} />
+                )}
+                {user.status === "موقوف" ? "تفعيل الحساب" : "إيقاف الحساب"}
+              </button>
+            )}
+
+          {onDelete && (
             <button
               type="button"
-              onClick={() => onToggleStatus?.(user)}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${user.status === "موقوف" ? "bg-[#00A63E] text-white hover:bg-[#008a33]" : "bg-[#FF8A00] text-white hover:bg-[#dd7000]"}`}
+              onClick={() => onDelete?.(user)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-600"
             >
-              {user.status === "موقوف" ? (
-                <CheckCircle2 size={18} />
-              ) : (
-                <Ban size={18} />
-              )}
-              {user.status === "موقوف" ? "تفعيل الحساب" : "إيقاف الحساب"}
+              <Trash2 size={18} />
+              حذف المستخدم
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={() => onDelete?.(user)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-600"
-          >
-            <Trash2 size={18} />
-            حذف المستخدم
-          </button>
         </div>
 
         <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -362,10 +372,11 @@ export const UserDetailsModal = ({
               onClick={(event) => {
                 if (!user.cvUrl) event.preventDefault();
               }}
-              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold !text-white transition-colors sm:w-auto [&_svg]:!text-white ${user.cvUrl
+              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold !text-white transition-colors sm:w-auto [&_svg]:!text-white ${
+                user.cvUrl
                   ? "bg-[#123C91] hover:bg-[#0f327a]"
                   : "cursor-not-allowed bg-gray-100"
-                }`}
+              }`}
             >
               <FileText size={17} />
               {user.cvUrl ? "عرض السيرة الذاتية" : "السيرة الذاتية غير متاحة"}
@@ -451,7 +462,14 @@ const ConfirmDialog = ({
   );
 };
 
-const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete, onOpenChat }) => {
+const ActionsMenu = ({
+  user,
+  onView,
+  onApprove,
+  onToggleStatus,
+  onDelete,
+  onOpenChat,
+}) => {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({
     top: 0,
@@ -548,9 +566,9 @@ const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete, onOpen
     const top = shouldOpenAbove
       ? Math.max(screenPadding, rect.top - menuHeight - gap)
       : Math.min(
-        rect.bottom + gap,
-        window.innerHeight - menuHeight - screenPadding,
-      );
+          rect.bottom + gap,
+          window.innerHeight - menuHeight - screenPadding,
+        );
 
     const left = Math.min(
       Math.max(screenPadding, rect.right - menuWidth),
@@ -621,8 +639,9 @@ const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete, onOpen
                       item.onClick();
                       setOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-sm text-right hover:bg-gray-50 ${item.tone ?? "text-[#575F69]"
-                      }`}
+                    className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-sm text-right hover:bg-gray-50 ${
+                      item.tone ?? "text-[#575F69]"
+                    }`}
                   >
                     <Icon size={15} />
                     <span>{item.label}</span>
@@ -637,7 +656,14 @@ const ActionsMenu = ({ user, onView, onApprove, onToggleStatus, onDelete, onOpen
   );
 };
 
-const MobileCard = ({ u, onView, onApprove, onToggleStatus, onDelete, onOpenChat }) => (
+const MobileCard = ({
+  u,
+  onView,
+  onApprove,
+  onToggleStatus,
+  onDelete,
+  onOpenChat,
+}) => (
   <div
     className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4"
     dir="rtl"
@@ -762,18 +788,18 @@ const UsersTable = ({
       setDetailsUser((currentUser) =>
         currentUser?.id === user.id
           ? {
-            ...currentUser,
-            ...fullTeacherData,
-            id: currentUser.id,
-            name:
-              fullTeacherData.fullName ||
-              fullTeacherData.name ||
-              currentUser.name,
-            role: currentUser.role,
-            status: currentUser.status,
-            teacherStatus: fullTeacherData.status,
-            teacherId,
-          }
+              ...currentUser,
+              ...fullTeacherData,
+              id: currentUser.id,
+              name:
+                fullTeacherData.fullName ||
+                fullTeacherData.name ||
+                currentUser.name,
+              role: currentUser.role,
+              status: currentUser.status,
+              teacherStatus: fullTeacherData.status,
+              teacherId,
+            }
           : currentUser,
       );
 

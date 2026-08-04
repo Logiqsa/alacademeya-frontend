@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { CreditCard, Loader2, RefreshCw } from "lucide-react";
+import { CreditCard, Loader2, RefreshCw, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import {
+  cancelSubscriptionOrder,
   getMySubscriptionOrders,
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
+import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
 
 const PAYMENT_LABELS = {
   created: "جاهز للدفع",
@@ -30,13 +32,12 @@ const ORDER_TYPE_LABELS = {
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 
-const money = (value) => `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
-
 const SubscriptionOrdersPanel = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState("");
+  const [cancellingId, setCancellingId] = useState("");
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -45,7 +46,12 @@ const SubscriptionOrdersPanel = () => {
       const data = responseData(response);
       setOrders(
         Array.isArray(data)
-          ? data.filter((order) => order.approvalStatus !== "approved")
+          ? data.filter(
+              (order) =>
+                order.approvalStatus !== "approved" &&
+                order.approvalStatus !== "cancelled" &&
+                order.paymentStatus !== "cancelled",
+            )
           : [],
       );
     } catch (error) {
@@ -75,6 +81,25 @@ const SubscriptionOrdersPanel = () => {
         toast.error(error.response?.data?.message || "تعذر بدء عملية الدفع");
       }
       setPayingId("");
+    }
+  };
+
+  const cancelOrder = async (order) => {
+    if (
+      !window.confirm(
+        "هل تريد إلغاء طلب الاشتراك؟ لن تتمكن من دفعه بعد الإلغاء.",
+      )
+    )
+      return;
+    setCancellingId(order.id);
+    try {
+      await cancelSubscriptionOrder(order.id);
+      setOrders((current) => current.filter((item) => item.id !== order.id));
+      toast.success("تم إلغاء طلب الاشتراك");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر إلغاء طلب الاشتراك");
+    } finally {
+      setCancellingId("");
     }
   };
 
@@ -143,9 +168,16 @@ const SubscriptionOrdersPanel = () => {
                       : "—"}
                   </p>
                 </div>
-                <strong className="text-lg text-[#123C91]">
-                  {money(order.totalAmount)}
-                </strong>
+                <div className="text-left">
+                  <strong className="block text-lg text-[#123C91]">
+                    {formatMoney(order.totalAmount, order.currency)}
+                  </strong>
+                  {formatEgpEquivalent(order.totalAmount, order) && (
+                    <span className="mt-1 block text-xs text-[#8C9198]">
+                      ما يعادله {formatEgpEquivalent(order.totalAmount, order)}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="mt-4 divide-y rounded-xl bg-[#F9FAFA] px-4">
@@ -163,7 +195,7 @@ const SubscriptionOrdersPanel = () => {
                       </span>
                     </div>
                     <span className="font-medium text-[#123C91]">
-                      {money(item.finalPrice)}
+                      {formatMoney(item.finalPrice, order.currency)}
                     </span>
                   </div>
                 ))}
@@ -194,6 +226,25 @@ const SubscriptionOrdersPanel = () => {
                     className="h-11 rounded-lg border border-[#123C91] px-5 text-sm font-medium text-[#123C91]"
                   >
                     عرض حالة الطلب
+                  </button>
+                )}
+                {["created", "pending"].includes(order.paymentStatus) && (
+                  <button
+                    type="button"
+                    onClick={() => cancelOrder(order)}
+                    disabled={
+                      cancellingId === order.id || payingId === order.id
+                    }
+                    className="flex h-11 items-center justify-center gap-2 rounded-lg border border-red-200 px-5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    {cancellingId === order.id ? (
+                      <Loader2 size={17} className="animate-spin" />
+                    ) : (
+                      <XCircle size={17} />
+                    )}
+                    {cancellingId === order.id
+                      ? "جارٍ الإلغاء..."
+                      : "إلغاء الطلب"}
                   </button>
                 )}
               </div>

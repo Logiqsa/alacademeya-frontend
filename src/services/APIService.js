@@ -181,6 +181,8 @@ export const getSubscriptionOrder = (id) =>
 export const getMySubscriptionOrders = () => API.get("/subscription-orders/my");
 export const startSubscriptionOrderCheckout = (id) =>
   API.post(`/subscription-orders/${id}/checkout`);
+export const cancelSubscriptionOrder = (id) =>
+  API.post(`/subscription-orders/${id}/cancel`);
 export const getPendingSubscriptionOrders = (params) =>
   API.get("/subscription-orders/admin/pending", { params });
 export const getAdminSubscriptionOrder = (id) =>

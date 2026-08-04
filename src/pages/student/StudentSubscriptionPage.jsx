@@ -8,6 +8,11 @@ import SubscriptionTable from "../../components/parent/subscription/Subscription
 import SubscriptionOrdersPanel from "../../components/subscription/SubscriptionOrdersPanel";
 import { AuthContext } from "../../context/AuthContext";
 import { getMyProfile, getMySubscriptions } from "../../services/APIService";
+import {
+  currencyCodeOf,
+  formatEgpEquivalent,
+  formatMoney,
+} from "../../utils/currencyDisplay";
 
 const STATUS_LABELS = {
   active: "نشطة",
@@ -89,9 +94,20 @@ const subscriptionRows = (subscription, studentName) => {
       startDate,
       endDate,
       amount:
-        item.finalPrice != null
-          ? `${Number(item.finalPrice).toLocaleString("ar-EG")} ج.م`
-          : "--",
+        item.finalPrice != null ? (
+          <span className="whitespace-nowrap">
+            <span className="block">
+              {formatMoney(item.finalPrice, currencyCodeOf(subscription))}
+            </span>
+            {formatEgpEquivalent(item.finalPrice, subscription) && (
+              <small className="block text-[#8C9198]">
+                يعادل {formatEgpEquivalent(item.finalPrice, subscription)}
+              </small>
+            )}
+          </span>
+        ) : (
+          "--"
+        ),
       status: STATUS_LABELS[status] || status || "—",
       rawStatus: status,
       totalSessions: total,

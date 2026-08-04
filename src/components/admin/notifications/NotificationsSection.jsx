@@ -23,10 +23,8 @@ import {
   getTeachers,
   getAllStudents,
   getUsers,
-  updateStudentProfile,
-  updateTeacherProfile,
-  updateUser,
 } from "../../../services/APIService";
+import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import {
   markAdminLocalNotificationRead,
   markAllAdminLocalNotificationsRead,
@@ -496,6 +494,7 @@ const NotificationsSection = ({
               admin: "مشرف",
               "super-admin": "مشرف عام",
             }[user.role] || user.role,
+          rawRole: user.role,
           status:
             teacherProfile?.status === "approved"
               ? "معتمد"
@@ -583,20 +582,10 @@ const NotificationsSection = ({
 
     setApprovingTeacher(true);
     try {
-      if (needsTeacherApproval) {
-        await updateTeacherProfile(teacherDetails.teacherId, {
-          status: "approved",
-        });
-      }
-      if (teacherDetails.studentId) {
-        await updateStudentProfile(teacherDetails.studentId, {
-          status: "approved",
-        });
-      }
-      await updateUser(teacherDetails.userId, {
-        ...(teacherDetails.isTeacher ? { status: "active" } : {}),
-        registrationStatus: "active",
-        isActive: true,
+      await approveRegistrationRequest({
+        userId: teacherDetails.userId,
+        role:
+          teacherDetails.rawRole || (teacherDetails.isTeacher ? "teacher" : ""),
       });
       setTeacherDetails((current) => ({
         ...current,

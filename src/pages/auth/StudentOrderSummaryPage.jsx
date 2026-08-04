@@ -8,9 +8,8 @@ import {
   createSubscriptionOrder,
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
+import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
 
-const money = (value, currency = "EGP") =>
-  `${Number(value || 0).toLocaleString("ar-EG")} ${currency}`;
 const responseData = (response) => response?.data?.data ?? response?.data;
 const isExistingProfileError = (error) => {
   const message = String(error.response?.data?.message || "").toLowerCase();
@@ -142,7 +141,7 @@ const StudentOrderSummaryPage = () => {
                         </small>
                       </div>
                       <strong className="text-[#123C91]">
-                        {money(
+                        {formatMoney(
                           item.finalPrice,
                           order.currency || state?.currency,
                         )}
@@ -151,12 +150,12 @@ const StudentOrderSummaryPage = () => {
                     {(item.discount || 0) > 0 && (
                       <div className="text-xs text-gray-500 mt-1">
                         السعر الأصلي{" "}
-                        {money(
+                        {formatMoney(
                           item.originalPrice,
                           order.currency || state?.currency,
                         )}{" "}
                         — الخصم{" "}
-                        {money(
+                        {formatMoney(
                           item.discount,
                           order.currency || state?.currency,
                         )}
@@ -168,9 +167,20 @@ const StudentOrderSummaryPage = () => {
               <div className="flex justify-between border border-gray-200 rounded-xl p-4 mt-5 text-lg font-bold">
                 <span>الإجمالي</span>
                 <strong className="text-[#123C91]">
-                  {money(order.totalAmount, order.currency || state?.currency)}
+                  {formatMoney(
+                    order.totalAmount,
+                    order.currency || state?.currency,
+                  )}
                 </strong>
               </div>
+              {formatEgpEquivalent(order.totalAmount, order) && (
+                <div className="mt-2 text-left text-sm text-gray-500">
+                  ما يعادله {formatEgpEquivalent(order.totalAmount, order)}
+                  {order.currency !== "EGP" && order.exchangeRate
+                    ? ` بسعر 1 ${order.currency} = ${order.exchangeRate} ج.م`
+                    : ""}
+                </div>
+              )}
             </>
           )}
 

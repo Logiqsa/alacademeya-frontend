@@ -5,8 +5,11 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import EntityProfileModal from "../../../components/admin/users/EntityProfileModal";
 import { getPendingSubscriptionOrders } from "../../../services/APIService";
+import {
+  formatEgpEquivalent,
+  formatMoney,
+} from "../../../utils/currencyDisplay";
 
-const money = (value) => `${Number(value || 0).toLocaleString("ar-EG")} جنيه`;
 const date = (value) =>
   value
     ? new Date(value).toLocaleDateString("ar-EG", { dateStyle: "medium" })
@@ -128,7 +131,15 @@ const SubscriptionRequestsPage = () => {
                           .join("، ")}
                       </td>
                       <td className="p-4 font-semibold text-[#123C91]">
-                        {money(order.totalAmount)}
+                        <span className="block">
+                          {formatMoney(order.totalAmount, order.currency)}
+                        </span>
+                        {formatEgpEquivalent(order.totalAmount, order) && (
+                          <small className="block font-normal text-gray-500">
+                            يعادل{" "}
+                            {formatEgpEquivalent(order.totalAmount, order)}
+                          </small>
+                        )}
                       </td>
                       <td className="p-4 text-sm text-gray-600">
                         {date(order.paidAt)}

@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getTeacherCvUrl } from "../../../utils/teacherCv";
-import { updateStudentProfile, updateUser } from "../../../services/APIService";
+import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
+import { UserDetailsModal } from "./Userstable";
 
 const text = (value) => {
   if (!value) return "—";
@@ -64,16 +65,12 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   const approveStudent = async () => {
     if (!window.confirm("هل تريد قبول طلب الطالب وتفعيل حسابه؟")) return;
     const userId = user.id || user._id;
-    const profileId = entity.id || entity._id;
     if (!userId) return toast.error("معرّف المستخدم غير متاح");
     setApproving(true);
     try {
-      if (profileId && entity.user) {
-        await updateStudentProfile(profileId, { status: "approved" });
-      }
-      await updateUser(userId, {
-        registrationStatus: "active",
-        isActive: true,
+      await approveRegistrationRequest({
+        userId,
+        role: "student",
       });
       setApprovedUserId(userId);
       toast.success("تم قبول طلب الطالب وتفعيل الحساب");
@@ -83,6 +80,38 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
       setApproving(false);
     }
   };
+
+  if (!isTeacher) {
+    const studentStatus = canApprove
+      ? "معلق"
+      : approvedUserId === currentUserId || registrationStatus === "active"
+        ? "نشط"
+        : user.isActive === false
+          ? "موقوف"
+          : "نشط";
+    return (
+      <UserDetailsModal
+        open
+        onClose={onClose}
+        user={{
+          id: currentUserId,
+          name,
+          email: user.email,
+          phone: user.phone,
+          username: user.username,
+          role: "طالب",
+          status: studentStatus,
+          joinDate: user.createdAt
+            ? new Date(user.createdAt).toLocaleDateString("ar-EG")
+            : "—",
+          stage: text(entity.stage ?? entity.academicLevel),
+          grade: text(entity.grade),
+          package: text(entity.package),
+        }}
+        onApprove={canApprove && !approving ? approveStudent : undefined}
+      />
+    );
+  }
 
   return (
     <div

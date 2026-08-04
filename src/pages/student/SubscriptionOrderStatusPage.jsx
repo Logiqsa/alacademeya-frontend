@@ -16,6 +16,7 @@ import {
   getSubscriptionOrder,
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
+import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 const terminalPayments = new Set(["paid", "failed", "refunded"]);
@@ -162,21 +163,42 @@ const SubscriptionOrderStatusPage = () => {
                     : "لم يتم تأكيد الدفع بعد"}
           </p>
           {!loading && orderId && (
-            <div className="space-y-4">
-              {labels.map(([label, done]) => (
-                <div key={label} className="flex items-center gap-3">
-                  <span
-                    className={`w-5 h-5 rounded-full border-2 ${done ? "bg-[#123C91] border-[#123C91]" : "bg-white border-gray-300"}`}
-                  />
-                  <span
-                    className={
-                      done ? "font-medium text-[#123C91]" : "text-gray-400"
-                    }
-                  >
-                    {label}
-                  </span>
+            <div>
+              {order && (
+                <div className="mb-6 rounded-xl bg-[#F9FAFA] p-4 text-center">
+                  <p className="text-xs text-gray-500">قيمة الطلب</p>
+                  <strong className="mt-1 block text-xl text-[#123C91]">
+                    {formatMoney(order.totalAmount, order.currency)}
+                  </strong>
+                  {formatEgpEquivalent(order.totalAmount, order) && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      ما يعادله {formatEgpEquivalent(order.totalAmount, order)}
+                    </p>
+                  )}
+                  {order.currency !== "EGP" && order.exchangeRate && (
+                    <p className="mt-1 text-xs text-gray-400">
+                      سعر الصرف المستخدم: 1 {order.currency} ={" "}
+                      {order.exchangeRate} ج.م
+                    </p>
+                  )}
                 </div>
-              ))}
+              )}
+              <div className="space-y-4">
+                {labels.map(([label, done]) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <span
+                      className={`w-5 h-5 rounded-full border-2 ${done ? "bg-[#123C91] border-[#123C91]" : "bg-white border-gray-300"}`}
+                    />
+                    <span
+                      className={
+                        done ? "font-medium text-[#123C91]" : "text-gray-400"
+                      }
+                    >
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {["created", "pending"].includes(order?.paymentStatus) && (

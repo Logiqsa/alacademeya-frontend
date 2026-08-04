@@ -14,12 +14,11 @@ import {
   getAllStudents,
   getTeachers,
   updateUser,
-  updateStudentProfile,
-  updateTeacherProfile,
 } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
+import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 
 const PAGE_SIZE = 6;
 const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
@@ -176,7 +175,9 @@ const UsersPage = () => {
               const teacher = teachersByUserId.get(String(mapped.id));
               if (teacher) {
                 const grades = profileNames(teacher.grades ?? teacher.grade);
-                const subjects = profileNames(teacher.subjects ?? teacher.subject);
+                const subjects = profileNames(
+                  teacher.subjects ?? teacher.subject,
+                );
                 const curriculums = profileNames(
                   teacher.curriculums ?? teacher.curriculum,
                 );
@@ -231,7 +232,9 @@ const UsersPage = () => {
   const gradeOptions = [
     ...new Set(
       visibleUsers
-        .filter((user) => user.role === "طالب" && user.grade && user.grade !== "—")
+        .filter(
+          (user) => user.role === "طالب" && user.grade && user.grade !== "—",
+        )
         .map((user) => user.grade),
     ),
   ].sort((a, b) => a.localeCompare(b, "ar"));
@@ -357,36 +360,9 @@ const UsersPage = () => {
 
   const handleApprove = async (user) => {
     try {
-      if (user.rawRole === "student" || user.rawRole === "teacher") {
-        const profileResponse = user.rawRole === "student"
-          ? await getAllStudents({ user: user.id })
-          : await getTeachers({ user: user.id });
-        const responseData = profileResponse.data?.data ?? profileResponse.data;
-        const profiles = Array.isArray(responseData)
-          ? responseData
-          : responseData?.students || responseData?.teachers || [responseData];
-        const profile = profiles.find(Boolean);
-        const profileId = profile?.id || profile?._id;
-
-        if (!profileId) {
-          throw new Error(
-            user.rawRole === "teacher"
-              ? "ملف المعلم غير موجود"
-              : "ملف الطالب غير موجود",
-          );
-        }
-
-        if (user.rawRole === "teacher") {
-          await updateTeacherProfile(profileId, { status: "approved" });
-        } else {
-          await updateStudentProfile(profileId, { status: "approved" });
-        }
-      }
-
-      await updateUser(user.id, {
-        ...(user.rawRole === "teacher" ? { status: "active" } : {}),
-        registrationStatus: "active",
-        isActive: true,
+      await approveRegistrationRequest({
+        userId: user.id,
+        role: user.rawRole,
       });
       setUsers((prev) =>
         prev.map((u) =>
@@ -410,7 +386,9 @@ const UsersPage = () => {
         toast.error("هذا المستخدم لم يعد موجودًا، جاري تحديث القائمة");
         fetchUsers(); // إعادة تحميل كامل بدل الحذف المحلي فقط
       } else {
-        toast.error(err.response?.data?.message || err.message || "تعذر قبول الطلب");
+        toast.error(
+          err.response?.data?.message || err.message || "تعذر قبول الطلب",
+        );
       }
     }
   };
@@ -533,7 +511,6 @@ const UsersPage = () => {
             />
           )}
         </div>
-
       </div>
     </AdminLayout>
   );
