@@ -33,10 +33,11 @@ export const getDatabaseUserFromAccountState = (response) => {
 export const isDatabaseAccountActivated = (response) => {
   const profile = getAccountStateData(response);
   const user =
-    profile?.user && typeof profile.user === "object"
-      ? profile.user
-      : profile;
-  const normalize = (value) => String(value || "").trim().toLowerCase();
+    profile?.user && typeof profile.user === "object" ? profile.user : profile;
+  const normalize = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
   const activeStatuses = ["active", "approved", "accepted"];
   const registrationStatus = normalize(
     user.registrationStatus || user.registration_status,

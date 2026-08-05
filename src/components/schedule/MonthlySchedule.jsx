@@ -287,20 +287,20 @@ const MonthlySchedule = ({ title, subtitle, role, hideHeader = false }) => {
       navigate(`/parent/classrooms/${classroomId}/sessions/${lessonId}`);
   };
 
-  // بيوديك للينك المناسب للحصة نفسها: لو شغالة دلوقتي (live) بيفتح لينك الاجتماع
-  // في تاب جديد، لو لسه قادمة (مفيش تفاصيل مفيدة نعرضها لسه) بيطلع toast،
-  // وإلا (منتهية/فائتة/ملغاة) بيوديك لصفحة تفاصيل الحصة
+  // الأدمن والمعلم يفتحوا صفحة تفاصيل الحصة في أي وقت. أما الطالب/ولي الأمر
+  // فالحصة المباشرة تفتح رابط الاجتماع، والحصة القادمة تعرض تنبيه الموعد.
   const openLessonLink = (lesson) => {
+    if (["admin", "teacher"].includes(role)) {
+      openDetails(lesson);
+      return;
+    }
+
     const isLive = ["live", "active"].includes(lesson.status);
     if (isLive && lesson.meetingLink) {
       window.open(lesson.meetingLink, "_blank", "noopener,noreferrer");
       return;
     }
     if (["scheduled", "postponed"].includes(lesson.status)) {
-      if (role === "teacher") {
-        openDetails(lesson);
-        return;
-      }
       toast("لم تبدأ الحصة بعد، يرجى الدخول في الموعد المحدد لها.", {
         icon: "⏰",
       });
