@@ -203,7 +203,7 @@ const AssignmentDetailsPage = () => {
               href={assignment.attachmentUrl}
               target="_blank"
               rel="noreferrer"
-              className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-[#123C91] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0e2f70] transition-colors"
+              className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-[#123C91] px-4 py-2.5 text-sm font-medium !text-white [&_svg]:!text-white hover:bg-[#0e2f70] transition-colors"
             >
               <ExternalLink size={17} />
               عرض الواجب

@@ -67,7 +67,7 @@ const StudentAssignmentsPage = () => {
         grade:
           a.submission?.score != null
             ? `${a.submission.score}/${a.totalScore}`
-            : "--",
+            : "لم يتم التسليم",
 
         totalScore: a.totalScore,
 

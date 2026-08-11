@@ -448,7 +448,6 @@ const StudentAssignmentsTable = ({
                   "عنوان الواجب",
                   "المجموعة",
                   "المادة",
-                  "المكان",
                   "الحصة",
                   "موعد التسليم",
                   "الحالة",
@@ -481,7 +480,7 @@ const StudentAssignmentsTable = ({
                     </button>
                   </td>
 
-                  {[a.group, a.subject, a.place, a.lesson, a.dueDate].map((cellData, index) => (
+                  {[a.group, a.subject, a.lesson, a.dueDate].map((cellData, index) => (
                     <td
                       key={index}
                       className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
@@ -502,7 +501,7 @@ const StudentAssignmentsTable = ({
                     className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] whitespace-nowrap"
                     style={{ fontFamily: "IBM Plex Sans Arabic, sans-serif", fontSize: "14px", lineHeight: "24px" }}
                   >
-                    {a.grade ?? "--"}
+                    {a.grade ?? "لم يتم التسليم"}
                   </td>
 
                   <td className="px-4 lg:px-6 py-3 lg:py-4">
@@ -538,7 +537,7 @@ const StudentAssignmentsTable = ({
               <MobileField label="المكان">{a.place || "--"}</MobileField> */}
               <MobileField label="الحصة">{a.lesson}</MobileField>
               <MobileField label="موعد التسليم">{a.dueDate}</MobileField>
-              <MobileField label="الدرجة">{a.grade ?? "--"}</MobileField>
+              <MobileField label="الدرجة">{a.grade ?? "لم يتم التسليم"}</MobileField>
             </div>
           </div>
         ))}
