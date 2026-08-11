@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import AssignmentDetailsStatsCards from "../../../components/teacher/assignments/AssignmentDetailsStatsCards";
 import AssignmentDetailsFilters from "../../../components/teacher/assignments/AssignmentDetailsFilters";
@@ -12,6 +12,7 @@ import {
   getClassroomStudents,
   gradeSubmission,
 } from "../../../services/APIService";
+import { getAssignmentAttachmentUrl } from "../../../utils/assignmentAttachment";
 
 const PAGE_SIZE = 5;
 
@@ -73,6 +74,7 @@ const buildAssignmentDetails = (assignmentRaw, submissionsRaw, rosterRaw) => {
   return {
     id: assignmentRaw.id,
     title: assignmentRaw.title,
+    attachmentUrl: getAssignmentAttachmentUrl(assignmentRaw),
     subtitle:
       assignmentRaw.description || "إدارة ومتابعة واجبات الطلاب وتصحيحها.",
     stats: { pendingCorrection, corrected, totalSubmissions },
@@ -187,13 +189,26 @@ const AssignmentDetailsPage = () => {
         dir="rtl"
       >
         {/* Assignment header */}
-        <div className="mb-6">
-          <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-1">
-            {assignment.title}
-          </h3>
-          <p className="text-[16px] font-normal leading-6 text-[#575F69]">
-            {assignment.subtitle}
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h3 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-1">
+              {assignment.title}
+            </h3>
+            <p className="text-[16px] font-normal leading-6 text-[#575F69]">
+              {assignment.subtitle}
+            </p>
+          </div>
+          {assignment.attachmentUrl && (
+            <a
+              href={assignment.attachmentUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-[#123C91] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0e2f70] transition-colors"
+            >
+              <ExternalLink size={17} />
+              عرض الواجب
+            </a>
+          )}
         </div>
 
         {/* Stats */}

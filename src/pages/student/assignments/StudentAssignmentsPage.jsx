@@ -73,6 +73,8 @@ const StudentAssignmentsPage = () => {
 
         submission: a.submission,
 
+        attachments: a.attachments || [],
+
         timeRemaining: "",
       }));
 

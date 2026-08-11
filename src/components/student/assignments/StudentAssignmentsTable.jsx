@@ -16,6 +16,7 @@ import {
   getMySubmission,
   submitAssignment,
 } from "../../../services/APIService";
+import { getAssignmentAttachmentUrl } from "../../../utils/assignmentAttachment";
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type, subLabel }) => {
@@ -404,6 +405,15 @@ const StudentAssignmentsTable = ({
 
   const handleOpenSubmit = (assignmentId) => setSubmitId(assignmentId);
 
+  const handleOpenAssignment = (assignment) => {
+    const attachmentUrl = getAssignmentAttachmentUrl(assignment);
+    if (attachmentUrl) {
+      window.open(attachmentUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    handleView(assignment.id);
+  };
+
   const handleSubmitted = (assignmentId) => {
     setLocalAssignments((prev) =>
       prev.map((a) => (a.id === assignmentId ? { ...a, status: "تم التسليم" } : a))
@@ -462,7 +472,13 @@ const StudentAssignmentsTable = ({
                     className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69]"
                     style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 500, fontSize: "16px", lineHeight: "20px" }}
                   >
-                    {a.title}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAssignment(a)}
+                      className="text-right text-[#123C91] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#123C91]"
+                    >
+                      {a.title}
+                    </button>
                   </td>
 
                   {[a.group, a.subject, a.place, a.lesson, a.dueDate].map((cellData, index) => (
@@ -503,9 +519,14 @@ const StudentAssignmentsTable = ({
         {localAssignments.map((a) => (
           <div key={a.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[#1A1A1A] font-semibold text-[16px]" style={{ fontFamily: "Tajawal, sans-serif" }}>
+              <button
+                type="button"
+                onClick={() => handleOpenAssignment(a)}
+                className="min-w-0 text-right text-[#123C91] font-semibold text-[16px] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#123C91]"
+                style={{ fontFamily: "Tajawal, sans-serif" }}
+              >
                 {a.title}
-              </h4>
+              </button>
               <RowActionsMenu assignment={a} onView={handleView} onSubmit={handleOpenSubmit} />
             </div>
 
