@@ -36,7 +36,7 @@ const SubmissionCount = ({ value }) => {
 const CorrectionModal = ({ student, type, onClose, onSubmit }) => {
   const [grade, setGrade] = useState(student.score ?? "");
   const [feedback, setFeedback] = useState(student.feedback ?? "");
-  const submissionFileUrl = getAssetUrl(student.fileUrl);
+  const submissionFiles = student.files || [];
 
   const handleSubmit = () => {
     onSubmit?.({ student, grade, feedback, type });
@@ -113,59 +113,50 @@ const CorrectionModal = ({ student, type, onClose, onSubmit }) => {
         </p>
 
         <div className="px-4 sm:px-6 pb-6 space-y-4 sm:space-y-5">
-          {/* File card */}
-          <div className="border border-gray-200 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 py-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-[#EAF4FF] flex items-center justify-center shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#123C91" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-              </div>
-              <div className="text-right min-w-0">
-                <p
-                  className="mb-1 truncate"
-                  style={{
-                    fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                    fontWeight: 600,
-                    fontSize: "14px",
-                    color: "#1A1A1A",
-                    direction: "ltr",
-                    textAlign: "right",
-                  }}
-                  title={student.fileName ?? `${student.name.replace(/\s/g, "_")}_assignment.pdf`}
-                >
-                  {student.fileName ?? `${student.name.replace(/\s/g, "_")}_assignment.pdf`}
-                </p>
-                <p
-                  style={{
-                    fontFamily: "IBM Plex Sans Arabic, sans-serif",
-                    fontSize: "12px",
-                    color: "#8C9198",
-                  }}
-                >
-                  {student.fileSize ?? "PDF 24MB"}
-                </p>
-              </div>
-            </div>
+          {/* Submitted files */}
+          <div className="space-y-2">
+            {submissionFiles.map((file) => {
+              const fileUrl = getAssetUrl(file.url);
+              return (
+                <div key={file.id} className="border border-gray-200 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 py-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-[#EAF4FF] flex items-center justify-center shrink-0">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#123C91" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    </div>
+                    <div className="text-right min-w-0">
+                      <p
+                        className="mb-1 truncate text-sm font-semibold text-[#1A1A1A]"
+                        style={{ direction: "ltr", textAlign: "right" }}
+                        title={file.name}
+                      >
+                        {file.name}
+                      </p>
+                      {file.size && <p className="text-xs text-[#8C9198]">{file.size}</p>}
+                    </div>
+                  </div>
 
-            <a
-              href={submissionFileUrl || undefined}
-              target="_blank"
-              rel="noreferrer"
-              aria-disabled={!submissionFileUrl}
-              onClick={(e) => {
-                if (!submissionFileUrl) e.preventDefault();
-              }}
-              className={`border border-gray-200 rounded-xl px-5 py-2 text-sm font-medium transition-colors shrink-0 w-full sm:w-auto text-center ${
-                submissionFileUrl
-                  ? "text-[#575F69] hover:bg-gray-50"
-                  : "text-[#9CA3AF] cursor-not-allowed"
-              }`}
-              style={{ fontFamily: "Tajawal, sans-serif" }}
-            >
-              عرض
-            </a>
+                  <a
+                    href={fileUrl || undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-disabled={!fileUrl}
+                    onClick={(e) => {
+                      if (!fileUrl) e.preventDefault();
+                    }}
+                    className={`border border-gray-200 rounded-xl px-5 py-2 text-sm font-medium transition-colors shrink-0 w-full sm:w-auto text-center ${
+                      fileUrl
+                        ? "text-[#575F69] hover:bg-gray-50"
+                        : "text-[#9CA3AF] cursor-not-allowed"
+                    }`}
+                  >
+                    عرض
+                  </a>
+                </div>
+              );
+            })}
           </div>
 
           {/* Grade input */}

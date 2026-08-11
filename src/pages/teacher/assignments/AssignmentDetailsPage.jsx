@@ -44,7 +44,18 @@ const buildAssignmentDetails = (assignmentRaw, submissionsRaw, rosterRaw) => {
     }
 
     const graded = sub.status === "graded";
-    const attachment = sub.attachments?.[0];
+    const files = (sub.attachments || []).map((attachment, index) => ({
+      id: attachment?.id || attachment?._id || `${sub.id}-file-${index}`,
+      name: attachment?.originalName || attachment?.name || `ملف ${index + 1}`,
+      size: formatBytes(attachment?.size),
+      url:
+        attachment?.url ||
+        attachment?.secureUrl ||
+        attachment?.secure_url ||
+        attachment?.fileUrl ||
+        attachment?.path ||
+        (typeof attachment === "string" ? attachment : null),
+    }));
     return {
       ...base,
       submitted: true,
@@ -56,14 +67,7 @@ const buildAssignmentDetails = (assignmentRaw, submissionsRaw, rosterRaw) => {
         ? `${sub.score}/${assignmentRaw.totalScore}`
         : undefined,
       correctionStatus: graded ? "تم التصحيح" : "قيد التصحيح",
-      fileName: attachment?.originalName,
-      fileSize: formatBytes(attachment?.size) ?? undefined,
-      fileUrl:
-        attachment?.url ||
-        attachment?.secureUrl ||
-        attachment?.secure_url ||
-        attachment?.fileUrl ||
-        attachment?.path,
+      files,
     };
   });
 
