@@ -23,6 +23,15 @@ const idOf = (obj) => {
   return obj.id || obj._id || "";
 };
 
+const nameOf = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.name?.ar || value.name?.en || value.name || value.ar || value.en || "";
+};
+
+const normalizedName = (value) =>
+  nameOf(value).trim().toLocaleLowerCase("ar");
+
 /* ------------------------------------------------------------------ */
 /* Static Data                                                          */
 /* ------------------------------------------------------------------ */
@@ -206,9 +215,13 @@ const CreateGroupPages = () => {
 
     setLoadingTeachers(true);
 
-    getTeachers()
+    getTeachers({ page: 1, limit: 1000 })
       .then((res) => {
         const raw = res.data?.data;
+        const selectedSubject = subjects.find(
+          (subject) => idOf(subject) === data.subject,
+        );
+        const selectedSubjectName = normalizedName(selectedSubject);
 
         const list = Array.isArray(raw)
           ? raw
@@ -230,8 +243,12 @@ const CreateGroupPages = () => {
               totalReviews: teacher.totalReviews,
               isActive: user.isActive,
               registrationStatus: user.registrationStatus,
+              profileStatus: String(teacher.status || "").toLowerCase(),
               isDeleted: teacher.isDeleted ?? user.isDeleted ?? false,
               subjectIds: (teacher.subjects || []).map(idOf),
+              subjectNames: (teacher.subjects || [])
+                .map(normalizedName)
+                .filter(Boolean),
               gradeIds: (teacher.grades || []).map(idOf),
               curriculumIds: (teacher.curriculums || []).map(idOf),
             };
@@ -239,10 +256,13 @@ const CreateGroupPages = () => {
           .filter(
             (teacher) =>
               teacher.id &&
-              teacher.isActive === true &&
-              teacher.registrationStatus === "active" &&
+              (["approved", "active"].includes(teacher.profileStatus) ||
+                (teacher.isActive === true &&
+                  teacher.registrationStatus === "active")) &&
               teacher.isDeleted !== true &&
-              teacher.subjectIds.includes(data.subject) &&
+              (teacher.subjectIds.includes(data.subject) ||
+                (selectedSubjectName &&
+                  teacher.subjectNames.includes(selectedSubjectName))) &&
               teacher.gradeIds.includes(data.grade) &&
               teacher.curriculumIds.includes(data.curriculum),
           );
@@ -254,7 +274,7 @@ const CreateGroupPages = () => {
         setTeachers([]);
       })
       .finally(() => setLoadingTeachers(false));
-  }, [data.curriculum, data.stage, data.grade, data.subject]);
+  }, [data.curriculum, data.stage, data.grade, data.subject, subjects]);
 
   const handleField = (field, value) => {
     setData((prev) => {
