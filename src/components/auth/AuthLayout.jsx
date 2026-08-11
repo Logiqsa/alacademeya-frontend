@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { FaWhatsapp } from "react-icons/fa";
+import { MdEmail } from "react-icons/md";
 import img1 from "../../assets/slide1.png";
 import img2 from "../../assets/slide2.png";
 import img3 from "../../assets/slide3.png";
+import useContactSettings, {
+  whatsappLink,
+} from "../../hooks/useContactSettings";
 
 const slides = [
   { image: img1, title: "منظومة تعليمية متكاملة", desc: "نجمع بين الطلاب وأولياء الأمور والمعلمين في منصة واحدة لتجربة تعليمية أكثر تنظيماً وفعالية." },
@@ -12,9 +18,20 @@ const slides = [
 const AuthLayout = ({ children }) => {
   const [current, setCurrent] = useState(0);
   const [progress, setProgress] = useState(0);
+  const { pathname } = useLocation();
+  const { contactSettings } = useContactSettings();
+  const whatsappUrl = whatsappLink(contactSettings?.whatsappNumber);
+  const emailUrl = contactSettings?.email
+    ? `mailto:${contactSettings.email}`
+    : "";
+  const showWhatsappButton =
+    pathname === "/login" ||
+    pathname === "/select-account-type" ||
+    pathname === "/verify-otp" ||
+    pathname === "/register" ||
+    pathname.startsWith("/register/");
 
   useEffect(() => {
-    setProgress(0);
     const duration = 4000;
     const intervalTime = 50;
     const step = 100 / (duration / intervalTime);
@@ -81,6 +98,33 @@ const AuthLayout = ({ children }) => {
           })}
         </div>
       </div>
+
+      {showWhatsappButton && (whatsappUrl || emailUrl) && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+          {emailUrl && (
+            <a
+              href={emailUrl}
+              aria-label="تواصل معنا عبر البريد الإلكتروني"
+              title="تواصل معنا عبر البريد الإلكتروني"
+              className="flex size-13 items-center justify-center rounded-full bg-[#123C91] text-white shadow-lg transition-all duration-300 hover:scale-110 hover:bg-[#0F3278] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#123C91] [&_svg]:text-white"
+            >
+              <MdEmail size={28} aria-hidden="true" />
+            </a>
+          )}
+          {whatsappUrl && (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="تواصل معنا عبر واتساب"
+              title="تواصل معنا عبر واتساب"
+              className="flex size-13 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-all duration-300 hover:scale-110 hover:bg-[#1ebe5d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] [&_svg]:text-white"
+            >
+              <FaWhatsapp size={29} aria-hidden="true" />
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 };

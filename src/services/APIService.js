@@ -16,8 +16,40 @@ const attachToken = (config) => {
   return config;
 };
 
+const firstValidationMessage = (value) => {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const message = firstValidationMessage(item);
+      if (message) return message;
+    }
+  }
+  if (value && typeof value === "object") {
+    for (const item of Object.values(value)) {
+      const message = firstValidationMessage(item);
+      if (message) return message;
+    }
+  }
+  return "";
+};
+
+const exposeValidationMessage = (error) => {
+  const body = error?.response?.data;
+  const validationMessage = firstValidationMessage(body?.errors);
+
+  // Most screens already display response.data.message. Replace the generic
+  // wrapper with the useful field-level validation message in one place.
+  if (body && validationMessage) body.message = validationMessage;
+  return Promise.reject(error);
+};
+
 API.interceptors.request.use(attachToken);
 ROOT_API.interceptors.request.use(attachToken);
+API.interceptors.response.use((response) => response, exposeValidationMessage);
+ROOT_API.interceptors.response.use(
+  (response) => response,
+  exposeValidationMessage,
+);
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export const login = (credentials) => API.post("/auth/login", credentials);

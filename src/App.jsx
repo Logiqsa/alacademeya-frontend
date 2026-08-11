@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useContext } from "react";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster, ToastBar } from "react-hot-toast";
 
 import HomeLayout from "./components/layout/HomeLayout";
 import Landing from "./pages/Landing";
@@ -113,8 +113,30 @@ function App() {
       <Toaster
         position="top-left"
         reverseOrder={false}
-        toastOptions={{ style: { direction: "ltr" } }}
-      />
+        toastOptions={{
+          duration: Infinity,
+          style: { direction: "rtl" },
+        }}
+      >
+        {(currentToast) => (
+          <ToastBar toast={currentToast}>
+            {({ icon, message }) => (
+              <>
+                {icon}
+                <div className="flex-1">{message}</div>
+                <button
+                  type="button"
+                  onClick={() => toast.dismiss(currentToast.id)}
+                  className="mr-2 flex size-6 shrink-0 items-center justify-center rounded-full text-lg leading-none text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                  aria-label="إغلاق الرسالة"
+                >
+                  ×
+                </button>
+              </>
+            )}
+          </ToastBar>
+        )}
+      </Toaster>
 
       <Routes>
         {/* Landing */}
