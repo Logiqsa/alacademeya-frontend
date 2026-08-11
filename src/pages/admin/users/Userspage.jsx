@@ -51,6 +51,34 @@ const profileNames = (values) =>
     .map(localizedProfileName)
     .filter(Boolean);
 
+const hasValues = (value) =>
+  Array.isArray(value) ? value.length > 0 : Boolean(value);
+
+const isTeacherProfileIncomplete = (user, teacher) =>
+  !teacher ||
+  hasIncompleteRegistration(user) ||
+  hasIncompleteRegistration(teacher) ||
+  !hasValues(teacher.curriculums ?? teacher.curriculum) ||
+  !hasValues(teacher.grades ?? teacher.grade) ||
+  !hasValues(teacher.subjects ?? teacher.subject);
+
+const isStudentProfileIncomplete = (user, student) => {
+  if (!student || hasIncompleteRegistration(user) || hasIncompleteRegistration(student)) {
+    return true;
+  }
+
+  const studentType = student.studentType || user.studentType || "school";
+  if (studentType !== "school") return false;
+
+  return (
+    !student.curriculum ||
+    !student.stage ||
+    !student.grade ||
+    !student.birthDate ||
+    !hasValues(student.preferredSubjects)
+  );
+};
+
 const mapUser = (u) => ({
   id: u.id || u._id,
   name: u.fullName || u.name || "—",
@@ -156,7 +184,7 @@ const UsersPage = () => {
       const teacherProfilesData = teachersResponse?.data?.data;
       const teacherProfiles = Array.isArray(teacherProfilesData)
         ? teacherProfilesData
-        : [];
+        : teacherProfilesData?.teachers || [];
       const teachersByUserId = new Map(
         teacherProfiles.map((teacher) => [
           String(
@@ -183,6 +211,9 @@ const UsersPage = () => {
                 );
                 return {
                   ...mapped,
+                  status: isTeacherProfileIncomplete(rawUser, teacher)
+                    ? "ملف غير مكتمل"
+                    : mapped.status,
                   profileStatus: teacher.status,
                   teacherGrades: grades,
                   teacherSubjects: subjects,
@@ -192,9 +223,32 @@ const UsersPage = () => {
                   curriculaLabel: curriculums.join("، ") || "—",
                 };
               }
+              if (mapped.rawRole === "teacher") {
+                return {
+                  ...mapped,
+                  status: "ملف غير مكتمل",
+                  teacherGrades: [],
+                  teacherSubjects: [],
+                  teacherCurriculums: [],
+                  gradesLabel: "—",
+                  subjectsLabel: "—",
+                  curriculaLabel: "—",
+                };
+              }
+              if (mapped.rawRole === "student" && !student) {
+                return {
+                  ...mapped,
+                  status: "ملف غير مكتمل",
+                  grade: "—",
+                  stage: "—",
+                };
+              }
               return student
                 ? {
                     ...mapped,
+                    status: isStudentProfileIncomplete(rawUser, student)
+                      ? "ملف غير مكتمل"
+                      : mapped.status,
                     studentId: student.id || student._id,
                     profileStatus: student.status,
                     grade:
@@ -227,9 +281,7 @@ const UsersPage = () => {
   }, [fetchUsers]);
 
   // استبعد أي مستخدم متعمله soft-delete من الجدول والإحصائيات
-  const visibleUsers = users.filter(
-    (user) => !user.isDeleted && !hasIncompleteRegistration(user),
-  );
+  const visibleUsers = users.filter((user) => !user.isDeleted);
   const gradeOptions = [
     ...new Set(
       visibleUsers

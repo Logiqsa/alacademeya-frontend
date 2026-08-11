@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useContext } from "react";
-import { Eye, EyeOff, ChevronDown, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, ChevronDown, ArrowRight, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
@@ -15,6 +15,14 @@ import { AuthContext } from "../../context/AuthContext";
 
 const OTP_LENGTH = 6;
 const TIMER_START = 60;
+
+const PASSWORD_REQUIREMENTS = [
+  { label: "8 أحرف على الأقل", test: (value) => value.length >= 8 },
+  { label: "حرف إنجليزي كبير واحد على الأقل", test: (value) => /[A-Z]/.test(value) },
+  { label: "حرف إنجليزي صغير واحد على الأقل", test: (value) => /[a-z]/.test(value) },
+  { label: "رقم واحد على الأقل", test: (value) => /\d/.test(value) },
+  { label: "رمز خاص واحد على الأقل (@$!%*?&)", test: (value) => /[@$!%*?&]/.test(value) },
+];
 
 const REGISTER_ERROR_MESSAGES = {
   EMAIL_ALREADY_EXISTS: "البريد الإلكتروني مستخدم بالفعل",
@@ -289,6 +297,17 @@ const RegisterForm = ({ type }) => {
     (c) => c.id === formData.phoneCountryId,
   );
   const phoneCode = normalizePhoneCode(selectedPhoneCountry?.phoneCode);
+  const passwordChecks = PASSWORD_REQUIREMENTS.map((requirement) => ({
+    ...requirement,
+    met: requirement.test(formData.password),
+  }));
+  const passwordScore = passwordChecks.filter((requirement) => requirement.met).length;
+  const passwordStrength =
+    passwordScore === PASSWORD_REQUIREMENTS.length
+      ? { label: "قوية", color: "bg-emerald-500", text: "text-emerald-600" }
+      : passwordScore >= 3
+        ? { label: "متوسطة", color: "bg-amber-500", text: "text-amber-600" }
+        : { label: "ضعيفة", color: "bg-red-500", text: "text-red-600" };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -677,6 +696,7 @@ const RegisterForm = ({ type }) => {
               />
             </div>
           </div>
+
         </div>
 
         {/* Password */}
@@ -702,6 +722,33 @@ const RegisterForm = ({ type }) => {
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
+          </div>
+          <div className="mt-3" aria-live="polite">
+            <div className="mb-1.5 flex items-center justify-between text-xs font-medium">
+              <span className="text-[#6B7280]">قوة كلمة المرور</span>
+              <span className={formData.password ? passwordStrength.text : "text-[#9CA3AF]"}>
+                {formData.password ? passwordStrength.label : "—"}
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#E5E7EB]">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${formData.password ? passwordStrength.color : "bg-transparent"}`}
+                style={{ width: formData.password ? `${(passwordScore / PASSWORD_REQUIREMENTS.length) * 100}%` : "0%" }}
+              />
+            </div>
+            <p className="mt-4 mb-2 text-[13px] font-semibold text-[#1F2937]">
+              يجب أن تحتوي كلمة المرور على:
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {passwordChecks.map((requirement) => (
+                <div key={requirement.label} className={`flex items-center gap-2 text-xs transition-colors ${requirement.met ? "text-emerald-600" : "text-[#6B7280]"}`}>
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${requirement.met ? "border-emerald-500 bg-emerald-500 text-white" : "border-[#9CA3AF] bg-white"}`}>
+                    {requirement.met && <Check size={12} strokeWidth={3} />}
+                  </span>
+                  <span>{requirement.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

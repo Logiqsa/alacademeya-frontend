@@ -164,6 +164,7 @@ const Badge = ({ label, type }) => {
 const statusBadge = (status) => {
   if (status === "نشط") return <Badge label={status} type="green" />;
   if (status === "معلق") return <Badge label={status} type="orange" />;
+  if (status === "ملف غير مكتمل") return <Badge label={status} type="blue" />;
   if (status === "موقوف") return <Badge label={status} type="red" />;
   return <Badge label={status} type="gray" />;
 };
