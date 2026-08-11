@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import {
   getMyProfile,
   updateMyProfile,
+  completeTeacherProfile,
   getCountries,
   getCurriculums,
   getCurriculumStages,
@@ -12,6 +13,7 @@ import {
   getSubjects,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
+import { isRegistrationIncomplete } from "../../../utils/roles";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 import { AccountStatusBadge } from "../../account-settings/AccountRegistrationStatus";
 import PhoneDisplay from "../../account-settings/PhoneDisplay";
@@ -713,8 +715,32 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
           form.experienceYears === "" ? undefined : Number(form.experienceYears),
         subjects: form.subjects,
       };
-      await updateMyProfile(payload);
-      toast.success("تم تعديل البيانات بنجاح");
+
+      if (isRegistrationIncomplete(teacher)) {
+        // Updating /users/me saves the academic fields, but it does not submit
+        // an incomplete teacher profile for review. Use the completion endpoint
+        // here so the backend can move the registration status to `pending`.
+        const completionPayload = new FormData();
+        completionPayload.append("language", payload.language);
+        completionPayload.append("curriculum", form.curriculumId);
+        if (payload.experienceYears !== undefined) {
+          completionPayload.append(
+            "experienceYears",
+            String(payload.experienceYears),
+          );
+        }
+        payload.grades.forEach((gradeId) =>
+          completionPayload.append("grades", gradeId),
+        );
+        payload.subjects.forEach((subjectId) =>
+          completionPayload.append("subjects", subjectId),
+        );
+        await completeTeacherProfile(completionPayload);
+        toast.success("تم استكمال البيانات وإرسال الملف للمراجعة");
+      } else {
+        await updateMyProfile(payload);
+        toast.success("تم تعديل البيانات بنجاح");
+      }
       await onSaved();
       setEditing(false);
     } catch (err) {
