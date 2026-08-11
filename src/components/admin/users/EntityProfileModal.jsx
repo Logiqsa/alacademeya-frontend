@@ -8,7 +8,7 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { getTeacherCvUrl } from "../../../utils/teacherCv";
+import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import { UserDetailsModal } from "./Userstable";
 import {
@@ -185,7 +185,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
     entity.user && typeof entity.user === "object" ? entity.user : entity;
   const name =
     user.fullName || entity.fullName || text(user.name || entity.name);
-  const cvUrl = isTeacher ? getTeacherCvUrl(entity) : "";
+  const teacherFileUrls = isTeacher ? getTeacherFileUrls(entity) : [];
   const currentUserId = user.id || user._id;
   const registrationStatus = String(
     user.registrationStatus || user.registration_status || "",
@@ -341,16 +341,26 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           )}
         </div>
         {isTeacher && (
-          <a
-            href={cvUrl || undefined}
-            target={cvUrl ? "_blank" : undefined}
-            rel="noreferrer"
-            onClick={(event) => !cvUrl && event.preventDefault()}
-            className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold ${cvUrl ? "border-[#123C91] text-[#123C91] hover:bg-blue-50" : "cursor-not-allowed border-gray-200 text-gray-400"}`}
-          >
-            <FileText size={17} />
-            {cvUrl ? "عرض السيرة الذاتية (CV)" : "السيرة الذاتية غير متاحة"}
-          </a>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {teacherFileUrls.length ? (
+              teacherFileUrls.map((url, index) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#123C91] px-4 py-2.5 text-sm font-semibold text-[#123C91] hover:bg-blue-50"
+                >
+                  <FileText size={16} />
+                  ملف {index + 1}
+                </a>
+              ))
+            ) : (
+              <span className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-400">
+                لا توجد ملفات متاحة
+              </span>
+            )}
+          </div>
         )}
       </section>
     </div>

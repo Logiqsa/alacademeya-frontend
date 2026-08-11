@@ -34,7 +34,7 @@ import {
   getNotificationChatState,
   getNotificationTarget,
 } from "../../../utils/notificationTarget";
-import { getTeacherCvUrl } from "../../../utils/teacherCv";
+import { getTeacherFileUrls } from "../../../utils/teacherCv";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -515,7 +515,7 @@ const NotificationsSection = ({
           curricula: listLabel(
             teacherProfile?.curriculums ?? teacherProfile?.curriculum,
           ),
-          cvUrl: getTeacherCvUrl(teacherProfile),
+          fileUrls: getTeacherFileUrls(teacherProfile),
           isTeacher: user.role === "teacher",
         });
         return;
@@ -561,7 +561,7 @@ const NotificationsSection = ({
         subjects: listLabel(teacher.subjects ?? teacher.subject),
         grades: listLabel(teacher.grades ?? teacher.grade),
         curricula: listLabel(teacher.curriculums ?? teacher.curriculum),
-        cvUrl: getTeacherCvUrl(teacher),
+        fileUrls: getTeacherFileUrls(teacher),
         role: "معلم",
         isTeacher: true,
       });
@@ -868,26 +868,27 @@ const NotificationsSection = ({
             </div>
 
             {teacherDetails.isTeacher && (
-              <a
-                href={teacherDetails.cvUrl || undefined}
-                target={teacherDetails.cvUrl ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                aria-disabled={!teacherDetails.cvUrl}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (!teacherDetails.cvUrl) event.preventDefault();
-                }}
-                className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold ${
-                  teacherDetails.cvUrl
-                    ? "border-[#123C91] text-[#123C91] hover:bg-blue-50"
-                    : "cursor-not-allowed border-gray-200 text-gray-400"
-                }`}
-              >
-                {teacherDetails.cvUrl
-                  ? "عرض السيرة الذاتية (CV)"
-                  : "السيرة الذاتية غير متاحة"}
-                {teacherDetails.cvUrl && <ExternalLink size={16} />}
-              </a>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {teacherDetails.fileUrls?.length ? (
+                  teacherDetails.fileUrls.map((url, index) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(event) => event.stopPropagation()}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#123C91] px-4 py-2.5 text-sm font-semibold text-[#123C91] hover:bg-blue-50"
+                    >
+                      ملف {index + 1}
+                      <ExternalLink size={15} />
+                    </a>
+                  ))
+                ) : (
+                  <span className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-400">
+                    لا توجد ملفات متاحة
+                  </span>
+                )}
+              </div>
             )}
 
             <div

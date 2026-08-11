@@ -26,7 +26,7 @@ import {
   updateUser,
 } from "../../../services/APIService";
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
-import { getTeacherCvUrl } from "../../../utils/teacherCv";
+import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 
 const PAGE_SIZE = 8;
@@ -138,7 +138,7 @@ const TeachersPage = () => {
                   : "في انتظار المراجعة",
             isApproved: teacher.status === "approved",
             isRejected: teacher.status === "rejected",
-            cvUrl: getTeacherCvUrl(teacher),
+            fileUrls: getTeacherFileUrls(teacher),
             createdAt: teacher.createdAt || teacher.user?.createdAt,
             raw: teacher,
             absences,
@@ -547,25 +547,26 @@ const TeachersPage = () => {
                 />
               </div>
 
-              <a
-                href={selectedTeacher.cvUrl || undefined}
-                target={selectedTeacher.cvUrl ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                aria-disabled={!selectedTeacher.cvUrl}
-                onClick={(event) => {
-                  if (!selectedTeacher.cvUrl) event.preventDefault();
-                }}
-                className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold ${
-                  selectedTeacher.cvUrl
-                    ? "border-[#123C91] text-[#123C91] hover:bg-blue-50"
-                    : "cursor-not-allowed border-gray-200 text-gray-400"
-                }`}
-              >
-                {selectedTeacher.cvUrl
-                  ? "عرض السيرة الذاتية (CV)"
-                  : "السيرة الذاتية غير متاحة"}
-                {selectedTeacher.cvUrl && <ExternalLink size={16} />}
-              </a>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {selectedTeacher.fileUrls?.length ? (
+                  selectedTeacher.fileUrls.map((url, index) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#123C91] px-4 py-2.5 text-sm font-semibold text-[#123C91] hover:bg-blue-50"
+                    >
+                      ملف {index + 1}
+                      <ExternalLink size={15} />
+                    </a>
+                  ))
+                ) : (
+                  <span className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-400">
+                    لا توجد ملفات متاحة
+                  </span>
+                )}
+              </div>
 
               <div
                 className={`mt-5 grid grid-cols-1 gap-3 ${

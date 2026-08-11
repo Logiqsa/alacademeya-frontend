@@ -19,3 +19,16 @@ export const getTeacherCvUrl = (teacher) => {
 
   return getAssetUrl(fileValue(value));
 };
+
+export const getTeacherFileUrls = (teacher) => {
+  const user =
+    teacher?.user && typeof teacher.user === "object" ? teacher.user : {};
+  const source = { ...user, ...teacher };
+  const files = Array.isArray(source.files) ? source.files : [];
+  const urls = files.map(fileValue).map(getAssetUrl).filter(Boolean);
+
+  if (urls.length) return [...new Set(urls)];
+
+  const legacyCvUrl = getTeacherCvUrl(teacher);
+  return legacyCvUrl ? [legacyCvUrl] : [];
+};

@@ -12,6 +12,23 @@ import {
   getAllSubjects,
 } from "../../services/APIService";
 
+const MAX_TEACHER_FILES = 10;
+const MAX_TEACHER_FILE_SIZE = 20 * 1024 * 1024;
+const TEACHER_FILE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+];
+const TEACHER_FILE_ACCEPT = ".png,.jpg,.jpeg,.webp,.pdf,.docx,.xls,.xlsx,.ppt,.pptx,.txt";
+
 // Single-select dropdown
 const SelectField = ({
   label,
@@ -168,8 +185,7 @@ const TeacherDetailsPage = () => {
     experienceYears: "",
   });
 
-  const [fileName, setFileName] = useState("");
-  const [fileObj, setFileObj] = useState(null);
+  const [files, setFiles] = useState([]);
 
   // Load curricula once
   useEffect(() => {
@@ -269,7 +285,7 @@ const TeacherDetailsPage = () => {
       }
       form.grades.forEach((gradeId) => payload.append("grades", gradeId));
       form.subjects.forEach((subjectId) => payload.append("subjects", subjectId));
-      if (fileObj) payload.append("cv", fileObj);
+      files.forEach((file) => payload.append("files", file));
 
       const res = await completeTeacherProfile(payload);
 
@@ -385,34 +401,72 @@ const TeacherDetailsPage = () => {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
+              disabled={files.length >= MAX_TEACHER_FILES}
               className="w-full py-4 border-dashed border-2 border-[#1F293733] rounded-xl flex items-center justify-center gap-2 text-[14px] text-[#6B7280] hover:border-[#123C91] hover:text-[#123C91] transition-colors"
             >
               <Upload size={16} />
-              {fileName || "ارفع مستنداتك هنا"}
+              {files.length
+                ? `تم اختيار ${files.length} من ${MAX_TEACHER_FILES} ملفات`
+                : "ارفع مستنداتك هنا (حتى 10 ملفات)"}
             </button>
-            {fileName && (
-              <div className="flex items-center justify-between bg-[#F0F4FF] rounded-lg px-3 py-2">
+            {files.map((file) => (
+              <div
+                key={`${file.name}-${file.size}-${file.lastModified}`}
+                className="flex items-center justify-between bg-[#F0F4FF] rounded-lg px-3 py-2"
+              >
                 <span className="text-[13px] text-[#123C91] truncate max-w-[80%]">
-                  {fileName}
+                  {file.name}
                 </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    setFileName("");
-                    setFileObj(null);
-                  }}
+                  aria-label={`حذف ${file.name}`}
+                  onClick={() =>
+                    setFiles((current) => current.filter((item) => item !== file))
+                  }
                 >
                   <X size={14} className="text-[#6B7280]" />
                 </button>
               </div>
-            )}
+            ))}
             <input
               ref={fileRef}
               type="file"
+              multiple
+              accept={TEACHER_FILE_ACCEPT}
               className="hidden"
               onChange={(e) => {
-                setFileName(e.target.files[0]?.name || "");
-                setFileObj(e.target.files[0] || null);
+                const selectedFiles = Array.from(e.target.files || []);
+                const validFiles = selectedFiles.filter((file) => {
+                  if (!TEACHER_FILE_TYPES.includes(file.type)) {
+                    toast.error(`نوع الملف غير مدعوم: ${file.name}`);
+                    return false;
+                  }
+                  if (file.size > MAX_TEACHER_FILE_SIZE) {
+                    toast.error(`حجم الملف يجب ألا يتجاوز 20 ميجابايت: ${file.name}`);
+                    return false;
+                  }
+                  return true;
+                });
+
+                setFiles((current) => {
+                  const knownFiles = new Set(
+                    current.map(
+                      (file) => `${file.name}-${file.size}-${file.lastModified}`,
+                    ),
+                  );
+                  const newFiles = validFiles.filter(
+                    (file) =>
+                      !knownFiles.has(
+                        `${file.name}-${file.size}-${file.lastModified}`,
+                      ),
+                  );
+                  const availableSlots = MAX_TEACHER_FILES - current.length;
+                  if (newFiles.length > availableSlots) {
+                    toast.error("يمكن رفع 10 ملفات بحد أقصى");
+                  }
+                  return [...current, ...newFiles.slice(0, availableSlots)];
+                });
+                e.target.value = "";
               }}
             />
           </div>
