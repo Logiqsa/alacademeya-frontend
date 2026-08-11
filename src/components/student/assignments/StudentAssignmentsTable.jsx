@@ -1,9 +1,6 @@
-import { useRef, useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
 import {
-  MoreVertical,
   Upload,
-  Eye,
   X,
   Loader2,
   FileText,
@@ -56,106 +53,19 @@ const statusBadge = (status, timeRemaining) => {
   return <Badge label={status} type="gray" />;
 };
 
-// ─── Row Actions Menu (fixed positioning + portal so it never gets clipped by the table's scroll container) ───
-const RowActionsMenu = ({ assignment, onView, onSubmit }) => {
-  const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const btnRef = useRef(null);
-  const menuRef = useRef(null);
-
-  const canSubmit = assignment.status !== "تم التسليم";
-  const MENU_WIDTH = 176; // matches w-44
-
-  const updatePosition = () => {
-    if (!btnRef.current) return;
-    const rect = btnRef.current.getBoundingClientRect();
-    let left = rect.left;
-    if (left + MENU_WIDTH > window.innerWidth - 8) {
-      left = window.innerWidth - MENU_WIDTH - 8;
-    }
-    if (left < 8) left = 8;
-    setCoords({ top: rect.bottom + 4, left });
-  };
-
-  const toggleOpen = () => {
-    if (!open) updatePosition();
-    setOpen((v) => !v);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handleClickOutside = (e) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target) &&
-        btnRef.current &&
-        !btnRef.current.contains(e.target)
-      ) {
-        setOpen(false);
-      }
-    };
-    const handleReposition = () => updatePosition();
-
-    document.addEventListener("mousedown", handleClickOutside);
-    // capture: true حتى يلتقط الـ scroll اللي بيحصل جوه الجدول (overflow-x-auto) مش بس الصفحة
-    window.addEventListener("scroll", handleReposition, true);
-    window.addEventListener("resize", handleReposition);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("scroll", handleReposition, true);
-      window.removeEventListener("resize", handleReposition);
-    };
-  }, [open]);
-
-  return (
-    <div className="inline-block">
-      <button
-        ref={btnRef}
-        onClick={toggleOpen}
-        className="p-2 flex items-center justify-center rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-all duration-200"
-        aria-label="إجراءات الواجب"
-      >
-        <MoreVertical size={18} />
-      </button>
-
-      {open &&
-        createPortal(
-          <div
-            ref={menuRef}
-            dir="rtl"
-            style={{ position: "fixed", top: coords.top, left: coords.left, zIndex: 9999 }}
-            className="w-44 bg-white rounded-xl border border-gray-100 shadow-lg overflow-hidden py-1"
-          >
-            <button
-              onClick={() => {
-                setOpen(false);
-                onView?.(assignment.id);
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#575F69] hover:bg-gray-50 transition-colors"
-            >
-              <Eye size={16} />
-              عرض التفاصيل
-            </button>
-            {canSubmit && (
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  onSubmit?.(assignment.id);
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#123C91] hover:bg-gray-50 transition-colors"
-              >
-                <Upload size={16} />
-                تسليم الحل
-              </button>
-            )}
-          </div>,
-          document.body
-        )}
-    </div>
+const SubmissionAction = ({ assignment, onSubmit }) =>
+  assignment.status === "تم التسليم" ? (
+    <Badge label="تم التسليم" type="green" />
+  ) : (
+    <button
+      type="button"
+      onClick={() => onSubmit(assignment.id)}
+      className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#123C91] px-3 py-2 text-sm font-medium !text-white [&_svg]:!text-white hover:bg-[#0e2f70] transition-colors whitespace-nowrap"
+    >
+      <Upload size={16} />
+      تسليم الواجب
+    </button>
   );
-};
 
 // ─── Mobile Row Field ─────────────────────────────────────────────────────────
 const MobileField = ({ label, children }) => (
@@ -416,7 +326,11 @@ const StudentAssignmentsTable = ({
 
   const handleSubmitted = (assignmentId) => {
     setLocalAssignments((prev) =>
-      prev.map((a) => (a.id === assignmentId ? { ...a, status: "تم التسليم" } : a))
+      prev.map((a) =>
+        a.id === assignmentId
+          ? { ...a, status: "تم التسليم", grade: "لم يتم التصحيح" }
+          : a,
+      )
     );
     onSubmitted?.(assignmentId); // فرصة للأب يعمل refetch للداتا الحقيقية (الدرجة إلخ)
   };
@@ -452,7 +366,7 @@ const StudentAssignmentsTable = ({
                   "موعد التسليم",
                   "الحالة",
                   "الدرجة",
-                  "الإجراءات",
+                  "تسليم الواجب",
                 ].map((header) => (
                   <th
                     key={header}
@@ -505,7 +419,7 @@ const StudentAssignmentsTable = ({
                   </td>
 
                   <td className="px-4 lg:px-6 py-3 lg:py-4">
-                    <RowActionsMenu assignment={a} onView={handleView} onSubmit={handleOpenSubmit} />
+                    <SubmissionAction assignment={a} onSubmit={handleOpenSubmit} />
                   </td>
                 </tr>
               ))}
@@ -526,7 +440,7 @@ const StudentAssignmentsTable = ({
               >
                 {a.title}
               </button>
-              <RowActionsMenu assignment={a} onView={handleView} onSubmit={handleOpenSubmit} />
+              <SubmissionAction assignment={a} onSubmit={handleOpenSubmit} />
             </div>
 
             <div className="flex items-center gap-2 mb-3">{statusBadge(a.status, a.timeRemaining)}</div>
