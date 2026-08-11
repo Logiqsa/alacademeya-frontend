@@ -4,6 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import { getNotifications, getUsers } from "../services/APIService";
 import { getChatRooms } from "./chatApi";
 import { getSocket } from "./socket";
+import { incrementStoredUnread } from "./chatUnreadStorage";
 import {
   ADMIN_NOTIFICATION_EVENT,
   getAdminLocalNotifications,
@@ -114,6 +115,11 @@ export function useSidebarUnread() {
         const message = payload?.message ?? payload;
         const senderId = message?.sender?._id ?? message?.sender?.id ?? message?.sender;
         if (String(senderId) !== String(userId)) {
+          const roomId = payload?.roomId ?? message?.room?._id ?? message?.room?.id ?? message?.room;
+          if (!pathname.includes("/messages")) {
+            const messageId = message?._id ?? message?.id;
+            incrementStoredUnread(userId, roomId, messageId);
+          }
           setUnread((current) => ({ ...current, messages: true }));
         }
       }
@@ -121,7 +127,7 @@ export function useSidebarUnread() {
 
     socket.onAny(onAny);
     return () => socket.offAny(onAny);
-  }, [userId]);
+  }, [pathname, userId]);
 
   return unread;
 }
