@@ -20,6 +20,7 @@ import {
 import { createPortal } from "react-dom";
 import { getArabicCountryName } from "../../../utils/countryName";
 import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeachingSelections";
+import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import {
   getAllStudents,
   getAllSubscriptions,
@@ -140,6 +141,7 @@ const teacherData = (profile) => {
     subjectsLabel: listNames(merged.subjects ?? merged.subject),
     certificatesLabel: listNames(merged.certificates),
     cvUrl: fileUrl(cv),
+    fileUrls: getTeacherFileUrls(merged),
   };
 };
 
@@ -550,24 +552,15 @@ export const UserDetailsModal = ({
               />
             </div>
 
-            <a
-              href={user.cvUrl || undefined}
-              target="_blank"
-              rel="noreferrer"
-              aria-disabled={!user.cvUrl}
-              onClick={(event) => {
-                if (!user.cvUrl) event.preventDefault();
-              }}
-              className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold !text-white transition-colors sm:w-auto [&_svg]:!text-white ${
-                user.cvUrl
-                  ? "bg-[#123C91] hover:bg-[#0f327a]"
-                  : "cursor-not-allowed bg-gray-100"
-              }`}
-            >
-              <FileText size={17} />
-              {user.cvUrl ? "عرض السيرة الذاتية" : "السيرة الذاتية غير متاحة"}
-              {user.cvUrl && <ExternalLink size={15} />}
-            </a>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(user.fileUrls?.length ? user.fileUrls : user.cvUrl ? [user.cvUrl] : []).map((url, index) => (
+                <a key={url} href={url} target="_blank" rel="noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#123C91] px-4 py-3 text-sm font-semibold !text-white transition-colors hover:bg-[#0f327a] [&_svg]:!text-white">
+                  <FileText size={17} /> مرفق {index + 1}<ExternalLink size={15} />
+                </a>
+              ))}
+              {!user.fileUrls?.length && !user.cvUrl && <span className="rounded-xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-400">لا توجد مرفقات متاحة</span>}
+            </div>
 
             {reportError && (
               <p className="mt-2 text-[12px] text-red-500 text-center">
