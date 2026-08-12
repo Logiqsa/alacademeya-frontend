@@ -21,6 +21,7 @@ import { getSavedPageSize } from "../../../utils/tablePagination";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
   getTeachers,
+  getTeacher,
   getTeacherMonthlyReport,
   updateTeacherProfile,
   updateUser,
@@ -28,6 +29,7 @@ import {
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
+import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeachingSelections";
 
 const PAGE_SIZE = 8;
 
@@ -75,6 +77,29 @@ const DetailItem = ({ label, value }) => (
     </p>
   </div>
 );
+
+const TeacherCurriculumBoxes = ({ teacher }) => {
+  const selections = teacher.raw?.teachingSelections || [];
+  if (!selections.length) return null;
+  return <div className="mt-4 space-y-3">
+    <p className="text-sm font-semibold text-[#1F2937]">المناهج والصفوف والمواد</p>
+    {selections.map((selection, index) => <div key={selection.curriculum?.id || selection.curriculum?._id || index} className="rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-4">
+      <p className="text-[11px] text-[#8C9198]">المنهج الدراسي</p>
+      <p className="text-sm font-bold text-[#123C91]">{localizedName(selection.curriculum) || "منهج غير محدد"}</p>
+      <div className="mt-3 space-y-2">
+        {selection.stages?.flatMap((stage) => stage.grades || []).map((grade, gradeIndex) => <div key={grade.grade?.id || grade.grade?._id || gradeIndex} className="flex flex-col gap-2 rounded-xl border bg-white p-3 sm:flex-row sm:items-start">
+          <p className="min-w-32 text-xs font-bold text-[#1F2937]">{localizedName(grade.grade) || "صف غير محدد"}</p>
+          <div className="flex flex-1 flex-wrap gap-1.5">
+            {(grade.subjects || []).map((subject, subjectIndex) => <span key={subject?.id || subject?._id || subjectIndex} className="rounded-lg bg-[#EAF0FB] px-2.5 py-1 text-xs text-[#123C91]">
+              {localizedName(subject) || "مادة غير محددة"}
+            </span>)}
+            {!grade.subjects?.length && <span className="text-xs text-[#8C9198]">لا توجد مواد</span>}
+          </div>
+        </div>)}
+      </div>
+    </div>)}
+  </div>;
+};
 
 const TeachersPage = () => {
   const navigate = useNavigate();
@@ -178,7 +203,22 @@ const TeachersPage = () => {
     0,
   );
 
-  const openTeacherDetails = (teacher) => setSelectedTeacher(teacher);
+  const openTeacherDetails = async (teacher) => {
+    setSelectedTeacher(teacher);
+    try {
+      const response = await getTeacher(teacher.id);
+      const details = response?.data?.data?.teacher ?? response?.data?.data ?? response?.data;
+      if (details && typeof details === "object") {
+        const mergedDetails = { ...teacher.raw, ...details };
+        const teachingSelections = await resolveTeacherTeachingSelections(mergedDetails);
+        setSelectedTeacher((current) => current?.id === teacher.id
+          ? { ...current, raw: { ...mergedDetails, teachingSelections } }
+          : current);
+      }
+    } catch {
+      // Keep the summary response visible if detailed data is unavailable.
+    }
+  };
 
   const handleApproveTeacher = async () => {
     if (!selectedTeacher || selectedTeacher.isApproved) return;
@@ -497,7 +537,7 @@ const TeachersPage = () => {
               }
             }}
           >
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+            <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-7 lg:p-8">
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-[#1F2937]">
                   تفاصيل المعلم
@@ -534,9 +574,6 @@ const TeachersPage = () => {
                   label="سنوات الخبرة"
                   value={selectedTeacher.experience}
                 />
-                <DetailItem label="المواد" value={selectedTeacher.subjects} />
-                <DetailItem label="الصفوف" value={selectedTeacher.grades} />
-                <DetailItem label="المناهج" value={selectedTeacher.curricula} />
                 <DetailItem
                   label="الساعات الشهرية"
                   value={formatHours(selectedTeacher.monthlyMinutes)}
@@ -546,6 +583,8 @@ const TeachersPage = () => {
                   value={selectedTeacher.completedSessions}
                 />
               </div>
+
+              <TeacherCurriculumBoxes teacher={selectedTeacher} />
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {selectedTeacher.fileUrls?.length ? (

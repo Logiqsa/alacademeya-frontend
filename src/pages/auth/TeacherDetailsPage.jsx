@@ -1,16 +1,13 @@
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ChevronDown, Upload, X } from "lucide-react";
+import { ArrowRight, LoaderCircle, Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { AuthContext } from "../../context/AuthContext";
 import {
   completeTeacherProfile,
-  getCurriculums,
-  getCurriculumStages,
-  getStageGrades,
-  getAllSubjects,
 } from "../../services/APIService";
+import TeachingSelectionsEditor, { sanitizeTeachingSelections, validTeachingSelections } from "../../components/teacher/TeachingSelectionsEditor";
 
 const MAX_TEACHER_FILES = 10;
 const MAX_TEACHER_FILE_SIZE = 20 * 1024 * 1024;
@@ -28,52 +25,6 @@ const TEACHER_FILE_TYPES = [
   "text/plain",
 ];
 const TEACHER_FILE_ACCEPT = ".png,.jpg,.jpeg,.webp,.pdf,.docx,.xls,.xlsx,.ppt,.pptx,.txt";
-
-// Single-select dropdown
-const SelectField = ({
-  label,
-  name,
-  value,
-  onChange,
-  options = [],
-  placeholder,
-  disabled,
-}) => {
-  const display = (o) => {
-    if (typeof o === "object" && o !== null)
-      return o.name?.ar || o.name?.en || o.name || "";
-    return o.name ?? o;
-  };
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[13px] font-medium text-[#1F2937]">{label}</label>
-      <div className="relative">
-        <select
-          name={name}
-          value={value}
-          onChange={onChange}
-          disabled={disabled}
-          className="w-full h-12 px-4 appearance-none rounded-xl border border-[#1F293733] bg-[#F9FAFA] text-[14px] outline-none cursor-pointer focus:border-[#123C91] transition-colors disabled:opacity-50"
-        >
-          <option value="" disabled>
-            {disabled ? "جاري التحميل..." : placeholder}
-          </option>
-          {Array.isArray(options) &&
-            options.map((o) => (
-              <option key={o.id ?? o} value={o.id ?? o}>
-                {display(o)}
-              </option>
-            ))}
-        </select>
-        <ChevronDown
-          size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
-        />
-      </div>
-    </div>
-  );
-};
 
 // Multi-select chips field
 const MultiSelectField = ({
@@ -141,23 +92,6 @@ const MultiSelectField = ({
   );
 };
 
-const subjectName = (subject) =>
-  subject?.name?.ar || subject?.name?.en || subject?.name || "";
-
-const groupSubjectsByName = (items) => {
-  const groups = new Map();
-  items.forEach((subject) => {
-    const id = subject.id ?? subject._id;
-    const name = subjectName(subject).trim();
-    if (!id || !name) return;
-    const key = name.toLocaleLowerCase("ar");
-    const existing = groups.get(key);
-    if (existing) existing.ids.push(id);
-    else groups.set(key, { ...subject, id, ids: [id] });
-  });
-  return [...groups.values()];
-};
-
 // Main page
 const TeacherDetailsPage = () => {
   const navigate = useNavigate();
@@ -167,95 +101,13 @@ const TeacherDetailsPage = () => {
   console.log("user:", localStorage.getItem("user"));
 
   const [submitting, setSubmitting] = useState(false);
-  const [loadingCurricula, setLoadingCurricula] = useState(true);
-  const [loadingStages, setLoadingStages] = useState(false);
-  const [loadingGrades, setLoadingGrades] = useState(false);
-  const [loadingSubjects, setLoadingSubjects] = useState(false);
-
-  const [curricula, setCurricula] = useState([]);
-  const [stages, setStages] = useState([]);
-  const [grades, setGrades] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-
   const [form, setForm] = useState({
-    curriculum: "",
-    stage: "",
-    grades: [],
-    subjects: [],
+    language: ["arabic"],
+    teachingSelections: [{ curriculum: "", stages: [] }],
     experienceYears: "",
   });
 
   const [files, setFiles] = useState([]);
-
-  // Load curricula once
-  useEffect(() => {
-    getCurriculums()
-      .then((res) => setCurricula(res.data?.data || res.data || []))
-      .catch(() => toast.error("فشل تحميل المناهج"))
-      .finally(() => setLoadingCurricula(false));
-  }, []);
-
-  // Load stages when curriculum changes
-  useEffect(() => {
-    if (!form.curriculum) {
-      setStages([]);
-      setGrades([]);
-      setSubjects([]);
-      return;
-    }
-    setLoadingStages(true);
-    setStages([]);
-    setGrades([]);
-    setSubjects([]);
-    setForm((p) => ({ ...p, stage: "", grades: [], subjects: [] }));
-
-    getCurriculumStages(form.curriculum)
-      .then((res) => setStages(res.data?.data || res.data || []))
-      .catch(() => toast.error("فشل تحميل المراحل"))
-      .finally(() => setLoadingStages(false));
-  }, [form.curriculum]);
-
-  // Load grades when stage changes
-  useEffect(() => {
-    if (!form.stage) {
-      setGrades([]);
-      setSubjects([]);
-      return;
-    }
-    setLoadingGrades(true);
-    setGrades([]);
-    setSubjects([]);
-    setForm((p) => ({ ...p, grades: [], subjects: [] }));
-
-    getStageGrades(form.stage)
-      .then((res) => setGrades(res.data?.data || res.data || []))
-      .catch(() => toast.error("فشل تحميل الصفوف"))
-      .finally(() => setLoadingGrades(false));
-  }, [form.stage]);
-
-  // Load subjects when grades change
-  useEffect(() => {
-    if (!form.grades.length) {
-      setSubjects([]);
-      return;
-    }
-    setLoadingSubjects(true);
-    setSubjects([]);
-    setForm((p) => ({ ...p, subjects: [] }));
-
-    Promise.all(
-      form.grades.map((gradeId) =>
-        getAllSubjects({ grade: gradeId })
-          .then((res) => res.data?.data || res.data || [])
-          .catch(() => []),
-      ),
-    )
-      .then((results) => {
-        const merged = results.flat();
-        setSubjects(groupSubjectsByName(merged));
-      })
-      .finally(() => setLoadingSubjects(false));
-  }, [form.grades]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -265,12 +117,8 @@ const TeacherDetailsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !form.curriculum ||
-      !form.stage ||
-      !form.grades.length ||
-      !form.subjects.length
-    ) {
+    const sanitizedSelections = sanitizeTeachingSelections(form.teachingSelections);
+    if (!form.language.length || !validTeachingSelections(sanitizedSelections)) {
       toast.error("يرجى إكمال جميع الحقول المطلوبة");
       return;
     }
@@ -278,19 +126,17 @@ const TeacherDetailsPage = () => {
     setSubmitting(true);
     try {
       const payload = new FormData();
-      payload.append("language", "ar");
-      payload.append("curriculum", form.curriculum);
+      payload.append("language", JSON.stringify(form.language));
       if (form.experienceYears) {
         payload.append("experienceYears", String(Number(form.experienceYears)));
       }
-      form.grades.forEach((gradeId) => payload.append("grades", gradeId));
-      form.subjects.forEach((subjectId) => payload.append("subjects", subjectId));
+      payload.append("teachingSelections", JSON.stringify(sanitizedSelections));
       files.forEach((file) => payload.append("files", file));
 
       const res = await completeTeacherProfile(payload);
 
       // ✅ لو الـ API رجّع user محدّث فيه status، احفظه
-      const updatedUser = res.data?.data || res.data?.user;
+      const updatedUser = res.data?.data?.teacher || res.data?.data || res.data?.user;
 
       // بعض استجابات الـ API ترجع الحالة فقط، لذلك لا نستبدل بيانات المستخدم
       // ونثبت الدور حتى يظل الحساب المعلّق معروفًا كحساب معلم.
@@ -330,51 +176,14 @@ const TeacherDetailsPage = () => {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Curriculum */}
-          <SelectField
-            label="المنهج"
-            name="curriculum"
-            value={form.curriculum}
-            onChange={handleChange}
-            options={curricula}
-            placeholder="اختر المنهج"
-            disabled={loadingCurricula}
-          />
-
-          {/* Stage */}
-          <SelectField
-            label="المرحلة الدراسية"
-            name="stage"
-            value={form.stage}
-            onChange={handleChange}
-            options={stages}
-            placeholder={form.curriculum ? "اختر المرحلة" : "اختر المنهج أولاً"}
-            disabled={!form.curriculum || loadingStages}
-          />
-
-          {/* Grades */}
           <MultiSelectField
-            label="الصفوف الدراسية"
-            options={grades}
-            selected={form.grades}
-            onChange={(val) =>
-              setForm((p) => ({ ...p, grades: val, subjects: [] }))
-            }
-            placeholder={form.stage ? "اختر الصفوف" : "اختر المرحلة أولاً"}
-            disabled={!form.stage || loadingGrades}
+            label="لغات التدريس"
+            options={[{ id: "arabic", name: "العربية" }, { id: "languages", name: "اللغات" }]}
+            selected={form.language}
+            onChange={(language) => setForm((p) => ({ ...p, language }))}
+            placeholder="اختر لغة تدريس واحدة على الأقل"
           />
-
-          {/* Subjects */}
-          <MultiSelectField
-            label="المواد التي تدرّسها"
-            options={subjects}
-            selected={form.subjects}
-            onChange={(val) => setForm((p) => ({ ...p, subjects: val }))}
-            placeholder={
-              form.grades.length ? "اختر المواد" : "اختر الصفوف أولاً"
-            }
-            disabled={!form.grades.length || loadingSubjects}
-          />
+          <TeachingSelectionsEditor value={form.teachingSelections} onChange={(teachingSelections) => setForm((p) => ({ ...p, teachingSelections }))} />
 
           {/* Experience years */}
           <div className="flex flex-col gap-1.5">
@@ -477,7 +286,14 @@ const TeacherDetailsPage = () => {
             className="w-full h-14 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-semibold text-[15px] hover:bg-[#0f3278] transition-colors disabled:opacity-60 mt-2"
             style={{ fontFamily: "Tajawal, sans-serif" }}
           >
-            {submitting ? "جاري الإرسال..." : "تقديم الطلب"}
+            {submitting ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <LoaderCircle size={19} className="animate-spin" />
+                جاري الإرسال...
+              </span>
+            ) : (
+              "تقديم الطلب"
+            )}
           </button>
         </form>
       </div>

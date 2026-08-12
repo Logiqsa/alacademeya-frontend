@@ -77,12 +77,17 @@ export const completeStudentProfile = (payload) =>
   API.post("/auth/completeStudentProfile", payload);
 
 export const completeTeacherProfile = (payload) =>
-  API.patch("/auth/completeTeacherProfile", payload, {
-    headers:
-      payload instanceof FormData
-        ? { "Content-Type": "multipart/form-data" }
-        : undefined,
-  });
+  // Do not set Content-Type for FormData: the browser must add its boundary.
+  API.patch("/auth/completeTeacherProfile", payload, { headers: { lang: "ar" } });
+
+export const getMyTeachingSelections = () =>
+  API.get("/teachers/me/teaching-selections", { headers: { lang: "ar" } });
+export const updateMyTeachingSelections = ({ teachingSelections }) =>
+  API.patch(
+    "/teachers/me/teaching-selections",
+    { teachingSelections },
+    { headers: { lang: "ar" } },
+  );
 
 export const saveStudentInterests = (payload) =>
   API.post("/auth/student/interests", payload);

@@ -91,6 +91,27 @@ button {
   cursor: pointer;
 }
 
+@keyframes toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.toast-countdown {
+  animation: toast-countdown 10s linear forwards;
+  transform-origin: right center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-countdown {
+    animation: none;
+  }
+}
+
 
 /* =========================
    INPUTS
@@ -238,4 +259,3 @@ section {
 .border-secondary {
   border-color: var(--secondary);
 }
-

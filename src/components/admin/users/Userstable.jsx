@@ -19,11 +19,13 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { getArabicCountryName } from "../../../utils/countryName";
+import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeachingSelections";
 import {
   getAllStudents,
   getAllSubscriptions,
   getClassroomStudents,
   getClassrooms,
+  getTeacher,
 } from "../../../services/APIService";
 const getCurrentMonth = () => {
   const now = new Date();
@@ -210,6 +212,114 @@ const DetailRow = ({ label, value }) => (
   </div>
 );
 
+const TeacherTeachingSelections = ({ selections }) => {
+  if (!Array.isArray(selections) || !selections.length) return null;
+
+  return (
+    <div className="mb-3 rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-4">
+      <p className="mb-3 text-sm font-semibold text-[#1F2937]">
+        المناهج وبيانات التدريس
+      </p>
+      <div className="space-y-3">
+        {selections.map((selection, curriculumIndex) => (
+          <div
+            key={entityId(selection.curriculum) || curriculumIndex}
+            className="rounded-xl border border-[#CAD8EF] bg-white p-4"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-xs font-bold text-white">
+                {curriculumIndex + 1}
+              </span>
+              <div>
+                <p className="text-[11px] text-[#8C9198]">المنهج الدراسي</p>
+                <p className="text-sm font-bold text-[#123C91]">
+                  {localizedName(selection.curriculum) || "منهج غير محدد"}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 border-r-2 border-[#D7E2F3] pr-3">
+              {(selection.stages || []).map((stage, stageIndex) => (
+                <div key={entityId(stage.stage) || stageIndex}>
+                  <p className="mb-2 text-xs font-semibold text-[#374151]">
+                    المرحلة: {localizedName(stage.stage) || "غير محددة"}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {(stage.grades || []).map((grade, gradeIndex) => (
+                      <div
+                        key={entityId(grade.grade) || gradeIndex}
+                        className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFA] p-3"
+                      >
+                        <p className="text-xs font-bold text-[#1F2937]">
+                          {localizedName(grade.grade) || "صف غير محدد"}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {(grade.subjects || []).length ? (
+                            grade.subjects.map((subject, subjectIndex) => (
+                              <span
+                                key={entityId(subject) || subjectIndex}
+                                className="rounded-lg bg-[#EAF0FB] px-2.5 py-1 text-xs font-medium text-[#123C91]"
+                              >
+                                {localizedName(subject) || "مادة غير محددة"}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-[#8C9198]">لا توجد مواد</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const legacyTeachingSelections = (teacher) => {
+  const curricula = Array.isArray(teacher.curriculums) ? teacher.curriculums : teacher.curriculum ? [teacher.curriculum] : [];
+  const grades = Array.isArray(teacher.grades) ? teacher.grades : teacher.grade ? [teacher.grade] : [];
+  const subjects = Array.isArray(teacher.subjects) ? teacher.subjects : teacher.subject ? [teacher.subject] : [];
+  const parentId = (item, key) => entityId(item?.[key] || item?.[`${key}Id`]);
+
+  return curricula.map((curriculum) => {
+    const curriculumId = entityId(curriculum);
+    const curriculumGrades = grades.filter((grade) => parentId(grade, "curriculum") === curriculumId);
+    const scopedGrades = curriculumGrades.length || curricula.length > 1 ? curriculumGrades : grades;
+    const stages = new Map();
+    scopedGrades.forEach((grade) => {
+      const stage = grade.stage || grade.stageId || { name: "المرحلة" };
+      const stageId = entityId(stage) || localizedName(stage);
+      if (!stages.has(stageId)) stages.set(stageId, { stage, grades: [] });
+      const gradeId = entityId(grade);
+      let gradeSubjects = subjects.filter((subject) => parentId(subject, "grade") === gradeId);
+      if (!gradeSubjects.length) {
+        gradeSubjects = subjects.filter((subject) => {
+          const subjectGrades = Array.isArray(subject.grades)
+            ? subject.grades
+            : subject.grade ? [subject.grade] : subject.gradeId ? [subject.gradeId] : [];
+          return subjectGrades.some((item) => String(entityId(item)) === String(gradeId));
+        });
+      }
+      if (!gradeSubjects.length && scopedGrades.length === 1) {
+        gradeSubjects = subjects.filter((subject) => {
+          const subjectCurriculum = parentId(subject, "curriculum");
+          return !subjectCurriculum || subjectCurriculum === curriculumId;
+        });
+      }
+      stages.get(stageId).grades.push({ grade, subjects: gradeSubjects });
+    });
+    if (scopedGrades.length && ![...stages.values()].some((stage) => stage.grades.some((grade) => grade.subjects.length))) {
+      stages.get([...stages.keys()][0]).grades[0].subjects = subjects;
+    }
+    return { curriculum, stages: [...stages.values()] };
+  });
+};
+
 export const UserDetailsModal = ({
   open,
   onClose,
@@ -239,7 +349,7 @@ export const UserDetailsModal = ({
     >
       <div
         className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-xl ${
-          isTeacher ? "max-w-4xl sm:p-7" : "max-w-2xl sm:p-7"
+          isTeacher ? "max-w-5xl sm:p-7 lg:p-8" : "max-w-2xl sm:p-7"
         }`}
         dir="rtl"
       >
@@ -405,18 +515,6 @@ export const UserDetailsModal = ({
                 label="سنوات الخبرة"
                 value={user.experienceYears ?? user.experience}
               />
-              <DetailRow
-                label="المواد"
-                value={user.subjectsLabel ?? user.subject}
-              />
-              <DetailRow
-                label="المناهج"
-                value={user.curriculaLabel ?? user.curriculum}
-              />
-              <DetailRow
-                label="الصفوف"
-                value={user.gradesLabel ?? user.grade}
-              />
               <DetailRow label="الدولة" value={user.countryName} />
               <DetailRow label="لغة التدريس" value={user.language} />
               <DetailRow label="التقييم" value={user.rating} />
@@ -425,6 +523,12 @@ export const UserDetailsModal = ({
                 value={user.teacherStatus ?? user.status}
               />
             </div>
+
+            <TeacherTeachingSelections selections={
+              Array.isArray(user.teachingSelections) && user.teachingSelections.length
+                ? user.teachingSelections
+                : legacyTeachingSelections(user)
+            } />
 
             <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <DetailRow
@@ -986,7 +1090,14 @@ const UsersTable = ({
         throw new Error("معرف المعلم غير موجود");
       }
 
-      const fullTeacherData = teacherData(teacherProfile);
+      const detailedResponse = await getTeacher(teacherId).catch(() => null);
+      const detailedTeacher = detailedResponse?.data?.data?.teacher ?? detailedResponse?.data?.data ?? detailedResponse?.data;
+      const mergedTeacher = {
+        ...teacherProfile,
+        ...(detailedTeacher && typeof detailedTeacher === "object" ? detailedTeacher : {}),
+      };
+      const teachingSelections = await resolveTeacherTeachingSelections(mergedTeacher);
+      const fullTeacherData = teacherData({ ...mergedTeacher, teachingSelections });
       setDetailsUser((currentUser) =>
         currentUser?.id === user.id
           ? {

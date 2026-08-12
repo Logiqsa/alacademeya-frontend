@@ -52,19 +52,19 @@ const AuthLayout = ({ children }) => {
 
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex md:h-screen md:overflow-hidden">
 
-      <div className="w-full md:w-1/2 flex items-center justify-center bg-white px-6">
+      <div className="w-full md:h-screen md:w-1/2 flex items-center justify-center overflow-y-auto overscroll-contain bg-white px-6">
         {children}
       </div>
 
-      <div className="hidden md:flex w-1/2 relative overflow-hidden order-1 md:order-1">
+      <div className="hidden md:flex h-screen w-1/2 shrink-0 relative overflow-hidden order-1 md:order-1">
         {slides.map((slide, index) => (
           <div
             key={index}
             className={`absolute inset-0 transition-opacity duration-700 ${current === index ? "opacity-100" : "opacity-0"}`}
           >
-            <img src={slide.image} className="w-full h-full object-cover" alt={slide.title} />
+            <img src={slide.image} className="h-screen w-full object-cover" alt={slide.title} />
 
             <div className="absolute bottom-4 left-10 right-10 z-10 text-right">
 

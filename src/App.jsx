@@ -114,14 +114,14 @@ function App() {
         position="top-left"
         reverseOrder={false}
         toastOptions={{
-          duration: Infinity,
+          duration: 10000,
           style: { direction: "rtl" },
         }}
       >
         {(currentToast) => (
           <ToastBar toast={currentToast}>
             {({ icon, message }) => (
-              <>
+              <div className="relative -m-2 flex min-w-72 items-center gap-2 overflow-hidden p-2 pb-3">
                 {icon}
                 <div className="flex-1">{message}</div>
                 <button
@@ -132,7 +132,12 @@ function App() {
                 >
                   ×
                 </button>
-              </>
+                <span
+                  key={currentToast.id}
+                  className="toast-countdown absolute inset-x-0 bottom-0 h-1 rounded-full bg-[#123C91]"
+                  aria-hidden="true"
+                />
+              </div>
             )}
           </ToastBar>
         )}

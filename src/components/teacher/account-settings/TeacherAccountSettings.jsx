@@ -7,16 +7,22 @@ import {
   completeTeacherProfile,
   getCountries,
   getCurriculums,
+  getCurriculum,
   getCurriculumStages,
+  getStage,
   getStageGrades,
   getGrade,
   getSubjects,
+  getSubject,
+  getMyTeachingSelections,
+  updateMyTeachingSelections,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
 import { isRegistrationIncomplete } from "../../../utils/roles";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 import { AccountStatusBadge } from "../../account-settings/AccountRegistrationStatus";
 import PhoneDisplay from "../../account-settings/PhoneDisplay";
+import TeachingSelectionsEditor, { sanitizeTeachingSelections, validTeachingSelections } from "../TeachingSelectionsEditor";
 import {
   getCountryId,
   resolveCountryLabel,
@@ -96,6 +102,83 @@ const LANGUAGE_OPTIONS = [
   { id: "en", label: "الإنجليزية" },
   { id: "fr", label: "الفرنسية" },
 ];
+
+const normalizeTeachingLanguages = (value) => [
+  ...new Set(
+    (Array.isArray(value) ? value : value ? [value] : [])
+      .map((item) => item === "ar" ? "arabic" : item === "en" ? "languages" : item)
+      .filter((item) => item === "arabic" || item === "languages"),
+  ),
+];
+
+const TeachingSelectionsSummary = ({ selections }) => {
+  const [names, setNames] = useState({});
+
+  useEffect(() => {
+    let active = true;
+    const requests = [];
+    const addRequest = (id, request) => {
+      if (!id || requests.some((item) => item.id === id)) return;
+      requests.push({ id, request });
+    };
+
+    selections.forEach((curriculum) => {
+      addRequest(curriculum.curriculum, () => getCurriculum(curriculum.curriculum));
+      curriculum.stages?.forEach((stage) => {
+        addRequest(stage.stage, () => getStage(stage.stage));
+        stage.grades?.forEach((grade) => {
+          addRequest(grade.grade, () => getGrade(grade.grade));
+          grade.subjects?.forEach((subject) => addRequest(subject, () => getSubject(subject)));
+        });
+      });
+    });
+
+    Promise.all(requests.map(async ({ id, request }) => {
+      try {
+        const response = await request();
+        const entity = response?.data?.data ?? response?.data ?? {};
+        const arabic = entity?.name?.ar ?? entity?.nameAr ?? entity?.arabicName ?? "";
+        const english = entity?.name?.en ?? entity?.nameEn ?? entity?.englishName ?? "";
+        return [id, { label: arabic || english || id, subjectLabel: [arabic, english].filter(Boolean).join(" - ") || id }];
+      } catch {
+        return [id, { label: id, subjectLabel: id }];
+      }
+    })).then((entries) => {
+      if (active) setNames(Object.fromEntries(entries));
+    });
+
+    return () => { active = false; };
+  }, [selections]);
+
+  if (!selections.length) return <p className="text-sm text-gray-500">لا توجد اختيارات تدريس مسجلة.</p>;
+
+  return <div className="space-y-4">
+    {selections.map((curriculum, curriculumIndex) => <div key={curriculum.curriculum} className="rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-4">
+      <div className="mb-4 flex items-center gap-2">
+        <span className="flex size-7 items-center justify-center rounded-full bg-[#123C91] text-sm font-bold text-white">{curriculumIndex + 1}</span>
+        <div>
+          <p className="text-xs text-gray-500">المنهج الدراسي</p>
+          <h4 className="font-bold text-[#123C91]">{names[curriculum.curriculum]?.label || "جاري تحميل الاسم..."}</h4>
+        </div>
+      </div>
+      <div className="space-y-3 border-r-2 border-[#C9D7EE] pr-4">
+        {curriculum.stages?.map((stage) => <div key={stage.stage}>
+          <p className="mb-2 text-sm font-semibold text-gray-800">المرحلة: {names[stage.stage]?.label || "جاري التحميل..."}</p>
+          <div className="grid gap-2 md:grid-cols-2">
+            {stage.grades?.map((grade) => <div key={grade.grade} className="rounded-xl border bg-white p-3 shadow-sm">
+              <p className="mb-2 text-sm font-bold text-gray-800">{names[grade.grade]?.label || "جاري تحميل الصف..."}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {grade.subjects?.map((subject) => <span key={subject} className="rounded-lg bg-[#EAF0FB] px-2.5 py-1 text-xs font-medium text-[#123C91]">
+                  {names[subject]?.subjectLabel || "جاري تحميل المادة..."}
+                </span>)}
+              </div>
+            </div>)}
+          </div>
+        </div>)}
+      </div>
+    </div>)}
+  </div>;
+};
 const PASSWORD_RULES = [
   { id: "len", label: "الحد الأدنى 8 أحرف", test: (p) => p.length >= 8 },
   {
@@ -530,6 +613,86 @@ const TeacherPersonalCard = ({
 };
 
 const TeacherProfessionalCard = ({ teacher, onSaved }) => {
+  const incomplete = isRegistrationIncomplete(teacher);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [language, setLanguage] = useState([]);
+  const [experienceYears, setExperienceYears] = useState("");
+  const [selections, setSelections] = useState([]);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const response = await getMyTeachingSelections();
+      const data = response?.data?.data ?? response?.data ?? {};
+      setLanguage(normalizeTeachingLanguages(data.language));
+      setSelections(Array.isArray(data.teachingSelections) ? data.teachingSelections : []);
+      setExperienceYears(teacher.experienceYears ?? teacher.experience ?? "");
+    } catch (err) {
+      if (!incomplete) setError(err.response?.data?.message || "تعذر تحميل اختيارات التدريس");
+      setLanguage(normalizeTeachingLanguages(teacher.language).length
+        ? normalizeTeachingLanguages(teacher.language)
+        : ["arabic"]);
+    } finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, [teacher]);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    const normalizedLanguages = normalizeTeachingLanguages(language);
+    const sanitizedSelections = sanitizeTeachingSelections(selections);
+    if (!normalizedLanguages.length || !validTeachingSelections(sanitizedSelections)) {
+      setError("اختر لغة ومنهجًا، مع مرحلة وصف ومادة واحدة على الأقل");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (incomplete) {
+        const formData = new FormData();
+        formData.append("language", JSON.stringify(normalizedLanguages));
+        formData.append("experienceYears", String(Number(experienceYears || 0)));
+        formData.append("teachingSelections", JSON.stringify(sanitizedSelections));
+        await completeTeacherProfile(formData);
+        toast.success("تم استكمال البيانات وإرسال الملف للمراجعة");
+      } else {
+        // Each endpoint has a separate responsibility. The selections request
+        // deliberately sends the complete edited state, including old curricula.
+        await Promise.all([
+          updateMyTeachingSelections({ teachingSelections: sanitizedSelections }),
+          updateMyProfile({ language: normalizedLanguages, experienceYears: experienceYears === "" ? undefined : Number(experienceYears) }),
+        ]);
+        toast.success("تم تعديل البيانات بنجاح");
+      }
+      await onSaved();
+      setEditing(false);
+    } catch (err) {
+      setError(err.response?.data?.message || "حدث خطأ أثناء تعديل البيانات");
+    } finally { setSaving(false); }
+  };
+
+  const languageLabel = language.map((item) => item === "arabic" ? "العربية" : "اللغات").join("، ") || "—";
+  return <form onSubmit={submit} className="bg-(--white) border border-(--border-light) rounded-2xl shadow-(--shadow) p-6">
+    <SectionHeader title="البيانات الأكاديمية" subtitle="مناهجك ومراحلها وصفوفها وموادها ولغات التدريس." editing={editing} onEditClick={() => setEditing(true)} />
+    {loading ? <div className="py-8 text-center text-gray-500">جاري تحميل اختيارات التدريس...</div> : !editing ? <div className="space-y-5">
+      <ViewGrid>
+        <ViewField label="لغات التدريس" value={languageLabel} />
+        <ViewField label="سنوات الخبرة" value={experienceYears || "—"} />
+      </ViewGrid>
+      <TeachingSelectionsSummary selections={selections} />
+    </div> : <EditBox>
+      <InlineMultiSelect label="لغات التدريس" value={language} options={[{ id: "arabic", label: "العربية" }, { id: "languages", label: "اللغات" }]} onChange={setLanguage} placeholder="اختر لغة تدريس" />
+      <TextInput label="سنوات الخبرة" type="number" value={experienceYears} onChange={(e) => setExperienceYears(e.target.value)} />
+      <div className="md:col-span-2"><TeachingSelectionsEditor value={selections} onChange={setSelections} /></div>
+    </EditBox>}
+    {error && !editing && <p className="mt-3 text-sm text-red-600">{error}</p>}
+    {editing && <ActionRow saving={saving} onCancel={() => { setEditing(false); setError(""); load(); }} error={error} confirmLabel="تعديل البيانات" />}
+  </form>;
+};
+
+const LegacyTeacherProfessionalCard = ({ teacher, onSaved }) => {
   const entityId = (value) =>
     typeof value === "string" ? value : value?._id || value?.id || "";
   const currentCurriculum =
@@ -876,6 +1039,10 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
     </form>
   );
 };
+
+// Kept temporarily as a compatibility reference while the new nested editor
+// replaces the former single-curriculum implementation.
+void LegacyTeacherProfessionalCard;
 
 const SecurityCard = ({ lastPasswordChange }) => {
   const [editing, setEditing] = useState(false);
