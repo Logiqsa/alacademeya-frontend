@@ -21,6 +21,7 @@ import { createPortal } from "react-dom";
 import { getArabicCountryName } from "../../../utils/countryName";
 import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeachingSelections";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
+import { teacherLanguageLabel } from "../../../utils/teacherLanguage";
 import {
   getAllStudents,
   getAllSubscriptions,
@@ -518,7 +519,10 @@ export const UserDetailsModal = ({
                 value={user.experienceYears ?? user.experience}
               />
               <DetailRow label="الدولة" value={user.countryName} />
-              <DetailRow label="لغة التدريس" value={user.language} />
+              <DetailRow
+                label="لغة التدريس"
+                value={teacherLanguageLabel(user.language)}
+              />
               <DetailRow label="التقييم" value={user.rating} />
               <DetailRow
                 label="حالة ملف المعلم"

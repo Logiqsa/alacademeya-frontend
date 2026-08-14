@@ -975,6 +975,10 @@ export const SecurityCard = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!form.currentPassword) {
+      setError("أدخل كلمة المرور الحالية");
+      return;
+    }
     if (!form.password) {
       setError("أدخل كلمة المرور الجديدة");
       return;
@@ -991,8 +995,7 @@ export const SecurityCard = ({
     try {
       await onSave({
         currentPassword: form.currentPassword,
-        password: form.password,
-        passwordConfirm: form.passwordConfirm,
+        updatedPassword: form.password,
       });
       handleCancel();
     } catch (err) {

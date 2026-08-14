@@ -96,7 +96,7 @@ const MultiSelectField = ({
 const TeacherDetailsPage = () => {
   const navigate = useNavigate();
   const fileRef = useRef(null);
-  const { user, setUser } = useContext(AuthContext);
+  const { user, updateUser } = useContext(AuthContext);
   console.log("token:", localStorage.getItem("token"));
   console.log("user:", localStorage.getItem("user"));
 
@@ -145,10 +145,9 @@ const TeacherDetailsPage = () => {
         ...(updatedUser && typeof updatedUser === "object" ? updatedUser : {}),
         role: "teacher",
         status: updatedUser?.status || "pending",
-        registrationStatus:
-          updatedUser?.registrationStatus || "pending",
+        registrationStatus: "pending-approval",
       };
-      setUser(patched);
+      updateUser(patched);
 
       navigate("/pending");
     } catch (err) {

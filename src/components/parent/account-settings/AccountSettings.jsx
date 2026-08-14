@@ -9,12 +9,14 @@ import {
   updateStudent,
   getCountries,
   getCurriculums,
+  updatePassword,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
 import {
   ParentProfileCard,
   StudentPersonalCard,
   StudentAcademicCard,
+  SecurityCard,
 } from "./ProfileCards";
 import { getArabicCountryName } from "../../../utils/countryName";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
@@ -375,6 +377,7 @@ const AccountSettings = () => {
             timezone={parent.timezone}
             onUpdated={handleTimezoneUpdated}
           />
+          <SecurityCard onSave={updatePassword} />
         </>
       )}
 

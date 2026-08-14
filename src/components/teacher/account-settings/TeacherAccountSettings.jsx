@@ -16,6 +16,7 @@ import {
   getSubject,
   getMyTeachingSelections,
   updateMyTeachingSelections,
+  updatePassword,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
 import { isRegistrationIncomplete } from "../../../utils/roles";
@@ -1065,6 +1066,10 @@ const SecurityCard = ({ lastPasswordChange }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!form.currentPassword) {
+      setError("أدخل كلمة المرور الحالية");
+      return;
+    }
     if (!form.password) {
       setError("أدخل كلمة المرور الجديدة");
       return;
@@ -1079,10 +1084,9 @@ const SecurityCard = ({ lastPasswordChange }) => {
     }
     setSaving(true);
     try {
-      await updateMyProfile({
+      await updatePassword({
         currentPassword: form.currentPassword,
-        password: form.password,
-        passwordConfirm: form.passwordConfirm,
+        updatedPassword: form.password,
       });
       toast.success("تم تغيير كلمة المرور بنجاح");
       handleCancel();
@@ -1260,6 +1264,7 @@ const TeacherAccountSettings = () => {
         onUpdated={handleTimezoneUpdated}
       />
       <TeacherProfessionalCard teacher={teacher} onSaved={fetchProfile} />
+      <SecurityCard lastPasswordChange={teacher.passwordChangedAt} />
     </div>
   );
 };

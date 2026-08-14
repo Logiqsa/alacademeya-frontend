@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
 import { Pencil, Eye, EyeOff, ChevronDown, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import {
   getMyProfile,
   updateMyProfile,
@@ -10,6 +9,7 @@ import {
   getCurriculums,
   getCurriculumStages,
   getStageGrades,
+  updatePassword,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
@@ -692,7 +692,7 @@ const StudentAcademicCard = ({ student, onUpdated }) => {
   );
 };
 
-const SecurityCard = ({ lastPasswordChange, onPasswordChanged }) => {
+const SecurityCard = ({ lastPasswordChange }) => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -731,14 +731,12 @@ const SecurityCard = ({ lastPasswordChange, onPasswordChanged }) => {
     }
     setSaving(true);
     try {
-      await updateMyProfile({
+      await updatePassword({
         currentPassword: form.currentPassword,
-        password: form.password,
-        passwordConfirm: form.passwordConfirm,
+        updatedPassword: form.password,
       });
-      toast.success("تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى");
+      toast.success("تم تغيير كلمة المرور بنجاح");
       handleCancel();
-      onPasswordChanged();
     } catch (err) {
       setError(
         err.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور",
@@ -804,8 +802,7 @@ const SecurityCard = ({ lastPasswordChange, onPasswordChanged }) => {
 /* ------------------------------------------------------------------ */
 
 const StudentAccountSettings = () => {
-  const { user: ctxUser, updateUser, logout } = useContext(AuthContext) || {};
-  const navigate = useNavigate();
+  const { user: ctxUser, updateUser } = useContext(AuthContext) || {};
 
   const [student, setStudent] = useState(ctxUser || null);
   const [loading, setLoading] = useState(true);
@@ -852,12 +849,6 @@ const StudentAccountSettings = () => {
       updateUser?.(next);
       return next;
     });
-  };
-
-  // بعد نجاح تغيير الباسورد: تسجيل خروج فعلي وتوجيه لصفحة اللوجين
-  const handleForceReLogin = () => {
-    logout?.();
-    navigate("/login", { replace: true });
   };
 
   if (loading) {
@@ -918,6 +909,7 @@ const StudentAccountSettings = () => {
         onUpdated={handleProfileUpdated}
       />
       <StudentAcademicCard student={student} onUpdated={handleProfileUpdated} />
+      <SecurityCard lastPasswordChange={student.passwordChangedAt} />
     </div>
   );
 };

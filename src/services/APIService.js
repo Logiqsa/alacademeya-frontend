@@ -58,6 +58,16 @@ export const resendOtp = (email) =>
   API.post("/auth/resendVerificationCode", { email });
 export const verifyAccount = (data) => API.post("/auth/verifyAccount", data);
 
+export const updatePassword = async ({ currentPassword, updatedPassword }) => {
+  const response = await API.patch("/auth/updatePassword", {
+    currentPassword,
+    updatedPassword,
+  });
+  const replacementToken = response.data?.token;
+  if (replacementToken) localStorage.setItem("token", replacementToken);
+  return response;
+};
+
 export const forgotPassword = (email) =>
   API.post("/auth/forgotPassword", { email });
 

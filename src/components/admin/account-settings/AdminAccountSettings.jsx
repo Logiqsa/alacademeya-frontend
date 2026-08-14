@@ -16,6 +16,7 @@ import {
   getMyProfile,
   updateContactSettings,
   updateMyProfile,
+  updatePassword,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext"; // عدّل المسار حسب مشروعك
 import {
@@ -569,7 +570,7 @@ const AdminPersonalCard = ({
   );
 };
 
-const SecurityCard = ({ lastPasswordChange, onPasswordChanged }) => {
+const SecurityCard = ({ lastPasswordChange }) => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -608,14 +609,12 @@ const SecurityCard = ({ lastPasswordChange, onPasswordChanged }) => {
     }
     setSaving(true);
     try {
-      await updateMyProfile({
+      await updatePassword({
         currentPassword: form.currentPassword,
-        password: form.password,
-        passwordConfirm: form.passwordConfirm,
+        updatedPassword: form.password,
       });
-      toast.success("تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى");
+      toast.success("تم تغيير كلمة المرور بنجاح");
       handleCancel();
-      onPasswordChanged();
     } catch (err) {
       setError(
         err.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور",
@@ -799,6 +798,7 @@ const AdminAccountSettings = () => {
         timezone={admin.timezone}
         onUpdated={handleProfileUpdated}
       />
+      <SecurityCard lastPasswordChange={admin.passwordChangedAt} />
       <ContactSettingsCard />
       <ExchangeRatesSettings />
       <LandingStatsSettings />

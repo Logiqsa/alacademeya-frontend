@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
+import { teacherLanguageLabel } from "../../../utils/teacherLanguage";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import { UserDetailsModal } from "./Userstable";
 import {
@@ -23,10 +24,6 @@ const text = (value) => {
   if (["string", "number"].includes(typeof value)) return value;
   return value.ar || value.en || value.name?.ar || value.name?.en || "—";
 };
-const languageLabel = (value) =>
-  ({ ar: "العربية", en: "الإنجليزية" })[String(value || "").toLowerCase()] ||
-  value ||
-  "—";
 const extractList = (response, keys = []) => {
   const payload = response?.data?.data ?? response?.data ?? [];
   if (Array.isArray(payload)) return payload;
@@ -420,7 +417,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
               />
               <Detail
                 label="لغة التدريس"
-                value={languageLabel(entity.language)}
+                value={teacherLanguageLabel(entity.language)}
               />
             </>
           ) : (
