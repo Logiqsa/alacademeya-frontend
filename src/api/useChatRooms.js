@@ -5,6 +5,9 @@ import {
   getRoomMessages,
   sendMessageApi,
   startSupportRoom,
+  deleteMessage,
+  updateChatRoom,
+  deleteChatRoom,
 } from "./chatApi";
 import {
   clearStoredUnread,
@@ -45,6 +48,12 @@ const normalizeRoom = (room) => ({
     room.info?.classroomId ??
     room.parent?.classroomId,
   participants: room.participants ?? [],
+  isActive:
+    room.isActive ??
+    !["inactive", "disabled", "deactivated"].includes(
+      String(room.status || "").toLowerCase(),
+    ),
+  status: room.status,
   avatarInitial: (room.displayName ?? room.name ?? "?").trim().charAt(0),
   studentName: room.studentName ?? null,
   unreadCount: Number(
@@ -451,6 +460,38 @@ export function useChatRooms(currentUserId) {
     [fetchRooms, openConversation, currentUserId],
   );
 
+  const removeMessage = useCallback(async (roomId, messageId) => {
+    await deleteMessage(messageId);
+    setConversations((current) =>
+      current.map((room) =>
+        String(room.id) === String(roomId)
+          ? { ...room, messages: room.messages.filter((message) => String(message.id) !== String(messageId)) }
+          : room,
+      ),
+    );
+  }, []);
+
+  const setRoomActive = useCallback(async (roomId, isActive) => {
+    const response = await updateChatRoom(roomId, { isActive });
+    const updated = response.data?.data ?? response.data?.room ?? response.data;
+    setConversations((current) =>
+      current.map((room) =>
+        String(room.id) === String(roomId)
+          ? { ...room, ...normalizeRoom({ ...room, ...updated, isActive }) , messages: room.messages }
+          : room,
+      ),
+    );
+  }, []);
+
+  const removeRoom = useCallback(async (roomId) => {
+    await deleteChatRoom(roomId);
+    setConversations((current) => current.filter((room) => String(room.id) !== String(roomId)));
+    if (String(currentRoomRef.current) === String(roomId)) {
+      currentRoomRef.current = null;
+      setActiveId(null);
+    }
+  }, []);
+
   return {
     conversations,
     activeId,
@@ -458,6 +499,9 @@ export function useChatRooms(currentUserId) {
     openConversation,
     leaveConversation,
     sendMessage,
+    removeMessage,
+    setRoomActive,
+    removeRoom,
     startSupportConversation,
   };
 }

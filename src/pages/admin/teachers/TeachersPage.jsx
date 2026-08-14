@@ -30,6 +30,7 @@ import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeachingSelections";
+import { normalizePhoneSearch } from "../../../utils/phone";
 
 const PAGE_SIZE = 8;
 
@@ -191,10 +192,13 @@ const TeachersPage = () => {
     loadTeachers();
   }, [loadTeachers]);
 
-  const filtered = teachers.filter(
-    (teacher) =>
-      teacher.name.includes(search) ||
-      teacher.email.toLowerCase().includes(search.toLowerCase()),
+  const normalizedSearch = search.trim().toLowerCase();
+  const normalizedPhoneSearch = normalizePhoneSearch(search);
+  const filtered = teachers.filter((teacher) =>
+    String(teacher.name || "").toLowerCase().includes(normalizedSearch) ||
+    String(teacher.email || "").toLowerCase().includes(normalizedSearch) ||
+    (normalizedPhoneSearch &&
+      normalizePhoneSearch(teacher.phone).includes(normalizedPhoneSearch)),
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -204,7 +208,7 @@ const TeachersPage = () => {
   );
 
   const openTeacherDetails = async (teacher) => {
-    setSelectedTeacher(teacher);
+    setSelectedTeacher({ ...teacher, academicLoading: true });
     try {
       const response = await getTeacher(teacher.id);
       const details = response?.data?.data?.teacher ?? response?.data?.data ?? response?.data;
@@ -212,11 +216,15 @@ const TeachersPage = () => {
         const mergedDetails = { ...teacher.raw, ...details };
         const teachingSelections = await resolveTeacherTeachingSelections(mergedDetails);
         setSelectedTeacher((current) => current?.id === teacher.id
-          ? { ...current, raw: { ...mergedDetails, teachingSelections } }
+          ? { ...current, academicLoading: false, raw: { ...mergedDetails, teachingSelections } }
           : current);
       }
     } catch {
       // Keep the summary response visible if detailed data is unavailable.
+    } finally {
+      setSelectedTeacher((current) => current?.id === teacher.id
+        ? { ...current, academicLoading: false }
+        : current);
     }
   };
 
@@ -337,7 +345,7 @@ const TeachersPage = () => {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="ابحث باسم المعلم أو البريد الإلكتروني..."
+              placeholder="ابحث باسم المعلم أو البريد الإلكتروني أو رقم الهاتف..."
               className="h-11 w-full rounded-lg border border-gray-200 bg-gray-50 pr-10 pl-3 text-sm outline-none focus:border-[#123C91]"
             />
           </div>
@@ -584,7 +592,14 @@ const TeachersPage = () => {
                 />
               </div>
 
-              <TeacherCurriculumBoxes teacher={selectedTeacher} />
+              {selectedTeacher.academicLoading ? (
+                <div className="mt-4 flex items-center justify-center gap-2 rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-6 text-sm font-medium text-[#123C91]">
+                  <Loader2 size={20} className="animate-spin" />
+                  جاري تحميل البيانات الأكاديمية للمعلم...
+                </div>
+              ) : (
+                <TeacherCurriculumBoxes teacher={selectedTeacher} />
+              )}
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {selectedTeacher.fileUrls?.length ? (

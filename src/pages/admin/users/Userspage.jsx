@@ -16,6 +16,7 @@ import {
   updateUser,
 } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import { normalizePhoneSearch } from "../../../utils/phone";
 import LoadingState from "../../../components/shared/LoadingState";
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
@@ -313,9 +314,14 @@ const UsersPage = () => {
     ),
   ].sort((a, b) => a.localeCompare(b, "ar"));
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const normalizedPhoneSearch = normalizePhoneSearch(search);
   const filtered = visibleUsers.filter(
     (u) =>
-      (u.name?.includes(search) || u.email?.includes(search)) &&
+      (String(u.name || "").toLowerCase().includes(normalizedSearch) ||
+        String(u.email || "").toLowerCase().includes(normalizedSearch) ||
+        (normalizedPhoneSearch &&
+          normalizePhoneSearch(u.phone).includes(normalizedPhoneSearch))) &&
       (filterRole === "جميع المستخدمين" || u.role === filterRole) &&
       (filterStatus === "جميع الحالات" || u.status === filterStatus) &&
       (filterRole !== "طالب" ||

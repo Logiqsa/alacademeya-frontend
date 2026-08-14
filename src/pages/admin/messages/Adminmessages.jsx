@@ -19,6 +19,9 @@ export default function AdminMessages() {
     openConversation,
     leaveConversation,
     sendMessage,
+    removeMessage,
+    setRoomActive,
+    removeRoom,
     startSupportConversation,
   } = useChatRooms(currentUserId);
 
@@ -145,7 +148,14 @@ export default function AdminMessages() {
               } min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white sm:rounded-3xl md:flex`}
             >
               {activeConversation ? (
-                <ChatBox conversation={activeConversation} onSend={sendMessage} onBack={handleBack} />
+                <ChatBox
+                  conversation={activeConversation}
+                  onSend={sendMessage}
+                  onBack={handleBack}
+                  onDeleteMessage={removeMessage}
+                  onToggleActive={setRoomActive}
+                  onDeleteRoom={removeRoom}
+                />
               ) : (
                 <div className="flex h-full items-center justify-center px-4 text-center text-sm text-gray-400">
                   اختر محادثة للبدء

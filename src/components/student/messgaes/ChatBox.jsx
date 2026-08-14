@@ -49,7 +49,10 @@ export default function ChatBox({ conversation, onSend, onBack }) {
     );
   }
 
+  const roomInactive = conversation.isActive === false;
+
   const handleSend = () => {
+    if (roomInactive) return;
     const trimmed = text.trim();
     if (!trimmed) return;
     onSend(conversation.id, trimmed);
@@ -234,6 +237,11 @@ export default function ChatBox({ conversation, onSend, onBack }) {
       </div>
 
       {/* Input */}
+      {roomInactive ? (
+        <div className="border-t border-amber-200 bg-amber-50 px-4 py-4 text-center text-sm font-medium text-amber-700">
+          هذه المحادثة غير مفعلة، وغير مسموح بإرسال رسائل فيها.
+        </div>
+      ) : (
       <div className="flex min-w-0 shrink-0 items-center gap-2 border-t border-gray-100 p-3 md:gap-3 md:p-4">
         <input
           ref={inputRef}
@@ -255,6 +263,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
           <span className="hidden text-sm font-medium md:inline">إرسال</span>
         </button>
       </div>
+      )}
     </div>
   );
 }

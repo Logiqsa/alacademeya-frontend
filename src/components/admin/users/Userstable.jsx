@@ -327,6 +327,7 @@ export const UserDetailsModal = ({
   open,
   onClose,
   user,
+  academicLoading = false,
   reportLoading,
   reportError,
   onOpenChat,
@@ -530,11 +531,18 @@ export const UserDetailsModal = ({
               />
             </div>
 
-            <TeacherTeachingSelections selections={
-              Array.isArray(user.teachingSelections) && user.teachingSelections.length
-                ? user.teachingSelections
-                : legacyTeachingSelections(user)
-            } />
+            {academicLoading ? (
+              <div className="mb-3 flex items-center justify-center gap-2 rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-6 text-sm font-medium text-[#123C91]">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#123C91] border-t-transparent" />
+                جاري تحميل البيانات الأكاديمية للمعلم...
+              </div>
+            ) : (
+              <TeacherTeachingSelections selections={
+                Array.isArray(user.teachingSelections) && user.teachingSelections.length
+                  ? user.teachingSelections
+                  : legacyTeachingSelections(user)
+              } />
+            )}
 
             <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <DetailRow
@@ -910,6 +918,7 @@ const UsersTable = ({
   const [suspendUser, setSuspendUser] = useState(null);
   const [activateUser, setActivateUser] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [academicLoading, setAcademicLoading] = useState(false);
   const [reportError, setReportError] = useState("");
 
   const navigate = useNavigate();
@@ -1046,6 +1055,7 @@ const UsersTable = ({
       return;
     }
 
+    setAcademicLoading(true);
     setReportLoading(true);
 
     try {
@@ -1112,6 +1122,7 @@ const UsersTable = ({
             }
           : currentUser,
       );
+      setAcademicLoading(false);
 
       const month = getCurrentMonth();
 
@@ -1155,6 +1166,7 @@ const UsersTable = ({
     } catch (error) {
       setReportError(error.message || "حدث خطأ أثناء تحميل التقرير الشهري");
     } finally {
+      setAcademicLoading(false);
       setReportLoading(false);
     }
   };
@@ -1340,6 +1352,7 @@ const UsersTable = ({
           setReportError("");
         }}
         user={detailsUser}
+        academicLoading={academicLoading}
         reportLoading={reportLoading}
         reportError={reportError}
         onOpenChat={handleOpenChat}

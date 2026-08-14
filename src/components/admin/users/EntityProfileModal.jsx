@@ -436,7 +436,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           )}
         </div>
         {isTeacher && (teacherDetailsLoading
-          ? <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-gray-50 p-5 text-sm text-gray-500"><Loader2 size={18} className="animate-spin" /> جاري تحميل بيانات المناهج...</div>
+          ? <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-gray-50 p-5 text-sm text-[#123C91]"><Loader2 size={18} className="animate-spin" /> جاري تحميل البيانات الأكاديمية للمعلم...</div>
           : <TeacherAcademicBoxes teacher={{ ...entity, ...teacherDetails }} />)}
         {isTeacher && (
           <div className="mt-4 flex flex-wrap items-center gap-2">

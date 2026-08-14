@@ -26,3 +26,9 @@ export const editMessage = (messageId, text) => API.patch(`/messages/${messageId
 
 
 export const deleteMessage = (messageId) => API.delete(`/messages/${messageId}`);
+
+export const updateChatRoom = (roomId, payload) =>
+  API.patch(`/chats/rooms/${roomId}`, payload);
+
+export const deleteChatRoom = (roomId) =>
+  API.delete(`/chats/rooms/${roomId}`);

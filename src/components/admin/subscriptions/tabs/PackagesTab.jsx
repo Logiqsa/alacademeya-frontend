@@ -161,7 +161,7 @@ const inputCls =
   "w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] text-[13px] font-['IBM_Plex_Sans_Arabic'] focus:outline-none focus:ring-2 focus:ring-[#123C91] text-right";
 
 // ─── Package Card ─────────────────────────────────────────────────────────────
-const PackageCard = ({ pkg, onEdit, onDelete }) => (
+const PackageCard = ({ pkg, onEdit, onDelete, onToggle, toggling }) => (
   <div
     className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col gap-3"
     dir="rtl"
@@ -172,15 +172,29 @@ const PackageCard = ({ pkg, onEdit, onDelete }) => (
         <h1 className="font-['Tajawal'] font-semibold mb-2 text-[17px] text-[#1F2937]">
           {pkg.name}
         </h1>
-        <span
-          className={`text-[12px] font-medium px-3 py-1 rounded-full ${
-            pkg.isActive
-              ? "bg-[#00A63E26] text-[#00A63E]"
-              : "bg-[#EF444426] text-[#EF4444]"
-          }`}
-        >
-          {pkg.isActive ? "نشطة" : "غير نشطة"}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={pkg.isActive !== false}
+            aria-label={pkg.isActive !== false ? "إلغاء تفعيل الباقة" : "تفعيل الباقة"}
+            title={pkg.isActive !== false ? "إلغاء تفعيل الباقة" : "تفعيل الباقة"}
+            disabled={toggling}
+            onClick={() => onToggle(pkg)}
+            className={`relative h-6 w-11 rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 ${pkg.isActive !== false ? "bg-[#00A63E]" : "bg-gray-300"}`}
+          >
+            <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${pkg.isActive !== false ? "right-6" : "right-1"}`} />
+          </button>
+          <span
+            className={`text-[12px] font-medium px-3 py-1 rounded-full ${
+              pkg.isActive !== false
+                ? "bg-[#00A63E26] text-[#00A63E]"
+                : "bg-[#EF444426] text-[#EF4444]"
+            }`}
+          >
+            {toggling ? "جاري التحديث..." : pkg.isActive !== false ? "نشطة" : "غير نشطة"}
+          </span>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -233,6 +247,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   const [editPkg, setEditPkg] = useState(null);
   const [deletePkg, setDeletePkg] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [togglingIds, setTogglingIds] = useState([]);
 
   const fetchPackages = async () => {
     setLoading(true);
@@ -265,10 +280,11 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
 
   const handleConfirmDelete = async () => {
     if (!deletePkg) return;
+    const packageId = deletePkg.id || deletePkg._id;
     setDeleting(true);
     try {
-      await deletePackage(deletePkg.id);
-      setPackages((prev) => prev.filter((p) => p.id !== deletePkg.id));
+      await deletePackage(packageId);
+      setPackages((prev) => prev.filter((p) => String(p.id || p._id) !== String(packageId)));
       setDeletePkg(null);
     } catch (err) {
       setError(
@@ -276,6 +292,29 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       );
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleTogglePackage = async (pkg) => {
+    const packageId = pkg.id || pkg._id;
+    if (!packageId || togglingIds.includes(String(packageId))) return;
+    const nextActive = pkg.isActive === false;
+    setTogglingIds((current) => [...current, String(packageId)]);
+    setError("");
+    try {
+      const response = await updatePackage(packageId, { isActive: nextActive });
+      const updated = response.data?.data ?? response.data?.package ?? response.data;
+      setPackages((current) =>
+        current.map((item) =>
+          String(item.id || item._id) === String(packageId)
+            ? { ...item, ...(updated && typeof updated === "object" ? updated : {}), isActive: nextActive }
+            : item,
+        ),
+      );
+    } catch (err) {
+      setError(err?.response?.data?.message || "تعذر تحديث حالة الباقة، حاول مرة أخرى");
+    } finally {
+      setTogglingIds((current) => current.filter((id) => id !== String(packageId)));
     }
   };
 
@@ -311,10 +350,12 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {packages.map((pkg) => (
             <PackageCard
-              key={pkg.id}
+              key={pkg.id || pkg._id}
               pkg={pkg}
               onEdit={setEditPkg}
               onDelete={setDeletePkg}
+              onToggle={handleTogglePackage}
+              toggling={togglingIds.includes(String(pkg.id || pkg._id))}
             />
           ))}
         </div>

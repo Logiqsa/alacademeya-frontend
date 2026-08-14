@@ -33,7 +33,7 @@ const UsersFilters = ({
           type="text"
           value={search}
           onChange={(e) => onSearchChange?.(e.target.value)}
-          placeholder="بحث باسم أو البريد الإلكتروني..."
+          placeholder="بحث بالاسم أو البريد الإلكتروني أو رقم الهاتف..."
           className="w-full h-full pr-10 pl-4 py-3 bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg text-sm outline-none focus:border-[#123C91] transition-colors"
         />
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" size={18} />
