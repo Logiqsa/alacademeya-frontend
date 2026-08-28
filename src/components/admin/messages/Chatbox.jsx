@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, CheckCheck, ArrowRight, Trash2, Power, PowerOff } from "lucide-react";
 import toast from "react-hot-toast";
+import { getUser, updateUser, deleteUser as deleteUserApi } from "../../../services/APIService";
+import { mapAdminUser } from "../../../utils/adminUser";
+import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
+import { UserDetailsModal } from "../users/Userstable";
 
 export default function ChatBox({
   conversation,
+  resolvedUser,
   onSend,
   onBack,
   onDeleteMessage,
@@ -13,6 +18,8 @@ export default function ChatBox({
   const [text, setText] = useState("");
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [userPopup, setUserPopup] = useState(null);
+  const [userPopupLoading, setUserPopupLoading] = useState(false);
   const endRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -78,6 +85,103 @@ export default function ChatBox({
     }
   };
 
+  const handleOpenUserPopup = async () => {
+    if (!resolvedUser?.id) {
+      toast.error(
+        "تعذر تحديد المستخدم بدقة (الاسم غير فريد أو غير مسجل) — جرّب البحث عنه في صفحة المستخدمين",
+      );
+      return;
+    }
+    setUserPopupLoading(true);
+    try {
+      const res = await getUser(resolvedUser.id);
+      const raw = res.data?.data ?? res.data;
+      setUserPopup(mapAdminUser(raw));
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر تحميل بيانات المستخدم");
+    } finally {
+      setUserPopupLoading(false);
+    }
+  };
+
+  const handleApproveUser = async (user) => {
+    try {
+      await approveRegistrationRequest({ userId: user.id, role: user.rawRole });
+      setUserPopup((current) =>
+        current
+          ? { ...current, registrationStatus: "active", isActive: true, status: "نشط" }
+          : current,
+      );
+      toast.success("تم قبول الطلب وتفعيل الحساب");
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || "تعذر قبول الطلب");
+    }
+  };
+
+  const handleToggleUserStatus = async (user) => {
+    const willActivate = user.status === "موقوف" || user.status === "معلق";
+    try {
+      await updateUser(user.id, { isActive: willActivate });
+      setUserPopup((current) =>
+        current
+          ? { ...current, isActive: willActivate, status: willActivate ? "نشط" : "موقوف" }
+          : current,
+      );
+      toast.success(willActivate ? "تم تفعيل الحساب" : "تم إيقاف الحساب");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر تحديث حالة المستخدم");
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    try {
+      await deleteUserApi(user.id);
+      toast.success("تم حذف المستخدم");
+      setUserPopup(null);
+      try {
+        await onDeleteRoom?.(conversation.id);
+      } catch {
+        // المستخدم اتمسح بنجاح حتى لو فشل تنظيف المحادثة — نكمل عادي
+      }
+      onBack?.();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر حذف المستخدم");
+    }
+  };
+
+  const requestApproveUser = (user) => {
+    setConfirmAction({
+      title: "الموافقة على الطلب",
+      message: "هل تريد الموافقة على طلب تسجيل هذا المستخدم وتفعيل حسابه؟",
+      confirmLabel: "موافقة",
+      destructive: false,
+      run: () => handleApproveUser(user),
+    });
+  };
+
+  const requestToggleUserStatus = (user) => {
+    const activating = user.status === "موقوف" || user.status === "معلق";
+    setConfirmAction({
+      title: activating ? "تفعيل الحساب" : "إيقاف الحساب",
+      message: activating
+        ? "هل تريد تفعيل حساب هذا المستخدم؟"
+        : "هل تريد إيقاف حساب هذا المستخدم؟",
+      confirmLabel: activating ? "تفعيل" : "إيقاف",
+      destructive: !activating,
+      run: () => handleToggleUserStatus(user),
+    });
+  };
+
+  const requestDeleteUser = (user) => {
+    setConfirmAction({
+      title: "حذف المستخدم",
+      message: "هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع، وستُغلق محادثته أيضًا.",
+      confirmLabel: "حذف المستخدم",
+      destructive: true,
+      run: () => handleDeleteUser(user),
+    });
+  };
+
   const requestDeleteMessage = (messageId) => {
     setConfirmAction({
       title: "حذف الرسالة",
@@ -134,36 +238,45 @@ export default function ChatBox({
         >
           <ArrowRight size={18} />
         </button>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white text-sm font-bold text-white sm:h-10 sm:w-10">
-          {conversation.avatarInitial}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold text-slate-800 font-['IBM_Plex_Sans_Arabic'] sm:text-[15px]">
-            {conversation.name}
-          </p>
-          <p className="truncate text-[11px] text-gray-400 font-['IBM_Plex_Sans_Arabic'] sm:text-[12px]">
-            {conversation.role}
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={handleOpenUserPopup}
+          disabled={userPopupLoading}
+          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg text-right transition-opacity hover:opacity-80 disabled:cursor-wait disabled:opacity-60 sm:gap-3"
+          aria-label={`عرض بيانات ${conversation.name}`}
+          title="عرض بيانات المستخدم"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white text-sm font-bold text-white sm:h-10 sm:w-10">
+            {conversation.avatarInitial}
+          </span>
+          <span className="min-w-0 flex-1">
+            <p className="truncate text-[14px] font-semibold text-slate-800 font-['IBM_Plex_Sans_Arabic'] sm:text-[15px]">
+              {conversation.name}
+            </p>
+            <p className="truncate text-[11px] text-gray-400 font-['IBM_Plex_Sans_Arabic'] sm:text-[12px]">
+              {conversation.role}
+            </p>
+          </span>
+        </button>
         <button
           type="button"
           onClick={requestToggleActive}
-          className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors sm:text-sm ${conversation.isActive ? "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100" : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}
+          className={`flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition-colors sm:px-3 sm:text-sm ${conversation.isActive ? "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100" : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}
           aria-label={conversation.isActive ? "تعطيل المحادثة" : "تفعيل المحادثة"}
           title={conversation.isActive ? "تعطيل المحادثة" : "تفعيل المحادثة"}
         >
           {conversation.isActive ? <PowerOff size={17} /> : <Power size={17} />}
-          <span>{conversation.isActive ? "إلغاء التفعيل" : "تفعيل"}</span>
+          <span className="hidden sm:inline">{conversation.isActive ? "إلغاء التفعيل" : "تفعيل"}</span>
         </button>
         <button
           type="button"
           onClick={requestDeleteRoom}
-          className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 sm:text-sm"
+          className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 sm:px-3 sm:text-sm"
           aria-label="حذف المحادثة بالكامل"
           title="حذف المحادثة بالكامل"
         >
           <Trash2 size={17} />
-          <span>حذف</span>
+          <span className="hidden sm:inline">حذف</span>
         </button>
       </div>
 
@@ -224,7 +337,7 @@ export default function ChatBox({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="اكتب رسالتك هنا..."
-          className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-[13px] text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic'] sm:px-4 sm:text-sm"
+          className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-[16px] text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic'] sm:px-4 sm:text-sm"
         />
         <button
           type="button"
@@ -259,6 +372,15 @@ export default function ChatBox({
           </div>
         </div>
       )}
+
+      <UserDetailsModal
+        open={Boolean(userPopup)}
+        onClose={() => setUserPopup(null)}
+        user={userPopup}
+        onApprove={requestApproveUser}
+        onToggleStatus={requestToggleUserStatus}
+        onDelete={requestDeleteUser}
+      />
     </div>
   );
 }

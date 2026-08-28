@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect, useRef } from "react";
+import { useState, useContext, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import ConversationsList from "../../../components/admin/messages/Conversationslist";
@@ -6,6 +6,18 @@ import ChatBox from "../../../components/admin/messages/Chatbox";
 import { useChatRooms } from "../../../api/useChatRooms"; // تأكد من المسار الصحيح
 import { AuthContext } from "../../../context/AuthContext";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import {
+  fetchAllAdminUsers,
+  mapAdminUser,
+  buildUserNameIndex,
+  resolveUserByName,
+} from "../../../utils/adminUser";
+
+const ROLE_FILTER_MAP = {
+  teachers: "teacher",
+  students: "student",
+  parents: "parent",
+};
 
 export default function AdminMessages() {
   const location = useLocation();
@@ -28,7 +40,28 @@ export default function AdminMessages() {
   const [showChatMobile, setShowChatMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [directoryUsers, setDirectoryUsers] = useState([]);
   const openedFromLink = useRef(false);
+
+  // الـ /chats/rooms مبترجعش participants ولا role — بس اسم الطرف التاني
+  // (displayName)، فبنجيب دليل كل المستخدمين مرة واحدة ونطابق بالاسم عشان
+  // نعرف نفلتر بالـ role ونفتح popup بيانات المستخدم الصح.
+  useEffect(() => {
+    let isMounted = true;
+    fetchAllAdminUsers()
+      .then((list) => {
+        if (isMounted) setDirectoryUsers(list.map(mapAdminUser));
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const userNameIndex = useMemo(
+    () => buildUserNameIndex(directoryUsers),
+    [directoryUsers],
+  );
 
   useEffect(() => {
     if (loading || openedFromLink.current) return;
@@ -98,15 +131,30 @@ export default function AdminMessages() {
     return false;
   };
 
+  // الـ API بترجع userRole/userId مباشرة دلوقتي لشاتات الـ support، وده أدق
+  // بكتير من مطابقة الاسم (اللي بتتعارض لو فيه أكتر من مستخدم بنفس الاسم).
+  // بنسيب المطابقة بالاسم كـ fallback بس لو الحقل ده لسه مش راجع من السيرفر.
+  const conversationRole = (c) =>
+    c.userRole ?? resolveUserByName(userNameIndex, c.name)?.rawRole ?? null;
+
+  const resolveConversationUser = (c) => {
+    if (c.userId) return { id: c.userId, rawRole: c.userRole };
+    return resolveUserByName(userNameIndex, c.name);
+  };
+
   const filteredConversations = conversations.filter((c) => {
     if (activeFilter === "all") return true;
     if (activeFilter === "groups") {
       return c.category === "groups" || c.type === "classroom";
     }
-    return c.participants?.some((p) => p.role === activeFilter);
+    const targetRole = ROLE_FILTER_MAP[activeFilter] ?? activeFilter;
+    return conversationRole(c) === targetRole;
   });
 
   const activeConversation = conversations.find((c) => c.id === activeId);
+  const activeConversationUser = activeConversation
+    ? resolveConversationUser(activeConversation)
+    : null;
 
   return (
     <AdminLayout>
@@ -150,6 +198,7 @@ export default function AdminMessages() {
               {activeConversation ? (
                 <ChatBox
                   conversation={activeConversation}
+                  resolvedUser={activeConversationUser}
                   onSend={sendMessage}
                   onBack={handleBack}
                   onDeleteMessage={removeMessage}

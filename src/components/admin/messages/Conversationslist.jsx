@@ -119,7 +119,7 @@ export default function ConversationsLists({
                 ? "ابحث عن معلم او مجموعة..."
                 : "ابحث عن معلم او طالب..."
             }
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-3 pr-9 text-[13px] text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic'] sm:py-2 sm:text-sm"
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-3 pr-9 text-[16px] text-slate-700 placeholder:text-gray-400 focus:border-[#123C91] focus:outline-none focus:ring-1 focus:ring-[#123C91] font-['IBM_Plex_Sans_Arabic'] sm:py-2 sm:text-sm"
           />
         </div>
       </div>
@@ -247,7 +247,7 @@ export default function ConversationsLists({
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   placeholder="ابحث بالاسم أو البريد الإلكتروني..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pr-9 pl-3 text-sm focus:border-[#123C91] focus:outline-none"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pr-9 pl-3 text-[16px] focus:border-[#123C91] focus:outline-none sm:text-sm"
                   autoFocus
                 />
               </div>

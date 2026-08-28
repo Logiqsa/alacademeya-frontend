@@ -160,6 +160,14 @@ const Field = ({ label, children }) => (
 const inputCls =
   "w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] text-[13px] font-['IBM_Plex_Sans_Arabic'] focus:outline-none focus:ring-2 focus:ring-[#123C91] text-right";
 
+const packageIdOf = (pkg) => pkg?.id || pkg?._id;
+
+const extractPackages = (response) => {
+  const data = response?.data?.data ?? response?.data ?? [];
+  if (Array.isArray(data)) return data;
+  return data.packages || data.results || data.items || [];
+};
+
 // ─── Package Card ─────────────────────────────────────────────────────────────
 const PackageCard = ({ pkg, onEdit, onDelete, onToggle, toggling }) => (
   <div
@@ -253,8 +261,17 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
     setLoading(true);
     setError("");
     try {
-      const res = await getAllPackages();
-      setPackages(res.data.data);
+      const [activeResponse, inactiveResponse] = await Promise.all([
+        getAllPackages({ isActive: true }),
+        getAllPackages({ isActive: false }),
+      ]);
+      const packagesById = new Map();
+
+      [...extractPackages(activeResponse), ...extractPackages(inactiveResponse)].forEach(
+        (pkg) => packagesById.set(String(packageIdOf(pkg)), pkg),
+      );
+
+      setPackages([...packagesById.values()]);
     } catch (err) {
       setError(
         err?.response?.data?.message || "تعذر تحميل الباقات، حاول مرة أخرى",
@@ -271,20 +288,27 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   // بعد ما مودال الإضافة/التعديل يحفظ بنجاح، نحدّث القايمة محليًا بدل ما نعمل fetch تاني
   const handleSaved = (saved) => {
     setPackages((prev) => {
-      const exists = prev.some((p) => p.id === saved.id);
+      const savedId = packageIdOf(saved);
+      const exists = prev.some(
+        (pkg) => String(packageIdOf(pkg)) === String(savedId),
+      );
       return exists
-        ? prev.map((p) => (p.id === saved.id ? saved : p))
+        ? prev.map((pkg) =>
+            String(packageIdOf(pkg)) === String(savedId) ? saved : pkg,
+          )
         : [saved, ...prev];
     });
   };
 
   const handleConfirmDelete = async () => {
     if (!deletePkg) return;
-    const packageId = deletePkg.id || deletePkg._id;
+    const packageId = packageIdOf(deletePkg);
     setDeleting(true);
     try {
       await deletePackage(packageId);
-      setPackages((prev) => prev.filter((p) => String(p.id || p._id) !== String(packageId)));
+      setPackages((prev) =>
+        prev.filter((pkg) => String(packageIdOf(pkg)) !== String(packageId)),
+      );
       setDeletePkg(null);
     } catch (err) {
       setError(
@@ -296,7 +320,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   };
 
   const handleTogglePackage = async (pkg) => {
-    const packageId = pkg.id || pkg._id;
+    const packageId = packageIdOf(pkg);
     if (!packageId || togglingIds.includes(String(packageId))) return;
     const nextActive = pkg.isActive === false;
     setTogglingIds((current) => [...current, String(packageId)]);
@@ -306,7 +330,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       const updated = response.data?.data ?? response.data?.package ?? response.data;
       setPackages((current) =>
         current.map((item) =>
-          String(item.id || item._id) === String(packageId)
+          String(packageIdOf(item)) === String(packageId)
             ? { ...item, ...(updated && typeof updated === "object" ? updated : {}), isActive: nextActive }
             : item,
         ),
@@ -350,12 +374,12 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {packages.map((pkg) => (
             <PackageCard
-              key={pkg.id || pkg._id}
+              key={packageIdOf(pkg)}
               pkg={pkg}
               onEdit={setEditPkg}
               onDelete={setDeletePkg}
               onToggle={handleTogglePackage}
-              toggling={togglingIds.includes(String(pkg.id || pkg._id))}
+              toggling={togglingIds.includes(String(packageIdOf(pkg)))}
             />
           ))}
         </div>

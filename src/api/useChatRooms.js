@@ -48,6 +48,9 @@ const normalizeRoom = (room) => ({
     room.info?.classroomId ??
     room.parent?.classroomId,
   participants: room.participants ?? [],
+  // بيرجع بس لشاتات الـ support من الأدمن — id و role الطرف التاني في المحادثة
+  userId: room.userId ?? null,
+  userRole: room.userRole ?? null,
   isActive:
     room.isActive ??
     !["inactive", "disabled", "deactivated"].includes(

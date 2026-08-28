@@ -9,7 +9,6 @@ import UsersStatsBar from "../../../components/admin/users/Usersstatsbar";
 import UsersFilters from "../../../components/admin/users/Usersfilters";
 import UsersTable from "../../../components/admin/users/Userstable";
 import {
-  getUsers,
   deleteUser as deleteUserApi,
   getAllStudents,
   getTeachers,
@@ -20,27 +19,12 @@ import { normalizePhoneSearch } from "../../../utils/phone";
 import LoadingState from "../../../components/shared/LoadingState";
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
+import { mapAdminUser, statusOf, fetchAllAdminUsers } from "../../../utils/adminUser";
 
 const PAGE_SIZE = 6;
 const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
 
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
-// ⚠️ "مشرف" = admin (صلاحيات محدودة)، "مشرف عام" = super-admin (صلاحيات كاملة)
-const ROLE_MAP = {
-  student: "طالب",
-  teacher: "معلم",
-  parent: "ولي أمر",
-  admin: "مشرف",
-  "super-admin": "مشرف عام",
-};
-
-const statusOf = (u) => {
-  if (u.isDeleted) return "محذوف";
-  if (!u.isActive) return "موقوف";
-  if (u.registrationStatus?.startsWith("pending")) return "معلق";
-  return "نشط";
-};
-
 const localizedProfileName = (value) => {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -80,68 +64,6 @@ const isStudentProfileIncomplete = (user, student) => {
   );
 };
 
-const mapUser = (u) => ({
-  id: u.id || u._id,
-  name: u.fullName || u.name || "—",
-  username: u.username,
-  email: u.email,
-  phone: u.phone,
-  role: ROLE_MAP[u.role] || u.role,
-  rawRole: u.role,
-  country: u.country,
-  isVerified: u.isVerified,
-  isDeleted: !!u.isDeleted,
-  isActive: !!u.isActive,
-  registrationStatus: u.registrationStatus,
-  createdAt: u.createdAt,
-  lastLoginAt:
-    u.lastLoginAt ||
-    u.lastLogin ||
-    u.lastLoggedInAt ||
-    u.lastSeenAt ||
-    u.lastActiveAt ||
-    u.loginAt ||
-    null,
-  status: statusOf(u),
-  joinDate: u.createdAt
-    ? new Date(u.createdAt).toLocaleDateString("en-CA")
-    : "—",
-});
-
-// ─── يجيب كل اليوزرز من كل الصفحات (بيتعامل مع أي شكل pagination من السيرفر) ──
-const fetchAllUsers = async () => {
-  let all = [];
-  let page = 1;
-
-  while (true) {
-    const res = await getUsers({ page, limit: FETCH_LIMIT });
-    const body = res.data || {};
-    const list = body.data || body.users || (Array.isArray(body) ? body : []);
-
-    all = all.concat(list);
-
-    // نحاول نلاقي معلومات الـ pagination بأي شكل شائع
-    const total =
-      body.total ?? body.count ?? body.pagination?.total ?? body.meta?.total;
-    const totalPages =
-      body.totalPages ??
-      body.pagination?.totalPages ??
-      (total ? Math.ceil(total / FETCH_LIMIT) : null);
-
-    if (totalPages) {
-      if (page >= totalPages) break;
-    } else {
-      // مفيش معلومات pagination واضحة → لو الصفحة رجعت أقل من الـ limit يبقى خلصنا
-      if (list.length < FETCH_LIMIT) break;
-    }
-
-    page += 1;
-    if (page > 100) break; // حماية من infinite loop
-  }
-
-  return all;
-};
-
 const UsersPage = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
@@ -164,7 +86,7 @@ const UsersPage = () => {
     setLoading(true);
     try {
       const [list, studentsResponse, teachersResponse] = await Promise.all([
-        fetchAllUsers(),
+        fetchAllAdminUsers(),
         getAllStudents({ page: 1, limit: FETCH_LIMIT }).catch(() => null),
         getTeachers({ page: 1, limit: FETCH_LIMIT }).catch(() => null),
       ]);
@@ -199,7 +121,7 @@ const UsersPage = () => {
       setUsers(
         Array.isArray(list)
           ? list.map((rawUser) => {
-              const mapped = mapUser(rawUser);
+              const mapped = mapAdminUser(rawUser);
               const student = studentsByUserId.get(String(mapped.id));
               const teacher = teachersByUserId.get(String(mapped.id));
               if (teacher) {
