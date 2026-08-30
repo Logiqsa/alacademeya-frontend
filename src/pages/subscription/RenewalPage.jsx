@@ -288,6 +288,11 @@ const RenewalPage = ({ role }) => {
                               )}
                               <strong className="block pe-6 text-sm text-[#1F2937]">
                                 {localizedName(packageOption.name)}
+                                {packageOption.isMostPopular && (
+                                  <span className="mr-2 inline-flex rounded-full bg-[#EAF4FF] px-2 py-1 text-[10px] font-semibold text-[#123C91]">
+                                    الأكثر طلبًا
+                                  </span>
+                                )}
                               </strong>
                               <span className="mt-2 block text-xs text-[#667085]">
                                 {packageOption.sessions} حصة

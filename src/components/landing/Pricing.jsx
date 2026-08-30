@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { Check, Crown, Loader2, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 // ⚠️ عدّل المسار ده حسب مكان ملف الـ api عندك في المشروع
-import { getAllPackages } from "../../services/APIService";
+import { getAllPackages, getCurriculums } from "../../services/APIService";
 import { AuthContext } from "../../context/AuthContext";
 
 // باقة التجربة المجانية مش باقة حقيقية من الباك إند، ثابتة تسويقياً فقط
@@ -19,15 +19,27 @@ const FREE_TRIAL_PLAN = {
 };
 
 const ANNUAL_DISCOUNT = 0.2;
+const entityId = (value) =>
+  typeof value === "string" ? value : value?.id || value?._id || "";
+const entityName = (value) =>
+  typeof value === "string"
+    ? value
+    : value?.name?.ar || value?.name?.en || value?.name || "منهج";
+const extractList = (response, keys = []) => {
+  const data = response?.data?.data ?? response?.data ?? [];
+  if (Array.isArray(data)) return data;
+  for (const key of keys) if (Array.isArray(data?.[key])) return data[key];
+  return [];
+};
 
 const mapApiPackage = (pkg, isAnnual, isPopular) => {
   const monthly = pkg.price;
   const annual = Math.round(monthly * 12 * (1 - ANNUAL_DISCOUNT));
 
   return {
-    id: pkg.id,
-    title: pkg.name,
-    sub: `باقة تشمل ${pkg.sessions} حصة دراسية شهرياً`,
+    id: entityId(pkg),
+    title: entityName(pkg),
+    sub: pkg.description || `باقة تشمل ${pkg.sessions} حصة دراسية شهرياً`,
     price: isAnnual
       ? `EGP ${annual.toLocaleString()}`
       : `EGP ${monthly.toLocaleString()}`,
@@ -52,6 +64,8 @@ const Pricing = () => {
   const isLoggedIn = Boolean(user || localStorage.getItem("token"));
   const [isAnnual, setIsAnnual] = useState(false);
   const [apiPackages, setApiPackages] = useState([]);
+  const [curriculums, setCurriculums] = useState([]);
+  const [selectedCurriculum, setSelectedCurriculum] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -60,11 +74,17 @@ const Pricing = () => {
       setLoading(true);
       setError("");
       try {
-        const res = await getAllPackages();
-        const active = (res.data.data || [])
-          .filter((p) => p.isActive)
+        const [packagesResponse, curriculumsResponse] = await Promise.all([
+          getAllPackages({ isActive: true }),
+          getCurriculums(),
+        ]);
+        const active = extractList(packagesResponse, ["packages", "results", "items"])
+          .filter((p) => p.isActive !== false)
           .sort((a, b) => a.price - b.price);
         setApiPackages(active);
+        setCurriculums(
+          extractList(curriculumsResponse, ["curriculums", "results", "items"]),
+        );
       } catch (err) {
         setError(
           err?.response?.data?.message ||
@@ -77,15 +97,24 @@ const Pricing = () => {
     fetchPackages();
   }, []);
 
-  // أغلى باقة تتعامل كـ "الأكثر اختياراً"
+  const visiblePackages = useMemo(
+    () =>
+      selectedCurriculum === "all"
+        ? apiPackages
+        : apiPackages.filter(
+            (pkg) =>
+              String(entityId(pkg.curriculum)) === String(selectedCurriculum),
+          ),
+    [apiPackages, selectedCurriculum],
+  );
+
   const plans = useMemo(() => {
-    if (apiPackages.length === 0) return [FREE_TRIAL_PLAN];
-    const popularId = apiPackages[apiPackages.length - 1].id;
-    const mapped = apiPackages.map((pkg) =>
-      mapApiPackage(pkg, isAnnual, pkg.id === popularId),
+    if (visiblePackages.length === 0) return [FREE_TRIAL_PLAN];
+    const mapped = visiblePackages.map((pkg) =>
+      mapApiPackage(pkg, isAnnual, pkg.isMostPopular === true),
     );
     return [FREE_TRIAL_PLAN, ...mapped];
-  }, [apiPackages, isAnnual]);
+  }, [visiblePackages, isAnnual]);
 
   return (
     <section className="py-20 font-sans" dir="rtl" id="pricing">
@@ -96,6 +125,35 @@ const Pricing = () => {
         <p className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[18px] leading-6 text-[#1F2937B2] p-4 rounded-lg text-center mb-8">
           اختر الباقة المناسبة لك ولأبنائك واستمتع بتجربة تعليمية متميزة
         </p>
+
+        {!loading && !error && curriculums.length > 0 && (
+          <div
+            className="mb-8 flex gap-2 overflow-x-auto pb-2 sm:justify-center"
+            aria-label="تصفية الباقات حسب المنهج"
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedCurriculum("all")}
+              className={`shrink-0 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors ${selectedCurriculum === "all" ? "border-[#123C91] bg-[#123C91] text-white" : "border-[#DCE3EE] bg-white text-[#575F69] hover:border-[#123C91]"}`}
+            >
+              كل المناهج
+            </button>
+            {curriculums.map((curriculum) => {
+              const curriculumId = entityId(curriculum);
+              const active = String(selectedCurriculum) === String(curriculumId);
+              return (
+                <button
+                  key={curriculumId}
+                  type="button"
+                  onClick={() => setSelectedCurriculum(curriculumId)}
+                  className={`shrink-0 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors ${active ? "border-[#123C91] bg-[#123C91] text-white" : "border-[#DCE3EE] bg-white text-[#575F69] hover:border-[#123C91]"}`}
+                >
+                  {entityName(curriculum)}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex items-center justify-center gap-4 mb-12" dir="rtl">
           <span
@@ -149,6 +207,10 @@ const Pricing = () => {
         )}
 
         {!loading && (
+          <>
+          {selectedCurriculum !== "all" && visiblePackages.length === 0 && (
+            <p className="mb-6 text-sm text-[#667085]">لا توجد باقات متاحة لهذا المنهج حالياً.</p>
+          )}
           <div className="flex flex-wrap items-stretch justify-center gap-6">
             {plans.map((plan) => (
               <div
@@ -157,7 +219,7 @@ const Pricing = () => {
               >
                 {plan.isPopular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#EAF4FF] text-[#123C91] text-xs font-bold px-4 py-1 rounded-full border border-[#123C91] flex items-center gap-1">
-                    <Crown size={12} /> الأكثر اختياراً
+                    <Crown size={12} /> الأكثر طلبًا
                   </div>
                 )}
 
@@ -202,6 +264,7 @@ const Pricing = () => {
               </div>
             ))}
           </div>
+          </>
         )}
       </div>
     </section>

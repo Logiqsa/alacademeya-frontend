@@ -92,6 +92,7 @@ const StudentPackagesPage = () => {
             name: pkg.name?.ar || pkg.name?.en || pkg.name || "باقة",
             sessions: pkg.sessions ?? pkg.numberOfSessions ?? pkg.sessionsCount,
             price: pkg.price,
+            isMostPopular: pkg.isMostPopular === true,
           }));
           return [subject.id, packages];
         });
@@ -217,6 +218,11 @@ const StudentPackagesPage = () => {
                             <span className="block text-sm text-gray-700">
                               {pkg.name}
                             </span>
+                            {pkg.isMostPopular && (
+                              <span className="my-1 inline-flex rounded-full bg-[#EAF4FF] px-2 py-0.5 text-[10px] font-semibold text-[#123C91]">
+                                الأكثر طلبًا
+                              </span>
+                            )}
                             {pkg.sessions != null && (
                               <span className="block text-xs text-gray-500">
                                 {pkg.sessions} حصة

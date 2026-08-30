@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Trash2,
   Pencil,
@@ -41,6 +41,7 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
   const [scope, setScope] = useState("all_curriculum");
   const [selectedGrades, setSelectedGrades] = useState([]);
   const [isActive, setIsActive] = useState(true);
+  const [isMostPopular, setIsMostPopular] = useState(false);
   const [curriculums, setCurriculums] = useState([]);
   const [grades, setGrades] = useState([]);
   const [optionsLoading, setOptionsLoading] = useState(false);
@@ -58,6 +59,7 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
       setSelectedGrades(gradeIds);
       setScope(gradeIds.length ? "specific_grades" : "all_curriculum");
       setIsActive(pkg?.isActive !== false);
+      setIsMostPopular(pkg?.isMostPopular === true);
       setError("");
       getCurriculums()
         .then((response) => setCurriculums(extractList(response, ["curriculums", "results", "items"])))
@@ -100,6 +102,7 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
       price: Number(price),
       sessions: Number(sessions),
       isActive,
+      isMostPopular,
     };
 
     setSaving(true);
@@ -202,6 +205,10 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
             الباقة نشطة
           </label>
+          <label className="flex items-center gap-2 text-sm text-[#1F2937]">
+            <input type="checkbox" checked={isMostPopular} onChange={(e) => setIsMostPopular(e.target.checked)} />
+            تعيين كالأكثر طلبًا داخل هذا المنهج
+          </label>
         </div>
 
         {error && (
@@ -263,6 +270,11 @@ const PackageCard = ({ pkg, onEdit, onDelete, onToggle, toggling }) => (
         <h1 className="font-['Tajawal'] font-semibold mb-2 text-[17px] text-[#1F2937]">
           {pkg.name}
         </h1>
+        {pkg.isMostPopular && (
+          <span className="mb-2 inline-flex rounded-full bg-[#EAF4FF] px-3 py-1 text-xs font-semibold text-[#123C91]">
+            الأكثر طلبًا
+          </span>
+        )}
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -332,6 +344,8 @@ const PackageCard = ({ pkg, onEdit, onDelete, onToggle, toggling }) => (
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const PackagesTab = ({ showAdd, onCloseAdd }) => {
   const [packages, setPackages] = useState([]);
+  const [curriculums, setCurriculums] = useState([]);
+  const [selectedCurriculum, setSelectedCurriculum] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -344,9 +358,10 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
     setLoading(true);
     setError("");
     try {
-      const [activeResponse, inactiveResponse] = await Promise.all([
+      const [activeResponse, inactiveResponse, curriculumsResponse] = await Promise.all([
         getAllPackages({ isActive: true }),
         getAllPackages({ isActive: false }),
+        getCurriculums(),
       ]);
       const packagesById = new Map();
 
@@ -355,6 +370,9 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       );
 
       setPackages([...packagesById.values()]);
+      setCurriculums(
+        extractList(curriculumsResponse, ["curriculums", "results", "items"]),
+      );
     } catch (err) {
       setError(
         err?.response?.data?.message || "تعذر تحميل الباقات، حاول مرة أخرى",
@@ -367,6 +385,25 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   useEffect(() => {
     fetchPackages();
   }, []);
+
+  const unassignedCount = useMemo(
+    () => packages.filter((pkg) => !entityId(pkg.curriculum)).length,
+    [packages],
+  );
+  const visiblePackages = useMemo(() => {
+    if (selectedCurriculum === "all") return packages;
+    if (selectedCurriculum === "unassigned") {
+      return packages.filter((pkg) => !entityId(pkg.curriculum));
+    }
+    return packages.filter(
+      (pkg) => String(entityId(pkg.curriculum)) === String(selectedCurriculum),
+    );
+  }, [packages, selectedCurriculum]);
+
+  const packageCountFor = (curriculumId) =>
+    packages.filter(
+      (pkg) => String(entityId(pkg.curriculum)) === String(curriculumId),
+    ).length;
 
   // بعد ما مودال الإضافة/التعديل يحفظ بنجاح، نحدّث القايمة محليًا بدل ما نعمل fetch تاني
   const handleSaved = (saved) => {
@@ -381,6 +418,9 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
           )
         : [saved, ...prev];
     });
+    // الـ backend يلغي isMostPopular من الباقة السابقة داخل المنهج نفسه.
+    // إعادة التحميل تضمن انعكاس هذا التغيير على الكروت الأخرى فوراً.
+    fetchPackages();
   };
 
   const handleConfirmDelete = async () => {
@@ -449,13 +489,56 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
         </div>
       )}
 
+      {packages.length > 0 && (
+        <div
+          className="mb-5 flex gap-2 overflow-x-auto pb-2"
+          dir="rtl"
+          aria-label="تصفية الباقات حسب المنهج"
+        >
+          <button
+            type="button"
+            onClick={() => setSelectedCurriculum("all")}
+            className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${selectedCurriculum === "all" ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-200 bg-white text-[#575F69] hover:border-[#123C91]"}`}
+          >
+            كل المناهج ({packages.length})
+          </button>
+          {curriculums.map((curriculumItem) => {
+            const curriculumId = entityId(curriculumItem);
+            const active = String(selectedCurriculum) === String(curriculumId);
+            return (
+              <button
+                key={curriculumId}
+                type="button"
+                onClick={() => setSelectedCurriculum(curriculumId)}
+                className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${active ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-200 bg-white text-[#575F69] hover:border-[#123C91]"}`}
+              >
+                {entityName(curriculumItem)} ({packageCountFor(curriculumId)})
+              </button>
+            );
+          })}
+          {unassignedCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedCurriculum("unassigned")}
+              className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${selectedCurriculum === "unassigned" ? "border-amber-600 bg-amber-600 text-white" : "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-500"}`}
+            >
+              بدون منهج ({unassignedCount})
+            </button>
+          )}
+        </div>
+      )}
+
       {packages.length === 0 ? (
         <div className="text-center py-20 text-[#8C9198] text-[14px]" dir="rtl">
           لا توجد باقات حالياً
         </div>
+      ) : visiblePackages.length === 0 ? (
+        <div className="text-center py-16 text-[#8C9198] text-[14px]" dir="rtl">
+          لا توجد باقات مرتبطة بهذا المنهج
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {packages.map((pkg) => (
+          {visiblePackages.map((pkg) => (
             <PackageCard
               key={packageIdOf(pkg)}
               pkg={pkg}
