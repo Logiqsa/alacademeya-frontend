@@ -5,10 +5,7 @@ import AuthLayout from "../../components/auth/AuthLayout";
 import logo from "../../assets/icons/logo.svg";
 import { AuthContext } from "../../context/AuthContext";
 import { verifyAccount } from "../../services/APIService";
-import {
-  getDashboardPathByRole,
-  getRegistrationContinuation,
-} from "../../utils/roles";
+import { getAuthenticatedDestination } from "../../utils/roles";
 
 const invalidLinkError = (error) => {
   const status = error.response?.status;
@@ -60,14 +57,12 @@ const VerifyEmailPage = () => {
         }
 
         const sessionUser = establishSession(jwt, verifiedUser);
-        const continuation = getRegistrationContinuation(sessionUser);
-        const destination =
-          continuation?.path || getDashboardPathByRole(sessionUser, "/");
+        const destination = getAuthenticatedDestination(sessionUser);
         setStatus("verified");
         redirectTimer = window.setTimeout(() => {
-          navigate(destination, {
+          navigate(destination.path, {
             replace: true,
-            state: continuation?.state,
+            state: destination.state,
           });
         }, 1200);
       })
@@ -84,11 +79,9 @@ const VerifyEmailPage = () => {
 
   useEffect(() => {
     if (verificationToken || !user) return undefined;
-    const continuation = getRegistrationContinuation(user);
-    const destination =
-      continuation?.path || getDashboardPathByRole(user, "/");
+    const destination = getAuthenticatedDestination(user);
     const redirectTimer = window.setTimeout(() => {
-      navigate(destination, { replace: true, state: continuation?.state });
+      navigate(destination.path, { replace: true, state: destination.state });
     }, 600);
     return () => window.clearTimeout(redirectTimer);
   }, [navigate, user, verificationToken]);

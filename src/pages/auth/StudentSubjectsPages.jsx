@@ -38,7 +38,7 @@ const StudentSubjectsPages = () => {
 
   useEffect(() => {
     if (!gradeId || !stageId || !curriculumId) {
-      navigate("/select-account-type");
+      navigate("/register/student-details", { replace: true });
       return;
     }
 

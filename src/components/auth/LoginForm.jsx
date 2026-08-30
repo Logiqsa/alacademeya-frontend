@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import { AuthContext } from "../../context/AuthContext";
-import { getDashboardPathByRole, getRegistrationContinuation } from "../../utils/roles";
+import { getAuthenticatedDestination } from "../../utils/roles";
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -35,9 +35,9 @@ const LoginForm = () => {
       toast.success("تم تسجيل الدخول بنجاح!");
 
       const loggedInUser = data?.user ?? data;
-      const continuation = getRegistrationContinuation(loggedInUser);
-      navigate(continuation?.path || getDashboardPathByRole(loggedInUser), {
-        state: continuation?.state,
+      const destination = getAuthenticatedDestination(loggedInUser);
+      navigate(destination.path, {
+        state: destination.state,
       });
 
     } catch (error) {

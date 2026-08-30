@@ -69,10 +69,22 @@ export const getRegistrationContinuation = (user, registrationData = {}) => {
       registrationData.country,
   };
 
-  if (role === "teacher") return { path: "/teacher/settings", state };
-  if (role === "student") return { path: "/student/settings", state };
-  if (role === "parent") return { path: "/parent/settings", state };
+  if (role === "teacher") return { path: "/register/teacher-details", state };
+  if (role === "student") return { path: "/register/student-details", state };
+
+  // There is currently no dedicated parent registration-completion endpoint
+  // or page. /parent/settings is ordinary profile editing, not onboarding.
   return null;
+};
+
+export const getAuthenticatedDestination = (
+  user,
+  registrationData = {},
+  fallback = "/",
+) => {
+  const continuation = getRegistrationContinuation(user, registrationData);
+  if (continuation) return continuation;
+  return { path: getDashboardPathByRole(user, fallback) };
 };
 
 export const getDashboardPathByRole = (user, fallback = "/") => {
@@ -83,9 +95,7 @@ export const getDashboardPathByRole = (user, fallback = "/") => {
   const isPendingReview = isAwaitingApproval(user);
 
   if (role === "teacher") {
-    return isApproved || isPendingReview
-      ? "/teacher-dashboard"
-      : "/pending";
+    return isApproved ? "/teacher-dashboard" : "/pending";
   }
 
   if (role === "student") {
