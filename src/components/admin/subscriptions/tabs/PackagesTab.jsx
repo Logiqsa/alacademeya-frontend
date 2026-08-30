@@ -12,7 +12,22 @@ import {
   createPackage,
   updatePackage,
   deletePackage,
+  getCurriculums,
+  getAllGrades,
 } from "../../../../services/APIService";
+
+const entityId = (value) =>
+  typeof value === "string" ? value : value?.id || value?._id || "";
+const entityName = (value) =>
+  typeof value === "string"
+    ? value
+    : value?.name?.ar || value?.name?.en || value?.name || "—";
+const extractList = (response, keys = []) => {
+  const body = response?.data?.data ?? response?.data ?? response ?? [];
+  if (Array.isArray(body)) return body;
+  for (const key of keys) if (Array.isArray(body?.[key])) return body[key];
+  return [];
+};
 
 // ─── Add/Edit Package Modal ───────────────────────────────────────────────────
 const PackageModal = ({ open, onClose, pkg, onSaved }) => {
@@ -21,6 +36,14 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [sessions, setSessions] = useState("");
+  const [description, setDescription] = useState("");
+  const [curriculum, setCurriculum] = useState("");
+  const [scope, setScope] = useState("all_curriculum");
+  const [selectedGrades, setSelectedGrades] = useState([]);
+  const [isActive, setIsActive] = useState(true);
+  const [curriculums, setCurriculums] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [optionsLoading, setOptionsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,22 +52,54 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
       setName(pkg?.name ?? "");
       setPrice(pkg?.price ?? "");
       setSessions(pkg?.sessions ?? "");
+      setDescription(pkg?.description ?? "");
+      setCurriculum(entityId(pkg?.curriculum));
+      const gradeIds = (pkg?.grades || []).map(entityId).filter(Boolean);
+      setSelectedGrades(gradeIds);
+      setScope(gradeIds.length ? "specific_grades" : "all_curriculum");
+      setIsActive(pkg?.isActive !== false);
       setError("");
+      getCurriculums()
+        .then((response) => setCurriculums(extractList(response, ["curriculums", "results", "items"])))
+        .catch(() => setError("تعذر تحميل المناهج"));
     }
   }, [open, pkg]);
+
+  useEffect(() => {
+    if (!open || !curriculum) {
+      return;
+    }
+    let active = true;
+    setOptionsLoading(true);
+    getAllGrades({ curriculum })
+      .then((response) => {
+        if (active) setGrades(extractList(response, ["grades", "results", "items"]));
+      })
+      .catch(() => active && setError("تعذر تحميل صفوف المنهج"))
+      .finally(() => active && setOptionsLoading(false));
+    return () => { active = false; };
+  }, [open, curriculum]);
 
   if (!open) return null;
 
   const handleSubmit = async () => {
-    if (!name.trim() || !price || !sessions) {
+    if (!name.trim() || !price || !sessions || !curriculum) {
       setError("من فضلك املأ كل الحقول");
+      return;
+    }
+    if (scope === "specific_grades" && !selectedGrades.length) {
+      setError("اختر صفاً واحداً على الأقل");
       return;
     }
 
     const payload = {
       name: name.trim(),
+      description: description.trim(),
+      curriculum,
+      grades: scope === "all_curriculum" ? [] : selectedGrades,
       price: Number(price),
       sessions: Number(sessions),
+      isActive,
     };
 
     setSaving(true);
@@ -75,7 +130,7 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
       }}
     >
       <div
-        className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl"
+        className="bg-white w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 shadow-xl"
         dir="rtl"
       >
         <div className="flex items-center justify-between mb-5">
@@ -99,6 +154,30 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
               className={inputCls}
             />
           </Field>
+          <Field label="وصف الباقة">
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="وصف مختصر للباقة" className={`${inputCls} h-20 py-3 resize-none`} />
+          </Field>
+          <Field label="المنهج">
+            <select value={curriculum} onChange={(e) => { setCurriculum(e.target.value); setSelectedGrades([]); setGrades([]); setOptionsLoading(Boolean(e.target.value)); }} className={inputCls}>
+              <option value="">اختر المنهج</option>
+              {curriculums.map((item) => <option key={entityId(item)} value={entityId(item)}>{entityName(item)}</option>)}
+            </select>
+          </Field>
+          <Field label="إتاحة الباقة">
+            <div className="grid grid-cols-2 gap-2">
+              {[{ value: "all_curriculum", label: "كل صفوف المنهج" }, { value: "specific_grades", label: "صفوف محددة" }].map((option) => (
+                <button key={option.value} type="button" onClick={() => { setScope(option.value); if (option.value === "all_curriculum") setSelectedGrades([]); }} className={`h-11 rounded-lg border text-sm ${scope === option.value ? "border-[#123C91] bg-blue-50 text-[#123C91]" : "border-[#E5E5E5]"}`}>{option.label}</button>
+              ))}
+            </div>
+          </Field>
+          {scope === "specific_grades" && <Field label="الصفوف">
+            <div className="max-h-36 overflow-y-auto rounded-lg border border-[#E5E5E5] p-3 space-y-2">
+              {!curriculum ? <p className="text-xs text-gray-400">اختر المنهج أولاً</p> : optionsLoading ? <p className="text-xs text-gray-400">جاري تحميل الصفوف...</p> : grades.map((grade) => {
+                const id = entityId(grade);
+                return <label key={id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedGrades.includes(id)} onChange={() => setSelectedGrades((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id])} />{entityName(grade)}</label>;
+              })}
+            </div>
+          </Field>}
           <div className="grid grid-cols-2 gap-3">
             <Field label="السعر (جنيه)">
               <input
@@ -119,6 +198,10 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
               />
             </Field>
           </div>
+          <label className="flex items-center gap-2 text-sm text-[#1F2937]">
+            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+            الباقة نشطة
+          </label>
         </div>
 
         {error && (

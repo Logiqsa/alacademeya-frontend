@@ -6,10 +6,9 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import {
   getStudent,
   getAllStudents,
-  getAllSubjects,
+  getAdminStudentSubscriptionOptions,
   getTeachers, // بيرجع كل المعلمين من GET /api/teachers/
   getAvailableClassrooms,
-  getAllPackages,
   getAllDiscounts,
   getAllSubscriptions,
   createSubscription,
@@ -313,6 +312,8 @@ const AddSubscriptionPage = () => {
   const [studentLoading, setStudentLoading] = useState(false);
   const [studentError, setStudentError] = useState("");
   const [subscribedSubjectIds, setSubscribedSubjectIds] = useState(new Set());
+  const [allSubjects, setAllSubjects] = useState([]);
+  const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -342,11 +343,14 @@ const AddSubscriptionPage = () => {
       setStudentLoading(true);
       setStudentError("");
       try {
-        const [profileResponse, subscriptionsResponse] = await Promise.all([
+        const [profileResponse, subscriptionsResponse, optionsResponse] = await Promise.all([
           getStudent(selectedStudentId),
           getAllSubscriptions({ student: selectedStudentId }),
+          getAdminStudentSubscriptionOptions(selectedStudentId),
         ]);
         setStudentProfile(profileResponse.data.data);
+        const optionsBody = optionsResponse.data?.data ?? optionsResponse.data ?? {};
+        setAllSubjects(optionsBody.subjects || []);
 
         const subscriptionsBody =
           subscriptionsResponse.data?.data ?? subscriptionsResponse.data ?? [];
@@ -400,51 +404,21 @@ const AddSubscriptionPage = () => {
   }));
 
   // ─── المواد الدراسية (كل المواد المتاحة) ─────────────────────────────────────
-  const [allSubjects, setAllSubjects] = useState([]);
-  const [subjectsLoading, setSubjectsLoading] = useState(true);
-  const [subjectsError, setSubjectsError] = useState("");
-  const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
-
-  useEffect(() => {
-    const fetchSubjects = async () => {
-      setSubjectsLoading(true);
-      setSubjectsError("");
-      try {
-        const curriculum = idOf(studentProfile?.curriculum);
-        const grade = idOf(studentProfile?.grade);
-        // ⚠️ بنبعت الفلترة كـ query params للسيرفر (زي getAvailableClassrooms) بدل
-        // ما نخمّن شكل حقول الـ subject نفسه. تأكدي من أسماء الـ params دي (curriculum/grade)
-        // عن طريق Postman لو النتيجة رجعت فاضية أو مش متفلترة.
-        const params = {};
-        if (curriculum) params.curriculum = curriculum;
-        if (grade) params.grade = grade;
-
-        const res = await getAllSubjects(params);
-        setAllSubjects(extractList(res.data));
-      } catch (err) {
-        setSubjectsError(
-          err?.response?.data?.message || "تعذر تحميل المواد الدراسية",
-        );
-      } finally {
-        setSubjectsLoading(false);
-      }
-    };
-    fetchSubjects();
-  }, [studentProfile]);
+  const subjectsLoading = studentLoading;
 
   const subjectOptions = useMemo(
     () =>
       allSubjects
-        .map((s) => ({ id: idOf(s), name: nameOf(s) || "مادة" }))
+        .map((s) => ({
+          id: idOf(s),
+          name: nameOf(s) || "مادة",
+          packages: s.packages || [],
+        }))
         .filter((s) => s.id && !subscribedSubjectIds.has(String(s.id))),
     [allSubjects, subscribedSubjectIds],
   );
 
   // لما الطالب يتغيّر، شيلي المواد المختارة اللي كانت خاصة بطالب سابق
-  useEffect(() => {
-    setSelectedSubjectIds([]);
-  }, [selectedStudentId]);
-
   // كل ما تتغير المواد المختارة، بنبني قائمة "subjects" اللي هتتعرض كـ accordion
   const subjects = useMemo(
     () => subjectOptions.filter((s) => selectedSubjectIds.includes(s.id)),
@@ -459,9 +433,8 @@ const AddSubscriptionPage = () => {
     );
   };
 
-  // ─── باقات وخصومات (عامة) ────────────────────────────────────────────────────
+  // الباقات تأتي داخل كل مادة من endpoint خيارات الطالب.
   const [discounts, setDiscounts] = useState([]);
-  const [packages, setPackages] = useState([]);
   const [metaLoading, setMetaLoading] = useState(true);
   const [metaError, setMetaError] = useState("");
 
@@ -470,12 +443,8 @@ const AddSubscriptionPage = () => {
       setMetaLoading(true);
       setMetaError("");
       try {
-        const [discountsRes, packagesRes] = await Promise.all([
-          getAllDiscounts({ isActive: true }),
-          getAllPackages(),
-        ]);
+        const discountsRes = await getAllDiscounts({ isActive: true });
         setDiscounts(extractList(discountsRes.data));
-        setPackages(extractList(packagesRes.data));
       } catch (err) {
         setMetaError(
           err?.response?.data?.message ||
@@ -689,7 +658,7 @@ const AddSubscriptionPage = () => {
         const selectedClassroom = (d.classrooms || []).find(
           (classroom) => idOf(classroom) === d.classroomId,
         );
-        const selectedPackage = packages.find(
+        const selectedPackage = (s.packages || []).find(
           (packageItem) => idOf(packageItem) === d.packageId,
         );
         const selectedDiscount = discounts.find(
@@ -748,14 +717,12 @@ const AddSubscriptionPage = () => {
           </p>
 
           {(studentsError ||
-            subjectsError ||
             metaError ||
             allTeachersError) && (
             <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-[13px]">
               <AlertCircle size={15} />
               <span>
                 {studentsError ||
-                  subjectsError ||
                   metaError ||
                   allTeachersError}
               </span>
@@ -775,7 +742,11 @@ const AddSubscriptionPage = () => {
                   studentsLoading ? "جاري تحميل الطلاب..." : "اختر طالب"
                 }
                 value={selectedStudentId}
-                onChange={(v) => setSelectedStudentId(v)}
+                onChange={(v) => {
+                  setSelectedStudentId(v);
+                  setSelectedSubjectIds([]);
+                  setAllSubjects([]);
+                }}
                 options={studentOptions}
                 loading={studentsLoading}
               />
@@ -831,7 +802,7 @@ const AddSubscriptionPage = () => {
                   isOpen={openSubject === subject.id}
                   onToggle={() => handleToggleSubject(subject.id)}
                   data={subjectData[subject.id] || {}}
-                  packages={packages}
+                  packages={subject.packages}
                   discounts={discounts}
                   packagesLoading={metaLoading}
                   onTeacherChange={handleTeacherChange}

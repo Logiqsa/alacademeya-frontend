@@ -8,7 +8,6 @@ import StudentLayout from "../../components/student/layout/StudentLayout";
 import CurrencySelector from "../../components/subscription/CurrencySelector";
 import {
   createAddSubjectSubscriptionOrder,
-  getAllPackages,
   getAllSubjects,
   getExchangeRates,
   getMyStudentsSubscriptions,
@@ -108,20 +107,14 @@ const AddSubjectPage = ({ role }) => {
           optionsResponse,
           ratesResponse,
           subjectsResponse,
-          packagesResponse,
         ] = await Promise.all([
           getStudentSubscriptionOptions(studentId),
           getExchangeRates(),
           getAllSubjects(subjectParams),
-          getAllPackages({ isActive: true, limit: 100 }),
         ]);
         const options = responseData(optionsResponse);
         const rates = responseData(ratesResponse);
         const gradeSubjects = responseData(subjectsResponse);
-        const packagesData = responseData(packagesResponse);
-        const availablePackages = Array.isArray(packagesData)
-          ? packagesData
-          : packagesData?.packages || [];
         const optionSubjects = options?.subjects || [];
         const optionsBySubject = new Map(
           optionSubjects.map((subject) => [String(entityId(subject)), subject]),
@@ -166,10 +159,7 @@ const AddSubjectPage = ({ role }) => {
           const option = optionsBySubject.get(String(entityId(subject)));
           return {
             ...subject,
-            packages:
-              option?.packages?.length > 0
-                ? option.packages
-                : availablePackages,
+            packages: option?.packages || [],
           };
         });
         setSubjects(

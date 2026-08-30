@@ -209,6 +209,8 @@ export const getAllSubscriptions = (params) =>
 export const getSubscription = (id) => API.get(`/subscriptions/${id}`);
 export const getStudentSubscriptionOptions = (studentId) =>
   API.get(`/students/${studentId}/subscription-options`);
+export const getAdminStudentSubscriptionOptions = (studentId) =>
+  API.get(`/subscriptions/students/${studentId}/subscription-options`);
 export const getPendingSubscriptionRequests = () =>
   API.get("/subscriptions/students/pending");
 export const getMyStudentsSubscriptions = () =>
