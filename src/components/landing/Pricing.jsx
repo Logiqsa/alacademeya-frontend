@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { Check, Crown, Loader2, AlertCircle } from "lucide-react";
+import { Crown, Loader2, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 // ⚠️ عدّل المسار ده حسب مكان ملف الـ api عندك في المشروع
 import { getAllPackages, getCurriculums } from "../../services/APIService";
 import { AuthContext } from "../../context/AuthContext";
@@ -12,7 +13,6 @@ const FREE_TRIAL_PLAN = {
   sub: "مثالية للتجربة والتعرف على المنصة",
   price: "مجانية",
   period: "وصول محدود لمدة 7 أيام",
-  features: ["حضور حصة تجريبية مجانية", "التواصل مع الإدارة فقط"],
   button: "ابدأ الآن",
   variant: "outline",
   isPopular: false,
@@ -44,14 +44,6 @@ const mapApiPackage = (pkg, isAnnual, isPopular) => {
       ? `EGP ${annual.toLocaleString()}`
       : `EGP ${monthly.toLocaleString()}`,
     period: `حتى ${pkg.sessions} حصة شهرياً`,
-    features: [
-      `${pkg.sessions} حصة دراسية شهرياً`,
-      "حضور الدروس المباشرة",
-      "مشاهدة تسجيلات الحصص",
-      "الواجبات والمتابعة",
-      "تقييمات وتقارير أداء",
-      "تواصل ولي الأمر مع المدرس",
-    ],
     button: "ابدأ الآن",
     variant: isPopular ? "solid" : "outline",
     isPopular,
@@ -65,7 +57,7 @@ const Pricing = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   const [apiPackages, setApiPackages] = useState([]);
   const [curriculums, setCurriculums] = useState([]);
-  const [selectedCurriculum, setSelectedCurriculum] = useState("all");
+  const [selectedCurriculum, setSelectedCurriculum] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -82,8 +74,20 @@ const Pricing = () => {
           .filter((p) => p.isActive !== false)
           .sort((a, b) => a.price - b.price);
         setApiPackages(active);
-        setCurriculums(
-          extractList(curriculumsResponse, ["curriculums", "results", "items"]),
+        const curriculumItems = extractList(curriculumsResponse, [
+          "curriculums",
+          "results",
+          "items",
+        ]);
+        setCurriculums(curriculumItems);
+        const firstWithPackages = curriculumItems.find((curriculum) =>
+          active.some(
+            (pkg) =>
+              String(entityId(pkg.curriculum)) === String(entityId(curriculum)),
+          ),
+        );
+        setSelectedCurriculum(
+          entityId(firstWithPackages || curriculumItems[0]),
         );
       } catch (err) {
         setError(
@@ -99,7 +103,7 @@ const Pricing = () => {
 
   const visiblePackages = useMemo(
     () =>
-      selectedCurriculum === "all"
+      !selectedCurriculum
         ? apiPackages
         : apiPackages.filter(
             (pkg) =>
@@ -128,28 +132,24 @@ const Pricing = () => {
 
         {!loading && !error && curriculums.length > 0 && (
           <div
-            className="mb-8 flex gap-2 overflow-x-auto pb-2 sm:justify-center"
+            className="mb-8 flex gap-2 overflow-x-auto px-1 pb-2 pt-2 sm:justify-center"
             aria-label="تصفية الباقات حسب المنهج"
           >
-            <button
-              type="button"
-              onClick={() => setSelectedCurriculum("all")}
-              className={`shrink-0 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors ${selectedCurriculum === "all" ? "border-[#123C91] bg-[#123C91] text-white" : "border-[#DCE3EE] bg-white text-[#575F69] hover:border-[#123C91]"}`}
-            >
-              كل المناهج
-            </button>
             {curriculums.map((curriculum) => {
               const curriculumId = entityId(curriculum);
               const active = String(selectedCurriculum) === String(curriculumId);
               return (
-                <button
+                <motion.button
                   key={curriculumId}
                   type="button"
                   onClick={() => setSelectedCurriculum(curriculumId)}
+                  animate={{ scale: active ? 1.04 : 1 }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ duration: 0.2 }}
                   className={`shrink-0 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors ${active ? "border-[#123C91] bg-[#123C91] text-white" : "border-[#DCE3EE] bg-white text-[#575F69] hover:border-[#123C91]"}`}
                 >
                   {entityName(curriculum)}
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -208,13 +208,26 @@ const Pricing = () => {
 
         {!loading && (
           <>
-          {selectedCurriculum !== "all" && visiblePackages.length === 0 && (
-            <p className="mb-6 text-sm text-[#667085]">لا توجد باقات متاحة لهذا المنهج حالياً.</p>
+          <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={selectedCurriculum || "packages"}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+          >
+          {selectedCurriculum && visiblePackages.length === 0 && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 text-sm text-[#667085]">لا توجد باقات متاحة لهذا المنهج حالياً.</motion.p>
           )}
           <div className="flex flex-wrap items-stretch justify-center gap-6">
             {plans.map((plan) => (
-              <div
+              <motion.div
                 key={plan.id}
+                layout
+                initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.3 }}
+                whileHover={{ y: -6 }}
                 className={`relative flex w-full max-w-sm flex-col rounded-2xl border p-6 transition-shadow md:basis-[calc(33.333%-1rem)] ${plan.isPopular ? "border-[#123C91] shadow-2xl" : "border-[#1F293733] bg-[#FFFFFF]"}`}
               >
                 {plan.isPopular && (
@@ -236,34 +249,20 @@ const Pricing = () => {
                   {plan.period}
                 </p>
 
-                <ul className="text-right space-y-3 mb-8 grow">
-                  {plan.features.map((f, j) => (
-                    <li
-                      key={j}
-                      className="flex items-center gap-2 font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#1F2937]"
-                    >
-                      <Check
-                        size={16}
-                        className="text-[#123C91] shrink-0"
-                        strokeWidth={3}
-                      />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-
                 {!isLoggedIn && (
                   <button
                     type="button"
                     onClick={() => navigate("/select-account-type")}
-                    className={`h-12 rounded-lg font-['Tajawal'] font-medium text-[16px] transition-all ${plan.variant === "solid" ? "bg-[#123C91] text-white [&_svg]:text-white" : "bg-white text-[#123C91] border border-[#123C91] hover:bg-[#123C91] hover:text-white hover:[&_svg]:text-white"}`}
+                    className={`mt-auto h-12 rounded-lg font-['Tajawal'] font-medium text-[16px] transition-all ${plan.variant === "solid" ? "bg-[#123C91] text-white [&_svg]:text-white" : "bg-white text-[#123C91] border border-[#123C91] hover:bg-[#123C91] hover:text-white hover:[&_svg]:text-white"}`}
                   >
                     ابدأ الآن
                   </button>
                 )}
-              </div>
+              </motion.div>
             ))}
           </div>
+          </motion.div>
+          </AnimatePresence>
           </>
         )}
       </div>
