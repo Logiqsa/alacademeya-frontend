@@ -1,20 +1,11 @@
-import { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Eye, EyeOff, ChevronDown, ArrowRight, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import { getArabicCountryName } from "../../utils/countryName";
 import { buildInternationalPhone } from "../../utils/phone";
-import {
-  register,
-  verifyAccount,
-  resendOtp,
-  getCountries,
-} from "../../services/APIService";
-import { AuthContext } from "../../context/AuthContext";
-
-const OTP_LENGTH = 6;
-const TIMER_START = 60;
+import { register, getCountries } from "../../services/APIService";
 
 const PASSWORD_REQUIREMENTS = [
   { label: "8 أحرف على الأقل", test: (value) => value.length >= 8 },
@@ -233,19 +224,12 @@ const PhoneCodeDropdown = ({ value, onChange, countries = [], loading }) => {
 
 const RegisterForm = ({ type }) => {
   const navigate = useNavigate();
-  const { setUser } = useContext(AuthContext);
-  const otpRefs = useRef([]);
 
   const [countries, setCountries] = useState([]);
   const [loadingCountries, setLoadingCountries] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otp, setOtp] = useState(new Array(OTP_LENGTH).fill(""));
-  const [timer, setTimer] = useState(TIMER_START);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -277,21 +261,6 @@ const RegisterForm = ({ type }) => {
     };
     load();
   }, []);
-
-  useEffect(() => {
-    if (!showOtpModal) return;
-    if (timer <= 0) return;
-    const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [showOtpModal, timer]);
 
   const selectedPhoneCountry = countries.find(
     (c) => c.id === formData.phoneCountryId,
@@ -406,151 +375,13 @@ const RegisterForm = ({ type }) => {
       }
       await register(payload);
 
-      toast.success(
-        "تم إنشاء الحساب. تحقق من مجلد Spam إذا لم تجد كود التفعيل.",
-      );
-      setOtp(new Array(OTP_LENGTH).fill(""));
-      setTimer(TIMER_START);
-      setShowOtpModal(true);
+      toast.success("تم إنشاء الحساب وإرسال رابط التحقق إلى بريدك الإلكتروني.");
+      navigate("/check-email", { state: { email: formData.email } });
     } catch (err) {
       console.error("خطأ من السيرفر (register):", err.response?.data);
       toast.error(registerErrorMessage(err));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleOtpChange = (target, index) => {
-    const val = target.value;
-    if (isNaN(val)) return;
-    const newOtp = [...otp];
-    newOtp[index] = val.slice(-1);
-    setOtp(newOtp);
-    if (val && index < OTP_LENGTH - 1) otpRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpKeyDown = (e, index) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-    if (e.key === "ArrowLeft" && index > 0) otpRefs.current[index - 1]?.focus();
-    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1)
-      otpRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpPaste = (e) => {
-    const pasted = e.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, OTP_LENGTH);
-    if (!pasted) return;
-    const newOtp = [...otp];
-    pasted.split("").forEach((char, i) => {
-      newOtp[i] = char;
-    });
-    setOtp(newOtp);
-    otpRefs.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
-    e.preventDefault();
-  };
-
-  // ---- Post-verification routing ----
-  // - parent                             -> straight to dashboard
-  // - student, university                -> straight to dashboard
-  // - student, primary/middle/high       -> student-details -> subjects -> success -> account-state
-  // - teacher                            -> teacher-details -> pending
-  const resolvePostVerifyRoute = () => {
-    if (type === "parent") {
-      return {
-        path: "/parent-dashboard",
-        state: { email: formData.email, role: type },
-      };
-    }
-    if (type === "student") {
-      if (formData.studentType === "university") {
-        return {
-          path: "/student-dashboard",
-          state: { email: formData.email, role: type },
-        };
-      }
-      return {
-        path: "/register/student-details",
-        state: {
-          email: formData.email,
-          role: type,
-          academicLevel: formData.academicLevel,
-          countryId: formData.country,
-          // نوع الطالب اللي اختاره المستخدم صراحةً من الـ toggle.
-          studentType: formData.studentType,
-        },
-      };
-    }
-    if (type === "teacher") {
-      return {
-        path: "/register/teacher-details",
-        state: { email: formData.email, role: type },
-      };
-    }
-    return { path: "/login", state: { email: formData.email, role: type } };
-  };
-
-  const handleVerify = async () => {
-    const code = otp.join("");
-    if (code.length !== OTP_LENGTH) {
-      toast.error("يرجى إدخال رمز التفعيل كاملاً");
-      return;
-    }
-    setOtpLoading(true);
-    try {
-      const found = countries.find((c) => c.id === formData.country);
-
-      const res = await verifyAccount({
-        email: formData.email,
-        code,
-        country: found?.code,
-      });
-
-      const token = res.data?.token || res.data?.data?.token;
-      const verifiedUser =
-        res.data?.data?.user || res.data?.user || res.data?.data;
-      if (token) localStorage.setItem("token", token);
-      if (verifiedUser && typeof verifiedUser === "object") {
-        const userWithRole = {
-          ...verifiedUser,
-          role: verifiedUser.role || type,
-        };
-        setUser(userWithRole);
-      }
-
-      toast.success("تم تفعيل الحساب بنجاح!");
-      setShowOtpModal(false);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      const { path, state } = resolvePostVerifyRoute();
-      navigate(path, { state });
-    } catch (err) {
-      console.error("خطأ من السيرفر (verify):", err.response?.data);
-      toast.error(
-        err.response?.data?.message || "الكود غير صحيح، حاول مرة أخرى",
-      );
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    setResendLoading(true);
-    try {
-      await resendOtp(formData.email, formData.role, formData.country);
-      setTimer(TIMER_START);
-      setOtp(new Array(OTP_LENGTH).fill(""));
-      otpRefs.current[0]?.focus();
-      toast.success("تم إرسال كود جديد. تحقق من مجلد Spam إذا لم تجده.");
-    } catch (err) {
-      console.error("خطأ من السيرفر (resend-otp):", err.response?.data);
-      toast.error(
-        err.response?.data?.message || "فشل إعادة الإرسال، حاول لاحقاً",
-      );
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -798,91 +629,6 @@ const RegisterForm = ({ type }) => {
         </div>
       </form>
 
-      {/* OTP Modal */}
-      {showOtpModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div
-            dir="ltr"
-            className="bg-white p-10 md:p-10 flex flex-col items-center justify-center shadow-[0px_20px_60px_0px_#1F29371F] overflow-y-auto"
-            style={{
-              width: "100%",
-              maxWidth: "720px",
-              height: "auto",
-              minHeight: "30px",
-              borderRadius: "24px",
-              opacity: "1",
-              gap: "20px",
-            }}
-          >
-            <p className="font-normal text-[18px] md:text-[20px] leading-8 text-center text-[#1F2937] p-2">
-              لإكمال عملية التسجيل، نرجو إدخال رمز التفعيل المرسل إلى البريد
-              الإلكتروني:
-            </p>
-            <p className="font-medium text-[20px] md:text-[22px] leading-8 text-center text-[#123C91] p-2 mb-2">
-              {formData.email}
-            </p>
-            <p
-              dir="rtl"
-              className="rounded-xl border-2 border-amber-300 bg-[#FFF8E6] px-4 py-3 text-center text-[14px] font-bold text-[#6B4700] shadow-sm"
-            >
-              إذا لم تجد الرسالة، تحقق من مجلد البريد غير المرغوب فيه (Spam).
-            </p>
-
-            <div
-              className="flex justify-center gap-2 mb-4"
-              onPaste={handleOtpPaste}
-            >
-              {otp.map((data, i) => (
-                <input
-                  key={i}
-                  ref={(el) => (otpRefs.current[i] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength="1"
-                  value={data}
-                  onChange={(e) => handleOtpChange(e.target, i)}
-                  onKeyDown={(e) => handleOtpKeyDown(e, i)}
-                  className="w-12 h-14 md:w-14 md:h-14 rounded-lg border border-[#1F293733] bg-[#F9FAFA] text-center text-xl outline-none focus:border-[#123C91] transition-colors"
-                />
-              ))}
-            </div>
-
-            <div className="mb-4">
-              {timer > 0 ? (
-                <p className="font-bold text-[20px] text-center text-[#123C91]">
-                  {timer} ثانية
-                </p>
-              ) : (
-                <button
-                  onClick={handleResend}
-                  disabled={resendLoading}
-                  className="text-[#123C91] underline w-full disabled:opacity-60"
-                >
-                  {resendLoading
-                    ? "جاري إعادة الإرسال..."
-                    : "إعادة إرسال الكود"}
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-col md:flex-row gap-4 w-full justify-center">
-              <button
-                onClick={() => setShowOtpModal(false)}
-                className="w-full md:w-77 h-14 rounded-lg border border-[#1F293733] bg-white text-[#123C91]"
-              >
-                إلغاء
-              </button>
-              <button
-                onClick={handleVerify}
-                disabled={otpLoading}
-                className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white disabled:opacity-70 transition-opacity"
-              >
-                {otpLoading ? "جاري التحقق..." : "تحقق"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

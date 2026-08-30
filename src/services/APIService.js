@@ -54,9 +54,10 @@ ROOT_API.interceptors.response.use(
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export const login = (credentials) => API.post("/auth/login", credentials);
 export const register = (userData) => API.post("/auth/register", userData);
-export const resendOtp = (email) =>
-  API.post("/auth/resendVerificationCode", { email });
-export const verifyAccount = (data) => API.post("/auth/verifyAccount", data);
+export const resendVerificationLink = (email) =>
+  API.post("/auth/resendVerificationLink", { email });
+export const verifyAccount = (token) =>
+  API.post("/auth/verifyAccount", { token });
 
 export const updatePassword = async ({ currentPassword, updatedPassword }) => {
   const response = await API.patch("/auth/updatePassword", {

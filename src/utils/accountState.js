@@ -15,7 +15,6 @@ export const getDatabaseUserFromAccountState = (response) => {
     data?.user && typeof data.user === "object" ? data.user : {};
 
   return {
-    
     ...data,
     ...nestedUser,
     user: nestedUser,

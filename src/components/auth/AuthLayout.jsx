@@ -27,7 +27,8 @@ const AuthLayout = ({ children }) => {
   const showWhatsappButton =
     pathname === "/login" ||
     pathname === "/select-account-type" ||
-    pathname === "/verify-otp" ||
+    pathname === "/check-email" ||
+    pathname === "/verify-email" ||
     pathname === "/register" ||
     pathname.startsWith("/register/");
 

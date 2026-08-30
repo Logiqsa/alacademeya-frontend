@@ -128,29 +128,30 @@ export const AuthContextProvider = ({ children }) => {
     };
   }, []);
 
+  const establishSession = useCallback((token, sessionUser) => {
+    const tokenRole = roleFromToken(token);
+    const finalUser =
+      sessionUser && typeof sessionUser === "object"
+        ? { ...sessionUser, role: sessionUser.role || tokenRole }
+        : sessionUser;
+
+    if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
+    persistUser(finalUser);
+    setUser(finalUser || null);
+
+    return finalUser;
+  }, []);
+
   const login = async (credentials) => {
     const res = await loginApi(credentials);
     console.log("الرد من الـ API:", res.data);
 
     const responseUser = res.data.data;
     const token = res.data.token;
-    const tokenRole = roleFromToken(token);
-    const finalUser =
-      responseUser && typeof responseUser === "object"
-        ? {
-            ...responseUser,
-            role: responseUser.role || tokenRole,
-          }
-        : responseUser;
+    const finalUser = establishSession(token, responseUser);
 
     console.log("البيانات التي سيتم حفظها:", finalUser);
-
-    setUser(finalUser);
-    persistUser(finalUser);
-
-    if (token) {
-      localStorage.setItem("token", token);
-    }
 
     return { user: finalUser, token };
   };
@@ -167,7 +168,7 @@ export const AuthContextProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, updateUser, checkingAccountState }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, updateUser, establishSession, checkingAccountState }}>
       {children}
     </AuthContext.Provider>
   );

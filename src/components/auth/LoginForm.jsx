@@ -41,6 +41,23 @@ const LoginForm = () => {
       });
 
     } catch (error) {
+      const responseCode = String(
+        error.response?.data?.code || error.response?.data?.message || "",
+      ).toUpperCase();
+      if (
+        error.response?.status === 403 &&
+        responseCode.includes("ACCOUNT_NOT_VERIFIED")
+      ) {
+        const identifier = credentials.email.trim();
+        navigate("/check-email", {
+          state: {
+            email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)
+              ? identifier.toLowerCase()
+              : "",
+          },
+        });
+        return;
+      }
       toast.error(
         error.response?.data?.message ||
         "حدث خطأ أثناء تسجيل الدخول، يرجى المحاولة لاحقاً."

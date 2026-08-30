@@ -7,7 +7,8 @@ import Landing from "./pages/Landing";
 import LoginPage from "./pages/auth/LoginPage";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import RegisterPage from "./pages/auth/RegisterPage";
-import OtpPage from "./pages/auth/OtpPage";
+import CheckEmailPage from "./pages/auth/CheckEmailPage";
+import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import TeacherDetailsPage from "./pages/auth/TeacherDetailsPage";
 import PendingPage from "./pages/auth/PendingPage";
 import { AccountTypePage } from "./pages/auth/AccountTypePage";
@@ -182,7 +183,8 @@ function App() {
             )
           }
         />
-        <Route path="/verify-otp" element={<OtpPage />} />
+        <Route path="/check-email" element={<CheckEmailPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route
           path="/register/student-details"
           element={<StudentDetailsPages />}

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from "react";
+import { useContext, useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
@@ -9,6 +9,7 @@ import {
   getCurriculums,
   getCurriculumStages,
   getStageGrades,
+  getMyProfile,
 } from "../../services/APIService";
 
 const Dropdown = ({
@@ -94,40 +95,23 @@ const Dropdown = ({
   );
 };
 
-// ── Adjust these two to match your actual router/backend contract ──
-// Where an approved student should land.
-const DASHBOARD_ROUTE = "/dashboard";
-// Where a student who is still awaiting approval should land.
-const PENDING_ROUTE = "/register/pending";
-
-// Reads the approval status out of an /auth/account-state response.
-// Tries a couple of common shapes ({ status } or { data: { status } })
-// since the exact field name/casing wasn't confirmed against the live
-// backend response — adjust this one function if the real field differs.
-const extractStatus = (res) => {
-  const raw =
-    res?.data?.status ??
-    res?.data?.data?.status ??
-    res?.data?.profileStatus ??
-    res?.data?.data?.profileStatus ??
-    "";
-  return String(raw).toLowerCase();
-};
-
-const isApprovedStatus = (status) =>
-  ["approved", "active", "accepted"].includes(status);
-
 const StudentDetailsPages = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  const { user, updateUser } = useContext(AuthContext);
+  const [profileUser, setProfileUser] = useState(null);
+  const profileRefreshStarted = useRef(false);
+  const canonicalUser = profileUser || user;
 
-  const email = state?.email || user?.email;
-  const role = state?.role || user?.role || "student";
-  const academicLevel = state?.academicLevel || user?.academicLevel;
+  const email = state?.email || canonicalUser?.email;
+  const role = state?.role || canonicalUser?.role || "student";
+  const academicLevel = state?.academicLevel || canonicalUser?.academicLevel;
   const countryId =
-    state?.countryId || user?.country?.id || user?.country?._id || user?.country;
-  const studentType = state?.studentType || user?.studentType || "school";
+    state?.countryId ||
+    canonicalUser?.country?.id ||
+    canonicalUser?.country?._id ||
+    canonicalUser?.country;
+  const studentType = state?.studentType || canonicalUser?.studentType || "school";
 
   const [curriculumId, setCurriculumId] = useState("");
   const [stageId, setStageId] = useState("");
@@ -143,33 +127,46 @@ const StudentDetailsPages = () => {
   const [loadingStages, setLoadingStages] = useState(false);
   const [loadingGrades, setLoadingGrades] = useState(false);
 
-  const [loading, setLoading] = useState(false);
 
   const toLabel = (nameObj) => nameObj?.ar || nameObj?.en || "—";
 
   useEffect(() => {
-    if (!countryId) {
-      console.log("countryId is empty:", countryId);
+    if (
+      profileRefreshStarted.current ||
+      (user?.email && user?.academicLevel && user?.country)
+    ) {
       return;
     }
-    console.log("loading curriculums for countryId:", countryId);
-    setLoadingCurriculums(true);
-    getCurriculums(countryId)
+    profileRefreshStarted.current = true;
+    let active = true;
+    getMyProfile()
+      .then((response) => {
+        if (!active) return;
+        const data = response.data?.data || response.data;
+        const freshUser = data?.user || data?.student || data;
+        if (freshUser && typeof freshUser === "object") {
+          const mergedUser = { ...user, ...freshUser };
+          setProfileUser(mergedUser);
+          updateUser?.(mergedUser);
+        }
+      })
+      .catch(() => {
+        // Existing form remains usable when profile refresh is unavailable.
+      });
+    return () => {
+      active = false;
+    };
+  }, [updateUser, user]);
+
+  useEffect(() => {
+    getCurriculums()
       .then((res) => {
-        console.log("curriculums raw response:", JSON.stringify(res.data));
         const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
-        console.log("curriculums list:", list);
         setCurriculums(list.map((c) => ({ id: c.id, label: toLabel(c.name) })));
       })
-      .catch((err) => {
-        console.log(
-          "curriculums error:",
-          err.response?.status,
-          err.response?.data,
-        );
-      })
+      .catch(() => toast.error("تعذر تحميل المناهج"))
       .finally(() => setLoadingCurriculums(false));
-  }, [countryId]);
+  }, []);
 
   useEffect(() => {
     if (!curriculumId) {
@@ -318,11 +315,10 @@ const StudentDetailsPages = () => {
 
           <button
             type="submit"
-            disabled={loading}
             className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
             style={{ fontFamily: "Tajawal, sans-serif" }}
           >
-            {loading ? "جاري الحفظ..." : "التالي"}
+            التالي
           </button>
 
           <div className="flex items-center justify-center gap-1 pt-1">
