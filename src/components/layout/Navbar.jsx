@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import logo from "../../assets/icons/logo.svg";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { getDashboardPathByRole } from "../../utils/roles";
@@ -19,7 +19,7 @@ const goToDashboard = (user, navigate) => {
 };
 
 const Navbar = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,6 +68,12 @@ const Navbar = () => {
     goToDashboard(user, navigate);
   };
 
+  const handleLogout = () => {
+    logout();
+    setMenuOpen(false);
+    navigate("/", { replace: true });
+  };
+
   return (
     <>
       {/* ================= NAVBAR ================= */}
@@ -113,6 +119,13 @@ const Navbar = () => {
                   className="h-10 px-6 rounded-lg bg-[#123C91] text-white [&_svg]:text-white text-[16px] font-medium"
                 >
                   لوحة التحكم
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex h-10 items-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-[15px] font-medium text-red-600 transition-colors hover:bg-red-50"
+                >
+                  <LogOut size={17} />
+                  تسجيل الخروج
                 </button>
               </div>
             ) : (
@@ -188,6 +201,13 @@ const Navbar = () => {
                 className="h-10 w-full rounded-lg bg-[#123C91] text-white [&_svg]:text-white text-[16px] font-medium"
               >
                 لوحة التحكم
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white text-[16px] font-medium text-red-600 transition-colors hover:bg-red-50"
+              >
+                <LogOut size={18} />
+                تسجيل الخروج
               </button>
             </div>
           ) : (

@@ -6,6 +6,7 @@ import {
   X,
   Loader2,
   AlertCircle,
+  Search,
 } from "lucide-react";
 import {
   getAllPackages,
@@ -346,6 +347,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   const [packages, setPackages] = useState([]);
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculum, setSelectedCurriculum] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -391,14 +393,32 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
     [packages],
   );
   const visiblePackages = useMemo(() => {
-    if (selectedCurriculum === "all") return packages;
-    if (selectedCurriculum === "unassigned") {
-      return packages.filter((pkg) => !entityId(pkg.curriculum));
-    }
-    return packages.filter(
-      (pkg) => String(entityId(pkg.curriculum)) === String(selectedCurriculum),
-    );
-  }, [packages, selectedCurriculum]);
+    const query = searchQuery.trim().toLocaleLowerCase("ar");
+    const filteredByCurriculum =
+      selectedCurriculum === "all"
+        ? packages
+        : selectedCurriculum === "unassigned"
+          ? packages.filter((pkg) => !entityId(pkg.curriculum))
+          : packages.filter(
+              (pkg) =>
+                String(entityId(pkg.curriculum)) === String(selectedCurriculum),
+            );
+
+    return filteredByCurriculum
+      .filter((pkg) => {
+        if (!query) return true;
+        return [pkg.name, pkg.description, entityName(pkg.curriculum)]
+          .filter(Boolean)
+          .some((value) =>
+            String(value).toLocaleLowerCase("ar").includes(query),
+          );
+      })
+      .sort((a, b) => {
+        const aDate = new Date(a.createdAt || 0).getTime();
+        const bDate = new Date(b.createdAt || 0).getTime();
+        return (Number.isNaN(bDate) ? 0 : bDate) - (Number.isNaN(aDate) ? 0 : aDate);
+      });
+  }, [packages, searchQuery, selectedCurriculum]);
 
   const packageCountFor = (curriculumId) =>
     packages.filter(
@@ -490,11 +510,26 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       )}
 
       {packages.length > 0 && (
-        <div
-          className="mb-5 flex gap-2 overflow-x-auto pb-2"
-          dir="rtl"
-          aria-label="تصفية الباقات حسب المنهج"
-        >
+        <>
+          <div className="relative mb-4 max-w-md" dir="rtl">
+            <Search
+              size={18}
+              className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#8C9198]"
+            />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="ابحث باسم الباقة أو المنهج..."
+              aria-label="البحث في الباقات"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white pr-11 pl-4 text-sm text-[#1F2937] outline-none transition-colors placeholder:text-[#9CA3AF] focus:border-[#123C91]"
+            />
+          </div>
+          <div
+            className="mb-5 flex gap-2 overflow-x-auto pb-2"
+            dir="rtl"
+            aria-label="تصفية الباقات حسب المنهج"
+          >
           <button
             type="button"
             onClick={() => setSelectedCurriculum("all")}
@@ -525,7 +560,8 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
               بدون منهج ({unassignedCount})
             </button>
           )}
-        </div>
+          </div>
+        </>
       )}
 
       {packages.length === 0 ? (
@@ -534,7 +570,9 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
         </div>
       ) : visiblePackages.length === 0 ? (
         <div className="text-center py-16 text-[#8C9198] text-[14px]" dir="rtl">
-          لا توجد باقات مرتبطة بهذا المنهج
+          {searchQuery.trim()
+            ? "لا توجد باقات مطابقة للبحث"
+            : "لا توجد باقات مرتبطة بهذا المنهج"}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
