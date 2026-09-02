@@ -15,6 +15,10 @@ import {
   getCurriculums,
   getAllGrades,
 } from "../../../../services/APIService";
+import Pagination from "../../../teacher/groups/students/Paginationn";
+import { getSavedPageSize } from "../../../../utils/tablePagination";
+
+const PAGE_SIZE = 10;
 
 const entityId = (value) =>
   typeof value === "string" ? value : value?.id || value?._id || "";
@@ -258,12 +262,52 @@ const extractPackages = (response) => {
   return data.packages || data.results || data.items || [];
 };
 
+const responseTotalPages = (response) => {
+  const body = response?.data ?? response ?? {};
+  const data = body?.data ?? body;
+  const pagination =
+    data?.pagination || data?.meta || body?.pagination || body?.meta || {};
+  return Number(
+    pagination.totalPages ||
+      pagination.pages ||
+      data.totalPages ||
+      body.totalPages ||
+      0,
+  );
+};
+
+const getEveryPackageByStatus = async (isActive) => {
+  const packagesById = new Map();
+  let page = 1;
+
+  while (true) {
+    const response = await getAllPackages({ isActive, page });
+    const pagePackages = extractPackages(response);
+    const countBeforePage = packagesById.size;
+
+    pagePackages.forEach((pkg) =>
+      packagesById.set(String(packageIdOf(pkg)), pkg),
+    );
+
+    const totalPages = responseTotalPages(response);
+    const reachedLastKnownPage = totalPages > 0 && page >= totalPages;
+    const hasNoNewPackages = packagesById.size === countBeforePage;
+
+    if (!pagePackages.length || reachedLastKnownPage || hasNoNewPackages) break;
+    page += 1;
+  }
+
+  return [...packagesById.values()];
+};
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const PackagesTab = ({ showAdd, onCloseAdd }) => {
   const [packages, setPackages] = useState([]);
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculum, setSelectedCurriculum] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -272,20 +316,23 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   const [deleting, setDeleting] = useState(false);
   const [togglingIds, setTogglingIds] = useState([]);
 
-  const fetchPackages = async () => {
+  const fetchPackages = async (savedPackage = null) => {
     setLoading(true);
     setError("");
     try {
-      const [activeResponse, inactiveResponse, curriculumsResponse] = await Promise.all([
-        getAllPackages({ isActive: true }),
-        getAllPackages({ isActive: false }),
+      const [activePackages, inactivePackages, curriculumsResponse] = await Promise.all([
+        getEveryPackageByStatus(true),
+        getEveryPackageByStatus(false),
         getCurriculums(),
       ]);
       const packagesById = new Map();
 
-      [...extractPackages(activeResponse), ...extractPackages(inactiveResponse)].forEach(
+      [...activePackages, ...inactivePackages].forEach(
         (pkg) => packagesById.set(String(packageIdOf(pkg)), pkg),
       );
+      if (savedPackage && packageIdOf(savedPackage)) {
+        packagesById.set(String(packageIdOf(savedPackage)), savedPackage);
+      }
 
       setPackages([...packagesById.values()]);
       setCurriculums(
@@ -355,6 +402,12 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
         return (Number.isNaN(bDate) ? 0 : bDate) - (Number.isNaN(aDate) ? 0 : aDate);
       });
   }, [curriculumNamesById, packages, searchQuery, selectedCurriculum]);
+  const totalPages = Math.max(1, Math.ceil(visiblePackages.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedPackages = visiblePackages.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   const packageCountFor = (curriculumId) =>
     packages.filter(
@@ -374,9 +427,10 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
           )
         : [saved, ...prev];
     });
+    setPage(1);
     // الـ backend يلغي isMostPopular من الباقة السابقة داخل المنهج نفسه.
     // إعادة التحميل تضمن انعكاس هذا التغيير على الكروت الأخرى فوراً.
-    fetchPackages();
+    fetchPackages(saved);
   };
 
   const handleConfirmDelete = async () => {
@@ -388,6 +442,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       setPackages((prev) =>
         prev.filter((pkg) => String(packageIdOf(pkg)) !== String(packageId)),
       );
+      setPage(1);
       setDeletePkg(null);
     } catch (err) {
       setError(
@@ -455,7 +510,10 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
             <input
               type="search"
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setPage(1);
+              }}
               placeholder="ابحث باسم الباقة أو المنهج..."
               aria-label="البحث في الباقات"
               className="h-11 w-full rounded-xl border border-gray-200 bg-white pr-11 pl-4 text-sm text-[#1F2937] outline-none transition-colors placeholder:text-[#9CA3AF] focus:border-[#123C91]"
@@ -468,7 +526,10 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
           >
           <button
             type="button"
-            onClick={() => setSelectedCurriculum("all")}
+            onClick={() => {
+              setSelectedCurriculum("all");
+              setPage(1);
+            }}
             className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${selectedCurriculum === "all" ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-200 bg-white text-[#575F69] hover:border-[#123C91]"}`}
           >
             كل المناهج ({packages.length})
@@ -480,7 +541,10 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
               <button
                 key={curriculumId}
                 type="button"
-                onClick={() => setSelectedCurriculum(curriculumId)}
+                onClick={() => {
+                  setSelectedCurriculum(curriculumId);
+                  setPage(1);
+                }}
                 className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${active ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-200 bg-white text-[#575F69] hover:border-[#123C91]"}`}
               >
                 {entityName(curriculumItem)} ({packageCountFor(curriculumId)})
@@ -490,7 +554,10 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
           {unassignedCount > 0 && (
             <button
               type="button"
-              onClick={() => setSelectedCurriculum("unassigned")}
+              onClick={() => {
+                setSelectedCurriculum("unassigned");
+                setPage(1);
+              }}
               className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${selectedCurriculum === "unassigned" ? "border-amber-600 bg-amber-600 text-white" : "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-500"}`}
             >
               بدون منهج ({unassignedCount})
@@ -511,8 +578,22 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
             : "لا توجد باقات مرتبطة بهذا المنهج"}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white" dir="rtl">
-          <table className="w-full min-w-[900px] border-collapse text-right">
+        <div className="space-y-4">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            onChange={setPage}
+            totalItems={visiblePackages.length}
+            displayedCount={paginatedPackages.length}
+            unitLabel="باقة"
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white" dir="rtl">
+            <table className="w-full min-w-[900px] border-collapse text-right">
             <thead className="bg-[#F8FAFC] text-[13px] font-semibold text-[#575F69]">
               <tr>
                 <th className="px-5 py-4">اسم الباقة</th>
@@ -525,7 +606,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-[13px] text-[#374151]">
-              {visiblePackages.map((pkg) => {
+              {paginatedPackages.map((pkg) => {
                 const packageId = packageIdOf(pkg);
                 const toggling = togglingIds.includes(String(packageId));
                 return (
@@ -593,7 +674,8 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
                 );
               })}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       )}
 
