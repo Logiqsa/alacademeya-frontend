@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Trash2,
   Pencil,
-  CheckCircle2,
   X,
   Loader2,
   AlertCircle,
@@ -259,89 +258,6 @@ const extractPackages = (response) => {
   return data.packages || data.results || data.items || [];
 };
 
-// ─── Package Card ─────────────────────────────────────────────────────────────
-const PackageCard = ({ pkg, onEdit, onDelete, onToggle, toggling }) => (
-  <div
-    className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col gap-3"
-    dir="rtl"
-  >
-    {/* Top row */}
-    <div className="flex items-start justify-between">
-      <div className="items-center gap-2">
-        <h1 className="font-['Tajawal'] font-semibold mb-2 text-[17px] text-[#1F2937]">
-          {pkg.name}
-        </h1>
-        {pkg.isMostPopular && (
-          <span className="mb-2 inline-flex rounded-full bg-[#EAF4FF] px-3 py-1 text-xs font-semibold text-[#123C91]">
-            الأكثر طلبًا
-          </span>
-        )}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={pkg.isActive !== false}
-            aria-label={pkg.isActive !== false ? "إلغاء تفعيل الباقة" : "تفعيل الباقة"}
-            title={pkg.isActive !== false ? "إلغاء تفعيل الباقة" : "تفعيل الباقة"}
-            disabled={toggling}
-            onClick={() => onToggle(pkg)}
-            className={`relative h-6 w-11 rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 ${pkg.isActive !== false ? "bg-[#00A63E]" : "bg-gray-300"}`}
-          >
-            <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${pkg.isActive !== false ? "right-6" : "right-1"}`} />
-          </button>
-          <span
-            className={`text-[12px] font-medium px-3 py-1 rounded-full ${
-              pkg.isActive !== false
-                ? "bg-[#00A63E26] text-[#00A63E]"
-                : "bg-[#EF444426] text-[#EF4444]"
-            }`}
-          >
-            {toggling ? "جاري التحديث..." : pkg.isActive !== false ? "نشطة" : "غير نشطة"}
-          </span>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onDelete(pkg)}
-          className="p-1.5 rounded-lg hover:bg-red-50 text-[#9CA3AF] hover:text-red-500 transition-colors"
-        >
-          <Trash2 size={15} />
-        </button>
-        <button
-          onClick={() => onEdit(pkg)}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-[#9CA3AF] hover:text-[#374151] transition-colors"
-        >
-          <Pencil size={15} />
-        </button>
-      </div>
-    </div>
-
-    {/* Price */}
-    <div className="text-right">
-      <span className="font-['Tajawal'] font-bold text-[28px] text-[#123C91]">
-        {pkg.price?.toLocaleString()} جنيه
-      </span>
-      <span className="text-[#8C9198] text-[13px] mr-1">/ شهر</span>
-    </div>
-
-    {/* Sessions */}
-    <div className="flex items-center justify-start gap-2 text-[13px] text-[#575F69]">
-      <CheckCircle2 size={15} className="text-[#00A63E] shrink-0" />
-      <span>{pkg.sessions} حصة شهرياً</span>
-    </div>
-
-    {/* Meta */}
-    <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-auto">
-      <span className="text-[12px] text-[#8C9198]">آخر تحديث</span>
-      <span className="text-[13px] font-medium text-[#123C91]">
-        {pkg.updatedAt
-          ? new Date(pkg.updatedAt).toLocaleDateString("ar-EG")
-          : "—"}
-      </span>
-    </div>
-  </div>
-);
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const PackagesTab = ({ showAdd, onCloseAdd }) => {
   const [packages, setPackages] = useState([]);
@@ -392,6 +308,22 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
     () => packages.filter((pkg) => !entityId(pkg.curriculum)).length,
     [packages],
   );
+  const curriculumNamesById = useMemo(
+    () =>
+      new Map(
+        curriculums.map((curriculumItem) => [
+          String(entityId(curriculumItem)),
+          entityName(curriculumItem),
+        ]),
+      ),
+    [curriculums],
+  );
+  const curriculumNameOf = (pkg) => {
+    const curriculumId = entityId(pkg.curriculum);
+    if (!curriculumId) return "بدون منهج";
+    if (typeof pkg.curriculum === "object") return entityName(pkg.curriculum);
+    return curriculumNamesById.get(String(curriculumId)) || "منهج غير متاح";
+  };
   const visiblePackages = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase("ar");
     const filteredByCurriculum =
@@ -407,7 +339,11 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
     return filteredByCurriculum
       .filter((pkg) => {
         if (!query) return true;
-        return [pkg.name, pkg.description, entityName(pkg.curriculum)]
+        const curriculumName =
+          typeof pkg.curriculum === "object"
+            ? entityName(pkg.curriculum)
+            : curriculumNamesById.get(String(entityId(pkg.curriculum))) || "";
+        return [pkg.name, pkg.description, curriculumName]
           .filter(Boolean)
           .some((value) =>
             String(value).toLocaleLowerCase("ar").includes(query),
@@ -418,7 +354,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
         const bDate = new Date(b.createdAt || 0).getTime();
         return (Number.isNaN(bDate) ? 0 : bDate) - (Number.isNaN(aDate) ? 0 : aDate);
       });
-  }, [packages, searchQuery, selectedCurriculum]);
+  }, [curriculumNamesById, packages, searchQuery, selectedCurriculum]);
 
   const packageCountFor = (curriculumId) =>
     packages.filter(
@@ -575,17 +511,89 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
             : "لا توجد باقات مرتبطة بهذا المنهج"}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visiblePackages.map((pkg) => (
-            <PackageCard
-              key={packageIdOf(pkg)}
-              pkg={pkg}
-              onEdit={setEditPkg}
-              onDelete={setDeletePkg}
-              onToggle={handleTogglePackage}
-              toggling={togglingIds.includes(String(packageIdOf(pkg)))}
-            />
-          ))}
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white" dir="rtl">
+          <table className="w-full min-w-[900px] border-collapse text-right">
+            <thead className="bg-[#F8FAFC] text-[13px] font-semibold text-[#575F69]">
+              <tr>
+                <th className="px-5 py-4">اسم الباقة</th>
+                <th className="px-5 py-4">المنهج</th>
+                <th className="px-5 py-4">السعر</th>
+                <th className="px-5 py-4">عدد الحصص</th>
+                <th className="px-5 py-4">تاريخ الإضافة</th>
+                <th className="px-5 py-4">الحالة</th>
+                <th className="px-5 py-4 text-center">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-[13px] text-[#374151]">
+              {visiblePackages.map((pkg) => {
+                const packageId = packageIdOf(pkg);
+                const toggling = togglingIds.includes(String(packageId));
+                return (
+                  <tr key={packageId} className="transition-colors hover:bg-[#F8FAFC]">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-[#1F2937]">{pkg.name}</span>
+                        {pkg.isMostPopular && (
+                          <span className="rounded-full bg-[#EAF4FF] px-2.5 py-1 text-[11px] font-semibold text-[#123C91]">
+                            الأكثر طلبًا
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">{curriculumNameOf(pkg)}</td>
+                    <td className="px-5 py-4 font-semibold text-[#123C91]">
+                      {Number(pkg.price || 0).toLocaleString("ar-EG")} جنيه
+                    </td>
+                    <td className="px-5 py-4">{pkg.sessions} حصة</td>
+                    <td className="px-5 py-4 text-[#6B7280]">
+                      {pkg.createdAt
+                        ? new Date(pkg.createdAt).toLocaleDateString("ar-EG")
+                        : "—"}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={pkg.isActive !== false}
+                          aria-label={pkg.isActive !== false ? "إلغاء تفعيل الباقة" : "تفعيل الباقة"}
+                          title={pkg.isActive !== false ? "إلغاء تفعيل الباقة" : "تفعيل الباقة"}
+                          disabled={toggling}
+                          onClick={() => handleTogglePackage(pkg)}
+                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 ${pkg.isActive !== false ? "bg-[#00A63E]" : "bg-gray-300"}`}
+                        >
+                          <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${pkg.isActive !== false ? "right-6" : "right-1"}`} />
+                        </button>
+                        <span className={pkg.isActive !== false ? "text-[#00A63E]" : "text-[#EF4444]"}>
+                          {toggling ? "جاري التحديث..." : pkg.isActive !== false ? "نشطة" : "غير نشطة"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditPkg(pkg)}
+                          aria-label={`تعديل باقة ${pkg.name}`}
+                          className="rounded-lg p-2 text-[#6B7280] transition-colors hover:bg-blue-50 hover:text-[#123C91]"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletePkg(pkg)}
+                          aria-label={`حذف باقة ${pkg.name}`}
+                          className="rounded-lg p-2 text-[#9CA3AF] transition-colors hover:bg-red-50 hover:text-red-500"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 

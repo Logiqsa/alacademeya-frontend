@@ -7,9 +7,11 @@ import {
   MessagesSquare,
   Search,
   CheckCircle2,
+  ChevronDown,
   XCircle,
   ExternalLink,
   Users,
+  Trash2,
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +27,7 @@ import {
   getTeacherMonthlyReport,
   updateTeacherProfile,
   updateUser,
+  deleteUser,
 } from "../../../services/APIService";
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
@@ -80,26 +83,67 @@ const DetailItem = ({ label, value }) => (
 );
 
 const TeacherCurriculumBoxes = ({ teacher }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const selections = teacher.raw?.teachingSelections || [];
   if (!selections.length) return null;
-  return <div className="mt-4 space-y-3">
-    <p className="text-sm font-semibold text-[#1F2937]">المناهج والصفوف والمواد</p>
-    {selections.map((selection, index) => <div key={selection.curriculum?.id || selection.curriculum?._id || index} className="rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-4">
-      <p className="text-[11px] text-[#8C9198]">المنهج الدراسي</p>
-      <p className="text-sm font-bold text-[#123C91]">{localizedName(selection.curriculum) || "منهج غير محدد"}</p>
-      <div className="mt-3 space-y-2">
-        {selection.stages?.flatMap((stage) => stage.grades || []).map((grade, gradeIndex) => <div key={grade.grade?.id || grade.grade?._id || gradeIndex} className="flex flex-col gap-2 rounded-xl border bg-white p-3 sm:flex-row sm:items-start">
-          <p className="min-w-32 text-xs font-bold text-[#1F2937]">{localizedName(grade.grade) || "صف غير محدد"}</p>
-          <div className="flex flex-1 flex-wrap gap-1.5">
-            {(grade.subjects || []).map((subject, subjectIndex) => <span key={subject?.id || subject?._id || subjectIndex} className="rounded-lg bg-[#EAF0FB] px-2.5 py-1 text-xs text-[#123C91]">
-              {localizedName(subject) || "مادة غير محددة"}
-            </span>)}
-            {!grade.subjects?.length && <span className="text-xs text-[#8C9198]">لا توجد مواد</span>}
-          </div>
-        </div>)}
-      </div>
-    </div>)}
-  </div>;
+  return (
+    <div className="mt-4 overflow-hidden rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD]">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((current) => !current)}
+        aria-expanded={isExpanded}
+        className="flex w-full items-center justify-between gap-3 px-4 py-4 text-right text-sm font-semibold text-[#1F2937] transition-colors hover:bg-[#EEF4FC]"
+      >
+        <span>المناهج والصفوف والمواد</span>
+        <ChevronDown
+          size={19}
+          className={`shrink-0 text-[#123C91] transition-transform ${isExpanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      {isExpanded && (
+        <div className="space-y-3 border-t border-[#D7E2F3] p-4">
+          {selections.map((selection, index) => (
+            <div
+              key={selection.curriculum?.id || selection.curriculum?._id || index}
+              className="rounded-2xl border border-[#D7E2F3] bg-white p-4"
+            >
+              <p className="text-[11px] text-[#8C9198]">المنهج الدراسي</p>
+              <p className="text-sm font-bold text-[#123C91]">
+                {localizedName(selection.curriculum) || "منهج غير محدد"}
+              </p>
+              <div className="mt-3 space-y-2">
+                {selection.stages
+                  ?.flatMap((stage) => stage.grades || [])
+                  .map((grade, gradeIndex) => (
+                    <div
+                      key={grade.grade?.id || grade.grade?._id || gradeIndex}
+                      className="flex flex-col gap-2 rounded-xl border bg-white p-3 sm:flex-row sm:items-start"
+                    >
+                      <p className="min-w-32 text-xs font-bold text-[#1F2937]">
+                        {localizedName(grade.grade) || "صف غير محدد"}
+                      </p>
+                      <div className="flex flex-1 flex-wrap gap-1.5">
+                        {(grade.subjects || []).map((subject, subjectIndex) => (
+                          <span
+                            key={subject?.id || subject?._id || subjectIndex}
+                            className="rounded-lg bg-[#EAF0FB] px-2.5 py-1 text-xs text-[#123C91]"
+                          >
+                            {localizedName(subject) || "مادة غير محددة"}
+                          </span>
+                        ))}
+                        {!grade.subjects?.length && (
+                          <span className="text-xs text-[#8C9198]">لا توجد مواد</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const TeachersPage = () => {
@@ -112,6 +156,8 @@ const TeachersPage = () => {
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [approvingTeacher, setApprovingTeacher] = useState(false);
   const [rejectingTeacher, setRejectingTeacher] = useState(false);
+  const [restoringTeacher, setRestoringTeacher] = useState(false);
+  const [deletingTeacher, setDeletingTeacher] = useState(false);
   const month = useMemo(() => currentMonth(), []);
 
   const loadTeachers = useCallback(async () => {
@@ -268,7 +314,6 @@ const TeachersPage = () => {
       await updateTeacherProfile(selectedTeacher.id, { status: "rejected" });
       if (selectedTeacher.userId) {
         await updateUser(selectedTeacher.userId, {
-          registrationStatus: "rejected",
           isActive: false,
         });
       }
@@ -289,6 +334,63 @@ const TeachersPage = () => {
       toast.error(error.response?.data?.message || "تعذر رفض طلب المعلم");
     } finally {
       setRejectingTeacher(false);
+    }
+  };
+
+  const handleDeleteRejectedTeacher = async () => {
+    if (!selectedTeacher?.isRejected || !selectedTeacher.userId) return;
+    if (
+      !window.confirm(
+        `هل تريد حذف حساب المعلم "${selectedTeacher.name}" نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingTeacher(true);
+    try {
+      await deleteUser(selectedTeacher.userId);
+      setTeachers((current) =>
+        current.filter((teacher) => teacher.id !== selectedTeacher.id),
+      );
+      setSelectedTeacher(null);
+      toast.success("تم حذف حساب المعلم");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر حذف حساب المعلم");
+    } finally {
+      setDeletingTeacher(false);
+    }
+  };
+
+  const handleRestoreRejectedTeacher = async () => {
+    if (!selectedTeacher?.isRejected) return;
+    if (!window.confirm("هل تريد إلغاء الرفض وإعادة الطلب إلى قيد المراجعة؟")) {
+      return;
+    }
+
+    setRestoringTeacher(true);
+    try {
+      await updateTeacherProfile(selectedTeacher.id, { status: "pending" });
+      if (selectedTeacher.userId) {
+        await updateUser(selectedTeacher.userId, { isActive: false });
+      }
+      const pendingTeacher = {
+        ...selectedTeacher,
+        status: "في انتظار المراجعة",
+        isApproved: false,
+        isRejected: false,
+      };
+      setSelectedTeacher(pendingTeacher);
+      setTeachers((current) =>
+        current.map((teacher) =>
+          teacher.id === pendingTeacher.id ? pendingTeacher : teacher,
+        ),
+      );
+      toast.success("تم إلغاء الرفض وإعادة الطلب إلى قيد المراجعة");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر إلغاء رفض الطلب");
+    } finally {
+      setRestoringTeacher(false);
     }
   };
 
@@ -627,7 +729,7 @@ const TeachersPage = () => {
                   selectedTeacher.isApproved
                     ? "sm:grid-cols-2"
                     : selectedTeacher.isRejected
-                      ? "sm:grid-cols-2"
+                      ? "sm:grid-cols-4"
                       : "sm:grid-cols-4"
                 }`}
               >
@@ -658,6 +760,36 @@ const TeachersPage = () => {
                         <XCircle size={18} />
                       )}
                       رفض الطلب
+                    </button>
+                  </>
+                )}
+                {selectedTeacher.isRejected && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={restoringTeacher || deletingTeacher}
+                      onClick={handleRestoreRejectedTeacher}
+                      className="flex h-12 items-center justify-center gap-2 rounded-xl border border-amber-500 bg-amber-50 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {restoringTeacher ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <Clock3 size={18} />
+                      )}
+                      إلغاء الرفض
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deletingTeacher || restoringTeacher || !selectedTeacher.userId}
+                      onClick={handleDeleteRejectedTeacher}
+                      className="flex h-12 items-center justify-center gap-2 rounded-xl bg-red-600 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {deletingTeacher ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={18} />
+                      )}
+                      حذف الحساب
                     </button>
                   </>
                 )}
