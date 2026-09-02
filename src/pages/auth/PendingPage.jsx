@@ -179,12 +179,7 @@ const PendingPage = () => {
         )}
 
         <button
-          onClick={() => {
-            const dashboard = databaseUser
-              ? getDatabaseAccountDashboard({ data: databaseUser })
-              : null;
-            navigate(dashboard || "/");
-          }}
+          onClick={() => navigate("/")}
           className="w-full h-14 rounded-xl bg-[#123C91] !text-white [&_svg]:!text-white font-medium text-[16px]"
         >
           الرئيسية
