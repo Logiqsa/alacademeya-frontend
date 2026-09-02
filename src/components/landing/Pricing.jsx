@@ -1,9 +1,14 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { Crown, Loader2, AlertCircle } from "lucide-react";
+import { Crown, Loader2, AlertCircle, BookOpen, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 // ⚠️ عدّل المسار ده حسب مكان ملف الـ api عندك في المشروع
-import { getAllPackages, getCurriculums } from "../../services/APIService";
+import {
+  getAllPackages,
+  getCurriculums,
+  getCurriculumStages,
+  getStageGrades,
+} from "../../services/APIService";
 import { AuthContext } from "../../context/AuthContext";
 
 // باقة التجربة المجانية مش باقة حقيقية من الباك إند، ثابتة تسويقياً فقط
@@ -58,6 +63,11 @@ const Pricing = () => {
   const [apiPackages, setApiPackages] = useState([]);
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculum, setSelectedCurriculum] = useState("");
+  const [stages, setStages] = useState([]);
+  const [selectedStage, setSelectedStage] = useState("");
+  const [grades, setGrades] = useState([]);
+  const [selectedGrade, setSelectedGrade] = useState("");
+  const [structureLoading, setStructureLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -89,6 +99,7 @@ const Pricing = () => {
         setSelectedCurriculum(
           entityId(firstWithPackages || curriculumItems[0]),
         );
+        if (!curriculumItems.length) setStructureLoading(false);
       } catch (err) {
         setError(
           err?.response?.data?.message ||
@@ -101,15 +112,61 @@ const Pricing = () => {
     fetchPackages();
   }, []);
 
+  useEffect(() => {
+    if (!selectedCurriculum) return;
+
+    let active = true;
+    getCurriculumStages(selectedCurriculum)
+      .then((response) => {
+        if (!active) return;
+        const items = extractList(response, ["stages", "results", "items"]);
+        setStages(items);
+        setSelectedStage(entityId(items[0]));
+        if (!items.length) setStructureLoading(false);
+      })
+      .catch(() => {
+        if (active) setStructureLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [selectedCurriculum]);
+
+  useEffect(() => {
+    if (!selectedStage) return;
+
+    let active = true;
+    getStageGrades(selectedStage)
+      .then((response) => {
+        if (!active) return;
+        const items = extractList(response, ["grades", "results", "items"]);
+        setGrades(items);
+        setSelectedGrade(entityId(items[0]));
+      })
+      .catch(() => {
+        if (active) {
+          setGrades([]);
+          setSelectedGrade("");
+        }
+      })
+      .finally(() => active && setStructureLoading(false));
+
+    return () => { active = false; };
+  }, [selectedStage]);
+
   const visiblePackages = useMemo(
     () =>
       !selectedCurriculum
         ? apiPackages
         : apiPackages.filter(
-            (pkg) =>
-              String(entityId(pkg.curriculum)) === String(selectedCurriculum),
+            (pkg) => {
+              if (String(entityId(pkg.curriculum)) !== String(selectedCurriculum)) return false;
+              const packageGrades = Array.isArray(pkg.grades) ? pkg.grades : [];
+              return !selectedGrade || packageGrades.length === 0 || packageGrades.some(
+                (grade) => String(entityId(grade)) === String(selectedGrade),
+              );
+            },
           ),
-    [apiPackages, selectedCurriculum],
+    [apiPackages, selectedCurriculum, selectedGrade],
   );
 
   const plans = useMemo(() => {
@@ -131,10 +188,8 @@ const Pricing = () => {
         </p>
 
         {!loading && !error && curriculums.length > 0 && (
-          <div
-            className="mb-8 flex gap-2 overflow-x-auto px-1 pb-2 pt-2 sm:justify-center"
-            aria-label="تصفية الباقات حسب المنهج"
-          >
+          <div className="mx-auto mb-9 max-w-4xl rounded-3xl border border-[#E4EAF2] bg-white/90 p-4 shadow-[0_12px_35px_rgba(18,60,145,0.08)] sm:p-6">
+          <div className="flex gap-2 overflow-x-auto px-1 pb-2 sm:justify-center" aria-label="تصفية الباقات حسب المنهج">
             {curriculums.map((curriculum) => {
               const curriculumId = entityId(curriculum);
               const active = String(selectedCurriculum) === String(curriculumId);
@@ -142,7 +197,14 @@ const Pricing = () => {
                 <motion.button
                   key={curriculumId}
                   type="button"
-                  onClick={() => setSelectedCurriculum(curriculumId)}
+                  onClick={() => {
+                    setSelectedCurriculum(curriculumId);
+                    setStages([]);
+                    setSelectedStage("");
+                    setGrades([]);
+                    setSelectedGrade("");
+                    setStructureLoading(true);
+                  }}
                   animate={{ scale: active ? 1.04 : 1 }}
                   whileTap={{ scale: 0.96 }}
                   transition={{ duration: 0.2 }}
@@ -152,6 +214,50 @@ const Pricing = () => {
                 </motion.button>
               );
             })}
+          </div>
+
+          {(structureLoading || stages.length > 0) && <div className="my-4 h-px bg-[#EDF0F5]" />}
+
+          {structureLoading && stages.length === 0 ? (
+            <div className="flex items-center justify-center gap-2 py-3 text-sm text-[#8C9198]">
+              <Loader2 size={16} className="animate-spin" /> جاري تحميل المراحل...
+            </div>
+          ) : stages.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-[#344054]">
+                <GraduationCap size={18} className="text-[#123C91]" /> اختر المرحلة الدراسية
+              </div>
+              <div className="flex flex-wrap justify-center gap-2" aria-label="تصفية الباقات حسب المرحلة">
+                {stages.map((stage) => {
+                  const stageId = entityId(stage);
+                  const active = String(selectedStage) === String(stageId);
+                  return <button key={stageId} type="button" onClick={() => {
+                    setSelectedStage(stageId);
+                    setGrades([]);
+                    setSelectedGrade("");
+                    setStructureLoading(true);
+                  }} className={`rounded-xl border px-4 py-2 text-sm font-medium transition-all ${active ? "border-[#12C6B0] bg-[#E9FBF8] text-[#087F71] shadow-sm" : "border-[#E4E7EC] bg-[#F9FAFB] text-[#667085] hover:border-[#12C6B0]"}`}>{entityName(stage)}</button>;
+                })}
+              </div>
+            </div>
+          )}
+
+          {selectedStage && (structureLoading || grades.length > 0) && (
+            <div className="mt-5 rounded-2xl bg-[#F6F8FC] p-3 sm:p-4">
+              <div className="mb-3 flex items-center justify-center gap-2 text-xs font-semibold text-[#667085]">
+                <BookOpen size={16} className="text-[#123C91]" /> الصف الدراسي
+              </div>
+              {structureLoading && grades.length === 0 ? <Loader2 size={16} className="mx-auto animate-spin text-[#123C91]" /> : (
+                <div className="flex flex-wrap justify-center gap-2" aria-label="تصفية الباقات حسب الصف">
+                  {grades.map((grade) => {
+                    const gradeId = entityId(grade);
+                    const active = String(selectedGrade) === String(gradeId);
+                    return <button key={gradeId} type="button" onClick={() => setSelectedGrade(gradeId)} className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${active ? "bg-[#123C91] text-white shadow-md shadow-blue-900/15" : "bg-white text-[#575F69] ring-1 ring-[#DCE3EE] hover:text-[#123C91]"}`}>{entityName(grade)}</button>;
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           </div>
         )}
 
@@ -206,18 +312,18 @@ const Pricing = () => {
           </div>
         )}
 
-        {!loading && (
+        {!loading && !structureLoading && (
           <>
           <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={selectedCurriculum || "packages"}
+            key={selectedCurriculum ? `${selectedCurriculum}-${selectedStage}-${selectedGrade}` : "packages"}
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
           >
           {selectedCurriculum && visiblePackages.length === 0 && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 text-sm text-[#667085]">لا توجد باقات متاحة لهذا المنهج حالياً.</motion.p>
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 text-sm text-[#667085]">لا توجد باقات متاحة لهذا الصف حالياً.</motion.p>
           )}
           <div className="flex flex-wrap items-stretch justify-center gap-6">
             {plans.map((plan) => (
