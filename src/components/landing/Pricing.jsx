@@ -11,18 +11,6 @@ import {
 } from "../../services/APIService";
 import { AuthContext } from "../../context/AuthContext";
 
-// باقة التجربة المجانية مش باقة حقيقية من الباك إند، ثابتة تسويقياً فقط
-const FREE_TRIAL_PLAN = {
-  id: "free-trial",
-  title: "التجربة المجانية",
-  sub: "مثالية للتجربة والتعرف على المنصة",
-  price: "مجانية",
-  period: "وصول محدود لمدة 7 أيام",
-  button: "ابدأ الآن",
-  variant: "outline",
-  isPopular: false,
-};
-
 const ANNUAL_DISCOUNT = 0.2;
 const entityId = (value) =>
   typeof value === "string" ? value : value?.id || value?._id || "";
@@ -168,11 +156,9 @@ const Pricing = () => {
   );
 
   const plans = useMemo(() => {
-    if (visiblePackages.length === 0) return [FREE_TRIAL_PLAN];
-    const mapped = visiblePackages.map((pkg) =>
+    return visiblePackages.map((pkg) =>
       mapApiPackage(pkg, isAnnual, pkg.isMostPopular === true),
     );
-    return [FREE_TRIAL_PLAN, ...mapped];
   }, [visiblePackages, isAnnual]);
 
   return (

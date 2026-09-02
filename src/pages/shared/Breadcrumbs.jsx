@@ -58,6 +58,7 @@ const DYNAMIC_LABELS = {
   lessonId: "تفاصيل الحصة",
   studentId: "تفاصيل الطالب",
   assignmentId: "تفاصيل الواجب",
+  curriculumId: "تفاصيل المنهج",
   classroomId: "الفصل",
   sessionId: "تفاصيل الحصة",
   id: "التفاصيل",
@@ -83,7 +84,12 @@ const HIDDEN_SEGMENTS = new Set([
 // زي HIDDEN_SEGMENTS بس لأجزاء المسار الديناميكية (زي :lessonId)، لأن قيمتها
 // بتتغير كل مرة فمينفعش تتحط في HIDDEN_SEGMENTS اللي بتشتغل بالقيمة الثابتة.
 // المفتاح هنا = اسم الـ param نفسه.
-const HIDDEN_PARAM_KEYS = new Set(["lessonId", "groupId", "classroomId"]);
+const HIDDEN_PARAM_KEYS = new Set([
+  "lessonId",
+  "groupId",
+  "classroomId",
+  "curriculumId",
+]);
 
 // ⚠️ مهم: بعض الصفحات مسارها الحقيقي في App.jsx مش نفس شكل الـ URL الحالي
 // (مثال: صفحة القايمة الأساسية مسارها /admin/subscription بالمفرد، لكن باقي
@@ -190,7 +196,9 @@ export default function Breadcrumbs({
         const paramKey = paramKeysByValue[segment];
         const dynamicLabel = breadcrumbLabels[paramKey];
         if (HIDDEN_PARAM_KEYS.has(paramKey) && !dynamicLabel) return null;
-        label = dynamicLabel || DYNAMIC_LABELS[paramKey] || segment;
+        // لا نعرض قيمة route param الخام للمستخدم تحت أي ظرف. لو الصفحة لم
+        // تمرر اسماً واضحاً ولم نضف تسمية عامة بعد، نستخدم تسمية آمنة بدلاً من ID.
+        label = dynamicLabel || DYNAMIC_LABELS[paramKey] || "التفاصيل";
         isDynamic = true;
 
         const suffix = DYNAMIC_LINK_SUFFIX[paramKey];

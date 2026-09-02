@@ -771,7 +771,10 @@ const CreateCurriculumPage = () => {
 
   return (
     <AdminLayout>
-      <Breadcrumbs homeTo="/admin-dashboard" />
+      <Breadcrumbs
+        homeTo="/admin-dashboard"
+        currentPageLabel={isEditing ? "تعديل المنهج" : ""}
+      />
       <div dir="rtl" className="max-w-4xl mx-auto p-4 space-y-6 pb-20">
         {loading ? (
           <div className="flex min-h-80 items-center justify-center">
