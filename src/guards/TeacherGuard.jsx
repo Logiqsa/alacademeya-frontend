@@ -9,9 +9,13 @@ import {
 } from "../utils/roles";
 
 const TeacherGuard = ({ children }) => {
-  const { user } = useContext(AuthContext);
+  const { user, checkingAccountState } = useContext(AuthContext);
 
+  if (checkingAccountState) return null;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "teacher") {
+    return <Navigate to="/account-state" replace />;
+  }
 
   const continuation = getRegistrationContinuation(user);
   if (continuation) {

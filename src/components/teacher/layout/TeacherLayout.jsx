@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import TeacherSidebar from "./TeacherSidebar";
 import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 import { AccountStatusNotice } from "../../account-settings/AccountRegistrationStatus";
+import { AuthContext } from "../../../context/AuthContext";
+import { getDashboardPathByRole } from "../../../utils/roles";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -11,6 +13,7 @@ const getInitialSidebarState = () => {
 };
 
 const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel }) => {
+  const { user } = useContext(AuthContext);
 
   const [isOpen, setIsOpen] = useState(getInitialSidebarState);
 
@@ -41,7 +44,7 @@ const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel }) =
       </div>
       <main className="flex-1 h-full overflow-y-auto p-3 md:p-6">
          <Breadcrumbs
-           homeTo="/teacher-dashboard"
+           homeTo={getDashboardPathByRole(user, "/teacher-dashboard")}
            dynamicLabels={breadcrumbLabels}
            currentPageLabel={breadcrumbCurrentLabel}
          />

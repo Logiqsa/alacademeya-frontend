@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import logo from "../../assets/icons/logo.svg";
 import { AuthContext } from "../../context/AuthContext";
 import { getAuthenticatedDestination } from "../../utils/roles";
+import { getApiErrorMessage, hasApiErrorCode } from "../../services/apiError";
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -41,12 +42,9 @@ const LoginForm = () => {
       });
 
     } catch (error) {
-      const responseCode = String(
-        error.response?.data?.code || error.response?.data?.message || "",
-      ).toUpperCase();
       if (
         error.response?.status === 403 &&
-        responseCode.includes("ACCOUNT_NOT_VERIFIED")
+        hasApiErrorCode(error, "ACCOUNT_NOT_VERIFIED")
       ) {
         const identifier = credentials.email.trim();
         navigate("/check-email", {
@@ -59,8 +57,7 @@ const LoginForm = () => {
         return;
       }
       toast.error(
-        error.response?.data?.message ||
-        "حدث خطأ أثناء تسجيل الدخول، يرجى المحاولة لاحقاً."
+        getApiErrorMessage(error, "حدث خطأ أثناء تسجيل الدخول، يرجى المحاولة لاحقاً.")
       );
     } finally {
       setLoading(false);

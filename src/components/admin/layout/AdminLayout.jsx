@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import AdminSidebar from "./AdminSidebar";
 
-
 const MOBILE_BREAKPOINT = 768;
 
 const getInitialSidebarState = () => {
@@ -10,9 +9,7 @@ const getInitialSidebarState = () => {
 };
 
 const AdminLayout = ({ children }) => {
-
   const [isOpen, setIsOpen] = useState(getInitialSidebarState);
-
 
   const wasAboveBreakpoint = useRef(getInitialSidebarState());
 
@@ -29,19 +26,28 @@ const AdminLayout = ({ children }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
   return (
-    <div className="h-screen flex bg-[#F5F7FB] overflow-hidden">
-      <div className="h-full shrink-0">
-        <AdminSidebar
-          isOpen={isOpen}
-          setIsOpen={setIsOpen}
-        />
+    <div className="flex h-dvh min-h-0 w-full overflow-hidden bg-[#F5F7FB]">
+      <div className="h-full min-h-0 shrink-0 overflow-hidden">
+        <AdminSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
       </div>
 
-      <main className="flex-1 h-full overflow-y-auto p-3 md:p-6">
+      <main className="admin-main-scroll h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 md:p-6">
         {children}
       </main>
-
     </div>
   );
 };

@@ -1,18 +1,19 @@
 
-import { Eye, EyeOff, GraduationCap, Settings, Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
+import NotificationTypeIcon from "../../shared/NotificationTypeIcon";
 
 const NotificationCard = ({
   title,
   description,
   time,
   type,
+  kind,
   isRead,
   onToggleRead,
   onOpen,
   onDelete,
 }) => {
   const isAcademic = type === "academic";
-  const Icon = isAcademic ? GraduationCap : Settings;
 
   return (
     <div
@@ -35,7 +36,7 @@ const NotificationCard = ({
               : "bg-[#E6F1FB] text-[#185FA5]"
           }`}
         >
-          <Icon size={18} />
+          <NotificationTypeIcon kind={kind} category={type} />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -50,16 +51,16 @@ const NotificationCard = ({
           </span>
         </div>
 
-        <button
+        {!isRead && <button
           onClick={(event) => {
             event.stopPropagation();
             onToggleRead();
           }}
           className="flex items-center justify-center sm:justify-start gap-1 text-[13px] sm:text-[14px] text-[#1F2937] hover:text-[#123C91] transition-colors self-start sm:self-center"
         >
-          {isRead ? <EyeOff size={15} /> : <Eye size={15} />}
-          <span>{isRead ? "وضع علامة كغير مقروءة" : "وضع علامة كمقروءة"}</span>
-        </button>
+          <Eye size={15} />
+          <span>وضع علامة كمقروءة</span>
+        </button>}
         <button
           type="button"
           onClick={(event) => {

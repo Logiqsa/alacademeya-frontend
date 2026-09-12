@@ -1,6 +1,15 @@
 export const ADMIN_ROLES = ["admin", "super-admin"];
+export const INSTRUCTOR_ELIGIBLE_ROLES = ["user", "teacher"];
 
 export const isAdminRole = (role) => ADMIN_ROLES.includes(role);
+
+export const canHaveInstructorProfile = (user) =>
+  INSTRUCTOR_ELIGIBLE_ROLES.includes(user?.role);
+
+export const isInstructor = (user) =>
+  canHaveInstructorProfile(user) &&
+  (user?.accountType === "instructor" ||
+    Boolean(user?.instructorId || user?.instructorProfileSlug));
 
 export const APPROVED_STATUSES = ["active", "approved", "accepted"];
 
@@ -93,6 +102,10 @@ export const getDashboardPathByRole = (user, fallback = "/") => {
   const role = user?.role;
   const isApproved = isActivated(user);
   const isPendingReview = isAwaitingApproval(user);
+
+  if (user?.role === "user" && isInstructor(user)) {
+    return isApproved ? "/teacher/earnings" : "/pending";
+  }
 
   if (role === "teacher") {
     return isApproved ? "/teacher-dashboard" : "/pending";

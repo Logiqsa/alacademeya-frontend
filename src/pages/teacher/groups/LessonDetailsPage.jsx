@@ -485,7 +485,6 @@ const LessonDetailsPage = () => {
       }));
       setEndDetailsOpen(false);
     } catch (err) {
-      console.error("endSession details failed:", err.response?.data || err);
       setEndDetailsError(err.response?.data?.message || "تعذر حفظ تفاصيل الحصة وإنهاؤها");
     } finally {
       setLifecycleLoading(false);

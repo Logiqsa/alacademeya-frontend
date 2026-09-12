@@ -10,6 +10,10 @@ import {
   getAdminLocalNotifications,
 } from "../utils/adminLocalNotifications";
 import { filterIncompleteJoinNotifications } from "../utils/incompleteRegistration";
+import {
+  isNotificationRead,
+  NOTIFICATION_RECEIVED_EVENT,
+} from "../utils/notificationTypes";
 
 const extractList = (payload, keys) => {
   let value = payload;
@@ -76,8 +80,7 @@ export function useSidebarUnread() {
               ...remoteNotifications,
               ...(isAdmin ? getAdminLocalNotifications() : []),
             ].some((item) => {
-              const isRead = item.isRead ?? item.read ?? item.status === "read";
-              return !isRead;
+              return !isNotificationRead(item);
             })
           : current.notifications,
     }));
@@ -110,6 +113,7 @@ export function useSidebarUnread() {
       const event = String(eventName).toLowerCase();
       if (event.includes("notification")) {
         setUnread((current) => ({ ...current, notifications: true }));
+        window.dispatchEvent(new CustomEvent(NOTIFICATION_RECEIVED_EVENT, { detail: payload }));
       }
       if (event.includes("message")) {
         const message = payload?.message ?? payload;

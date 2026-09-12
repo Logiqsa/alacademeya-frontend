@@ -6,12 +6,14 @@ import Marquee from "../components/landing/Marquee";
 import FAQ from "../components/landing/FAQ";
 import Pricing from "../components/landing/Pricing";
 import BlogSection from "../components/landing/BlogSection";
+import FeaturedCourses from "../components/landing/FeaturedCourses";
 
 export default function Landing() {
   return (
     <>
       <Hero />
       <Marquee />
+      <FeaturedCourses />
       <Pricing />
       <Stats />
       <Features />

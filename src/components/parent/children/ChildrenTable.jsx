@@ -93,7 +93,6 @@ const ChildrenTable = ({
       toast.success(`تم حذف ${name} بنجاح`);
       onStudentRemoved?.(id);
     } catch (err) {
-      console.error("فشل حذف الابن:", err.response?.data);
       toast.error(err.response?.data?.message || "حدث خطأ أثناء الحذف");
     } finally {
       setDeletingId(null);

@@ -1,109 +1,27 @@
-import React from "react";
+import { formatMoney } from "../../../utils/currencyDisplay";
 
-const Badge = ({ label, type }) => {
-  const map = {
-    green:  "bg-[#00A63E26] text-[#00A63E]",
-    orange: "bg-[#FF8A0026] text-[#FF8A00]",
-    gray:   "bg-gray-100 text-[#8C9198]",
-  };
-  return (
-    <span
-      className={`inline-flex items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${map[type] ?? map.gray}`}
-    >
-      {label}
-    </span>
-  );
+const formatDate = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium" }).format(date);
 };
+const Money = ({ value, currency, emphasized = false }) => <span dir="ltr" className={`inline-block whitespace-nowrap ${emphasized ? "font-bold text-[#087F73]" : ""}`}>{formatMoney(value, currency)}</span>;
+const Field = ({ label, children }) => <div className="flex items-center justify-between gap-3 border-b border-gray-50 py-2.5 last:border-0"><span className="text-xs font-medium text-[#8C9198]">{label}</span><span className="text-sm text-[#575F69]">{children}</span></div>;
 
-const statusBadge = (status) => {
-  if (status === "مكتمل")       return <Badge label={status} type="green" />;
-  if (status === "قيد المراجعة") return <Badge label={status} type="orange" />;
-  return <Badge label={status} type="gray" />;
-};
-
-const MobileField = ({ label, children }) => (
-  <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-50 last:border-b-0">
-    <span className="text-xs font-medium text-[#8C9198] shrink-0">{label}</span>
-    <span className="text-sm text-[#575F69] font-medium text-left">{children}</span>
-  </div>
-);
-
-const HEADERS = [
-  "رقم المعاملة",
-  "التاريخ",
-  "الحساب",
-  "إجمالي الحصص",
-  "الحالة",
-  "المبلغ",
-];
-
-const EarningsTable = ({ transactions = [] }) => {
-  if (transactions.length === 0) {
-    return (
-      <div
-        dir="rtl"
-        className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm py-12 text-center text-sm text-[#575F69]"
-      >
-        لا توجد معاملات
-      </div>
-    );
-  }
-
-  const fmt = (n) => `EGP ${Number(n).toLocaleString("en-EG")}`;
-
-  return (
-    <div dir="rtl" className="w-full">
-      {/* Desktop */}
-      <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right">
-            <thead>
-              <tr style={{ backgroundColor: "#F9FAFA" }}>
-                {HEADERS.map((h) => (
-                  <th
-                    key={h}
-                    className="px-5 py-3.5 text-[#575F69] text-[13px] font-medium whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {transactions.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td className="px-5 py-3.5 text-[#575F69] text-sm font-medium whitespace-nowrap">{t.ref}</td>
-                  <td className="px-5 py-3.5 text-[#575F69] text-sm whitespace-nowrap">{t.date}</td>
-                  <td className="px-5 py-3.5 text-[#575F69] text-sm whitespace-nowrap">{t.account}</td>
-                  <td className="px-5 py-3.5 text-[#575F69] text-sm whitespace-nowrap">{t.sessions} حصص</td>
-                  <td className="px-5 py-3.5">{statusBadge(t.status)}</td>
-                  <td className="px-5 py-3.5 text-[#575F69] text-sm font-semibold whitespace-nowrap">{fmt(t.amount)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Mobile */}
-      <div className="md:hidden space-y-3">
-        {transactions.map((t) => (
-          <div key={t.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[#1A1A1A] font-semibold text-sm">{t.ref}</span>
-              {statusBadge(t.status)}
-            </div>
-            <div className="space-y-0.5">
-              <MobileField label="التاريخ">{t.date}</MobileField>
-              <MobileField label="الحساب">{t.account}</MobileField>
-              <MobileField label="إجمالي الحصص">{t.sessions} حصص</MobileField>
-              <MobileField label="المبلغ">{fmt(t.amount)}</MobileField>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+const EarningsTable = ({ earnings = [] }) => {
+  if (!earnings.length) return <div className="rounded-2xl border border-gray-200 bg-white px-4 py-12 text-center text-sm text-[#667085]">لا توجد عمليات أرباح تطابق الفلاتر الحالية.</div>;
+  return <div className="w-full" dir="rtl">
+    <div className="hidden overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm md:block"><div className="overflow-x-auto">
+      <table className="w-full min-w-190 text-right"><thead className="bg-[#F9FAFB] text-[13px] text-[#575F69]"><tr>{["الدورة", "التاريخ", "الإجمالي", "العمولة", "الصافي", "العملة"].map((header) => <th key={header} scope="col" className="px-5 py-3.5 font-semibold whitespace-nowrap">{header}</th>)}</tr></thead>
+        <tbody className="divide-y divide-gray-100">{earnings.map((earning) => <tr key={earning.id} className="transition-colors hover:bg-gray-50/80">
+          <td className="max-w-70 px-5 py-4 text-sm font-semibold text-[#1F2937]">{earning.course}</td><td className="px-5 py-4 text-sm text-[#575F69] whitespace-nowrap"><span dir="ltr">{formatDate(earning.date)}</span></td><td className="px-5 py-4 text-sm text-[#575F69]"><Money value={earning.gross} currency={earning.currency} /></td><td className="px-5 py-4 text-sm text-[#B54708]"><Money value={earning.commission} currency={earning.currency} /></td><td className="px-5 py-4 text-sm"><Money value={earning.net} currency={earning.currency} emphasized /></td><td className="px-5 py-4"><span dir="ltr" className="rounded-full bg-[#EEF4FF] px-2.5 py-1 text-xs font-bold text-[#123C91]">{earning.currency}</span></td>
+        </tr>)}</tbody></table>
+    </div></div>
+    <div className="space-y-3 md:hidden">{earnings.map((earning) => <article key={earning.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="mb-2 flex items-start justify-between gap-3"><h3 className="text-sm font-bold text-[#1F2937]">{earning.course}</h3><span dir="ltr" className="rounded-full bg-[#EEF4FF] px-2.5 py-1 text-xs font-bold text-[#123C91]">{earning.currency}</span></div>
+      <Field label="التاريخ"><span dir="ltr">{formatDate(earning.date)}</span></Field><Field label="الإجمالي"><Money value={earning.gross} currency={earning.currency} /></Field><Field label="العمولة"><Money value={earning.commission} currency={earning.currency} /></Field><Field label="الصافي"><Money value={earning.net} currency={earning.currency} emphasized /></Field>
+    </article>)}</div>
+  </div>;
 };
 
 export default EarningsTable;

@@ -6,6 +6,10 @@ import {
   getNotificationTarget,
 } from "../../../utils/notificationTarget";
 import {
+  getNotificationPresentation,
+  NOTIFICATION_RECEIVED_EVENT,
+} from "../../../utils/notificationTypes";
+import {
   getNotifications,
   markNotificationRead,
   deleteNotification,
@@ -49,19 +53,11 @@ const timeAgo = (dateValue) => {
 
 // بيوحّد شكل الإشعار مهما كان اسم الحقل جاي من الباك إند (title/message/body)
 const normalizeNotification = (n) => {
-  // Extract the raw title field
-  const rawTitle = n.title ?? n.message ?? n.body ?? n.content ?? "إشعار جديد";
-
-  // Check if it's an object and has translation keys
-  let displayTitle = rawTitle;
-  if (typeof rawTitle === "object" && rawTitle !== null) {
-    // Priority: 'ar' (since your UI is RTL), then 'en'
-    displayTitle = rawTitle.ar || rawTitle.en || "إشعار جديد";
-  }
+  const presentation = getNotificationPresentation(n, "ar");
 
   return {
     id: n.id ?? n._id,
-    title: displayTitle, // Now this is guaranteed to be a string
+    title: presentation.title,
     time: timeAgo(n.createdAt ?? n.date ?? n.timestamp),
     read: n.read ?? n.isRead ?? false,
     raw: n,
@@ -94,7 +90,13 @@ const NotificationsSection = () => {
   }, []);
 
   useEffect(() => {
-    fetchNotifications();
+    const timer = window.setTimeout(fetchNotifications, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchNotifications]);
+
+  useEffect(() => {
+    window.addEventListener(NOTIFICATION_RECEIVED_EVENT, fetchNotifications);
+    return () => window.removeEventListener(NOTIFICATION_RECEIVED_EVENT, fetchNotifications);
   }, [fetchNotifications]);
 
   const handleNotificationClick = async (notif) => {

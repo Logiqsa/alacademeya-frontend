@@ -18,7 +18,7 @@ const CheckEmailPage = () => {
   const [email, setEmail] = useState(registrationEmail);
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [alreadyVerified, setAlreadyVerified] = useState(() => {
+  const [alreadyVerified] = useState(() => {
     const currentEmail = String(user?.email || "").trim().toLowerCase();
     return Boolean(
       currentEmail &&
@@ -50,28 +50,12 @@ const CheckEmailPage = () => {
 
     setSending(true);
     try {
-      const response = await resendVerificationLink(normalizedEmail);
-      const responseCode = String(
-        response.data?.code || response.data?.message || "",
-      ).toUpperCase();
-      if (responseCode.includes("ACCOUNT_ALREADY_VERIFIED")) {
-        setAlreadyVerified(true);
-        toast.success("هذا البريد الإلكتروني مفعّل بالفعل.");
-        return;
-      }
+      await resendVerificationLink(normalizedEmail);
       setCooldown(RESEND_COOLDOWN);
       toast.success(
         "إذا كان الحساب موجوداً وغير مفعّل، فستصلك رسالة تحقق جديدة.",
       );
-    } catch (error) {
-      const responseCode = String(
-        error.response?.data?.code || error.response?.data?.message || "",
-      ).toUpperCase();
-      if (responseCode.includes("ACCOUNT_ALREADY_VERIFIED")) {
-        setAlreadyVerified(true);
-        toast.success("هذا البريد الإلكتروني مفعّل بالفعل.");
-        return;
-      }
+    } catch {
       toast.error("تعذر إرسال رسالة التحقق حالياً، حاول مرة أخرى لاحقاً.");
     } finally {
       setSending(false);

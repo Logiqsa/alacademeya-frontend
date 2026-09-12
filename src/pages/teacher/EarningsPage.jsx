@@ -1,108 +1,154 @@
-import { useState } from "react";
-import { DollarSign } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, BarChart3, Filter, History, RefreshCw } from "lucide-react";
 import TeacherLayout from "../../components/teacher/layout/TeacherLayout";
 import EarningsStatsBar from "../../components/teacher/earnings/EarningsStatsBar";
 import EarningsFilters from "../../components/teacher/earnings/EarningsFilters";
 import EarningsTable from "../../components/teacher/earnings/EarningsTable";
+import EarningsTimelineChart from "../../components/teacher/earnings/EarningsTimelineChart";
+import CourseEarningsAnalytics from "../../components/teacher/earnings/CourseEarningsAnalytics";
 import Paginationn from "../../components/teacher/groups/students/Paginationn";
+import LoadingState from "../../components/shared/LoadingState";
+import { getSavedPageSize } from "../../utils/tablePagination";
+import { getApiErrorMessage } from "../../services/apiError";
+import {
+  getEarningsCourses,
+  getEarningsHistory,
+  getEarningsSummary,
+  getEarningsTimeline,
+} from "../../features/instructor-earnings/api/earningsApi";
 
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_TRANSACTIONS = [
-  { id: 1, ref: "145-f578", date: "01/06/2026", account: "01012547896", sessions: 8, status: "قيد المراجعة", amount: 3000 },
-  { id: 2, ref: "145-f578", date: "01/06/2026", account: "01012547896", sessions: 8, status: "مكتمل",        amount: 1200 },
-  { id: 3, ref: "145-f578", date: "01/06/2026", account: "01012547896", sessions: 8, status: "مكتمل",        amount: 4200 },
-  { id: 4, ref: "d85-98745", date: "01/06/2026", account: "01012547896", sessions: 8, status: "مكتمل",       amount: 700 },
-  { id: 5, ref: "a12-33201", date: "15/05/2026", account: "01012547896", sessions: 5, status: "مكتمل",       amount: 2500 },
-  { id: 6, ref: "b77-10293", date: "10/05/2026", account: "01099887766", sessions: 6, status: "قيد المراجعة", amount: 1800 },
-];
-
-const PAGE_SIZE = 6;
+const EMPTY_FILTERS = { from: "", to: "", courseId: "", currency: "" };
+const initialSection = (data) => ({ data, loading: true, error: "" });
 
 const EarningsPage = () => {
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("جميع الحالات");
-  const [filterTime, setFilterTime] = useState("جميع الأوقات");
+  const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [interval, setIntervalValue] = useState("daily");
   const [page, setPage] = useState(1);
-
-  const filtered = MOCK_TRANSACTIONS.filter((t) => {
-    const matchSearch = t.ref.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "جميع الحالات" || t.status === filterStatus;
-    return matchSearch && matchStatus;
+  const [pageSize, setPageSize] = useState(() => getSavedPageSize(10));
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [sections, setSections] = useState({
+    summary: initialSection(null),
+    history: initialSection({ items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } }),
+    courses: initialSection([]),
+    timeline: initialSection([]),
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const query = useMemo(() => Object.fromEntries(Object.entries(filters).filter(([, value]) => value)), [filters]);
+  const setPending = useCallback((names) => setSections((current) => {
+    const next = { ...current };
+    names.forEach((name) => { next[name] = { ...current[name], loading: true, error: "" }; });
+    return next;
+  }), []);
+  const settle = useCallback((name, result, fallback) => setSections((current) => ({
+    ...current,
+    [name]: result.status === "fulfilled"
+      ? { data: result.value, loading: false, error: "" }
+      : { ...current[name], loading: false, error: getApiErrorMessage(result.reason, fallback) },
+  })), []);
 
-  const stats = {
-    total:     MOCK_TRANSACTIONS.reduce((s, t) => s + t.amount, 0),
-    available: 13000,
-    withdrawn: 7000,
-    pending:   MOCK_TRANSACTIONS.filter((t) => t.status === "قيد المراجعة").reduce((s, t) => s + t.amount, 0),
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([getEarningsSummary(query)]).then(([summary]) => {
+      if (!active) return;
+      settle("summary", summary, "تعذر تحميل ملخص الأرباح");
+    });
+    return () => { active = false; };
+  }, [query, refreshKey, settle]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([getEarningsHistory({ ...query, page, limit: pageSize })]).then(([history]) => {
+      if (!active) return;
+      settle("history", history, "تعذر تحميل سجل الأرباح");
+    });
+    return () => { active = false; };
+  }, [page, pageSize, query, refreshKey, settle]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([getEarningsCourses(query)]).then(([courses]) => {
+      if (!active) return;
+      settle("courses", courses, "تعذر تحميل أداء الدورات");
+    });
+    return () => { active = false; };
+  }, [query, refreshKey, settle]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([getEarningsTimeline({ ...query, interval })]).then(([timeline]) => {
+      if (!active) return;
+      settle("timeline", timeline, "تعذر تحميل مخطط الأرباح");
+    });
+    return () => { active = false; };
+  }, [interval, query, refreshKey, settle]);
+
+  const retrySection = async (name) => {
+    setPending([name]);
+    const requests = {
+      summary: () => getEarningsSummary(query),
+      history: () => getEarningsHistory({ ...query, page, limit: pageSize }),
+      courses: () => getEarningsCourses(query),
+      timeline: () => getEarningsTimeline({ ...query, interval }),
+    };
+    const fallbacks = { summary: "تعذر تحميل ملخص الأرباح", history: "تعذر تحميل سجل الأرباح", courses: "تعذر تحميل أداء الدورات", timeline: "تعذر تحميل مخطط الأرباح" };
+    const [result] = await Promise.allSettled([requests[name]()]);
+    settle(name, result, fallbacks[name]);
   };
 
-  const fmt = (n) => `EGP ${Number(n).toLocaleString("en-EG")}`;
+  const courseOptions = useMemo(() => {
+    const values = [...sections.courses.data, ...sections.history.data.items.map((item) => ({ id: item.courseId, title: item.course }))];
+    return [...new Map(values.filter((item) => item.id).map((item) => [String(item.id), item])).values()];
+  }, [sections.courses.data, sections.history.data.items]);
+  const currencyOptions = useMemo(() => [...new Set([
+    ...(sections.summary.data?.currencies || []).map((item) => item.currency),
+    ...sections.courses.data.map((item) => item.currency),
+    ...sections.history.data.items.map((item) => item.currency),
+  ].filter(Boolean))].sort(), [sections]);
+  const anyLoading = Object.values(sections).some((section) => section.loading);
 
-  return (
-    <TeacherLayout>
-      <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right space-y-5" dir="rtl">
+  const applyFilters = () => { setPending(["summary", "history", "courses", "timeline"]); setPage(1); setFilters({ ...draftFilters }); setRefreshKey((value) => value + 1); };
+  const resetFilters = () => { setPending(["summary", "history", "courses", "timeline"]); setDraftFilters(EMPTY_FILTERS); setPage(1); setFilters(EMPTY_FILTERS); setRefreshKey((value) => value + 1); };
+  const changeInterval = (value) => { if (value === interval) return; setPending(["timeline"]); setIntervalValue(value); };
 
-        {/* ── Page Header ── */}
-        <div>
-          <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">الأرباح والمدفوعات</h1>
-          <p className="text-[16px] font-normal leading-6 text-[#575F69]">متابعة أرباحك وسحب المستحقات</p>
+  return <TeacherLayout>
+    <main className="mx-auto w-full max-w-400 pb-8 text-right font-['IBM_Plex_Sans_Arabic']" dir="rtl">
+      <header className="relative mb-6 overflow-hidden rounded-2xl bg-linear-to-l from-[#123C91] to-[#1E55B3] px-5 py-6 text-white shadow-[0_10px_30px_rgba(18,60,145,0.18)] sm:px-7 sm:py-8">
+        <div className="absolute -left-10 -top-14 h-40 w-40 rounded-full bg-[#12C6B0]/20 blur-sm" aria-hidden="true" />
+        <div className="absolute -bottom-16 left-24 h-32 w-32 rounded-full bg-white/8" aria-hidden="true" />
+        <div className="relative flex items-center gap-4">
+          <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-white/12 ring-1 ring-white/15"><BarChart3 size={25} /></div>
+          <div><p className="mb-1 text-xs font-semibold text-[#8DE9DE]">لوحة المحاضر</p><h1 className="text-2xl font-bold sm:text-3xl">أرباح الدورات</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">تابع مبيعات دوراتك وعمولة المنصة وصافي أرباحك من مكان واحد.</p></div>
         </div>
+      </header>
 
-        {/* ── Hero withdrawal card ── */}
-        <div
-          className="rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-          style={{ background: "#1F2937" }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-              <DollarSign size={24} className="text-white" />
-            </div>
-            <div className="text-right">
-              <p className="text-white/70 text-sm mb-2">متاح للطلب</p>
-              <p className="text-white text-2xl font-bold mb-2">{fmt(stats.available)}</p>
-              <p className="text-white/60 text-xs mt-1">المبلغ الذي يمكنك طلبه من الإدارة</p>
-            </div>
-          </div>
-          <button className="px-5 py-2.5 rounded-lg bg-white text-[#123C91] text-sm font-semibold hover:bg-gray-100 transition-colors shrink-0">
-            طلب سحب الأرباح
-          </button>
-        </div>
-
-        {/* ── Stats Bar ── */}
-        <EarningsStatsBar {...stats} />
-
-        {/* ── Filters ── */}
-        <div className="bg-white border border-[#E5E5E5] shadow-sm rounded-2xl p-5">
-          <EarningsFilters
-            search={search}
-            onSearchChange={(v) => { setSearch(v); setPage(1); }}
-            filterStatus={filterStatus}
-            onFilterStatusChange={(v) => { setFilterStatus(v); setPage(1); }}
-            filterTime={filterTime}
-            onFilterTimeChange={(v) => { setFilterTime(v); setPage(1); }}
-          />
-        </div>
-
-        {/* ── Pagination ── */}
-        <Paginationn
-          page={page}
-          totalPages={totalPages}
-          onChange={setPage}
-          totalItems={filtered.length}
-          displayedCount={paginated.length}
-          unitLabel="معاملة"
-        />
-
-        {/* ── Table ── */}
-        <EarningsTable transactions={paginated} />
+      <div role="region" aria-labelledby="earnings-filters-title" className="mb-6 rounded-2xl border border-[#E3E8EF] bg-white p-4 shadow-[0_4px_16px_rgba(16,24,40,0.04)] sm:p-5">
+        <SectionHeading id="earnings-filters-title" icon={Filter} title="تصفية النتائج" description="خصص البيانات حسب الفترة أو الدورة أو العملة" />
+        <EarningsFilters filters={draftFilters} courses={courseOptions} currencies={currencyOptions} onChange={(key, value) => setDraftFilters((current) => ({ ...current, [key]: value }))} onApply={applyFilters} onReset={resetFilters} loading={anyLoading} />
       </div>
-    </TeacherLayout>
-  );
+
+      <div className="space-y-6">
+        <SectionState section={sections.summary} retry={() => retrySection("summary")}><EarningsStatsBar summary={sections.summary.data} /></SectionState>
+        <SectionState section={sections.timeline} retry={() => retrySection("timeline")}><EarningsTimelineChart points={sections.timeline.data} interval={interval} onIntervalChange={changeInterval} /></SectionState>
+        <SectionState section={sections.courses} retry={() => retrySection("courses")}><CourseEarningsAnalytics courses={sections.courses.data} /></SectionState>
+        <div role="region" aria-labelledby="earnings-history-title" className="space-y-4">
+          <SectionHeading id="earnings-history-title" icon={History} title="سجل الأرباح" description="تفاصيل كل عملية بيع وخصم عمولة المنصة" />
+          <SectionState section={sections.history} retry={() => retrySection("history")}>
+            <EarningsTable earnings={sections.history.data.items} />
+            {sections.history.data.pagination.totalPages > 1 && <div className="mt-3"><Paginationn page={sections.history.data.pagination.page || page} totalPages={sections.history.data.pagination.totalPages} onChange={(value) => { setPending(["history"]); setPage(value); }} totalItems={sections.history.data.pagination.total} displayedCount={sections.history.data.items.length} unitLabel="عملية" pageSize={pageSize} onPageSizeChange={(value) => { setPending(["history"]); setPage(1); setPageSize(value); }} /></div>}
+          </SectionState>
+        </div>
+      </div>
+    </main>
+  </TeacherLayout>;
+};
+
+const SectionHeading = ({ id, icon: Icon, title, description }) => <div className="mb-4 flex items-center gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#EEF4FF] text-[#123C91]"><Icon size={19} /></div><div><h2 id={id} className="text-base font-bold text-[#1F2937] sm:text-lg">{title}</h2><p className="mt-0.5 text-xs text-[#667085] sm:text-sm">{description}</p></div></div>;
+
+const SectionState = ({ section, retry, children }) => {
+  if (section.loading) return <div className="rounded-2xl border border-gray-200 bg-white"><LoadingState compact /></div>;
+  if (section.error) return <div role="alert" className="flex flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-700"><AlertCircle size={24} /><span>{section.error}</span><button type="button" onClick={retry} className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 font-semibold text-[#123C91] shadow-sm"><RefreshCw size={15} />إعادة المحاولة</button></div>;
+  return children;
 };
 
 export default EarningsPage;

@@ -6,18 +6,10 @@ import logo from "../../assets/icons/logo.svg";
 import { AuthContext } from "../../context/AuthContext";
 import { verifyAccount } from "../../services/APIService";
 import { getAuthenticatedDestination } from "../../utils/roles";
+import { hasApiErrorCode } from "../../services/apiError";
 
 const invalidLinkError = (error) => {
-  const status = error.response?.status;
-  const message = String(
-    error.response?.data?.code || error.response?.data?.message || "",
-  ).toUpperCase();
-  return (
-    [400, 404, 409, 410, 422].includes(status) ||
-    ["INVALID", "EXPIRED", "CONSUMED", "REPLACED", "ALREADY_USED"].some(
-      (key) => message.includes(key),
-    )
-  );
+  return hasApiErrorCode(error, "VERIFICATION_LINK_INVALID_OR_EXPIRED");
 };
 
 const readAndRemoveToken = () => {

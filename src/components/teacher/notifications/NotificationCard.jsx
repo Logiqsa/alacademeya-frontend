@@ -1,8 +1,8 @@
-import { Check, GraduationCap, Settings, Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
+import NotificationTypeIcon from "../../shared/NotificationTypeIcon";
 
-const NotificationCard = ({ title, description, time, type, isRead, onToggleRead, onOpen, onDelete }) => {
+const NotificationCard = ({ title, description, time, type, kind, isRead, onToggleRead, onOpen, onDelete }) => {
   const isAcademic = type === "academic";
-  const Icon = isAcademic ? GraduationCap : Settings;
 
   return (
     <div
@@ -23,7 +23,7 @@ const NotificationCard = ({ title, description, time, type, isRead, onToggleRead
             isAcademic ? "bg-[#E1F5EE] text-[#0F6E56]" : "bg-[#E6F1FB] text-[#185FA5]"
           }`}
         >
-          <Icon size={18} />
+          <NotificationTypeIcon kind={kind} category={type} />
         </div>
 
         <div className="flex-1 min-w-0">

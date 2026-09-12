@@ -471,17 +471,12 @@ const CreateCurriculumPage = () => {
     }
   };
   const logSaveError = (err) => {
-    console.group("Curriculum save error");
-    console.error("Step:", err.saveStep || "Unknown step");
-    console.error("Toast message:", apiErrorMessage(err));
-    console.error("HTTP status:", err.response?.status);
-    console.error("HTTP status text:", err.response?.statusText);
-    console.error("Request method:", err.config?.method?.toUpperCase());
-    console.error("Request URL:", err.config?.baseURL ? `${err.config.baseURL}${err.config.url}` : err.config?.url);
-    console.error("Payload:", err.savePayload || err.config?.data);
-    console.error("Response data:", err.response?.data);
-    console.error("Full error:", err);
-    console.groupEnd();
+    if (!import.meta.env.DEV) return;
+    console.error("Curriculum save failed", {
+      step: err.saveStep || "unknown",
+      code: err.response?.data?.code || "unknown",
+      status: err.response?.status || null,
+    });
   };
   const normalizedName = (name) =>
     typeof name === "string"

@@ -1,12 +1,9 @@
 import {
   Check,
-  Bell,
   Eye,
-  EyeOff,
-  GraduationCap,
-  Settings,
   Trash2,
 } from "lucide-react";
+import NotificationTypeIcon from "../../shared/NotificationTypeIcon";
 
 const getLocalizedText = (value, lang = "ar") => {
   if (!value) return "";
@@ -25,6 +22,7 @@ const NotificationCard = ({
   description,
   time,
   type,
+  kind,
   isRead,
   onToggleRead,
   onOpen,
@@ -34,8 +32,6 @@ const NotificationCard = ({
   compact = false,
 }) => {
   const isAcademic = type === "academic";
-
-  const Icon = compact ? Bell : isAcademic ? GraduationCap : Settings;
 
   const safeTitle = getLocalizedText(title, "ar");
   const safeDescription = getLocalizedText(description, "ar");
@@ -83,7 +79,7 @@ const NotificationCard = ({
             }
           `}
         >
-          <Icon size={compact ? 17 : 18} />
+          <NotificationTypeIcon kind={kind} category={type} compact={compact} />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -137,7 +133,7 @@ const NotificationCard = ({
           </span>
         </div>
 
-        <button
+        {!isRead && <button
           type="button"
           onClick={(event) => {
             event.stopPropagation();
@@ -152,18 +148,14 @@ const NotificationCard = ({
         >
           {compact ? (
             <Check size={18} strokeWidth={2.5} />
-          ) : isRead ? (
-            <EyeOff size={15} />
           ) : (
             <Eye size={15} />
           )}
 
           {!compact && <span>
-            {isRead
-              ? "وضع علامة كغير مقروءة"
-              : "وضع علامة كمقروءة"}
+            وضع علامة كمقروءة
           </span>}
-        </button>
+        </button>}
         {!compact && <button
           type="button"
           onClick={(event) => {

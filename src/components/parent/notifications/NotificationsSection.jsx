@@ -1,6 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, BellRing, GraduationCap, Settings } from "lucide-react";
+import {
+  Bell,
+  BellRing,
+  GraduationCap,
+  LoaderCircle,
+  Settings,
+  Trash2,
+} from "lucide-react";
 import NotificationCard from "./NotificationCard";
 import {
   getNotifications,
@@ -12,6 +19,11 @@ import {
   getNotificationChatState,
   getNotificationTarget,
 } from "../../../utils/notificationTarget";
+import {
+  getNotificationPresentation,
+  extractNotificationList,
+  NOTIFICATION_RECEIVED_EVENT,
+} from "../../../utils/notificationTypes";
 
 const tabs = [
   { key: "all", label: "الكل", icon: Bell },
@@ -26,31 +38,40 @@ const NotificationsSection = ({ onStatsUpdate }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deletingRead, setDeletingRead] = useState(false);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getNotifications();
-      setNotifications(res.data.data || []);
-      onStatsUpdate?.(res.data.data || []);
-    } catch (err) {
+      const list = extractNotificationList(res.data);
+      setNotifications(list);
+      onStatsUpdate?.(list);
+    } catch {
       setError("فشل في تحميل الإشعارات");
     } finally {
       setLoading(false);
     }
-  };
+  }, [onStatsUpdate]);
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    const timer = window.setTimeout(fetchNotifications, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchNotifications]);
+
+  useEffect(() => {
+    window.addEventListener(NOTIFICATION_RECEIVED_EVENT, fetchNotifications);
+    return () => window.removeEventListener(NOTIFICATION_RECEIVED_EVENT, fetchNotifications);
+  }, [fetchNotifications]);
 
   const handleToggleRead = async (notification) => {
+    if (notification.isRead) return;
     try {
-      if (!notification.isRead) {
-        await markNotificationRead(notification._id);
-      }
+      await markNotificationRead(notification._id ?? notification.id);
       const updated = notifications.map((n) =>
-        n._id === notification._id ? { ...n, isRead: !n.isRead } : n,
+        (n._id ?? n.id) === (notification._id ?? notification.id)
+          ? { ...n, isRead: true }
+          : n,
       );
       setNotifications(updated);
       onStatsUpdate?.(updated);
@@ -82,14 +103,38 @@ const NotificationsSection = ({ onStatsUpdate }) => {
     try {
       await deleteNotification(notification._id ?? notification.id);
       const id = notification._id ?? notification.id;
-      const updated = notifications.filter(
-        (n) => (n._id ?? n.id) !== id,
-      );
+      const updated = notifications.filter((n) => (n._id ?? n.id) !== id);
       setNotifications(updated);
       onStatsUpdate?.(updated);
     } catch {
       setError("فشل في حذف الإشعار");
     }
+  };
+
+  const handleDeleteRead = async () => {
+    const readNotifications = notifications.filter(
+      (notification) => notification.isRead,
+    );
+    if (!readNotifications.length || deletingRead) return;
+    setDeletingRead(true);
+    const results = await Promise.allSettled(
+      readNotifications.map((notification) =>
+        deleteNotification(notification._id ?? notification.id),
+      ),
+    );
+    const deletedIds = new Set(
+      readNotifications
+        .filter((_, index) => results[index].status === "fulfilled")
+        .map((notification) => notification._id ?? notification.id),
+    );
+    const updated = notifications.filter(
+      (notification) => !deletedIds.has(notification._id ?? notification.id),
+    );
+    setNotifications(updated);
+    onStatsUpdate?.(updated);
+    if (deletedIds.size !== readNotifications.length)
+      setError("تعذر حذف بعض الإشعارات المقروءة");
+    setDeletingRead(false);
   };
 
   const filtered = notifications.filter((n) => {
@@ -109,14 +154,31 @@ const NotificationsSection = ({ onStatsUpdate }) => {
         <h2 className="text-[16px] font-medium text-[#1F2937]">
           جميع الإشعارات
         </h2>
-        {notifications.some((n) => !n.isRead) && (
-          <button
-            onClick={handleMarkAllRead}
-            className="text-[13px] text-[#123C91] hover:underline"
-          >
-            تعليم الكل كمقروء
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {notifications.some((n) => !n.isRead) && (
+            <button
+              onClick={handleMarkAllRead}
+              className="text-[13px] text-[#123C91] hover:underline"
+            >
+              تعليم الكل كمقروء
+            </button>
+          )}
+          {notifications.some((n) => n.isRead) && (
+            <button
+              type="button"
+              onClick={handleDeleteRead}
+              disabled={deletingRead}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-[13px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+            >
+              {deletingRead ? (
+                <LoaderCircle size={14} className="animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+              حذف المقروءة
+            </button>
+          )}
+        </div>
       </div>
 
       <p className="text-[14px] sm:text-[16px] text-[#6B7280] mb-5">
@@ -148,11 +210,13 @@ const NotificationsSection = ({ onStatsUpdate }) => {
         <div className="text-center py-10 text-[#6B7280]">لا توجد إشعارات</div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((n) => (
+          {filtered.map((n) => {
+            const presentation = getNotificationPresentation(n, "ar");
+            return (
             <NotificationCard
-              key={n._id}
-              title={n.title?.ar || n.title}
-              description={n.body?.ar || n.body}
+              key={n._id ?? n.id}
+              title={presentation.title}
+              description={presentation.description}
               time={new Date(n.createdAt).toLocaleDateString("ar-EG", {
                 year: "numeric",
                 month: "long",
@@ -160,17 +224,19 @@ const NotificationsSection = ({ onStatsUpdate }) => {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
-              type={
-                n.type === "chat" || n.type === "subscription"
-                  ? "system"
-                  : "academic"
-              }
+              type={presentation.category}
+              kind={presentation.kind}
               isRead={n.isRead}
               onToggleRead={() => handleToggleRead(n)}
-              onOpen={getNotificationTarget(n, "parent") ? () => handleOpen(n) : undefined}
+              onOpen={
+                getNotificationTarget(n, "parent")
+                  ? () => handleOpen(n)
+                  : undefined
+              }
               onDelete={() => handleDelete(n)}
             />
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

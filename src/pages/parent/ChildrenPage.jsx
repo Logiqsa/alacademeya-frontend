@@ -77,8 +77,8 @@ const ChildrenPage = () => {
               .map(String),
           ),
         );
-      } catch (err) {
-        console.error("فشل تحميل بيانات الأبناء:", err.response?.data);
+      } catch {
+        // Keep the existing empty state without exposing private response data.
       } finally {
         setLoading(false);
       }

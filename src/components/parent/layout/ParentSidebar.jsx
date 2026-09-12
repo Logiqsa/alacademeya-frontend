@@ -210,11 +210,11 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
         </button>
         <button
           onClick={handleLogout}
-          className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${
+          className={`flex w-full items-center rounded-lg bg-[#991B1B] px-3 py-2.5 font-['IBM_Plex_Sans_Arabic'] text-[16px] font-semibold leading-4 text-white transition-all hover:bg-[#7F1D1D] ${
             isOpen ? "gap-3 justify-start" : "justify-center"
           }`}
         >
-          <img src={logoutIcon} alt="logout" className="w-5 h-5" />
+          <img src={logoutIcon} alt="logout" className="h-5 w-5 brightness-0 invert" />
 
           {isOpen && <span className="text-sm">تسجيل الخروج</span>}
         </button>

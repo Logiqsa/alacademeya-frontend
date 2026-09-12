@@ -31,11 +31,14 @@ export const getNotificationChatState = (notification) => {
 };
 
 export const getNotificationTarget = (notification, role) => {
+  const eventType = notificationTypeOf(notification);
   const type = String(notification.type ?? "").toLowerCase();
   const roomId = firstId(notification, ["roomId", "room", "chatRoom"]);
   const assignmentId = firstId(notification, ["assignmentId", "assignment"]);
   const classroomId = firstId(notification, ["classroomId", "classroom"]);
   const sessionId = firstId(notification, ["sessionId", "session"]);
+  const courseId = firstId(notification, ["courseId", "course"]);
+  const courseSlug = firstId(notification, ["courseSlug", "slug"]);
 
   if (["chat", "message", "new_message"].includes(type) || roomId) {
     return role === "teacher" ? "/teacher/messages" : `/${role}/messages`;
@@ -49,6 +52,34 @@ export const getNotificationTarget = (notification, role) => {
     notification.data?.url;
   if (typeof explicitTarget === "string" && explicitTarget.startsWith("/")) {
     return explicitTarget;
+  }
+
+  if (["WITHDRAWAL_REQUEST_CREATED", "WITHDRAWAL_APPROVED", "WITHDRAWAL_REJECTED", "WITHDRAWAL_PAID"].includes(eventType)) {
+    return role === "admin" ? "/admin/course-finances" : "/teacher/earnings";
+  }
+  if (eventType === "NEW_WITHDRAWAL_REQUEST") {
+    return role === "admin" ? "/admin/course-finances" : "/teacher/earnings";
+  }
+
+  if (eventType === "CERTIFICATE_ISSUED") {
+    return role === "student" && courseId
+      ? `/certificate/${encodeURIComponent(courseId)}`
+      : role === "student" ? "/student-dashboard/courses" : null;
+  }
+
+  if (["COURSE_PURCHASE_SUCCESS", "QUIZ_PASSED", "QUIZ_ATTEMPTS_EXHAUSTED", "COURSE_COMPLETED"].includes(eventType)) {
+    if (role === "student") return courseId ? `/learn/${encodeURIComponent(courseId)}` : "/student-dashboard/courses";
+    if (role === "parent") return courseSlug ? `/courses/${encodeURIComponent(courseSlug)}` : "/courses";
+  }
+
+  if (["NEW_COURSE_SALE", "NEW_COURSE_REVIEW"].includes(eventType)) {
+    if (role === "teacher") return courseId ? `/teacher/courses/${encodeURIComponent(courseId)}` : "/teacher/courses";
+    if (role === "admin") return courseId ? `/admin/courses/${encodeURIComponent(courseId)}` : "/admin/courses";
+  }
+
+  if (eventType === "COURSE_ACCESS_GRANT_FAILED") {
+    if (role === "admin") return courseId ? `/admin/courses/${encodeURIComponent(courseId)}` : "/admin/courses";
+    if (role === "student") return courseSlug ? `/courses/${encodeURIComponent(courseSlug)}` : "/student-dashboard/courses";
   }
 
   if (assignmentId || ["assignment", "submission", "grading", "grade"].includes(type)) {
@@ -81,3 +112,4 @@ export const getNotificationTarget = (notification, role) => {
 
   return null;
 };
+import { notificationTypeOf } from "./notificationTypes.js";

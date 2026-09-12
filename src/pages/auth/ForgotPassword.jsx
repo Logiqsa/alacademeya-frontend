@@ -67,7 +67,6 @@ export default function ForgotPassword() {
       setModalStep("otp");
       setShowResetModal(true);
     } catch (err) {
-      console.error("خطأ من السيرفر (forgot-password):", err.response?.data);
       toast.error(err.response?.data?.message || "حدث خطأ أثناء إرسال الكود");
     } finally {
       setLoading(false);
@@ -120,12 +119,10 @@ export default function ForgotPassword() {
 
     setVerifyLoading(true);
     try {
-      const verifyRes = await verifyPasswordResetCode(code);
-      console.log("Verify Response:", verifyRes.data);
+      await verifyPasswordResetCode(code);
       toast.success("تم التحقق من الكود بنجاح");
       setModalStep("password");
     } catch (err) {
-      console.error("Verify Code Error:", err.response?.data);
       toast.error(err.response?.data?.message || "رمز التحقق غير صحيح");
     } finally {
       setVerifyLoading(false);
@@ -156,20 +153,16 @@ export default function ForgotPassword() {
 
     setResetLoading(true);
     try {
-      const resetRes = await resetPassword({
+      await resetPassword({
         email,
         newPassword: password,
       });
 
-      console.log("Reset Response:", resetRes.data);
 
       toast.success("تم تغيير كلمة المرور بنجاح");
       setShowResetModal(false);
       navigate("/login");
     } catch (err) {
-      console.error("Status:", err.response?.status);
-      console.error("Error:", err.response?.data);
-
       toast.error(
         err.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور",
       );
@@ -187,7 +180,6 @@ export default function ForgotPassword() {
       setOtp(new Array(OTP_LENGTH).fill(""));
       setTimer(TIMER_START);
     } catch (err) {
-      console.error("Resend Error:", err.response?.data);
       toast.error(err.response?.data?.message || "حدث خطأ أثناء إعادة الإرسال");
     } finally {
       setResendLoading(false);

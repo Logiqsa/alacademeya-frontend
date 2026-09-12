@@ -1,6 +1,5 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle, Check, Clock } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { CheckCircle, Check } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
 
 const steps = [

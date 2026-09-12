@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -488,53 +489,6 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
             getAllGrades({ page: 1, limit: 1000 }),
           ]);
 
-        // ⚠️ debug مؤقت: افتحي الكونسول وشوفي شكل الـ raw data فعليًا.
-        // لو الـ array اللي جوّاها فاضي أو الحقول مختلفة، ده معناه extractList
-        // محتاجة keys إضافية تتظبط على شكل الـ response الحقيقي عندك.
-        if (allRes.status === "fulfilled")
-          console.log(
-            "[AddStudentModal] getAllStudents raw:",
-            allRes.value?.data,
-          );
-        else
-          console.error(
-            "[AddStudentModal] getAllStudents rejected:",
-            allRes.reason,
-          );
-
-        if (gradesRes.status === "fulfilled")
-          console.log(
-            "[AddStudentModal] getAllGrades raw:",
-            gradesRes.value?.data,
-          );
-        else
-          console.error(
-            "[AddStudentModal] getAllGrades rejected:",
-            gradesRes.reason,
-          );
-
-        if (curriculumsRes.status === "fulfilled")
-          console.log(
-            "[AddStudentModal] getCurriculums raw:",
-            curriculumsRes.value?.data,
-          );
-        else
-          console.error(
-            "[AddStudentModal] getCurriculums rejected:",
-            curriculumsRes.reason,
-          );
-
-        if (classroomRes.status === "rejected")
-          console.error(
-            "[AddStudentModal] getClassroomStudents rejected:",
-            classroomRes.reason,
-          );
-        if (packagesRes.status === "rejected")
-          console.error(
-            "[AddStudentModal] getAllPackages rejected:",
-            packagesRes.reason,
-          );
-
         let all =
           allRes.status === "fulfilled"
             ? extractList(allRes.value, ["students", "results", "items"])
@@ -547,16 +501,9 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
               page: 1,
               limit: 1000,
             });
-            console.log(
-              "[AddStudentModal] getUsers(student) fallback raw:",
-              usersResponse?.data,
-            );
             all = extractList(usersResponse, ["users", "results", "items"]);
-          } catch (usersError) {
-            console.error(
-              "[AddStudentModal] getUsers student fallback failed:",
-              usersError,
-            );
+          } catch {
+            // The primary student endpoint remains the source of truth.
           }
         }
 
@@ -660,12 +607,9 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         ) {
           setError("تعذر تحميل المراحل والصفوف");
         }
-      } catch (err) {
-        console.error("[AddStudentModal] load failed unexpectedly:", err);
+      } catch {
         if (!cancelled) {
-          setError(
-            "حصل خطأ أثناء تحميل بيانات المودال — افتحي الـ Console وابعتيلي رسالة الخطأ",
-          );
+          setError("حصل خطأ أثناء تحميل البيانات");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -778,10 +722,6 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       onChanged?.();
       onClose();
     } catch (err) {
-      console.error(
-        "createSubscription (add student) failed:",
-        err.response?.data || err,
-      );
       setError(err.response?.data?.message || "حدث خطأ أثناء إضافة الطالب");
     } finally {
       setSubmitting(false);
@@ -867,8 +807,7 @@ const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
     // ⚠️ endpoint /teachers/available كان بيرجع فاضي، رجعنا لـ /teachers المؤكد شغّال
     getTeachers()
       .then((res) => setTeachers(filterActiveTeachers(res.data?.data || [])))
-      .catch((err) => {
-        console.error("getTeachers failed:", err);
+      .catch(() => {
         setError("تعذر تحميل قائمة المعلمين");
       })
       .finally(() => setLoading(false));
@@ -887,10 +826,6 @@ const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
       onChanged?.();
       onClose();
     } catch (err) {
-      console.error(
-        "updateClassroom (assign teacher) failed:",
-        err.response?.data || err,
-      );
       setError(err.response?.data?.message || "حدث خطأ أثناء تعيين المعلم");
     } finally {
       setSubmitting(false);
@@ -938,8 +873,7 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
     // ⚠️ endpoint /teachers/available كان بيرجع فاضي، رجعنا لـ /teachers المؤكد شغّال
     getTeachers()
       .then((res) => setTeachers(filterActiveTeachers(res.data?.data || [])))
-      .catch((err) => {
-        console.error("getTeachers failed:", err);
+      .catch(() => {
         setError("تعذر تحميل قائمة المعلمين");
       })
       .finally(() => setLoading(false));
@@ -961,10 +895,6 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
       onChanged?.();
       onClose();
     } catch (err) {
-      console.error(
-        "updateClassroomSubstituteTeacher failed:",
-        err.response?.data || err,
-      );
       const apiMessage = err.response?.data?.message;
       const apiCode = err.response?.data?.code || err.response?.data?.error;
       setError(
@@ -985,10 +915,6 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
       onChanged?.();
       onClose();
     } catch (err) {
-      console.error(
-        "remove substitute teacher failed:",
-        err.response?.data || err,
-      );
       setError(
         err.response?.data?.message || "حدث خطأ أثناء إزالة المعلم البديل",
       );

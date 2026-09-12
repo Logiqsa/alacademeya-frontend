@@ -1,7 +1,10 @@
 import { createContext, useCallback, useState, useEffect } from "react";
-import { getMyProfile, login as loginApi } from "../services/APIService";
+import { getMyInstructorProfile, getMyProfile, login as loginApi } from "../services/APIService";
 import { getDatabaseUserFromAccountState } from "../utils/accountState";
+import { AUTH_EXPIRED_EVENT } from "../services/apiError";
+import { canHaveInstructorProfile } from "../utils/roles";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
 const roleFromToken = (token) => {
@@ -61,6 +64,10 @@ const userDataForStorage = (source) => {
     "countryCode",
     "academicLevel",
     "studentType",
+    "accountType",
+    "instructorId",
+    "instructorStatus",
+    "instructorProfileSlug",
     "timezone",
   ];
 
@@ -90,6 +97,15 @@ export const AuthContextProvider = ({ children }) => {
   );
 
   useEffect(() => {
+    const handleExpiredSession = () => {
+      setUser(null);
+      setCheckingAccountState(false);
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleExpiredSession);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpiredSession);
+  }, []);
+
+  useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       return;
@@ -99,10 +115,31 @@ export const AuthContextProvider = ({ children }) => {
     const ordinaryUser = withoutStoredAccountState(restoreUser());
 
     getMyProfile()
-      .then((response) => {
+      .then(async (response) => {
         if (!active) return;
         const databaseUser = getDatabaseUserFromAccountState(response);
-        const freshUser = { ...ordinaryUser, ...databaseUser };
+        let freshUser = { ...ordinaryUser, ...databaseUser };
+        if (canHaveInstructorProfile(freshUser)) {
+          try {
+            const instructorResponse = await getMyInstructorProfile();
+            const instructorPayload =
+              instructorResponse.data?.data || instructorResponse.data;
+            const instructor =
+              instructorPayload?.instructor ||
+              instructorPayload?.profile ||
+              instructorPayload;
+            freshUser = {
+              ...freshUser,
+              accountType: "instructor",
+              instructorId: instructor?._id || instructor?.id,
+              instructorStatus: instructor?.status,
+              instructorProfileSlug: instructor?.profileSlug || "",
+            };
+          } catch {
+            // A normal teacher/user account may not have a marketplace profile.
+          }
+        }
+        if (!active) return;
         setUser(freshUser);
         persistUser(freshUser);
       })
@@ -145,20 +182,45 @@ export const AuthContextProvider = ({ children }) => {
 
   const login = async (credentials) => {
     const res = await loginApi(credentials);
-    console.log("الرد من الـ API:", res.data);
-
     const responseUser = res.data.data;
     const token = res.data.token;
-    const finalUser = establishSession(token, responseUser);
+    let finalUser = establishSession(token, responseUser);
 
-    console.log("البيانات التي سيتم حفظها:", finalUser);
+    if (canHaveInstructorProfile(finalUser)) {
+      try {
+        const instructorResponse = await getMyInstructorProfile();
+        const instructorPayload =
+          instructorResponse.data?.data || instructorResponse.data;
+        const instructor =
+          instructorPayload?.instructor ||
+          instructorPayload?.profile ||
+          instructorPayload;
+        finalUser = {
+          ...finalUser,
+          accountType: "instructor",
+          instructorId: instructor?._id || instructor?.id,
+          instructorStatus: instructor?.status,
+          instructorProfileSlug: instructor?.profileSlug || "",
+        };
+        persistUser(finalUser);
+        setUser(finalUser);
+      } catch {
+        // A normal teacher/user account may not have a marketplace profile.
+      }
+    }
 
     return { user: finalUser, token };
   };
 
   const updateUser = useCallback((updatedUser) => {
-    setUser(updatedUser);
-    persistUser(updatedUser);
+    setUser((currentUser) => {
+      const nextUser =
+        typeof updatedUser === "function"
+          ? updatedUser(currentUser)
+          : updatedUser;
+      persistUser(nextUser);
+      return nextUser;
+    });
   }, []);
 
   const logout = useCallback(() => {

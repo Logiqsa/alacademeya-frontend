@@ -16,6 +16,7 @@ import {
   getTeachers,
   updateClassroomSubstituteTeacher,
 } from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
+import { normalizeApiError } from "../../../../services/apiError";
 
 const DAY_LABELS = {
   saturday: "السبت",
@@ -235,19 +236,18 @@ const CreateLessonPage = ({ role = "teacher" }) => {
     } catch (err) {
       console.error("createClassroomSession failed:", err);
 
-      const code = err?.response?.data?.message;
+      const apiError = normalizeApiError(err);
+      const code = apiError.code;
       const KNOWN_ERRORS = {
         INVALID_SCHEDULED_DATE:
           "موعد الحصة المؤجلة غير صالح أو قد مضى، من فضلك اختر موعدًا مستقبليًا",
         SESSION_ALREADY_EXISTS:
           "يوجد حصة أخرى مجدولة لهذه المجموعة في نفس الموعد، من فضلك اختر تاريخًا أو وقتًا مختلفًا",
-        "There is no classroom schedule for today":
-          "لا يوجد جدول لهذه المجموعة اليوم، من فضلك تأكد إن اليوم من أيام جدول المجموعة أو عدّل الجدول أولاً",
       };
 
       setError(
         KNOWN_ERRORS[code] ||
-          code ||
+          apiError.message ||
           "حدث خطأ أثناء إنشاء الحصة، حاول مرة أخرى",
       );
     } finally {

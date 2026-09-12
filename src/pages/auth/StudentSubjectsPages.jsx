@@ -9,6 +9,7 @@ import {
   getMyProfile,
   getSubjects,
 } from "../../services/APIService";
+import { hasApiErrorCode } from "../../services/apiError";
 
 const normalizeSubjects = (raw) => {
   const list = Array.isArray(raw) ? raw : raw?.data || [];
@@ -93,12 +94,7 @@ const StudentSubjectsPages = () => {
         const token = response.data?.token;
         if (token) localStorage.setItem("token", token);
       } catch (error) {
-        const message = String(error.response?.data?.message || "");
-        if (
-          !["PROFILE_ALREADY_EXISTS", "PROFILE_ALREADY_COMPLETED"].includes(
-            message,
-          )
-        ) {
+        if (!hasApiErrorCode(error, "PROFILE_ALREADY_EXISTS", "PROFILE_ALREADY_COMPLETED")) {
           throw error;
         }
       }

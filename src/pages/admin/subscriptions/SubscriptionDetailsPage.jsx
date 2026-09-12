@@ -178,6 +178,13 @@ const SubscriptionDetailsPage = () => {
             الرجوع
           </button>
         </div>
+        {subscription.status === "active" && (
+          <div className="mb-4 flex justify-end">
+            <button onClick={() => navigate(`/admin/subscriptions/${id}/renew`)} className="rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">
+              تجديد الاشتراك يدويًا
+            </button>
+          </div>
+        )}
 
         <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-sm mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

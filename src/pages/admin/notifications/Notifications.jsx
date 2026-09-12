@@ -11,6 +11,7 @@ import {
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import { mergeAdminNotifications } from "../../../utils/adminLocalNotifications";
 import { filterIncompleteJoinNotifications } from "../../../utils/incompleteRegistration";
+import { NOTIFICATION_RECEIVED_EVENT } from "../../../utils/notificationTypes";
 
 const extractList = (resData) => {
   if (!resData) return [];
@@ -184,6 +185,11 @@ const AdminNotificationss = () => {
     // Data loading is intentionally triggered when the page mounts.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNotifications();
+  }, [fetchNotifications]);
+
+  useEffect(() => {
+    window.addEventListener(NOTIFICATION_RECEIVED_EVENT, fetchNotifications);
+    return () => window.removeEventListener(NOTIFICATION_RECEIVED_EVENT, fetchNotifications);
   }, [fetchNotifications]);
 
   return (

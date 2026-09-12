@@ -13,6 +13,7 @@ import {
   UserPlus,
   CheckCircle2,
   ExternalLink,
+  Trash2,
   X,
 } from "lucide-react";
 import NotificationCard from "./NotificationCard";
@@ -35,6 +36,11 @@ import {
   getNotificationTarget,
 } from "../../../utils/notificationTarget";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
+import {
+  getNotificationPresentation,
+  getNotificationTypeLabel,
+  NOTIFICATION_TYPES,
+} from "../../../utils/notificationTypes";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -42,6 +48,8 @@ import { getTeacherFileUrls } from "../../../utils/teacherCv";
 // زوّد هنا أي key/type جديد يوصل من الباك إند
 const ACADEMIC_TYPES = ["lesson", "absence", "attendance", "academic"];
 const categoryOf = (n) => {
+  const presentation = getNotificationPresentation(n, "ar");
+  if (NOTIFICATION_TYPES.includes(presentation.type)) return presentation.category;
   if (ACADEMIC_TYPES.includes(n.type) || ACADEMIC_TYPES.includes(n.key)) {
     return "academic";
   }
@@ -64,8 +72,13 @@ const localizedText = (value) => {
   return String(value);
 };
 
-const titleOf = (n) =>
-  KEY_TITLES[n.key] || n.title || n.key?.replaceAll("_", " ") || "إشعار جديد";
+const titleOf = (n) => {
+  const presentation = getNotificationPresentation(n, "ar");
+  return KEY_TITLES[n.key] || localizedText(n.title) ||
+    (NOTIFICATION_TYPES.includes(presentation.type)
+      ? presentation.title
+      : n.key?.replaceAll("_", " ") || getNotificationTypeLabel("", "ar"));
+};
 
 const descOf = (n) => {
   const content = [
@@ -83,6 +96,8 @@ const descOf = (n) => {
     .find(Boolean);
 
   if (content) return content;
+  const presentation = getNotificationPresentation(n, "ar");
+  if (NOTIFICATION_TYPES.includes(presentation.type)) return presentation.description;
   if (n.data?.studentName) {
     return `بخصوص الطالب: ${n.data.studentName}`;
   }
@@ -347,6 +362,7 @@ const NotificationsSection = ({
   const [activeTab, setActiveTab] = useState("all");
   const [joinRole, setJoinRole] = useState("all");
   const [markingAll, setMarkingAll] = useState(false);
+  const [deletingRead, setDeletingRead] = useState(false);
   const [teacherDetails, setTeacherDetails] = useState(null);
   const [teacherDetailsLoading, setTeacherDetailsLoading] = useState(false);
   const [approvingTeacher, setApprovingTeacher] = useState(false);
@@ -375,15 +391,7 @@ const NotificationsSection = ({
     const id = n._id || n.id;
     const prevState = notifications;
 
-    if (n.isRead) {
-      // السيرفر مفيهوش endpoint لإلغاء القراءة، فده تحديث محلي بس
-      onChange?.(
-        notifications.map((x) =>
-          (x._id || x.id) === id ? { ...x, isRead: false } : x,
-        ),
-      );
-      return;
-    }
+    if (n.isRead) return;
 
     onChange?.(
       notifications.map((x) =>
@@ -631,6 +639,43 @@ const NotificationsSection = ({
     }
   };
 
+  const handleDeleteRead = async () => {
+    const readNotifications = notifications.filter(
+      (notification) => notification.isRead,
+    );
+    if (!readNotifications.length || deletingRead) return;
+    setDeletingRead(true);
+    const remoteNotifications = readNotifications.filter(
+      (notification) => !notification._local,
+    );
+    const results = await Promise.allSettled(
+      remoteNotifications.map((notification) =>
+        deleteNotification(notification._id || notification.id),
+      ),
+    );
+    const deletedIds = new Set(
+      remoteNotifications
+        .filter((_, index) => results[index].status === "fulfilled")
+        .map((notification) => notification._id || notification.id),
+    );
+    readNotifications
+      .filter((notification) => notification._local)
+      .forEach((notification) => {
+        const id = notification._id || notification.id;
+        deleteAdminLocalNotification(id);
+        deletedIds.add(id);
+      });
+    onChange?.(
+      notifications.filter(
+        (notification) => !deletedIds.has(notification._id || notification.id),
+      ),
+    );
+    if (deletedIds.size === readNotifications.length)
+      toast.success("تم حذف الإشعارات المقروءة");
+    else toast.error("تعذر حذف بعض الإشعارات المقروءة");
+    setDeletingRead(false);
+  };
+
   return (
     <div
       dir="rtl"
@@ -665,16 +710,33 @@ const NotificationsSection = ({
             عرض الكل
           </button>
         ) : (
-          notifications.some((n) => !n.isRead) && (
-            <button
-              onClick={handleMarkAllRead}
-              disabled={markingAll}
-              className="shrink-0 flex items-center gap-1.5 text-[13px] text-[#123C91] hover:underline disabled:opacity-60"
-            >
-              {markingAll && <Loader2 size={14} className="animate-spin" />}
-              تحديد الكل كمقروء
-            </button>
-          )
+          <div className="flex shrink-0 items-center gap-3">
+            {notifications.some((n) => !n.isRead) && (
+              <button
+                onClick={handleMarkAllRead}
+                disabled={markingAll}
+                className="flex items-center gap-1.5 text-[13px] text-[#123C91] hover:underline disabled:opacity-60"
+              >
+                {markingAll && <Loader2 size={14} className="animate-spin" />}
+                تحديد الكل كمقروء
+              </button>
+            )}
+            {notifications.some((n) => n.isRead) && (
+              <button
+                type="button"
+                onClick={handleDeleteRead}
+                disabled={deletingRead}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-[13px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+              >
+                {deletingRead ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Trash2 size={14} />
+                )}
+                حذف المقروءة
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -761,6 +823,7 @@ const NotificationsSection = ({
         <div className={compact ? "mt-4 space-y-2" : "space-y-3"}>
           {displayedNotifications.map((n) => {
             const id = n._id || n.id;
+            const presentation = getNotificationPresentation(n, "ar");
             return (
               <NotificationCard
                 key={id}
@@ -768,6 +831,7 @@ const NotificationsSection = ({
                 description={descOf(n)}
                 time={timeAgo(n.createdAt)}
                 type={categoryOf(n)}
+                kind={presentation.kind}
                 isRead={n.isRead}
                 onToggleRead={() => toggleRead(n)}
                 onOpen={

@@ -619,7 +619,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       setTimeout(() => setShowToast(false), 4000);
       fetchData();
     } catch (err) {
-      console.error("endSession failed:", err.response?.data || err);
       setEndError(err.response?.data?.message || "حدث خطأ أثناء إنهاء الحصة");
     } finally {
       setEnding(false);

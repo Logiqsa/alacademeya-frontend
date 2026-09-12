@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Tajaw al:wght@300;400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Tajaw al:wght@300;400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap");
 
 @import "tailwindcss";
 
@@ -12,27 +12,26 @@
   --accent-bg: rgba(170, 59, 255, 0.1);
   --accent-border: rgba(170, 59, 255, 0.5);
   --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  --primary: #123C91;
-  --primary-dark: #0F3278;
-  --secondary: #12C6B0;
-  --bg-light: #EAF4FF;
-  --bg-section: #F8FBFF;
-  --text-dark: #1F2937;
-  --text-light: #6B7280;
-  --white: #FFFFFF;
-  --border-light: #DBE7F5;
+  --primary: #123c91;
+  --primary-dark: #0f3278;
+  --secondary: #12c6b0;
+  --bg-light: #eaf4ff;
+  --bg-section: #f8fbff;
+  --text-dark: #1f2937;
+  --text-light: #6b7280;
+  --white: #ffffff;
+  --border-light: #dbe7f5;
 
-
-  --sans: 'IBM Plex Sans Arabic', sans-serif;
-  --heading: 'Tajawal', sans-serif;
+  --sans: "IBM Plex Sans Arabic", sans-serif;
+  --heading: "Tajawal", sans-serif;
   --mono: ui-monospace, Consolas, monospace;
-
 }
 
 html {
@@ -58,7 +57,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 
 /* =========================
    LINKS
@@ -112,7 +110,6 @@ button {
   }
 }
 
-
 /* =========================
    INPUTS
 ========================= */
@@ -150,7 +147,7 @@ section {
 }
 
 ::-webkit-scrollbar-track {
-  background: #EDF4FF;
+  background: #edf4ff;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -162,6 +159,47 @@ section {
   background: var(--primary-dark);
 }
 
+/* Dashboard scroll areas stay independent; the page itself never gains a
+   second scrollbar. */
+.admin-main-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #9bb3da transparent;
+}
+
+.admin-main-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-main-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-main-scroll::-webkit-scrollbar-thumb {
+  background: #9bb3da;
+  border-radius: 999px;
+}
+
+.admin-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
 
 /* =========================
    TEXT SELECTION
@@ -175,9 +213,7 @@ section {
    UTILITIES
 ========================= */
 .text-gradient {
-  background: linear-gradient(90deg,
-      var(--primary),
-      var(--secondary));
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
 
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -206,8 +242,6 @@ section {
 .border-main {
   border-color: var(--border);
 }
-
-
 
 /* =========================
    RESPONSIVE

@@ -50,24 +50,81 @@ export const mapAdminUser = (u) => ({
 
 const FETCH_ALL_USERS_LIMIT = 100;
 
-// يجيب كل اليوزرز من كل الصفحات (بيتعامل مع أي شكل pagination من السيرفر)
+const extractUsersPage = (response) => {
+  const body = response?.data ?? response ?? {};
+  const containers = [body, body?.data, body?.data?.data].filter(Boolean);
+  const listKeys = ["users", "items", "results", "docs"];
+  let list = [];
+
+  for (const container of containers) {
+    if (Array.isArray(container)) {
+      list = container;
+      break;
+    }
+    const nestedList = listKeys
+      .map((key) => container?.[key])
+      .find(Array.isArray);
+    if (nestedList) {
+      list = nestedList;
+      break;
+    }
+  }
+
+  const metadata = containers.find(
+    (container) => !Array.isArray(container) && container?.pagination,
+  ) || containers.find(
+    (container) =>
+      !Array.isArray(container) &&
+      (container?.meta ||
+        container?.totalPages != null ||
+        container?.total != null ||
+        container?.count != null),
+  ) || {};
+  const pagination = metadata.pagination || metadata.meta || {};
+  const total =
+    pagination.total ?? metadata.total ?? metadata.count ?? pagination.count;
+  const totalPages =
+    pagination.totalPages ??
+    pagination.pages ??
+    metadata.totalPages ??
+    metadata.pages ??
+    (Number(total) > 0
+      ? Math.ceil(Number(total) / FETCH_ALL_USERS_LIMIT)
+      : null);
+
+  return {
+    list,
+    totalPages: Number.isFinite(Number(totalPages))
+      ? Number(totalPages)
+      : null,
+  };
+};
+
+const adminUserIdentity = (user) => {
+  const id = user?.id || user?._id;
+  if (id) return `id:${String(id)}`;
+
+  // لا يُستخدم إلا لو الاستجابة القديمة لا تحتوي على id.
+  const email = String(user?.email || "").trim().toLowerCase();
+  return email ? `email:${email}` : "";
+};
+
+// يجلب كل الصفحات ويمنع تكرار المستخدم إذا أعاد السيرفر صفحات متداخلة.
 export const fetchAllAdminUsers = async () => {
-  let all = [];
+  const usersByIdentity = new Map();
   let page = 1;
 
   while (true) {
     const res = await getUsers({ page, limit: FETCH_ALL_USERS_LIMIT });
-    const body = res.data || {};
-    const list = body.data || body.users || (Array.isArray(body) ? body : []);
+    const { list, totalPages } = extractUsersPage(res);
+    const sizeBeforePage = usersByIdentity.size;
 
-    all = all.concat(list);
-
-    const total =
-      body.total ?? body.count ?? body.pagination?.total ?? body.meta?.total;
-    const totalPages =
-      body.totalPages ??
-      body.pagination?.totalPages ??
-      (total ? Math.ceil(total / FETCH_ALL_USERS_LIMIT) : null);
+    list.forEach((user, index) => {
+      const identity = adminUserIdentity(user);
+      // نحافظ على العناصر النادرة التي لا تحتوي على id أو email دون دمجها خطأً.
+      usersByIdentity.set(identity || `page:${page}:row:${index}`, user);
+    });
+    const addedUsers = usersByIdentity.size - sizeBeforePage;
 
     if (totalPages) {
       if (page >= totalPages) break;
@@ -75,11 +132,14 @@ export const fetchAllAdminUsers = async () => {
       break;
     }
 
+    // حماية من API يتجاهل page ويعيد نفس النتائج في كل طلب.
+    if (list.length > 0 && addedUsers === 0) break;
+
     page += 1;
     if (page > 100) break; // حماية من infinite loop
   }
 
-  return all;
+  return [...usersByIdentity.values()];
 };
 
 const normalizeName = (value) =>

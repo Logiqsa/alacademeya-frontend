@@ -13,6 +13,7 @@ import {
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
 import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
+import { normalizeApiError } from "../../services/apiError";
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 
@@ -45,9 +46,8 @@ const ERROR_MESSAGES = {
 };
 
 const errorMessage = (error, fallback) => {
-  const code = error.response?.data?.code;
-  const message = error.response?.data?.message;
-  return ERROR_MESSAGES[code] || ERROR_MESSAGES[message] || message || fallback;
+  const apiError = normalizeApiError(error);
+  return ERROR_MESSAGES[apiError.code] || apiError.message || fallback;
 };
 
 const RenewalPage = ({ role }) => {

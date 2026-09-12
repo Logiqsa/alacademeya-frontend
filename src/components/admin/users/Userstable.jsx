@@ -16,6 +16,7 @@ import {
   ArrowDown,
   ArrowUpDown,
   ChevronDown,
+  CreditCard,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { getArabicCountryName } from "../../../utils/countryName";
@@ -661,6 +662,7 @@ const ActionsMenu = ({
   onDelete,
   onOpenChat,
 }) => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({
     top: 0,
@@ -700,6 +702,25 @@ const ActionsMenu = ({
       tone: "text-[#123C91]",
     },
   ];
+
+  if (user.role === "طالب" && user.studentId) {
+    items.splice(1, 0,
+      {
+        key: "create-subscription",
+        label: "إنشاء اشتراك",
+        Icon: CreditCard,
+        onClick: () => navigate(`/admin/subscriptions/add?studentId=${user.studentId}`),
+        tone: "text-[#123C91]",
+      },
+      {
+        key: "view-subscriptions",
+        label: "عرض الاشتراكات",
+        Icon: Eye,
+        onClick: () => navigate("/admin/subscription"),
+        tone: "text-[#123C91]",
+      },
+    );
+  }
 
   if (isPending) {
     items.push({

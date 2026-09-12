@@ -97,8 +97,6 @@ const TeacherDetailsPage = () => {
   const navigate = useNavigate();
   const fileRef = useRef(null);
   const { user, updateUser } = useContext(AuthContext);
-  console.log("token:", localStorage.getItem("token"));
-  console.log("user:", localStorage.getItem("user"));
 
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -151,7 +149,6 @@ const TeacherDetailsPage = () => {
 
       navigate("/pending");
     } catch (err) {
-      console.error(err);
       toast.error(err.response?.data?.message || "حدث خطأ غير متوقع");
     } finally {
       setSubmitting(false);

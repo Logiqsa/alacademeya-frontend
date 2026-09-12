@@ -1,6 +1,6 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useRef, useState, useContext } from "react";
 import logo from "../../assets/icons/logo.svg";
-import { LogOut, Menu, X } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { getDashboardPathByRole } from "../../utils/roles";
@@ -21,11 +21,15 @@ const goToDashboard = (user, navigate) => {
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
+  const accountMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   const links = [
     { title: "الرئيسية", id: "home" },
+    { title: "الدورات", id: "courses" },
     { title: "الباقات", id: "pricing" },
     { title: "عن الأكاديمية", id: "features" },
     { title: "المميزات", id: "services" },
@@ -64,13 +68,24 @@ const Navbar = () => {
     return () => window.cancelAnimationFrame(frameId);
   }, [location.pathname, location.hash]);
 
+  useEffect(() => {
+    const closeAccountMenu = (event) => {
+      if (!accountMenuRef.current?.contains(event.target)) setAccountMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeAccountMenu);
+    return () => document.removeEventListener("pointerdown", closeAccountMenu);
+  }, []);
+
   const handleDashboardClick = () => {
+    setAccountMenuOpen(false);
     goToDashboard(user, navigate);
   };
 
   const handleLogout = () => {
     logout();
     setMenuOpen(false);
+    setAccountMenuOpen(false);
+    setMobileAccountOpen(false);
     navigate("/", { replace: true });
   };
 
@@ -110,23 +125,22 @@ const Navbar = () => {
           {/* DESKTOP BUTTONS */}
           <div className="hidden lg:flex items-center gap-3">
             {user ? (
-              <div className="flex items-center gap-4">
-                <span className="text-[#123C91] font-medium text-[16px]">
-                  مرحباً، {user.fullName || "عزيزي المستخدم"}
-                </span>
+              <div ref={accountMenuRef} className="relative">
                 <button
-                  onClick={handleDashboardClick}
-                  className="h-10 px-6 rounded-lg bg-[#123C91] text-white [&_svg]:text-white text-[16px] font-medium"
+                  type="button"
+                  onClick={() => setAccountMenuOpen((open) => !open)}
+                  aria-expanded={accountMenuOpen}
+                  className="flex min-h-11 items-center gap-3 rounded-xl border border-[#D8E1EF] bg-white px-3 py-2 text-right shadow-sm transition hover:border-[#123C91] hover:bg-[#F8FBFF]"
                 >
-                  لوحة التحكم
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-[#123C91] font-bold text-white">{(user.fullName || user.name || "م").trim().charAt(0)}</span>
+                  <span><span className="block text-[11px] text-[#7B8490]">مرحبًا،</span><strong className="block max-w-40 truncate text-sm text-[#123C91]">{user.fullName || user.name || "عزيزي المستخدم"}</strong></span>
+                  <ChevronDown size={17} className={`mr-1 text-[#667085] transition-transform ${accountMenuOpen ? "rotate-180" : ""}`} />
                 </button>
-                <button
-                  onClick={handleLogout}
-                  className="flex h-10 items-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-[15px] font-medium text-red-600 transition-colors hover:bg-red-50"
-                >
-                  <LogOut size={17} />
-                  تسجيل الخروج
-                </button>
+                {accountMenuOpen && <div className="absolute left-0 top-[calc(100%+8px)] z-60 w-56 overflow-hidden rounded-xl border border-[#E1E7EF] bg-white p-1.5 shadow-xl">
+                  <button type="button" onClick={handleDashboardClick} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#344054] transition hover:bg-[#F2F6FC]"><LayoutDashboard size={18} className="text-[#123C91]" />لوحة التحكم</button>
+                  <div className="my-1 border-t border-[#EEF1F5]" />
+                  <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"><LogOut size={18} />تسجيل الخروج</button>
+                </div>}
               </div>
             ) : (
               <>
@@ -192,10 +206,12 @@ const Navbar = () => {
         {/* BUTTONS */}
         <div className="mt-auto p-6 border-t border-(--border-light) flex flex-col gap-3">
           {user ? (
-            <div className="flex flex-col gap-4">
-              <span className="text-[#123C91] font-medium text-[16px] text-center">
-                مرحباً، {user.fullName || "عزيزي المستخدم"}
-              </span>
+            <div className="flex flex-col gap-3">
+              <button type="button" onClick={() => setMobileAccountOpen((open) => !open)} className="flex items-center justify-between rounded-xl border border-[#D8E1EF] bg-[#F8FBFF] px-4 py-3 text-[#123C91]">
+                <span className="text-right"><span className="block text-xs text-[#7B8490]">مرحبًا،</span><strong className="block text-sm">{user.fullName || user.name || "عزيزي المستخدم"}</strong></span>
+                <ChevronDown size={18} className={`transition-transform ${mobileAccountOpen ? "rotate-180" : ""}`} />
+              </button>
+              {mobileAccountOpen && <>
               <button
                 onClick={() => { handleDashboardClick(); setMenuOpen(false); }}
                 className="h-10 w-full rounded-lg bg-[#123C91] text-white [&_svg]:text-white text-[16px] font-medium"
@@ -209,6 +225,7 @@ const Navbar = () => {
                 <LogOut size={18} />
                 تسجيل الخروج
               </button>
+              </>}
             </div>
           ) : (
             <>

@@ -23,8 +23,8 @@ const Home = () => {
         ]);
         setStudents(studentsRes.data?.data || []);
         setStats(statsRes.data?.data || null);
-      } catch (err) {
-        console.error("فشل تحميل بيانات لوحة التحكم:", err.response?.data);
+      } catch {
+        // Keep the dashboard fallback without exposing private response data.
       } finally {
         setLoading(false);
       }

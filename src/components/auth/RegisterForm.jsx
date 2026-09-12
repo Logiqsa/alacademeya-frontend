@@ -378,7 +378,6 @@ const RegisterForm = ({ type }) => {
       toast.success("تم إنشاء الحساب وإرسال رابط التحقق إلى بريدك الإلكتروني.");
       navigate("/check-email", { state: { email: formData.email } });
     } catch (err) {
-      console.error("خطأ من السيرفر (register):", err.response?.data);
       toast.error(registerErrorMessage(err));
     } finally {
       setLoading(false);

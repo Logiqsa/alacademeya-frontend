@@ -1,4 +1,5 @@
 import bellIcon from "../../../assets/icons/bell-icon.svg";
+import ApiIntegrationHint from "../../shared/ApiIntegrationHint";
 
 const notifications = [
   {
@@ -13,7 +14,9 @@ const notifications = [
 
 const RecentNotificationsSection = () => {
   return (
-    <div className="bg-white border border-[#1F293726] rounded-2xl p-6 flex flex-col shadow-sm">
+    <div className="flex flex-col gap-3">
+      <ApiIntegrationHint />
+      <div className="bg-white border border-[#1F293726] rounded-2xl p-6 flex flex-col shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-['Tajawal'] font-medium text-[20px] text-[#1F2937]">
           الإشعارات الأخيرة
@@ -42,6 +45,7 @@ const RecentNotificationsSection = () => {
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );

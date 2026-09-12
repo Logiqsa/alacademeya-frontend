@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -20,6 +20,7 @@ import LoadingState from "../../../components/shared/LoadingState";
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import { mapAdminUser, statusOf, fetchAllAdminUsers } from "../../../utils/adminUser";
+import { AuthContext } from "../../../context/AuthContext";
 
 const PAGE_SIZE = 6;
 const FETCH_LIMIT = 100; // حجم كل صفحة وإحنا بنجيب البيانات من السيرفر
@@ -66,6 +67,7 @@ const isStudentProfileIncomplete = (user, student) => {
 
 const UsersPage = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -392,13 +394,16 @@ const UsersPage = () => {
         dir="rtl"
       >
         {/* Header */}
-        <div className="mb-4">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
           <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
             إدارة المستخدمين
           </h3>
           <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
             إدارة جميع حسابات المنصة.
           </p>
+          </div>
+          {currentUser?.role === "super-admin" && <button onClick={() => navigate("/admin/students/new")} className="shrink-0 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">إنشاء طالب</button>}
         </div>
 
         <div className="mb-6">

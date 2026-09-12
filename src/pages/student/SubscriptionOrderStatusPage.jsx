@@ -17,6 +17,7 @@ import {
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
 import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
+import CoursePurchaseReturn from "../../features/course-management/components/student/CoursePurchaseReturn";
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 const terminalPayments = new Set(["paid", "failed", "refunded"]);
@@ -30,7 +31,16 @@ const SubscriptionOrderStatusPage = () => {
     user?.isActive === true || user?.registrationStatus === "active";
   const { orderId: pathOrderId } = useParams();
   const [searchParams] = useSearchParams();
+  const paymentType = String(searchParams.get("type") || "")
+    .trim()
+    .toLowerCase();
+  const coursePurchaseId =
+    searchParams.get("purchaseId") || searchParams.get("purchase_id");
   const orderId = pathOrderId || searchParams.get("orderId");
+  // purchaseId هو المرجع الصحيح لشراء الدورة. نستخدمه كذلك كإشارة احتياطية
+  // إذا أغفل مزود الدفع type، ولا نسمح بتمرير العملية إلى منطق الاشتراكات.
+  const isCoursePurchaseReturn =
+    paymentType === "course" || Boolean(coursePurchaseId && !orderId);
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +49,7 @@ const SubscriptionOrderStatusPage = () => {
 
   const refresh = useCallback(
     async (quiet = false) => {
+      if (isCoursePurchaseReturn) return null;
       if (!orderId) {
         if (!quiet) {
           setLoading(false);
@@ -83,10 +94,18 @@ const SubscriptionOrderStatusPage = () => {
         if (!quiet) setLoading(false);
       }
     },
-    [hasActiveAccount, isWhopReturn, navigate, orderId, userRole],
+    [
+      hasActiveAccount,
+      isCoursePurchaseReturn,
+      isWhopReturn,
+      navigate,
+      orderId,
+      userRole,
+    ],
   );
 
   useEffect(() => {
+    if (isCoursePurchaseReturn) return undefined;
     const initialRefresh = window.setTimeout(() => refresh(), 0);
     const startedAt = Date.now();
     const timer = window.setInterval(async () => {
@@ -103,7 +122,7 @@ const SubscriptionOrderStatusPage = () => {
       window.clearTimeout(initialRefresh);
       window.clearInterval(timer);
     };
-  }, [refresh]);
+  }, [isCoursePurchaseReturn, refresh]);
 
   const continuePayment = async () => {
     if (!orderId) return;
@@ -133,6 +152,8 @@ const SubscriptionOrderStatusPage = () => {
     ],
     ["تم تفعيل الاشتراك", order?.approvalStatus === "approved"],
   ];
+
+  if (isCoursePurchaseReturn) return <AuthLayout><CoursePurchaseReturn purchaseId={coursePurchaseId} /></AuthLayout>;
 
   return (
     <AuthLayout>

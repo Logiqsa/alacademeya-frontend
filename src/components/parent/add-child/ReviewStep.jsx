@@ -104,7 +104,6 @@ const ReviewStep = ({
       toast.success('تم إنشاء حساب الطالب بنجاح!');
       onSuccess(studentId);
     } catch (err) {
-      console.error('addStudent error response:', err.response?.data);
       const message = getServerErrorMessage(err);
       setSubmitError(message);
       toast.error(message);

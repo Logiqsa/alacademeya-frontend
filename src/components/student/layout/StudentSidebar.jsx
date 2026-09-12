@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
+import { Library, Wallet } from "lucide-react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
 
@@ -33,6 +34,7 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       icon: assignmentsIcon,
       path: "/student/groups",
     },
+    { title: "مكتبتي", icon: Library, isLucide: true, path: "/student-dashboard/courses" },
     {
       title: "الجدول",
       icon: scheduleIcon,
@@ -53,6 +55,7 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       icon: subscriptionIcon,
       path: "/student/subscription",
     },
+    { title: "المدفوعات", icon: Wallet, isLucide: true, path: "/student/payments" },
     {
       title: "الإعدادات",
       icon: settingsIcon,
@@ -160,23 +163,16 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
             {({ isActive }) => (
               <>
                 <span className="relative shrink-0">
-                  <img
-                    src={item.icon}
-                    alt={item.title}
-                    className={`block w-5 h-5 transition-all duration-200 ${
-                      isActive
-                        ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
-                        : ""
-                    }`}
-                    style={
-                      isActive
-                        ? {
-                            filter:
-                              "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
-                          }
-                        : {}
-                    }
-                  />
+                  {item.isLucide ? (
+                    <item.icon className="block h-5 w-5" style={{ color: isActive ? "#123C91" : "#FFFFFF" }} />
+                  ) : (
+                    <img
+                      src={item.icon}
+                      alt={item.title}
+                      className={`block w-5 h-5 transition-all duration-200 ${isActive ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200" : ""}`}
+                      style={isActive ? { filter: "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)" } : {}}
+                    />
+                  )}
                   {((item.path === "/student/messages" && unread.messages) ||
                     (item.path === "/student/notifications" &&
                       unread.notifications)) && (
@@ -204,11 +200,11 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
         </button>
         <button
           onClick={handleLogout}
-          className={`flex items-center mx-3 py-2 rounded-lg transition-all font-['IBM_Plex_Sans_Arabic'] font-medium text-[16px] leading-4 ${
+          className={`flex w-full items-center rounded-lg bg-[#991B1B] px-3 py-2.5 font-['IBM_Plex_Sans_Arabic'] text-[16px] font-semibold leading-4 text-white transition-all hover:bg-[#7F1D1D] ${
             isOpen ? "gap-3 justify-start" : "justify-center"
           }`}
         >
-          <img src={logoutIcon} alt="logout" className="w-5 h-5" />
+          <img src={logoutIcon} alt="logout" className="h-5 w-5 brightness-0 invert" />
 
           {isOpen && <span className="text-sm">تسجيل الخروج</span>}
         </button>

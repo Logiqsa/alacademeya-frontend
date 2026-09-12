@@ -10,11 +10,11 @@ import {
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
 import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
+import { hasApiErrorCode } from "../../services/apiError";
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 const isExistingProfileError = (error) => {
-  const message = String(error.response?.data?.message || "").toLowerCase();
-  return message.includes("profile") && message.includes("already exists");
+  return hasApiErrorCode(error, "PROFILE_ALREADY_EXISTS", "PROFILE_ALREADY_COMPLETED");
 };
 
 const StudentOrderSummaryPage = () => {

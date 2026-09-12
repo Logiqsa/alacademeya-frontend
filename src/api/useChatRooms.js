@@ -155,8 +155,8 @@ export function useChatRooms(currentUserId) {
           rooms.forEach((room) => socket.emit("joinRoom", room.id));
           // لا نحدد أي محادثة تلقائيًا — تفضل فاضية لحد ما المستخدم يضغط (زي واتساب)
         }
-      } catch (err) {
-        console.error("فشل تحميل المحادثات:", err);
+      } catch {
+        // The consuming page keeps its existing empty/error state.
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -204,8 +204,8 @@ export function useChatRooms(currentUserId) {
           }),
         );
       });
-    } catch (err) {
-      console.error("فشل تحديث قائمة المحادثات:", err);
+    } catch {
+      // Polling failures are transient and must not expose response data.
     }
   }, [fetchRooms]);
 
@@ -271,7 +271,7 @@ export function useChatRooms(currentUserId) {
                 );
               });
             })
-            .catch((err) => console.error("فشل تحديث قائمة المحادثات:", err));
+            .catch(() => {});
           return prev;
         }
 
@@ -340,7 +340,7 @@ export function useChatRooms(currentUserId) {
                 ),
               );
             })
-            .catch((err) => console.error("فشل تحميل الرسائل:", err));
+            .catch(() => {});
         }
         return prev;
       });
@@ -418,8 +418,7 @@ export function useChatRooms(currentUserId) {
           ),
         );
       }
-    } catch (err) {
-      console.error("فشل إرسال الرسالة:", err);
+    } catch {
       // في حالة الفشل امسح الـ optimistic
       setConversations((prev) =>
         prev.map((c) =>
@@ -452,11 +451,7 @@ export function useChatRooms(currentUserId) {
 
         if (newRoomId) await openConversation(newRoomId);
         return newRoomId;
-      } catch (err) {
-        console.error(
-          "فشل بدء محادثة الدعم:",
-          err.response?.data ?? err.message,
-        );
+      } catch {
         return null;
       }
     },

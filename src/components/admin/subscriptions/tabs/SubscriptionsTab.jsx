@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Eye, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
+import { Eye, ChevronRight, ChevronLeft, Loader2, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getAllSubscriptions } from "../../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
 import EntityProfileModal from "../../users/EntityProfileModal";
@@ -25,15 +25,13 @@ const StatusBadge = ({ status }) => {
 };
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
-const RowActions = ({ onView }) => (
-  <button
+const RowActions = ({ onView, onRenew, canRenew }) => (<div className="flex items-center gap-1"><button
     onClick={onView}
     className="p-2 rounded-lg text-[#575F69] hover:bg-[#EAF4FF] hover:text-[#123C91] transition-colors"
     title="عرض التفاصيل"
   >
     <Eye size={17} />
-  </button>
-);
+  </button>{canRenew && <button onClick={onRenew} className="p-2 rounded-lg text-[#123C91] hover:bg-[#EAF4FF]" title="تجديد يدوي"><RefreshCw size={17}/></button>}</div>);
 
 const valueOrDash = (value) => (value == null || value === "" ? "--" : value);
 
@@ -84,7 +82,7 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
 );
 
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
-const SubCard = ({ s, onView, onStudentClick }) => (
+const SubCard = ({ s, onView, onRenew, onStudentClick }) => (
   <div className="p-4 flex flex-col gap-2.5">
     <div className="flex items-start justify-between gap-2">
       <button
@@ -94,7 +92,7 @@ const SubCard = ({ s, onView, onStudentClick }) => (
       >
         {s.student}
       </button>
-      <RowActions onView={onView} />
+      <RowActions onView={onView} onRenew={onRenew} canRenew={s.status === "active"} />
     </div>
     <div className="flex items-center justify-between text-[13px]">
       <span className="text-[#9CA3AF]">المادة</span>
@@ -256,6 +254,7 @@ const SubscriptionsTab = () => {
                   onView={() =>
                     navigate(`/admin/subscriptions/${s.subscriptionId}`)
                   }
+                  onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
                   onStudentClick={() => setProfileStudent(s.studentEntity)}
                 />
               ))}
@@ -319,7 +318,7 @@ const SubscriptionsTab = () => {
                         <StatusBadge status={s.status} />
                       </td>
                       <td className="px-5 py-3.5">
-                        <RowActions
+                        <RowActions canRenew={s.status === "active"} onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
                           onView={() =>
                             navigate(`/admin/subscriptions/${s.subscriptionId}`)
                           }

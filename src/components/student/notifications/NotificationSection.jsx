@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { LoaderCircle, Trash2 } from "lucide-react";
 import NotificationCard from "./NotificationCard";
+import {
+  getNotificationPresentation,
+  extractNotificationList,
+  NOTIFICATION_RECEIVED_EVENT,
+} from "../../../utils/notificationTypes";
 import {
   getNotificationChatState,
   getNotificationTarget,
@@ -11,9 +17,6 @@ import {
   markAllNotificationsRead,
   deleteNotification,
 } from "../../../services/APIService"; // عدّل المسار حسب مكانه عندك
-
-const resolveLocalized = (val) =>
-  typeof val === "string" ? val : val?.ar || val?.en || "";
 
 const formatRelativeTime = (dateStr) => {
   if (!dateStr) return "";
@@ -29,26 +32,19 @@ const formatRelativeTime = (dateStr) => {
   return date.toLocaleDateString("ar-EG");
 };
 
-// ⚠️ تصنيف تقريبي بناءً على حقل type الحقيقي من الـ backend
-// (القيمة اللي شفناها فعليًا: "subscription"). عدّل القايمة دي لو عندك أنواع أكاديمية تانية.
-const ACADEMIC_TYPES = [
-  "session",
-  "classroom",
-  "assignment",
-  "attendance",
-];
-const getCategory = (type) =>
-  ACADEMIC_TYPES.includes(type) ? "academic" : "system";
-
-const mapNotification = (n) => ({
-  id: n._id ?? n.id,
-  title: resolveLocalized(n.title),
-  description: resolveLocalized(n.body),
-  time: formatRelativeTime(n.createdAt),
-  type: getCategory(n.type),
-  isRead: !!n.isRead,
-  raw: n,
-});
+const mapNotification = (n) => {
+  const presentation = getNotificationPresentation(n, "ar");
+  return {
+    id: n._id ?? n.id,
+    title: presentation.title,
+    description: presentation.description,
+    time: formatRelativeTime(n.createdAt),
+    type: presentation.category,
+    kind: presentation.kind,
+    isRead: !!n.isRead,
+    raw: n,
+  };
+};
 
 const NotificationsSection = ({ onStatsUpdate }) => {
   const navigate = useNavigate();
@@ -56,12 +52,13 @@ const NotificationsSection = ({ onStatsUpdate }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [deletingRead, setDeletingRead] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       const { data } = await getNotifications();
-      const mapped = (data?.data ?? []).map(mapNotification);
+      const mapped = extractNotificationList(data).map(mapNotification);
       setNotifications(mapped);
       onStatsUpdate?.(mapped);
     } catch (err) {
@@ -72,7 +69,13 @@ const NotificationsSection = ({ onStatsUpdate }) => {
   }, [onStatsUpdate]);
 
   useEffect(() => {
-    fetchNotifications();
+    const timer = window.setTimeout(fetchNotifications, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchNotifications]);
+
+  useEffect(() => {
+    window.addEventListener(NOTIFICATION_RECEIVED_EVENT, fetchNotifications);
+    return () => window.removeEventListener(NOTIFICATION_RECEIVED_EVENT, fetchNotifications);
   }, [fetchNotifications]);
 
   const handleToggleRead = async (notification) => {
@@ -126,6 +129,34 @@ const NotificationsSection = ({ onStatsUpdate }) => {
     }
   };
 
+  const handleDeleteRead = async () => {
+    const readNotifications = notifications.filter(
+      (notification) => notification.isRead,
+    );
+    if (!readNotifications.length || deletingRead) return;
+    setDeletingRead(true);
+    const results = await Promise.allSettled(
+      readNotifications.map((notification) =>
+        deleteNotification(notification.id),
+      ),
+    );
+    const deletedIds = new Set(
+      readNotifications
+        .filter((_, index) => results[index].status === "fulfilled")
+        .map((notification) => notification.id),
+    );
+    setNotifications((prev) => {
+      const updated = prev.filter(
+        (notification) => !deletedIds.has(notification.id),
+      );
+      onStatsUpdate?.(updated);
+      return updated;
+    });
+    if (deletedIds.size !== readNotifications.length)
+      setError(new Error("تعذر حذف بعض الإشعارات المقروءة"));
+    setDeletingRead(false);
+  };
+
   const filters = [
     { id: "all", label: "الكل" },
     { id: "unread", label: "غير مقروءة" },
@@ -164,12 +195,29 @@ const NotificationsSection = ({ onStatsUpdate }) => {
           ))}
         </div>
 
-        <button
-          onClick={handleMarkAllRead}
-          className="text-[12.5px] sm:text-[13px] text-[#123C91] font-medium hover:underline"
-        >
-          تحديد الكل كمقروء
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleMarkAllRead}
+            className="text-[12.5px] sm:text-[13px] text-[#123C91] font-medium hover:underline"
+          >
+            تحديد الكل كمقروء
+          </button>
+          {notifications.some((notification) => notification.isRead) && (
+            <button
+              type="button"
+              onClick={handleDeleteRead}
+              disabled={deletingRead}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-[12.5px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+            >
+              {deletingRead ? (
+                <LoaderCircle size={14} className="animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+              حذف المقروءة
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && (
@@ -194,9 +242,14 @@ const NotificationsSection = ({ onStatsUpdate }) => {
                 description={n.description}
                 time={n.time}
                 type={n.type}
+                kind={n.kind}
                 isRead={n.isRead}
                 onToggleRead={() => handleToggleRead(n)}
-                onOpen={getNotificationTarget(n.raw, "student") ? () => handleOpen(n) : undefined}
+                onOpen={
+                  getNotificationTarget(n.raw, "student")
+                    ? () => handleOpen(n)
+                    : undefined
+                }
                 onDelete={() => handleDelete(n)}
               />
             ))
