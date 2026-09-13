@@ -120,6 +120,8 @@ import CourseCategoriesPage from "./pages/admin/CourseCategoriesPage";
 import CategoryCoursesPage from "./pages/admin/CategoryCoursesPage";
 import CourseFinancesPage from "./pages/admin/course-finances/CourseFinancesPage";
 import CommissionSettingsPage from "./pages/admin/course-finances/CommissionSettingsPage";
+import AdminWithdrawalsPage from "./pages/admin/course-finances/AdminWithdrawalsPage";
+import AdminPoliciesPage from "./pages/admin/AdminPoliciesPage";
 import InstructorCommissionRatesPage from "./pages/teacher/InstructorCommissionRatesPage";
 import InstructorOnboardingPage from "./pages/teacher/InstructorOnboardingPage";
 import InstructorProfilePage from "./pages/teacher/InstructorProfilePage";
@@ -760,6 +762,8 @@ function App() {
               )
             }
           />
+          <Route path="/admin/course-finances/withdrawals" element={user ? <AdminWithdrawalsPage /> : <Navigate to="/login" replace />} />
+          <Route path="/admin/course-policies" element={user ? <AdminPoliciesPage /> : <Navigate to="/login" replace />} />
           <Route
             path="/admin-dashboard"
             element={user ? <AdminHome /> : <Navigate to="/login" replace />}

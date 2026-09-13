@@ -6,6 +6,7 @@ import EarningsFilters from "../../components/teacher/earnings/EarningsFilters";
 import EarningsTable from "../../components/teacher/earnings/EarningsTable";
 import EarningsTimelineChart from "../../components/teacher/earnings/EarningsTimelineChart";
 import CourseEarningsAnalytics from "../../components/teacher/earnings/CourseEarningsAnalytics";
+import InstructorPayoutDashboard from "../../components/teacher/earnings/InstructorPayoutDashboard";
 import Paginationn from "../../components/teacher/groups/students/Paginationn";
 import LoadingState from "../../components/shared/LoadingState";
 import { getSavedPageSize } from "../../utils/tablePagination";
@@ -58,6 +59,12 @@ const EarningsPage = () => {
 
   useEffect(() => {
     let active = true;
+    Promise.allSettled([getEarningsTimeline({ ...query, interval })]).then(([result]) => { if (active) settle("timeline", result, "تعذر تحميل مخطط الأرباح"); });
+    return () => { active = false; };
+  }, [interval, query, refreshKey, settle]);
+
+  useEffect(() => {
+    let active = true;
     Promise.allSettled([getEarningsHistory({ ...query, page, limit: pageSize })]).then(([history]) => {
       if (!active) return;
       settle("history", history, "تعذر تحميل سجل الأرباح");
@@ -73,15 +80,6 @@ const EarningsPage = () => {
     });
     return () => { active = false; };
   }, [query, refreshKey, settle]);
-
-  useEffect(() => {
-    let active = true;
-    Promise.allSettled([getEarningsTimeline({ ...query, interval })]).then(([timeline]) => {
-      if (!active) return;
-      settle("timeline", timeline, "تعذر تحميل مخطط الأرباح");
-    });
-    return () => { active = false; };
-  }, [interval, query, refreshKey, settle]);
 
   const retrySection = async (name) => {
     setPending([name]);
@@ -107,9 +105,9 @@ const EarningsPage = () => {
   ].filter(Boolean))].sort(), [sections]);
   const anyLoading = Object.values(sections).some((section) => section.loading);
 
-  const applyFilters = () => { setPending(["summary", "history", "courses", "timeline"]); setPage(1); setFilters({ ...draftFilters }); setRefreshKey((value) => value + 1); };
-  const resetFilters = () => { setPending(["summary", "history", "courses", "timeline"]); setDraftFilters(EMPTY_FILTERS); setPage(1); setFilters(EMPTY_FILTERS); setRefreshKey((value) => value + 1); };
-  const changeInterval = (value) => { if (value === interval) return; setPending(["timeline"]); setIntervalValue(value); };
+  const applyFilters = () => { setPending(["summary", "history", "courses"]); setPage(1); setFilters({ ...draftFilters }); setRefreshKey((value) => value + 1); };
+  const resetFilters = () => { setPending(["summary", "history", "courses"]); setDraftFilters(EMPTY_FILTERS); setPage(1); setFilters(EMPTY_FILTERS); setRefreshKey((value) => value + 1); };
+  const changeInterval = (value) => { if (value !== interval) { setPending(["timeline"]); setIntervalValue(value); } };
 
   return <TeacherLayout>
     <main className="mx-auto w-full max-w-400 pb-8 text-right font-['IBM_Plex_Sans_Arabic']" dir="rtl">
@@ -128,6 +126,7 @@ const EarningsPage = () => {
       </div>
 
       <div className="space-y-6">
+        <InstructorPayoutDashboard />
         <SectionState section={sections.summary} retry={() => retrySection("summary")}><EarningsStatsBar summary={sections.summary.data} /></SectionState>
         <SectionState section={sections.timeline} retry={() => retrySection("timeline")}><EarningsTimelineChart points={sections.timeline.data} interval={interval} onIntervalChange={changeInterval} /></SectionState>
         <SectionState section={sections.courses} retry={() => retrySection("courses")}><CourseEarningsAnalytics courses={sections.courses.data} /></SectionState>

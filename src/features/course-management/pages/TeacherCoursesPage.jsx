@@ -395,7 +395,7 @@ const TeacherCoursesPage = () => {
               </span>
               <Link
                 to="/instructor/onboarding"
-                className="text-sm font-bold text-[#123C91]"
+                className="rounded-lg bg-[#123C91] px-3 py-2 text-sm font-bold !text-white transition hover:bg-[#0E327A]"
               >
                 تعديل الملف
               </Link>

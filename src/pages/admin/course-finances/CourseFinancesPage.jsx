@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, BarChart3, BookOpen, Check, ChevronDown, Filter, GraduationCap, LoaderCircle, RefreshCw, Search, ShoppingCart, WalletCards, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
 import LoadingState from "../../../components/shared/LoadingState";
@@ -11,7 +10,7 @@ import { formatMoney } from "../../../utils/currencyDisplay";
 import { getApiErrorMessage } from "../../../services/apiError";
 import { getAssetUrl } from "../../../services/APIService";
 import { fetchPublicInstructor } from "../../../features/course-management/api/coursesApi";
-import { getCourseEarningsByCourse, getCourseEarningsByInstructor, getCourseEarningsLedger, getCourseEarningsSummary, getCourseEarningsTimeline } from "../../../features/admin-finances/api/courseEarningsApi";
+import { getCourseEarningsByCourse, getCourseEarningsByInstructor, getCourseEarningsLedger, getCourseEarningsSummary } from "../../../features/admin-finances/api/courseEarningsApi";
 
 const EMPTY_FILTERS = { from: "", to: "", courseId: "", instructorId: "", currency: "" };
 const initialSection = (data) => ({ data, loading: true, error: "" });
@@ -32,52 +31,32 @@ const periodDates = (interval) => {
     ? { from: isoDate(new Date(today.getFullYear(), today.getMonth(), 1)), to: isoDate(today) }
     : { from: isoDate(today), to: isoDate(today) };
 };
-const chartDate = (value, interval) => {
-  const parsed = value ? new Date(value) : null;
-  if (!parsed || Number.isNaN(parsed.getTime())) return String(value || "");
-  return new Intl.DateTimeFormat("ar-EG", interval === "monthly"
-    ? { month: "long", year: "numeric" }
-    : { day: "2-digit", month: "2-digit", year: "numeric" }).format(parsed);
-};
-
 const CourseFinancesPage = () => {
   const [draftFilters, setDraftFilters] = useState(() => ({ ...EMPTY_FILTERS, ...periodDates("daily") }));
   const [filters, setFilters] = useState(() => ({ ...EMPTY_FILTERS, ...periodDates("daily") }));
-  const [interval, setIntervalValue] = useState("daily");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => getSavedPageSize(10));
   const [refreshKey, setRefreshKey] = useState(0);
   const [initialized, setInitialized] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState(null);
-  const [defaultPeriods] = useState(() => {
-    const today = new Date();
-    return {
-      daily: { from: isoDate(today), to: isoDate(today) },
-      monthly: { from: isoDate(new Date(today.getFullYear(), today.getMonth(), 1)), to: isoDate(today) },
-    };
-  });
-  const [sections, setSections] = useState({ summary: initialSection(null), courses: initialSection([]), instructors: initialSection([]), timeline: initialSection([]), ledger: initialSection({ items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } }) });
+  const [sections, setSections] = useState({ summary: initialSection(null), courses: initialSection([]), instructors: initialSection([]), ledger: initialSection({ items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } }) });
   const query = useMemo(() => Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== "")), [filters]);
-  const timelineQuery = useMemo(() => {
-    if (query.from || query.to) return { ...query, interval };
-    return { ...query, interval, ...defaultPeriods[interval] };
-  }, [defaultPeriods, interval, query]);
   const setPending = useCallback((names) => setSections((current) => { const next = { ...current }; names.forEach((name) => { next[name] = { ...current[name], loading: true, error: "" }; }); return next; }), []);
   const settle = useCallback((name, result, fallback) => setSections((current) => ({ ...current, [name]: result.status === "fulfilled" ? { data: result.value, loading: false, error: "" } : { ...current[name], loading: false, error: getApiErrorMessage(result.reason, fallback) } })), []);
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([getCourseEarningsSummary(query), getCourseEarningsByCourse(query), getCourseEarningsByInstructor(query), getCourseEarningsTimeline(timelineQuery), getCourseEarningsLedger({ ...query, page, limit: pageSize })]).then(([summary, courses, instructors, timeline, ledger]) => {
+    Promise.allSettled([getCourseEarningsSummary(query), getCourseEarningsByCourse(query), getCourseEarningsByInstructor(query), getCourseEarningsLedger({ ...query, page, limit: pageSize })]).then(([summary, courses, instructors, ledger]) => {
       if (!active) return;
-      settle("summary", summary, "تعذر تحميل الملخص المالي"); settle("courses", courses, "تعذر تحميل أداء الدورات"); settle("instructors", instructors, "تعذر تحميل أداء المحاضرين"); settle("timeline", timeline, "تعذر تحميل المخطط الزمني"); settle("ledger", ledger, "تعذر تحميل سجل المبيعات"); setInitialized(true);
+      settle("summary", summary, "تعذر تحميل الملخص المالي"); settle("courses", courses, "تعذر تحميل أداء الدورات"); settle("instructors", instructors, "تعذر تحميل أداء المحاضرين"); settle("ledger", ledger, "تعذر تحميل سجل المبيعات"); setInitialized(true);
     });
     return () => { active = false; };
-  }, [page, pageSize, query, refreshKey, settle, timelineQuery]);
+  }, [page, pageSize, query, refreshKey, settle]);
 
   const retry = async (name) => {
     setPending([name]);
-    const calls = { summary: () => getCourseEarningsSummary(query), courses: () => getCourseEarningsByCourse(query), instructors: () => getCourseEarningsByInstructor(query), timeline: () => getCourseEarningsTimeline(timelineQuery), ledger: () => getCourseEarningsLedger({ ...query, page, limit: pageSize }) };
-    const messages = { summary: "تعذر تحميل الملخص المالي", courses: "تعذر تحميل أداء الدورات", instructors: "تعذر تحميل أداء المحاضرين", timeline: "تعذر تحميل المخطط الزمني", ledger: "تعذر تحميل سجل المبيعات" };
+    const calls = { summary: () => getCourseEarningsSummary(query), courses: () => getCourseEarningsByCourse(query), instructors: () => getCourseEarningsByInstructor(query), ledger: () => getCourseEarningsLedger({ ...query, page, limit: pageSize }) };
+    const messages = { summary: "تعذر تحميل الملخص المالي", courses: "تعذر تحميل أداء الدورات", instructors: "تعذر تحميل أداء المحاضرين", ledger: "تعذر تحميل سجل المبيعات" };
     const [result] = await Promise.allSettled([calls[name]()]); settle(name, result, messages[name]);
   };
   const courseOptions = useMemo(() => [...new Map([...sections.courses.data, ...sections.ledger.data.items].filter((item) => item.courseId || item.id).map((item) => [String(item.courseId || item.id), { id: item.courseId || item.id, name: item.course }])).values()], [sections.courses.data, sections.ledger.data.items]);
@@ -91,23 +70,13 @@ const CourseFinancesPage = () => {
     }
     setPending(Object.keys(sections)); setPage(1); setFilters({ ...draftFilters }); setRefreshKey((value) => value + 1);
   };
-  const resetFilters = () => { const defaults = { ...EMPTY_FILTERS, ...periodDates(interval) }; setPending(Object.keys(sections)); setDraftFilters(defaults); setFilters(defaults); setPage(1); setRefreshKey((value) => value + 1); };
-  const changeInterval = (value) => {
-    if (value === interval) return;
-    const range = periodDates(value);
-    setPending(Object.keys(sections));
-    setDraftFilters((current) => ({ ...current, ...range }));
-    setFilters((current) => ({ ...current, ...range }));
-    setPage(1);
-    setIntervalValue(value);
-  };
+  const resetFilters = () => { const defaults = { ...EMPTY_FILTERS, ...periodDates("daily") }; setPending(Object.keys(sections)); setDraftFilters(defaults); setFilters(defaults); setPage(1); setRefreshKey((value) => value + 1); };
 
   return <AdminLayout><main dir="rtl" className="mx-auto w-full max-w-400 space-y-6 pb-10 text-right font-['IBM_Plex_Sans_Arabic']">
     <header className="relative overflow-hidden rounded-2xl bg-linear-to-l from-[#123C91] to-[#17689A] px-5 py-7 text-white shadow-[0_10px_30px_rgba(18,60,145,.18)] sm:px-7"><div className="absolute -left-10 -top-14 size-40 rounded-full bg-[#12C6B0]/20" /><div className="relative flex items-center gap-4"><span className="grid size-12 place-items-center rounded-xl bg-white/12"><BarChart3 /></span><div><p className="text-xs font-bold text-[#8DE9DE]">لوحة الإدارة المالية</p><h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">مالية الدورات</h1><p className="mt-2 text-sm text-white/75">تحليل المبيعات وعمولة المنصة وصافي مستحقات المحاضرين.</p></div></div></header>
     <Filters value={draftFilters} courses={courseOptions} instructors={instructorOptions} currencies={currencies} loading={anyLoading} onChange={(key, value) => setDraftFilters((current) => ({ ...current, [key]: value }))} onApply={applyFilters} onReset={resetFilters} />
     {!initialized ? <div className="rounded-2xl border bg-white"><LoadingState label="جاري تحميل البيانات المالية..." /></div> : <>
       <Section section={sections.summary} retry={() => retry("summary")}><Summary data={sections.summary.data} /></Section>
-      <Section section={sections.timeline} retry={() => retry("timeline")}><Timeline points={sections.timeline.data} interval={interval} onChange={changeInterval} /></Section>
       <Section section={sections.courses} retry={() => retry("courses")}><AnalyticsTable title="أداء الدورات" type="courses" items={sections.courses.data} onInstructor={setSelectedInstructor} /></Section>
       <Section section={sections.instructors} retry={() => retry("instructors")}><AnalyticsTable title="أداء المحاضرين" type="instructors" items={sections.instructors.data} onInstructor={setSelectedInstructor} /></Section>
       <Section section={sections.ledger} retry={() => retry("ledger")}><Ledger items={sections.ledger.data.items} onInstructor={setSelectedInstructor} />{sections.ledger.data.pagination.totalPages > 1 && <div className="mt-3"><Paginationn page={sections.ledger.data.pagination.page || page} totalPages={sections.ledger.data.pagination.totalPages} onChange={(value) => { setPending(["ledger"]); setPage(value); }} totalItems={sections.ledger.data.pagination.total} displayedCount={sections.ledger.data.items.length} unitLabel="عملية" pageSize={pageSize} onPageSizeChange={(value) => { setPending(["ledger"]); setPage(1); setPageSize(value); }} /></div>}</Section>
@@ -138,13 +107,6 @@ const SearchableSelect = ({ label, value, options, placeholder, searchPlaceholde
 const Summary = ({ data }) => <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><MoneyCard icon={ShoppingCart} label="إجمالي مبيعات الدورات" rows={data?.currencies} field="gross" /><MoneyCard icon={WalletCards} label="عمولة المنصة" rows={data?.currencies} field="commission" /><MoneyCard icon={GraduationCap} label="صافي أرباح المحاضرين" rows={data?.currencies} field="net" /><CountCard icon={BookOpen} label="الدورات المباعة" value={data?.coursesSold} /><CountCard icon={GraduationCap} label="محاضرون لديهم مبيعات" value={data?.instructorsWithSales} /></div>;
 const MoneyCard = ({ icon: Icon, label, rows = [], field }) => <div className="min-h-32 rounded-2xl border border-[#E1E7EF] bg-white p-4 shadow-sm"><div className="mb-3 flex items-center gap-2"><span className="grid size-9 place-items-center rounded-lg bg-[#EAF2FF] text-[#123C91]"><Icon size={18} /></span><span className="text-xs font-bold text-[#667085]">{label}</span></div>{rows.length ? <div className="space-y-1.5">{rows.map((row) => <div key={row.currency} dir="ltr" className="flex items-center justify-between gap-2 text-sm"><b className="text-[#1F2937]">{money(row[field], row.currency)}</b><span className="rounded bg-[#F2F4F7] px-1.5 py-0.5 text-[10px] text-[#475467]">{row.currency}</span></div>)}</div> : <p className="text-sm text-[#98A2B3]">لا توجد بيانات</p>}</div>;
 const CountCard = ({ icon: Icon, label, value }) => <div className="min-h-32 rounded-2xl border border-[#E1E7EF] bg-white p-4 shadow-sm"><span className="grid size-9 place-items-center rounded-lg bg-[#E8F8F5] text-[#0B9F8D]"><Icon size={18} /></span><b dir="ltr" className="mt-3 block text-2xl text-[#1F2937]">{Number(value || 0).toLocaleString("en-US")}</b><span className="mt-1 block text-xs font-bold text-[#667085]">{label}</span></div>;
-
-const Timeline = ({ points, interval, onChange }) => {
-  const currencies = [...new Set(points.map((item) => item.currency))]; const colors = ["#123C91", "#12A594", "#7C3AED", "#D97706", "#DC2626", "#0284C7"];
-  const rows = [...points.reduce((map, item) => { const row = map.get(item.date) || { date: chartDate(item.date, interval) }; row[`${item.currency}-gross`] = item.gross; row[`${item.currency}-commission`] = item.commission; row[`${item.currency}-net`] = item.net; map.set(item.date, row); return map; }, new Map()).values()];
-  const hasValues = points.some((item) => item.gross || item.commission || item.net);
-  return <div className="overflow-hidden rounded-2xl border border-[#E1E7EF] bg-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b p-5"><Heading icon={BarChart3} title="التطور المالي" subtitle="المبيعات والعمولة والصافي بألوان منفصلة لكل عملة" /><div className="flex rounded-xl bg-[#F2F4F7] p-1">{[["daily", "يومي"], ["monthly", "شهري"]].map(([value, label]) => <button key={value} onClick={() => onChange(value)} className={`rounded-lg px-4 py-2 text-xs font-bold ${interval === value ? "bg-white text-[#123C91] shadow-sm" : "text-[#667085]"}`}>{label}</button>)}</div></div>{rows.length && hasValues ? <div className="h-80 p-4" dir="ltr"><ResponsiveContainer width="100%" height="100%"><AreaChart data={rows}><CartesianGrid vertical={false} strokeDasharray="4 4" /><XAxis dataKey="date" tick={{ fontSize: 10 }} /><YAxis tick={{ fontSize: 10 }} /><Tooltip formatter={(value, name) => { const currency = String(name).split("-")[0]; return [money(value, currency), name]; }} /><Legend />{currencies.flatMap((currency, index) => [["gross", "مبيعات"], ["commission", "عمولة"], ["net", "صافي"]].map(([field, label], fieldIndex) => <Area key={`${currency}-${field}`} dataKey={`${currency}-${field}`} name={`${currency}-${label}`} type="monotone" connectNulls={false} fill={colors[(index * 3 + fieldIndex) % colors.length]} fillOpacity={fieldIndex === 0 ? .08 : 0} stroke={colors[(index * 3 + fieldIndex) % colors.length]} strokeWidth={2.25} strokeDasharray={fieldIndex === 1 ? "5 4" : undefined} />))}</AreaChart></ResponsiveContainer></div> : <Empty text="لا توجد قيم مالية زمنية للفترة المحددة." />}</div>;
-};
 
 const AnalyticsTable = ({ title, type, items, onInstructor }) => {
   const instructor = type === "instructors"; const heads = instructor ? ["المحاضر", "الدورات المباعة", "المبيعات", "الإجمالي", "العمولة", "الصافي", "العملة"] : ["الدورة", "المحاضر", "المبيعات", "الإجمالي", "العمولة", "صافي المحاضر", "العملة"];

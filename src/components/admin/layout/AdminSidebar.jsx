@@ -60,11 +60,13 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       items: [
         { title: "الدورات", icon: BookOpen, path: "/admin/courses" },
         { title: "التصنيفات", icon: Tags, path: "/admin/course-categories" },
+        { title: "السياسات القانونية", icon: ShieldCheck, path: "/admin/course-policies" },
         {
           title: "مالية الدورات",
           icon: PiggyBank,
           path: "/admin/course-finances",
         },
+        { title: "طلبات السحب", icon: WalletCards, path: "/admin/course-finances/withdrawals" },
       ],
     },
     {

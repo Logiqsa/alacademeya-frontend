@@ -53,7 +53,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
               },
             ]
           : []),
-        ...(isTeacher ? [{ title: "دوراتي التعليمية", icon: dashboardIcon, path: "/teacher/my-courses" }] : []),
+        ...(isTeacher ? [{ title: "الدورات المسجل بها", icon: dashboardIcon, path: "/teacher/my-courses" }] : []),
         ...(canAccessInstructorArea
           ? [
               {
@@ -63,7 +63,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
               },
             ]
           : []),
-        ...(instructor
+        ...(canAccessInstructorArea
           ? [
               {
                 title: "الأرباح",

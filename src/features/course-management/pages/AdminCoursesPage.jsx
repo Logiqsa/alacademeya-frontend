@@ -615,6 +615,7 @@ export default function AdminCoursesPage() {
   const [selectedInstructorCourse, setSelectedInstructorCourse] =
     useState(null);
   const selectedCategory = searchParams.get("category") || "";
+  const selectedAudience = searchParams.get("audienceType") || "";
 
   const openInstructorMessages = (course) => {
     const instructor = course.instructorDetails || {};
@@ -721,9 +722,10 @@ export default function AdminCoursesPage() {
       const matchesCategory =
         !selectedCategory ||
         String(course.categoryId || course.category) === selectedCategory;
-      return matchesTab && matchesSearch && matchesCategory;
+      const matchesAudience = !selectedAudience || course.audienceType === selectedAudience;
+      return matchesTab && matchesSearch && matchesCategory && matchesAudience;
     });
-  }, [activeTab, courses, search, selectedCategory]);
+  }, [activeTab, courses, search, selectedCategory, selectedAudience]);
   const categories = useMemo(() => {
     const values = new Map();
     courses.forEach((course) => {
@@ -826,6 +828,9 @@ export default function AdminCoursesPage() {
                     {label}
                   </option>
                 ))}
+              </select>
+              <select value={selectedAudience} onChange={(event) => { const next=new URLSearchParams(searchParams); if(event.target.value) next.set("audienceType",event.target.value); else next.delete("audienceType"); setSearchParams(next); }} className="h-11 rounded-xl border border-[#DCE3EC] bg-[#FAFBFC] px-3 text-sm">
+                <option value="">كل الجماهير</option><option value="general">عامة</option><option value="school">مدرسية</option><option value="university">جامعية</option><option value="graduate">خريجون</option>
               </select>
             </div>
           </div>

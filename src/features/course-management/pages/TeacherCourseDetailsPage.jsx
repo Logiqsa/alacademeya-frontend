@@ -28,6 +28,7 @@ import {
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import { fetchTeacherCourse, fetchTeacherCourseEnrollments } from "../api/coursesApi";
 import ReviewsPanel from "../components/reviews/ReviewsPanel";
+import ModerationHistoryPanel from "../components/ModerationHistoryPanel";
 import { resolveMediaUrl } from "../../../services/apiUrl";
 import { getEarningsCourses, getEarningsHistory } from "../../instructor-earnings/api/earningsApi";
 
@@ -611,6 +612,7 @@ const TeacherCourseDetailsPage = () => {
           <StatCard icon={Star} value={Number(course.rating || 0).toFixed(1)} label="التقييم" accent="bg-[#FFF4D8] text-[#F5A623]" />
           <StatCard icon={WalletCards} value={headerStats.earnings.length ? headerStats.earnings.map((item) => money(item.amount, item.currency)).join(" + ") : "—"} label="صافي أرباحك" accent="bg-[#E8FFFC] text-[#12A594]" />
         </div>
+        <div className="mb-4"><ModerationHistoryPanel courseId={course.id} /></div>
 
         <div className="mb-4 overflow-x-auto">
           <nav className="flex min-w-max items-center justify-start gap-1 rounded-lg border border-[#E5E7EB] bg-white p-1">

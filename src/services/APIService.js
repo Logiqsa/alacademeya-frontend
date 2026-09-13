@@ -34,15 +34,17 @@ const handleApiError = (error) => {
 
   const requestPath = String(error?.config?.url || "").split("?")[0];
   const hadBearerToken = Boolean(error?.config?.headers?.Authorization);
-  const isMediaTicketError = [
-    "MEDIA_TOKEN_EXPIRED",
-    "MEDIA_TOKEN_INVALID",
+  const isMediaPlaybackError = [
+    "MEDIA_PLAYBACK_SESSION_INVALID",
+    "MEDIA_PLAYBACK_SESSION_EXPIRED",
+    "MEDIA_PLAYBACK_CREDENTIAL_REQUIRED",
+    "MEDIA_PLAYBACK_CREDENTIAL_INVALID",
   ].includes(apiError.code);
   const shouldExpireSession =
     apiError.status === 401 &&
     hadBearerToken &&
     !publicAuthPaths.has(requestPath) &&
-    !isMediaTicketError;
+    !isMediaPlaybackError;
 
   if (shouldExpireSession && localStorage.getItem("token")) {
     localStorage.removeItem("token");
@@ -138,17 +140,30 @@ export const getMyInstructorEarningsTimeline = (params) =>
 export const getMyInstructorBalance = () =>
   API.get("/instructors/me/balance");
 export const createMyInstructorWithdrawal = (payload) =>
-  API.post("/instructors/me/withdrawals", payload);
+  API.post("/instructors/me/withdrawals", payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
 export const getMyInstructorWithdrawals = (params) =>
   API.get("/instructors/me/withdrawals", { params });
 export const getMyInstructorWithdrawal = (id) =>
   API.get(`/instructors/me/withdrawals/${encodeURIComponent(id)}`);
 export const cancelMyInstructorWithdrawal = (id) =>
-  API.post(`/instructors/me/withdrawals/${encodeURIComponent(id)}/cancel`);
+  API.post(`/instructors/me/withdrawals/${encodeURIComponent(id)}/cancel`, null, { headers: { "Idempotency-Key": crypto.randomUUID() } });
 export const getPublicInstructor = (slug) =>
   API.get(`/instructors/${encodeURIComponent(slug)}`);
 export const updateInstructorStatus = (id, payload) =>
   API.patch(`/instructors/${id}/status`, payload);
+
+// Course marketplace policies and safe configuration
+export const getCurrentPolicies = () => API.get("/policies/current");
+export const getCurrentPolicy = (type) => API.get(`/policies/current/${encodeURIComponent(type)}`);
+export const getMyPolicyStatus = () => API.get("/policies/me/status");
+export const acceptCurrentPolicy = (type) => API.post(`/policies/${encodeURIComponent(type)}/accept`, { source: "web" });
+export const getAdminPolicyVersions = (params) => API.get("/policies/admin/versions", { params });
+export const getAdminPolicyVersion = (id) => API.get(`/policies/admin/versions/${encodeURIComponent(id)}`);
+export const createAdminPolicyDraft = (type, payload) => API.post(`/policies/admin/${encodeURIComponent(type)}`, payload);
+export const updateAdminPolicyDraft = (id, payload) => API.patch(`/policies/admin/${encodeURIComponent(id)}`, payload);
+export const publishAdminPolicy = (id) => API.post(`/policies/admin/${encodeURIComponent(id)}/publish`);
+export const retireAdminPolicy = (id) => API.post(`/policies/admin/${encodeURIComponent(id)}/retire`);
+export const getCourseMarketplaceConfig = () => API.get("/course-marketplace/config");
 
 // Course marketplace
 export const getPublicCourses = (params) => API.get("/courses", { params });
@@ -231,7 +246,9 @@ export const getCourseAccess = (courseId) =>
 export const getCourseLearningView = (courseId) =>
   API.get(`/courses/${courseId}/learn`);
 export const requestLessonMediaAccess = (courseId, lessonId) =>
-  API.post(`/courses/${courseId}/lessons/${lessonId}/media-access`);
+  API.post(`/courses/${courseId}/lessons/${lessonId}/media-access`, null, {
+    withCredentials: true,
+  });
 export const getProtectedMediaUrl = resolveMediaUrl;
 export const getCourseProgress = (courseId) =>
   API.get(`/courses/${courseId}/progress`);
@@ -279,12 +296,14 @@ export const uploadCourseLessonAttachments = (
   courseId,
   lessonId,
   files,
+  accessMode = "downloadable",
   onUploadProgress,
 ) => {
   const formData = new FormData();
   Array.from(files || []).forEach((file) =>
     formData.append("attachments", file),
   );
+  formData.append("accessMode", accessMode);
   return API.post(
     `/courses/${courseId}/lessons/${lessonId}/attachments`,
     formData,
@@ -294,6 +313,16 @@ export const uploadCourseLessonAttachments = (
     },
   );
 };
+export const updateCourseLessonAttachmentAccessMode = (
+  courseId,
+  lessonId,
+  attachmentId,
+  accessMode,
+) =>
+  API.patch(
+    `/courses/${courseId}/lessons/${lessonId}/attachments/${attachmentId}`,
+    { accessMode },
+  );
 export const deleteCourseLessonAttachment = (
   courseId,
   lessonId,
@@ -309,6 +338,8 @@ export const requestLessonAttachmentAccess = (
 ) =>
   API.post(
     `/courses/${courseId}/lessons/${lessonId}/attachments/${attachmentId}/media-access`,
+    null,
+    { withCredentials: true },
   );
 export const cancelCoursePurchase = (purchaseId) =>
   API.post(`/course-purchases/${purchaseId}/cancel`);
@@ -326,6 +357,13 @@ export const getAdminCourseEarningsLedger = (params) =>
   API.get("/admin/course-earnings", { params });
 export const getAdminCoursePurchase = (id) =>
   API.get(`/admin/course-purchases/${id}`);
+export const getAdminInstructorWithdrawals = (params) => API.get("/admin/instructor-withdrawals", { params });
+export const getAdminInstructorWithdrawal = (id) => API.get(`/admin/instructor-withdrawals/${encodeURIComponent(id)}`);
+export const approveAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/approve`, payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
+export const rejectAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/reject`, payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
+export const confirmPaidAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/confirm-paid`, payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
+export const getMyCourseModeration = (id) => API.get(`/courses/me/${encodeURIComponent(id)}/moderation`);
+export const getAdminCourseModeration = (id) => API.get(`/courses/admin/${encodeURIComponent(id)}/moderation`);
 export const getAdminCourseEnrollments = (courseId) =>
   API.get(`/courses/admin/${courseId}/enrollments`);
 export const grantAdminCourseEnrollment = (courseId, userId) =>

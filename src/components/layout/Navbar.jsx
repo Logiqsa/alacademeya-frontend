@@ -133,7 +133,7 @@ const Navbar = () => {
                   className="flex min-h-11 items-center gap-3 rounded-xl border border-[#D8E1EF] bg-white px-3 py-2 text-right shadow-sm transition hover:border-[#123C91] hover:bg-[#F8FBFF]"
                 >
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-[#123C91] font-bold text-white">{(user.fullName || user.name || "م").trim().charAt(0)}</span>
-                  <span><span className="block text-[11px] text-[#7B8490]">مرحبًا،</span><strong className="block max-w-40 truncate text-sm text-[#123C91]">{user.fullName || user.name || "عزيزي المستخدم"}</strong></span>
+                  <span className="min-w-0 max-w-40 text-right"><span className="block text-[11px] text-[#7B8490]">مرحبًا،</span><strong className="block overflow-hidden text-ellipsis whitespace-nowrap text-start text-sm text-[#123C91]" dir="auto" title={user.fullName || user.name || "عزيزي المستخدم"}>{user.fullName || user.name || "عزيزي المستخدم"}</strong></span>
                   <ChevronDown size={17} className={`mr-1 text-[#667085] transition-transform ${accountMenuOpen ? "rotate-180" : ""}`} />
                 </button>
                 {accountMenuOpen && <div className="absolute left-0 top-[calc(100%+8px)] z-60 w-56 overflow-hidden rounded-xl border border-[#E1E7EF] bg-white p-1.5 shadow-xl">
@@ -208,7 +208,7 @@ const Navbar = () => {
           {user ? (
             <div className="flex flex-col gap-3">
               <button type="button" onClick={() => setMobileAccountOpen((open) => !open)} className="flex items-center justify-between rounded-xl border border-[#D8E1EF] bg-[#F8FBFF] px-4 py-3 text-[#123C91]">
-                <span className="text-right"><span className="block text-xs text-[#7B8490]">مرحبًا،</span><strong className="block text-sm">{user.fullName || user.name || "عزيزي المستخدم"}</strong></span>
+                <span className="min-w-0 max-w-[210px] text-right"><span className="block text-xs text-[#7B8490]">مرحبًا،</span><strong className="block overflow-hidden text-ellipsis whitespace-nowrap text-start text-sm" dir="auto" title={user.fullName || user.name || "عزيزي المستخدم"}>{user.fullName || user.name || "عزيزي المستخدم"}</strong></span>
                 <ChevronDown size={18} className={`transition-transform ${mobileAccountOpen ? "rotate-180" : ""}`} />
               </button>
               {mobileAccountOpen && <>

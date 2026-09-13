@@ -13,7 +13,7 @@ import {
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
-import { AccountStatusBadge } from "../../account-settings/AccountRegistrationStatus";
+import { AccountStatusBadge, AccountTypeBadge } from "../../account-settings/AccountRegistrationStatus";
 import PhoneDisplay from "../../account-settings/PhoneDisplay";
 import {
   getCountryId,
@@ -894,7 +894,7 @@ const StudentAccountSettings = () => {
               {student.email}
             </p>
           </div>
-          <AccountStatusBadge />
+          <div className="mr-auto flex flex-wrap items-center gap-2"><AccountTypeBadge /><AccountStatusBadge /></div>
         </div>
       </div>
 

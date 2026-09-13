@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 // ⚠️ تأكدي من المسار ده صح عندك (نفس نمط TeacherLayout بس جوه components/admin/layout)
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import PolicyAcceptanceDialog from "../../../components/course/PolicyAcceptanceDialog";
 import CourseStepsNavigation from "../components/CourseStepsNavigation";
 import {
   addCourseCategory,
@@ -34,6 +35,8 @@ import {
   getCurriculumStages,
   getStageGrades,
   getSubjects,
+  getCourseMarketplaceConfig,
+  getMyPolicyStatus,
 } from "../../../services/APIService";
 import {
   getApiErrorMessage,
@@ -45,7 +48,7 @@ const EMPTY_COURSE = {
   titleEn: "",
   category: "",
   instructorId: "",
-  courseType: "general",
+  audienceType: "general",
   level: "",
   language: "عربي",
   description: "",
@@ -384,6 +387,13 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   const [contentModal, setContentModal] = useState(null);
   const [quizModal, setQuizModal] = useState(null);
   const [course, setCourse] = useState(EMPTY_COURSE);
+  const [commission, setCommission] = useState(null);
+  const [policyOpen, setPolicyOpen] = useState(false);
+  const [pendingSubmission, setPendingSubmission] = useState(false);
+
+  useEffect(() => {
+    getCourseMarketplaceConfig().then((response) => setCommission(response?.data?.data ?? response?.data)).catch(() => setCommission(null));
+  }, []);
 
   useEffect(() => {
     fetchCourseCategories({ admin: isAdminFlow })
@@ -485,10 +495,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           editableQuizIds,
           category: item.categoryId || item.category,
           instructorId: item.instructorId || "",
-          courseType:
-            item.courseType === "academic" || item.academicCurriculumId
-              ? "academic"
-              : "general",
+          audienceType: item.audienceType || (item.courseType === "academic" || item.academicCurriculumId ? "school" : "general"),
           academicCurriculum: item.academicCurriculumId || "",
           academicStage: item.academicStageId || "",
           academicGrade: item.academicGradeId || "",
@@ -551,7 +558,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
     }
     if (
       step === 0 &&
-      course.courseType === "academic" &&
+      course.audienceType === "school" &&
       (!course.academicStage || !course.academicGrade || !course.subject)
     ) {
       toast.error("أكمل المنهج والمرحلة والصف والمادة، أو اختر دورة عامة");
@@ -600,8 +607,22 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
     return true;
   };
 
-  const save = async (status = course.status) => {
+  const save = async (status = course.status, policyChecked = false) => {
     if (saving) return;
+    if (!isAdminFlow && status === "قيد المراجعة" && !policyChecked) {
+      try {
+        const policyStatus = (await getMyPolicyStatus())?.data?.data;
+        const required = ["instructor_agreement", "course_publishing_policy", "revenue_share_agreement"];
+        if (required.some((type) => policyStatus?.[type]?.required && !policyStatus[type]?.accepted)) {
+          setPendingSubmission(true);
+          setPolicyOpen(true);
+          return;
+        }
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "تعذر التحقق من اتفاقيات المحاضر"));
+        return;
+      }
+    }
     if (
       course.pricingType === "paid" &&
       (!Number.isFinite(Number(course.price)) || Number(course.price) <= 0)
@@ -768,6 +789,12 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         state: { savedId: savedCourseId, refresh: true },
       });
     } catch (error) {
+      if (error?.response?.data?.code === "POLICY_ACCEPTANCE_REQUIRED") {
+        setPendingSubmission(true);
+        setPolicyOpen(true);
+        toast.dismiss(savingToast);
+        return;
+      }
       if (error.savedCourseId) {
         setExistingCourse((current) => ({
           ...(current || course),
@@ -945,8 +972,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   );
   const discountAmount = coursePrice * (discountPercentage / 100);
   const priceAfterDiscount = coursePrice - discountAmount;
-  const platformFee = priceAfterDiscount * 0.15;
-  const teacherNet = priceAfterDiscount - platformFee;
+  const commissionRate = Number.isFinite(Number(commission?.platformCommissionBps)) ? Number(commission.platformCommissionBps) / 10000 : null;
+  const platformFee = commissionRate == null ? null : priceAfterDiscount * commissionRate;
+  const teacherNet = platformFee == null ? null : priceAfterDiscount - platformFee;
   const instructorOptions = instructors.map((teacher) => {
     const account = teacher.user || teacher;
     return {
@@ -988,6 +1016,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
       item.ids.some((id) => courseInstructorIds.includes(id)) ||
       (existingCourse?.instructor && item.name === existingCourse.instructor),
   );
+  const policyDialog = <PolicyAcceptanceDialog open={policyOpen} requiredTypes={["instructor_agreement", "course_publishing_policy", "revenue_share_agreement"]} onClose={() => setPolicyOpen(false)} onSatisfied={() => { setPolicyOpen(false); if (pendingSubmission) { setPendingSubmission(false); save("قيد المراجعة", true); } }} />;
   const selectedCategory = categories.find(
     (item) =>
       String(item._id || item.id) === String(course.category || ""),
@@ -1273,12 +1302,12 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   نوع الدورة
                   <select
                     className={inputClass}
-                    value={course.courseType || "general"}
+                    value={course.audienceType || "general"}
                     onChange={(e) =>
                       setCourse((current) => ({
                         ...current,
-                        courseType: e.target.value,
-                        ...(e.target.value === "general"
+                        audienceType: e.target.value,
+                        ...(e.target.value !== "school"
                           ? {
                               academicCurriculum: "",
                               academicStage: "",
@@ -1289,12 +1318,14 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                       }))
                     }
                   >
-                    <option value="general">دورة عامة</option>
-                    <option value="academic">دورة أكاديمية</option>
+                    <option value="general">عامة / General</option>
+                    <option value="school">مدرسية / School</option>
+                    <option value="university">جامعية / University</option>
+                    <option value="graduate">خريجون / Graduates</option>
                   </select>
                 </label>
               </div>
-              {course.courseType === "academic" && (
+              {course.audienceType === "school" && (
                 <div className="grid gap-5 rounded-xl border border-[#DCE6F5] bg-[#F8FAFD] p-4 sm:grid-cols-2 md:grid-cols-4">
                   <label className="space-y-2 text-right text-sm font-medium text-[#1F2937]">
                     المنهج *
@@ -1791,14 +1822,12 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                       </>
                     )}
                     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#D7E7FC] px-4 py-3 sm:px-5">
-                      <strong className="text-[#123C91]">
-                        رسوم المنصة (15%)
-                      </strong>
-                      <span>- {money(platformFee)}</span>
+                      <strong className="text-[#123C91]">رسوم المنصة {commissionRate == null ? "" : `(${commission.platformCommissionPercentage}%)`}</strong>
+                      <span>{platformFee == null ? "غير متاحة حاليًا" : `- ${money(platformFee)}`}</span>
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#D7E7FC] px-4 py-4 font-bold sm:px-5">
                       <span>صافي أرباحك</span>
-                      <span>{money(teacherNet)}</span>
+                      <span>{teacherNet == null ? "غير متاح حاليًا" : money(teacherNet)}</span>
                     </div>
                   </div>
                 </>
@@ -2056,6 +2085,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                       id: crypto.randomUUID(),
                       file,
                       name: file.name,
+                      accessMode: "downloadable",
                     }));
                     if (!files.length) return;
                     const lesson = activeModalLesson(contentModal);
@@ -2078,9 +2108,27 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                         key={attachment.id || attachment._id}
                         className="flex items-center justify-between rounded-lg bg-[#F8FAFC] px-3 py-2 text-xs"
                       >
-                        <span>
+                        <span className="min-w-0 flex-1 truncate">
                           {attachment.name || attachment.originalName || "مرفق"}
                         </span>
+                        <select
+                          aria-label="وضع الوصول للمرفق"
+                          value={attachment.accessMode || "downloadable"}
+                          onChange={(event) => {
+                            const lesson = activeModalLesson(contentModal);
+                            updateLesson(contentModal.sectionId, contentModal.lessonId, {
+                              attachments: lesson.attachments.map((item) =>
+                                (item.id || item._id) === (attachment.id || attachment._id)
+                                  ? { ...item, accessMode: event.target.value }
+                                  : item,
+                              ),
+                            });
+                          }}
+                          className="mx-2 rounded-md border border-[#D0D5DD] bg-white px-2 py-1 text-xs"
+                        >
+                          <option value="view_only">عرض فقط / View only</option>
+                          <option value="downloadable">قابل للتنزيل / Downloadable</option>
+                        </select>
                         <button
                           type="button"
                           onClick={() =>
@@ -2461,14 +2509,14 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   );
 
   if (!useTeacherLayout) {
-    return formContent;
+    return <>{policyDialog}{formContent}</>;
   }
 
-  return isAdminFlow ? (
+  return <>{policyDialog}{isAdminFlow ? (
     <AdminLayout contentClassName="!p-0">{formContent}</AdminLayout>
   ) : (
     <TeacherLayout contentClassName="!p-0">{formContent}</TeacherLayout>
-  );
+  )}</>;
 };
 
 export default TeacherCourseFormPage;

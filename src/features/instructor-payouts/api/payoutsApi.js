@@ -37,11 +37,12 @@ const request = (promise) => promise.catch((error) => {
   throw wrapped;
 });
 
+const majorAmount = (minor, scale = 2) => numberOf(minor) / (10 ** Number(scale || 0));
 const normalizeBalanceItem = (item = {}, currency) => ({
   currency: currencyOf(item, currency),
-  available: numberOf(item.available, item.availableAmount, item.availableBalance),
-  reserved: numberOf(item.reserved, item.reservedAmount, item.reservedBalance),
-  paid: numberOf(item.paid, item.paidAmount, item.totalPaid),
+  available: item.availableAmountMinor !== undefined ? majorAmount(item.availableAmountMinor, item.currencyScale) : numberOf(item.available, item.availableAmount, item.availableBalance),
+  reserved: item.reservedAmountMinor !== undefined ? majorAmount(item.reservedAmountMinor, item.currencyScale) : numberOf(item.reserved, item.reservedAmount, item.reservedBalance),
+  paid: item.paidAmountMinor !== undefined ? majorAmount(item.paidAmountMinor, item.currencyScale) : numberOf(item.paid, item.paidAmount, item.totalPaid),
 });
 
 export const normalizeInstructorBalance = (response) => {
@@ -63,12 +64,13 @@ const normalizeWithdrawal = (item = {}) => {
   const status = String(item.status || "requested").toLowerCase();
   return {
     id: item._id || item.id || item.withdrawalId,
-    amount: numberOf(amount.value, amount.amount, typeof item.amount !== "object" ? item.amount : undefined, item.requestedAmount),
+    amount: item.requestedAmountMinor !== undefined ? majorAmount(item.requestedAmountMinor, item.currencyScale) : numberOf(amount.value, amount.amount, typeof item.amount !== "object" ? item.amount : undefined, item.requestedAmount),
     currency: currencyOf(item, amount.currency),
     status,
     date: item.requestedAt || item.createdAt || item.date,
     updatedAt: item.updatedAt,
     rejectionReason: item.rejectionReason || item.reason || "",
+    expectedTransferAt: item.expectedTransferAt || null,
     canCancel: Boolean(item.canCancel ?? item.cancellable ?? status === "requested"),
   };
 };
@@ -97,7 +99,7 @@ export const getInstructorBalance = () =>
   request(getMyInstructorBalance()).then(normalizeInstructorBalance);
 
 export const createWithdrawal = (payload) =>
-  request(createMyInstructorWithdrawal(payload)).then((response) => {
+  request(createMyInstructorWithdrawal({ currency: payload.currency, requestedAmountMinor: String(Math.round(Number(payload.amount) * 100)) })).then((response) => {
     const data = unwrap(response);
     return normalizeWithdrawal(data.withdrawal || data.request || data);
   });

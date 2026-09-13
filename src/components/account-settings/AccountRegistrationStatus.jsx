@@ -130,10 +130,17 @@ export const AccountStatusBadge = () => {
 
   return (
     <span
-      className={`mr-auto inline-flex shrink-0 items-center rounded-full px-3 py-1.5 text-xs font-bold ${colors[details.type]}`}
+      className={`inline-flex shrink-0 items-center rounded-full px-3 py-1.5 text-xs font-bold ${colors[details.type]}`}
       title={details.description}
     >
       {details.label}
     </span>
   );
+};
+
+export const AccountTypeBadge = () => {
+  const { user } = useContext(AuthContext) || {};
+  if (!user) return null;
+  const labels = { "super-admin": "مشرف عام", admin: "مشرف", teacher: "معلم", student: "طالب", parent: "ولي أمر", user: user.accountType === "instructor" ? "محاضر" : "مستخدم" };
+  return <span className="inline-flex shrink-0 items-center rounded-full bg-[#EAF1FF] px-3 py-1.5 text-xs font-bold text-[#123C91]" title="نوع الحساب">{labels[user.role] || "مستخدم"}</span>;
 };

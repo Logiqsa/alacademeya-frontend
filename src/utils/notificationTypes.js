@@ -14,6 +14,8 @@ export const NOTIFICATION_TYPES = Object.freeze([
   "QUIZ_ATTEMPTS_EXHAUSTED",
   "COURSE_COMPLETED",
   "NEW_COURSE_REVIEW",
+  "COURSE_APPROVED",
+  "COURSE_REJECTED",
 ]);
 
 const TYPE_META = {
@@ -30,6 +32,8 @@ const TYPE_META = {
   QUIZ_ATTEMPTS_EXHAUSTED: { ar: "تم استنفاد محاولات الاختبار", en: "Quiz attempts exhausted", category: "academic", kind: "quiz" },
   COURSE_COMPLETED: { ar: "تم إكمال الدورة", en: "Course completed", category: "academic", kind: "course" },
   NEW_COURSE_REVIEW: { ar: "تقييم جديد للدورة", en: "New course review", category: "academic", kind: "review" },
+  COURSE_APPROVED: { ar: "تمت الموافقة على الدورة", en: "Course approved", category: "academic", kind: "course" },
+  COURSE_REJECTED: { ar: "تحتاج الدورة إلى تعديلات", en: "Course changes required", category: "academic", kind: "course" },
 };
 
 const normalizeType = (value) =>

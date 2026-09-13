@@ -4,7 +4,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import logo from '../../../../assets/icons/logo.svg';
 import { fetchPublicCourse } from '../../api/coursesApi';
-import { startCoursePurchase } from '../../../../services/APIService';
+import { getMyPolicyStatus, startCoursePurchase } from '../../../../services/APIService';
+import PolicyAcceptanceDialog from '../../../../components/course/PolicyAcceptanceDialog';
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 
@@ -14,6 +15,7 @@ export default function CoursePaymentPage() {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
 
   useEffect(() => {
     fetchPublicCourse(slug)
@@ -27,12 +29,17 @@ export default function CoursePaymentPage() {
     setPaying(true);
     const loadingToast = toast.loading('جاري تجهيز صفحة الدفع الآمنة...');
     try {
+      const status = unwrap(await getMyPolicyStatus());
+      if (status?.learner_course_terms?.required && !status.learner_course_terms.accepted) {
+        setTermsOpen(true); setPaying(false); toast.dismiss(loadingToast); return;
+      }
       const data = unwrap(await startCoursePurchase(course.id, 'EGP'));
       const purchaseUrl = data?.purchaseUrl || data?.checkoutUrl || data?.url;
       if (!purchaseUrl) throw new Error('لم يُرجع الخادم رابط الدفع');
       toast.success('سيتم تحويلك إلى بوابة الدفع', { id: loadingToast });
       window.location.assign(purchaseUrl);
     } catch (error) {
+      if (error?.response?.data?.code === 'POLICY_ACCEPTANCE_REQUIRED') setTermsOpen(true);
       toast.error(error?.response?.data?.message || error.message || 'تعذر بدء عملية الدفع', { id: loadingToast });
       setPaying(false);
     }
@@ -44,6 +51,7 @@ export default function CoursePaymentPage() {
   const price = course.effectivePrice ?? course.price ?? 0;
 
   return <div dir='rtl' className='min-h-screen bg-[#F4F7FC] px-4 py-5 text-[#1F2937] sm:px-6 sm:py-7'>
+    <PolicyAcceptanceDialog open={termsOpen} requiredTypes={['learner_course_terms']} onClose={() => setTermsOpen(false)} onSatisfied={() => { setTermsOpen(false); checkout(); }} />
     <div className='mx-auto w-full max-w-5xl'>
       <header className='mb-6 flex items-center justify-between border-b border-[#DDE5F0] pb-5 sm:mb-8'>
         <Link to='/' aria-label='العودة إلى الرئيسية' className='shrink-0'><img src={logo} alt='الأكاديمية' className='h-9 w-auto sm:h-10' /></Link>

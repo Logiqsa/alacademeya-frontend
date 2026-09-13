@@ -50,10 +50,20 @@ const financials = (item = {}) => {
   return {
     gross: numberOf(item.gross?.amount, item.gross?.value, item.gross, item.grossAmount, item.totalGross, item.totalGrossAmount, item.saleAmount, item.salesAmount, item.amount?.total, item.amount?.value, typeof item.amount !== "object" ? item.amount : undefined, purchase.amount?.total, purchase.amount?.value, typeof purchase.amount !== "object" ? purchase.amount : undefined, nested.gross?.amount, nested.gross, nested.grossAmount),
     commission: numberOf(item.commission?.amount, item.commission?.value, item.commission, item.commissionAmount, item.platformCommission, item.platformCommissionAmount, item.totalCommission, item.totalCommissionAmount, nested.commission?.amount, nested.commission, nested.commissionAmount),
-    net: numberOf(item.net?.amount, item.net?.value, item.net, item.netAmount, item.instructorNet, item.instructorNetAmount, item.instructorEarning, item.instructorEarnings, item.netEarnings, item.totalEarnings, item.totalNet, item.totalNetAmount, nested.net?.amount, nested.net, nested.netAmount, nested.instructorEarning),
+    net: numberOf(item.net?.amount, item.net?.value, item.net, item.netAmount, item.instructorNet, item.instructorNetAmount, item.instructorEarning, item.instructorEarnings, item.earnings, item.netEarning, item.netEarnings, item.totalEarnings, item.totalNet, item.totalNetAmount, nested.net?.amount, nested.net, nested.netAmount, nested.instructorEarning, nested.earnings),
     currency: currencyOf(item, currencyOf(nested, item.amount?.currency || purchase.currency || purchase.amount?.currency || "EGP")),
   };
 };
+
+const timelineAmount = (point = {}) =>
+  numberOf(
+    point.net?.amount, point.net?.value, point.net, point.netAmount,
+    point.instructorEarning, point.instructorEarnings, point.earnings,
+    point.netEarning, point.netEarnings, point.totalEarnings, point.totalNet,
+    point.amount?.amount, point.amount?.value,
+    typeof point.amount !== "object" ? point.amount : undefined,
+    point.value, point.total,
+  );
 
 const normalizeBreakdown = (value, fallbackCurrency, fallbackAmount) => {
   if (Array.isArray(value)) {
@@ -137,7 +147,7 @@ export const normalizeEarningsTimeline = (response) => {
   return [...direct, ...grouped, ...series].flatMap((item, index) => {
     const pointDate = item.date || item.period || item.day || item.month || item.label;
     const breakdown = item.byCurrency || item.currencyBreakdown || item.currencies || item.totalsByCurrency;
-    const normalizePoint = (point) => ({ id: point.id || `${pointDate || index}-${currencyOf(point)}`, date: pointDate, amount: financials(point).net, currency: financials(point).currency });
+    const normalizePoint = (point) => ({ id: point.id || `${pointDate || index}-${currencyOf(point)}`, date: point.date || point.period || point.day || point.month || point.label || pointDate, amount: timelineAmount(point), currency: financials(point).currency });
     if (Array.isArray(breakdown)) return breakdown.map(normalizePoint);
     if (breakdown && typeof breakdown === "object") return Object.entries(breakdown).map(([currency, values]) => normalizePoint({ ...(typeof values === "object" ? values : { net: values }), currency }));
     return [normalizePoint(item)];

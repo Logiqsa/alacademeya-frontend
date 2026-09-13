@@ -61,6 +61,7 @@ import {
   moveCourseLesson,
   deleteCourseLesson,
   uploadCourseLessonAttachments,
+  updateCourseLessonAttachmentAccessMode,
   deleteCourseLessonAttachment,
 } from "../../../services/APIService";
 import { normalizeApiError } from "../../../services/apiError";
@@ -275,8 +276,9 @@ export const normalizeCourse = (source = {}) => {
       category.id ||
       (typeof course.category === "string" ? course.category : ""),
     classification: String(
-      valueOf(course.courseType, valueOf(category, "عام")),
+      valueOf(course.audienceType, valueOf(course.courseType, valueOf(category, "عام"))),
     ),
+    audienceType: course.audienceType || (course.courseType === "academic" || academicCurriculum ? "school" : "general"),
     level: levelLabels[course.level] || valueOf(course.level, "جميع المستويات"),
     language: normalizedCourseLanguage(course.language),
     instructor:
@@ -453,6 +455,7 @@ export const normalizeCourse = (source = {}) => {
         attachments: (lesson.attachments || []).map((file) => ({
           ...file,
           name: file.name || file.fileName || "مرفق",
+          accessMode: file.accessMode || "downloadable",
           url: getAssetUrl(file.url || file.path),
         })),
         quiz: lesson.quiz?.questions || lesson.questions || lesson.quiz || [],
@@ -830,7 +833,7 @@ const coursePayload = (course) => {
     subject: course.subject,
   };
   const isAcademic =
-    course.courseType === "academic" &&
+    course.audienceType === "school" &&
     Object.values(academicIds).every(isMongoId);
 
   return {
@@ -847,7 +850,7 @@ const coursePayload = (course) => {
     // course may still carry its original `categoryId`, which must not win
     // after the admin selects a different category.
     category: course.category || course.categoryId,
-    courseType: isAcademic ? "academic" : "general",
+    audienceType: course.audienceType || "general",
     ...(isAcademic ? academicIds : {}),
     level: levelValues[course.level] || course.level || "beginner",
     language:
@@ -895,7 +898,7 @@ export const saveCourseToApi = async ({
     response = await createMarketplaceCourse({
       title: payload.title,
       category: payload.category,
-      courseType: payload.courseType,
+      audienceType: payload.audienceType,
       pricingType: payload.pricingType,
       ...(payload.pricingType === "paid"
         ? {
@@ -1197,16 +1200,33 @@ export const saveCourseToApi = async ({
             !retainedAttachmentIds.has(String(attachmentId))
           ) {
             await deleteCourseLessonAttachment(id, lessonId, attachmentId);
+          } else if (attachmentId) {
+            const desired = (lesson.attachments || []).find(
+              (item) => String(item._id || item.id || "") === String(attachmentId),
+            );
+            const desiredMode = desired?.accessMode || "downloadable";
+            const storedMode = attachment.accessMode || "downloadable";
+            if (desiredMode !== storedMode) {
+              await updateCourseLessonAttachmentAccessMode(
+                id,
+                lessonId,
+                attachmentId,
+                desiredMode,
+              );
+            }
           }
         }
-        const attachmentFiles = (lesson.attachments || [])
-          .map((item) => item.file)
-          .filter(Boolean);
-        if (attachmentFiles.length) {
+        const newAttachments = (lesson.attachments || []).filter((item) => item.file);
+        for (const accessMode of ["view_only", "downloadable"]) {
+          const attachmentFiles = newAttachments
+            .filter((item) => (item.accessMode || "downloadable") === accessMode)
+            .map((item) => item.file);
+          if (!attachmentFiles.length) continue;
           await uploadCourseLessonAttachments(
             id,
             lessonId,
             attachmentFiles,
+            accessMode,
             progressHandler(`جاري رفع مرفقات الدرس: ${lesson.title}`),
           );
         }

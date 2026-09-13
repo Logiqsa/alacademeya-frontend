@@ -15,6 +15,8 @@ const ERROR_MESSAGES = {
   USERNAME_ALREADY_EXISTS: "اسم المستخدم مستخدم بالفعل",
   EMAIL_ALREADY_EXISTS: "البريد الإلكتروني مستخدم بالفعل",
   PHONE_ALREADY_EXISTS: "رقم الهاتف مستخدم بالفعل",
+  STUDENT_TYPE_REQUIRED: "إصدار خدمة إنشاء الطلاب غير متوافق. يرجى تحديث خدمة الـ Backend",
+  USER_REQUIRED: "خدمة إنشاء الطلاب تعمل بإصدار قديم. يرجى تحديث أو إعادة تشغيل الـ Backend",
 };
 
 export const idOf = (value) =>

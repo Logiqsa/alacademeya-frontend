@@ -10,6 +10,8 @@ import { PlayCircle, X } from 'lucide-react';
 import { requestLessonMediaAccess } from '../services/APIService';
 import { resolveMediaUrl } from '../services/apiUrl';
 import ReviewsPanel from "../features/course-management/components/reviews/ReviewsPanel";
+import PolicyAcceptanceDialog from "../components/course/PolicyAcceptanceDialog";
+import { getMyPolicyStatus } from "../services/APIService";
 
 export default function CourseDetailsPage() {
   const { slug } = useParams();
@@ -33,6 +35,8 @@ export default function CourseDetailsPage() {
   const [activeTab, setActiveTab] = useState(() =>
     window.location.hash === "#course-reviews" ? "reviews" : "description",
   );
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [pendingAcquisition, setPendingAcquisition] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -83,12 +87,12 @@ export default function CourseDetailsPage() {
     try {
       const response = await requestLessonMediaAccess(course.id, lesson.id);
       const data = response?.data?.data ?? response?.data ?? response;
-      if (!data?.url) throw new Error('PREVIEW_URL_MISSING');
-      const ticketUrl = resolveMediaUrl(data.url);
+      if (!data?.playbackUrl) throw new Error('PREVIEW_URL_MISSING');
+      const ticketUrl = resolveMediaUrl(data.playbackUrl);
       const declaredType = String(data.mimeType || data.contentType || lesson.media?.mimeType || lesson.contentType || lesson.type || '').toLowerCase();
       const isFile = declaredType.startsWith('application/') || declaredType.startsWith('image/') || declaredType.startsWith('text/') || ['document', 'file', 'ملف', 'مستند'].includes(declaredType);
       if (isFile) {
-        const fileResponse = await fetch(ticketUrl);
+        const fileResponse = await fetch(ticketUrl, { credentials: 'include' });
         if (!fileResponse.ok) throw new Error('FILE_PREVIEW_FAILED');
         const blob = await fileResponse.blob();
         const objectUrl = URL.createObjectURL(blob);
@@ -124,6 +128,20 @@ export default function CourseDetailsPage() {
     setCourse(refreshed);
     return refreshed;
   };
+  const performAcquisition = async (mode) => {
+    if (mode === "paid") return navigate(`/payment/courses/${course.slug}`);
+    try {
+      setSubmitting(true);
+      await enrollFreeCourse(course.id);
+      setEnrolled(true);
+      setCourse((current) => ({ ...current, students: Number(current.students || 0) + 1 }));
+      toast.success("تم الاشتراك في الدورة بنجاح");
+      navigate("/student-dashboard/courses");
+    } catch (requestError) {
+      if (requestError?.response?.data?.code === "POLICY_ACCEPTANCE_REQUIRED") { setPendingAcquisition("free"); setTermsOpen(true); }
+      else toast.error(requestError?.response?.data?.message || "تعذر الاشتراك في الدورة");
+    } finally { setSubmitting(false); }
+  };
   const subscribe = async () => {
     if (!user) {
       toast.error("سجّل الدخول أولًا للاشتراك في الدورة");
@@ -131,17 +149,23 @@ export default function CourseDetailsPage() {
     } else if (accessReason === "admin") navigate(`/admin/courses/${course.id}`);
     else if (accessReason === "instructor") navigate(`/teacher/courses/${course.id}`);
     else if (enrolled) navigate("/student-dashboard/courses");
-    else if (course.price > 0) navigate(`/payment/courses/${course.slug}`);
+    else if (course.price > 0) {
+      setSubmitting(true);
+      try {
+        const status = (await getMyPolicyStatus())?.data?.data;
+        if (status?.learner_course_terms?.required && !status.learner_course_terms.accepted) { setPendingAcquisition("paid"); setTermsOpen(true); }
+        else await performAcquisition("paid");
+      } catch (requestError) { toast.error(requestError?.response?.data?.message || "تعذر التحقق من شروط الدورة"); }
+      finally { setSubmitting(false); }
+    }
     else {
       try {
         setSubmitting(true);
-        await enrollFreeCourse(course.id);
-        setEnrolled(true);
-        setCourse((current) => ({ ...current, students: Number(current.students || 0) + 1 }));
-        toast.success("تم الاشتراك في الدورة بنجاح");
-        navigate("/student-dashboard/courses");
+        const status = (await getMyPolicyStatus())?.data?.data;
+        if (status?.learner_course_terms?.required && !status.learner_course_terms.accepted) { setPendingAcquisition("free"); setTermsOpen(true); }
+        else await performAcquisition("free");
       } catch (requestError) {
-        toast.error(requestError?.response?.data?.message || "تعذر الاشتراك في الدورة");
+        toast.error(requestError?.response?.data?.message || "تعذر التحقق من شروط الدورة");
       } finally {
         setSubmitting(false);
       }
@@ -149,6 +173,7 @@ export default function CourseDetailsPage() {
   };
 
   return <div dir="rtl" className="min-h-screen bg-[#F6F8FB] pb-10 text-[#202936] sm:pb-14">
+    <PolicyAcceptanceDialog open={termsOpen} requiredTypes={["learner_course_terms"]} onClose={() => setTermsOpen(false)} onSatisfied={() => { setTermsOpen(false); const mode = pendingAcquisition; setPendingAcquisition(""); performAcquisition(mode); }} />
     <div className="mx-auto max-w-7xl px-3 pt-5 sm:px-5 sm:pt-7">
       <nav className="mb-4 flex min-w-0 items-center gap-1.5 overflow-hidden text-xs text-[#8B94A0] sm:text-sm">
         <Link to="/" className="text-[#123C91]">الرئيسية</Link><ChevronLeft size={14} />
@@ -277,8 +302,8 @@ function LessonPreviewContent({ lesson, url, mimeType, loading }) {
   const isPdf = normalizedMime === "application/pdf" || /\.pdf$/.test(fileName);
 
   if (loading || !url) return <div className="grid aspect-video place-items-center bg-[#111827] text-white"><LoaderCircle className="animate-spin" size={32} /></div>;
-  if (isVideo) return <div className="aspect-video bg-black"><video src={url} controls autoPlay className="h-full w-full" /></div>;
-  if (isAudio) return <div className="flex min-h-48 items-center justify-center bg-[#F4F7FB] p-6"><audio src={url} controls autoPlay className="w-full max-w-xl" /></div>;
+  if (isVideo) return <div className="aspect-video bg-black"><video src={url} crossOrigin="use-credentials" controls autoPlay className="h-full w-full" /></div>;
+  if (isAudio) return <div className="flex min-h-48 items-center justify-center bg-[#F4F7FB] p-6"><audio src={url} crossOrigin="use-credentials" controls autoPlay className="w-full max-w-xl" /></div>;
   if (isImage) return <div className="flex max-h-[65vh] items-center justify-center overflow-auto bg-[#F4F7FB] p-4"><img src={url} alt={lesson.title || "معاينة الدرس"} className="max-h-[60vh] max-w-full rounded-lg object-contain" /></div>;
   if (isPdf) return <iframe src={url} title={lesson.title || "معاينة ملف الدرس"} className="h-[65vh] w-full bg-white" />;
   return <div className="flex min-h-56 flex-col items-center justify-center gap-3 bg-[#F4F7FB] p-6 text-center"><FileText size={36} className="text-[#123C91]" /><p className="text-sm text-[#667085]">هذا الدرس يحتوي على ملف للمعاينة.</p><a href={url} target="_blank" rel="noreferrer" className="rounded-lg bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0E3279]">فتح الملف</a></div>;

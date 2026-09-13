@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { Award, CheckCircle2, ChevronDown, ChevronLeft, Download, ExternalLink, FileText, LoaderCircle, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, Paperclip, PlayCircle } from 'lucide-react';
+import { Award, CheckCircle2, ChevronDown, ChevronLeft, Download, ExternalLink, Eye, FileText, LoaderCircle, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, Paperclip, PlayCircle, X } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import StudentLayout from '../../../../components/student/layout/StudentLayout';
@@ -9,6 +9,8 @@ import { claimCourseCertificate, completeCourseLesson, getCourseLearningView, re
 import { resolveMediaUrl } from '../../../../services/apiUrl';
 import { hasApiErrorCode, normalizeApiError } from '../../../../services/apiError';
 import { CircleHelp } from 'lucide-react';
+import ProtectedContentWatermark from '../../../../components/course/ProtectedContentWatermark';
+import { getProtectedContentIdentity } from '../../../../utils/protectedContentIdentity';
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 const titleOf = (value) => value?.ar || value?.en || value || 'الدورة';
@@ -35,17 +37,20 @@ export default function CoursePlayerPage() {
   const [currentLesson, setCurrentLesson] = useState(null);
   const [mediaUrl, setMediaUrl] = useState('');
   const [mediaLessonId, setMediaLessonId] = useState('');
+  const [mediaMimeType, setMediaMimeType] = useState('');
   const [openSection, setOpenSection] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [working, setWorking] = useState(false);
   const [openingAttachmentId, setOpeningAttachmentId] = useState('');
+  const [attachmentViewer, setAttachmentViewer] = useState(null);
   const [contentCollapsed, setContentCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const mediaRef = useRef(null);
   const playerFrameRef = useRef(null);
   const lastSavedPositionRef = useRef(0);
   const mediaRefreshRef = useRef(0);
+  const pendingResumePositionRef = useRef(null);
   const Layout = user?.role === 'teacher' ? TeacherLayout : StudentLayout;
   const libraryPath = user?.role === 'teacher' ? '/teacher/my-courses' : '/student-dashboard/courses';
 
@@ -87,10 +92,11 @@ export default function CoursePlayerPage() {
     let active = true;
     requestLessonMediaAccess(view.course.id, currentLesson.id).then((response) => {
       const data = unwrap(response);
-      const url = data?.url || data?.mediaUrl || data?.signedUrl || data?.playbackUrl;
+      const url = data?.playbackUrl;
       if (active && url) {
         setMediaUrl(resolveMediaUrl(url));
         setMediaLessonId(currentLesson.id);
+        setMediaMimeType(String(data?.mimeType || ''));
       }
     }).catch((error) => toast.error(error?.response?.data?.message || 'تعذر تشغيل محتوى الدرس'));
     return () => { active = false; };
@@ -114,15 +120,17 @@ export default function CoursePlayerPage() {
   const refreshExpiredMedia = async () => {
     if (!view?.course?.id || !currentLesson?.id || mediaRefreshRef.current >= 1) return;
     mediaRefreshRef.current += 1;
+    pendingResumePositionRef.current = Number(mediaRef.current?.currentTime || lastSavedPositionRef.current || 0);
     try {
       const data = unwrap(await requestLessonMediaAccess(view.course.id, currentLesson.id));
-      const url = data?.url || data?.mediaUrl || data?.signedUrl || data?.playbackUrl;
+      const url = data?.playbackUrl;
       if (url) {
         setMediaUrl(resolveMediaUrl(url));
         setMediaLessonId(currentLesson.id);
+        setMediaMimeType(String(data?.mimeType || ''));
       }
     } catch (error) {
-      toast.error(hasApiErrorCode(error, 'MEDIA_TOKEN_EXPIRED') ? 'انتهت صلاحية رابط الوسائط. أعد المحاولة.' : error?.response?.data?.message || 'تعذر تجديد رابط محتوى الدرس');
+      toast.error(hasApiErrorCode(error, 'MEDIA_PLAYBACK_SESSION_EXPIRED') ? 'انتهت صلاحية جلسة الوسائط. أعد المحاولة.' : error?.response?.data?.message || 'تعذر تجديد جلسة محتوى الدرس');
     }
   };
 
@@ -133,9 +141,17 @@ export default function CoursePlayerPage() {
     setOpeningAttachmentId(attachmentId);
     try {
       const data = unwrap(await requestLessonAttachmentAccess(view.course.id, currentLesson.id, attachmentId));
-      if (!data?.url) throw new Error('ATTACHMENT_URL_MISSING');
-      if (target) target.location.href = resolveMediaUrl(data.url);
-      else window.location.assign(resolveMediaUrl(data.url));
+      if (!data?.playbackUrl) throw new Error('ATTACHMENT_URL_MISSING');
+      const url = resolveMediaUrl(data.playbackUrl);
+      if (data.accessMode === 'view_only') {
+        if (target) target.close();
+        setAttachmentViewer({
+          url,
+          mimeType: String(data.mimeType || attachment.mimeType || ''),
+          name: attachment.name || attachment.originalName || 'مرفق الدرس',
+        });
+      } else if (target) target.location.href = url;
+      else window.location.assign(url);
     } catch (error) {
       if (target) target.close();
       toast.error(error?.response?.data?.message || 'تعذر فتح مرفق الدرس');
@@ -158,7 +174,8 @@ export default function CoursePlayerPage() {
 
   const restorePosition = (event) => {
     mediaRefreshRef.current = 0;
-    const savedPosition = Number(currentLesson?.progress?.lastPositionSeconds || 0);
+    const savedPosition = Number(pendingResumePositionRef.current ?? currentLesson?.progress?.lastPositionSeconds ?? 0);
+    pendingResumePositionRef.current = null;
     const duration = Number(event.currentTarget.duration || currentLesson?.durationSeconds || 0);
     if (savedPosition > 0 && (!duration || savedPosition < duration)) event.currentTarget.currentTime = savedPosition;
   };
@@ -192,6 +209,9 @@ export default function CoursePlayerPage() {
   const currentMediaType = mediaTypeOf(currentLesson);
   const activeMediaUrl = mediaLessonId === currentLesson?.id ? mediaUrl : '';
   const poster = resolveMediaUrl(currentLesson?.thumbnailUrl || currentLesson?.posterUrl || currentLesson?.previewImage || view.course?.coverImage || '');
+  const watermarkIdentity = getProtectedContentIdentity(user);
+  const isLearnerPlayback = !['teacher', 'admin', 'super-admin'].includes(user?.role);
+  const isPdf = currentMediaType === 'document' && mediaMimeType.toLowerCase() === 'application/pdf';
 
   return <Layout><div dir='rtl' className='min-h-full rounded-2xl bg-[#F4F7FB] p-2 text-[#202936] sm:p-3 lg:p-4'>
     <div className='mx-auto max-w-[1450px]'><div className='mb-6 overflow-hidden rounded-2xl bg-linear-to-l from-[#123C91] via-[#174BAE] to-[#116B91] px-5 py-5 text-white shadow-[0_12px_30px_rgba(18,60,145,0.18)] sm:px-7'>
@@ -205,15 +225,17 @@ export default function CoursePlayerPage() {
         </aside>}
         <main className='order-1 min-w-0 xl:order-2'>
           <div className='mb-2 flex items-center justify-between gap-2'>{contentCollapsed ? <button type='button' onClick={() => setContentCollapsed(false)} className='inline-flex h-9 items-center gap-2 rounded-lg border border-[#DCE4EF] bg-white px-3 text-xs font-bold text-[#123C91] shadow-sm transition hover:bg-[#EAF2FF]'><PanelRightOpen size={17} />إظهار محتوى الدورة</button> : <span />}</div>
-          <div ref={playerFrameRef} className='group relative flex aspect-video items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-[#080B12] text-white shadow-[0_14px_36px_rgba(15,23,42,0.22)] fullscreen:aspect-auto fullscreen:h-screen fullscreen:w-screen fullscreen:rounded-none fullscreen:border-0'>
+          <div ref={playerFrameRef} onContextMenu={(event) => event.preventDefault()} className='group relative flex aspect-video items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-[#080B12] text-white shadow-[0_14px_36px_rgba(15,23,42,0.22)] fullscreen:aspect-auto fullscreen:h-screen fullscreen:w-screen fullscreen:rounded-none fullscreen:border-0'>
             <button type='button' onClick={toggleFullscreen} className='absolute left-3 top-3 z-20 grid h-10 w-10 place-items-center rounded-xl bg-black/65 text-white opacity-90 backdrop-blur transition hover:bg-[#123C91] focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100' aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'عرض بملء الشاشة'} title={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}>{isFullscreen ? <Minimize2 size={19} /> : <Maximize2 size={19} />}</button>
-            {!activeMediaUrl ? <div className='text-center'><LoaderCircle className='mx-auto animate-spin text-[#26D6C1]' size={30} /><p className='mt-3 text-xs text-white/65'>جاري تجهيز محتوى الدرس...</p></div> : currentMediaType === 'video' ? <video ref={mediaRef} key={activeMediaUrl} src={activeMediaUrl} poster={poster || undefined} controls controlsList='nodownload' playsInline preload='metadata' className='h-full w-full bg-black object-contain' onError={refreshExpiredMedia} onLoadedMetadata={restorePosition} onPlay={(event) => savePosition(event.currentTarget.currentTime, true)} onTimeUpdate={(event) => savePosition(event.currentTarget.currentTime)} onPause={(event) => savePosition(event.currentTarget.currentTime, true)} onEnded={completeLesson}>متصفحك لا يدعم تشغيل الفيديو.</video> : currentMediaType === 'audio' ? <audio ref={mediaRef} key={activeMediaUrl} src={activeMediaUrl} controls preload='metadata' className='w-[min(90%,680px)]' onError={refreshExpiredMedia} onLoadedMetadata={restorePosition} onPlay={(event) => savePosition(event.currentTarget.currentTime, true)} onTimeUpdate={(event) => savePosition(event.currentTarget.currentTime)} onPause={(event) => savePosition(event.currentTarget.currentTime, true)} onEnded={completeLesson} /> : <div className='mx-4 w-full max-w-md rounded-2xl border border-white/15 bg-white/8 p-6 text-center shadow-2xl backdrop-blur-sm sm:p-8'><span className='mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-white text-[#123C91] shadow-lg'><FileText size={30} /></span><h2 className='mt-4 line-clamp-2 text-lg font-extrabold text-white'>{currentLesson?.title || 'ملف الدرس'}</h2><p className='mt-2 text-sm leading-6 text-white/65'>هذا الملف محمي ولا يسمح بعرضه داخل الصفحة. يمكنك فتحه بأمان في نافذة جديدة.</p><a href={activeMediaUrl} target='_blank' rel='noopener noreferrer' className='mx-auto mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#20CDB7] px-6 text-sm font-extrabold !text-[#082E3A] shadow-[0_8px_20px_rgba(32,205,183,0.25)] transition hover:-translate-y-0.5 hover:bg-[#43DFCB]'><ExternalLink size={18} />فتح ملف الدرس</a></div>}
+            {activeMediaUrl && isLearnerPlayback && <ProtectedContentWatermark {...watermarkIdentity} />}
+            {!activeMediaUrl ? <div className='text-center'><LoaderCircle className='mx-auto animate-spin text-[#26D6C1]' size={30} /><p className='mt-3 text-xs text-white/65'>جاري تجهيز محتوى الدرس...</p></div> : currentMediaType === 'video' ? <video ref={mediaRef} key={activeMediaUrl} src={activeMediaUrl} crossOrigin='use-credentials' poster={poster || undefined} controls controlsList='nodownload noremoteplayback' disablePictureInPicture disableRemotePlayback playsInline preload='metadata' className='h-full w-full bg-black object-contain' onError={refreshExpiredMedia} onLoadedMetadata={restorePosition} onPlay={(event) => savePosition(event.currentTarget.currentTime, true)} onTimeUpdate={(event) => savePosition(event.currentTarget.currentTime)} onPause={(event) => savePosition(event.currentTarget.currentTime, true)} onEnded={completeLesson}>متصفحك لا يدعم تشغيل الفيديو.</video> : currentMediaType === 'audio' ? <audio ref={mediaRef} key={activeMediaUrl} src={activeMediaUrl} crossOrigin='use-credentials' controls controlsList='nodownload noremoteplayback' disableRemotePlayback preload='metadata' className='w-[min(90%,680px)]' onError={refreshExpiredMedia} onLoadedMetadata={restorePosition} onPlay={(event) => savePosition(event.currentTarget.currentTime, true)} onTimeUpdate={(event) => savePosition(event.currentTarget.currentTime)} onPause={(event) => savePosition(event.currentTarget.currentTime, true)} onEnded={completeLesson} /> : isPdf ? <iframe src={`${activeMediaUrl}#toolbar=0&navpanes=0`} title={currentLesson?.title || 'ملف الدرس'} className='h-full w-full bg-white' /> : <div className='mx-4 w-full max-w-md rounded-2xl border border-white/15 bg-white/8 p-6 text-center shadow-2xl backdrop-blur-sm sm:p-8'><span className='mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-white text-[#123C91] shadow-lg'><FileText size={30} /></span><h2 className='mt-4 line-clamp-2 text-lg font-extrabold text-white'>{currentLesson?.title || 'ملف الدرس'}</h2><p className='mt-2 text-sm leading-6 text-white/65'>هذا التنسيق لا يملك عارضًا آمنًا داخل المتصفح في المرحلة الحالية. يمكنك فتحه عبر الطلب المحمي المؤقت.</p><a href={activeMediaUrl} target='_blank' rel='noopener noreferrer' className='mx-auto mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#20CDB7] px-6 text-sm font-extrabold !text-[#082E3A] shadow-[0_8px_20px_rgba(32,205,183,0.25)] transition hover:-translate-y-0.5 hover:bg-[#43DFCB]'><ExternalLink size={18} />فتح ملف الدرس</a></div>}
           </div>
           <div className='mt-5 flex flex-col gap-4 rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-[0_6px_20px_rgba(31,41,55,0.05)] sm:flex-row sm:items-center sm:justify-between'><div className='min-w-0'><span className='mb-1 block text-xs font-bold text-[#12A594]'>الدرس الحالي</span><h1 className='text-lg font-extrabold text-[#172238]'>{currentLesson?.title}</h1><p className='mt-1 text-sm leading-7 text-[#718096]'>{currentLesson?.description}</p></div><button onClick={completeLesson} disabled={working || currentLesson?.progress?.status === 'completed'} className='h-11 shrink-0 rounded-xl bg-[#123C91] px-6 font-bold text-white shadow-[0_6px_14px_rgba(18,60,145,0.18)] transition hover:bg-[#0E3279] disabled:bg-[#D8DEE8] disabled:shadow-none'>{currentLesson?.progress?.status === 'completed' ? 'تم إكمال الدرس' : 'إكمال الدرس'}</button></div>
-          {!!currentLesson?.attachments?.length && <div className='mt-4 rounded-2xl border border-[#DCE4EF] bg-white p-5'><h2 className='mb-3 flex items-center gap-2 font-extrabold text-[#26344B]'><Paperclip size={18} className='text-[#123C91]' />مرفقات الدرس</h2><div className='grid gap-2 sm:grid-cols-2'>{currentLesson.attachments.map((attachment) => { const attachmentId = attachment.id || attachment._id; return <button key={attachmentId} type='button' onClick={() => openAttachment(attachment)} disabled={!!openingAttachmentId} className='flex items-center justify-between rounded-xl border border-[#E1E7EF] bg-[#F8FAFD] px-4 py-3 text-right text-sm font-bold transition hover:border-[#123C91] hover:bg-[#EFF5FF] disabled:opacity-60'><span className='truncate'>{attachment.originalName || attachment.name || 'مرفق الدرس'}</span>{openingAttachmentId === attachmentId ? <LoaderCircle size={17} className='animate-spin' /> : <Download size={17} className='text-[#123C91]' />}</button>; })}</div></div>}
+          {!!currentLesson?.attachments?.length && <div className='mt-4 rounded-2xl border border-[#DCE4EF] bg-white p-5'><h2 className='mb-3 flex items-center gap-2 font-extrabold text-[#26344B]'><Paperclip size={18} className='text-[#123C91]' />مرفقات الدرس</h2><div className='grid gap-2 sm:grid-cols-2'>{currentLesson.attachments.map((attachment) => { const attachmentId = attachment.id || attachment._id; const viewOnly = attachment.accessMode === 'view_only'; return <button key={attachmentId} type='button' onClick={() => openAttachment(attachment)} disabled={!!openingAttachmentId} className='flex items-center justify-between gap-3 rounded-xl border border-[#E1E7EF] bg-[#F8FAFD] px-4 py-3 text-right text-sm font-bold transition hover:border-[#123C91] hover:bg-[#EFF5FF] disabled:opacity-60'><span className='min-w-0 flex-1'><span className='block truncate'>{attachment.originalName || attachment.name || 'مرفق الدرس'}</span><small className='mt-0.5 block text-[10px] font-semibold text-[#667085]'>{viewOnly ? 'عرض فقط / View only' : 'قابل للتنزيل / Downloadable'}</small></span>{openingAttachmentId === attachmentId ? <LoaderCircle size={17} className='animate-spin' /> : viewOnly ? <Eye size={17} className='text-[#089E8C]' /> : <Download size={17} className='text-[#123C91]' />}</button>; })}</div></div>}
           <div className='mt-5 flex items-center justify-between rounded-xl border bg-[#F7FAFC] p-5'><div><h2 className='font-extrabold'>شهادة إتمام الدورة</h2><p className='mt-1 text-sm text-gray-500'>{view.certificateIssued ? 'تم إصدار شهادتك' : view.certificateEligible ? 'أصبحت مؤهلاً للحصول على الشهادة' : 'أكمل المتطلبات التي يحددها الخادم للحصول عليها'}</p></div>{view.certificateIssued ? <Link to={`/certificate/${courseId}`} className='flex items-center gap-2 rounded-lg bg-[#12C6B0] px-5 py-3 font-bold text-white'><Award size={18} />عرض الشهادة</Link> : <button onClick={claimCertificate} disabled={working || !view.certificateEligible} className='flex items-center gap-2 rounded-lg bg-[#12C6B0] px-5 py-3 font-bold text-white disabled:bg-gray-300'><Award size={18} />إصدار الشهادة</button>}</div>
         </main>
       </div>
     </div>
+    {attachmentViewer && <div className='fixed inset-0 z-[130] grid place-items-center bg-[#07142D]/90 p-3 sm:p-6' role='dialog' aria-modal='true' aria-label={attachmentViewer.name} onMouseDown={(event) => event.target === event.currentTarget && setAttachmentViewer(null)}><div onContextMenu={(event) => event.preventDefault()} className='relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#081A3A] shadow-2xl'><header className='flex items-center justify-between gap-3 bg-linear-to-l from-[#123C91] to-[#1E55B3] px-4 py-3 text-white'><div className='min-w-0'><p className='text-[10px] text-[#8FE3D8]'>عرض فقط / View only</p><h2 className='truncate text-sm font-bold'>{attachmentViewer.name}</h2></div><button type='button' onClick={() => setAttachmentViewer(null)} className='grid h-9 w-9 place-items-center rounded-full bg-white/10' aria-label='إغلاق'><X size={18} /></button></header><div className='relative min-h-0 flex-1 bg-[#050B17]'>{isLearnerPlayback && <ProtectedContentWatermark {...watermarkIdentity} />}{attachmentViewer.mimeType.startsWith('image/') ? <img src={attachmentViewer.url} alt={attachmentViewer.name} className='h-full w-full bg-white object-contain' /> : <iframe src={`${attachmentViewer.url}#toolbar=0&navpanes=0`} title={attachmentViewer.name} className='h-full w-full bg-white' />}</div></div></div>}
   </div></Layout>;
 }

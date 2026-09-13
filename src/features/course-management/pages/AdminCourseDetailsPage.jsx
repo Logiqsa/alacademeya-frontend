@@ -47,6 +47,7 @@ import mathCover from "../../../assets/courses/math-course.png";
 import pythonCover from "../../../assets/courses/python-course.png";
 import skillsCover from "../../../assets/courses/skills-course.png";
 import ReviewsPanel from "../components/reviews/ReviewsPanel";
+import ModerationHistoryPanel from "../components/ModerationHistoryPanel";
 import { confirmToast } from "../../../utils/confirmToast";
 import { getCourseEarningsByCourse } from "../../admin-finances/api/courseEarningsApi";
 import {
@@ -485,12 +486,12 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
     try {
       const response = await requestLessonMediaAccess(course.id, lesson.id);
       const data = response?.data?.data ?? response?.data ?? response;
-      if (!data?.url) throw new Error("PREVIEW_URL_MISSING");
+      if (!data?.playbackUrl) throw new Error("PREVIEW_URL_MISSING");
       const isFile =
         lesson.type === "ملف" ||
         lesson.type === "document" ||
         lesson.type === "file";
-      const ticketUrl = resolveMediaUrl(data.url);
+      const ticketUrl = resolveMediaUrl(data.playbackUrl);
       if (isFile) {
         const fileResponse = await fetch(ticketUrl);
         if (!fileResponse.ok) throw new Error("FILE_PREVIEW_FAILED");
@@ -632,9 +633,10 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
                         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#F2F4F7] text-[11px] text-[#667085]">
                           {lessonIndex + 1}
                         </span>
-                        <span className="min-w-0 flex-1 text-[#344054]">
-                          {lesson.title || "درس بدون عنوان"}
-                        </span>
+                        <div className="min-w-0 flex-1 text-[#344054]">
+                          <span className="block truncate">{lesson.title || "درس بدون عنوان"}</span>
+                          {!!lesson.attachments?.length && <div className="mt-1.5 flex flex-wrap gap-1">{lesson.attachments.map((attachment) => <span key={attachment.id || attachment._id || attachment.name} className="rounded-full bg-[#F2F4F7] px-2 py-0.5 text-[10px] text-[#667085]">{attachment.name || attachment.originalName || "مرفق"} · {(attachment.accessMode || "downloadable") === "view_only" ? "عرض فقط" : "قابل للتنزيل"}</span>)}</div>}
+                        </div>
                         {lesson.preview && (
                           <span className="shrink-0 rounded-full bg-[#DDF7E8] px-2.5 py-1 text-[10px] font-bold text-[#17864B]">
                             متاح للمعاينة
@@ -781,6 +783,7 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
               ) : (
                 <video
                   src={mediaPreview.url}
+                  crossOrigin="use-credentials"
                   controls
                   controlsList="nodownload"
                   autoPlay
@@ -1708,6 +1711,8 @@ const AdminCourseDetailsPage = () => {
             </button>
           </div>
         </div>
+
+        <div className="mb-4"><ModerationHistoryPanel courseId={course.id} admin /></div>
 
         <div className="mb-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           {isPendingReview ? (

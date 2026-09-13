@@ -11,6 +11,7 @@ import UsersTable from "../../../components/admin/users/Userstable";
 import {
   deleteUser as deleteUserApi,
   getAllStudents,
+  getUser,
   getTeachers,
   updateUser,
 } from "../../../services/APIService";
@@ -96,6 +97,29 @@ const UsersPage = () => {
       const studentProfiles = Array.isArray(studentProfilesData)
         ? studentProfilesData
         : [];
+      const completeUsers = Array.isArray(list) ? [...list] : [];
+      const knownUserIds = new Set(
+        completeUsers.map((item) => String(item.id || item._id)).filter(Boolean),
+      );
+      const missingUserIds = [
+        ...new Set(
+          studentProfiles
+            .map((student) =>
+              typeof student.user === "string"
+                ? student.user
+                : student.user?.id || student.user?._id,
+            )
+            .filter((id) => id && !knownUserIds.has(String(id))),
+        ),
+      ];
+      const missingUserResponses = await Promise.allSettled(
+        missingUserIds.map((userId) => getUser(userId)),
+      );
+      missingUserResponses.forEach((result) => {
+        if (result.status !== "fulfilled") return;
+        const userData = result.value.data?.data || result.value.data;
+        if (userData?.id || userData?._id) completeUsers.push(userData);
+      });
       const studentsByUserId = new Map(
         studentProfiles.map((student) => [
           String(
@@ -120,9 +144,7 @@ const UsersPage = () => {
           teacher,
         ]),
       );
-      setUsers(
-        Array.isArray(list)
-          ? list.map((rawUser) => {
+      const mappedUsers = completeUsers.map((rawUser) => {
               const mapped = mapAdminUser(rawUser);
               const student = studentsByUserId.get(String(mapped.id));
               const teacher = teachersByUserId.get(String(mapped.id));
@@ -190,9 +212,8 @@ const UsersPage = () => {
                       "—",
                   }
                 : mapped;
-            })
-          : [],
-      );
+            });
+      setUsers(mappedUsers);
     } catch (err) {
       console.error(err);
       toast.error("تعذر تحميل المستخدمين");

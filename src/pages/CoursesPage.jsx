@@ -13,6 +13,7 @@ const prices = [
   { value: "free", label: "مجاني" },
   { value: "paid", label: "مدفوع" },
 ];
+const audiences = [{value:"general",label:"عامة"},{value:"school",label:"مدرسية"},{value:"university",label:"جامعية"},{value:"graduate",label:"خريجون"}];
 const COURSES_PER_PAGE = 3;
 
 const CheckboxGroup = ({ title, items, selected, onToggle }) => (
@@ -52,6 +53,7 @@ export default function CoursesPage() {
   const [selectedLanguages, setSelectedLanguages] = useState([]);
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [selectedPrices, setSelectedPrices] = useState([]);
+  const [selectedAudiences, setSelectedAudiences] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -79,6 +81,7 @@ export default function CoursesPage() {
     setSelectedLanguages([]);
     setSelectedLevels([]);
     setSelectedPrices([]);
+    setSelectedAudiences([]);
   };
 
   const activeFilterCount =
@@ -88,7 +91,8 @@ export default function CoursesPage() {
     selectedGrades.length +
     selectedLanguages.length +
     selectedLevels.length +
-    selectedPrices.length;
+    selectedPrices.length +
+    selectedAudiences.length;
 
   const filteredCourses = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -111,6 +115,7 @@ export default function CoursesPage() {
         !selectedPrices.length ||
         (selectedPrices.includes("free") && course.price === 0) ||
         (selectedPrices.includes("paid") && course.price > 0);
+      const matchesAudience = !selectedAudiences.length || selectedAudiences.includes(course.audienceType);
       return (
         matchesQuery &&
         matchesClassification &&
@@ -119,7 +124,7 @@ export default function CoursesPage() {
         matchesGrade &&
         matchesLanguage &&
         matchesLevel &&
-        matchesPrice
+        matchesPrice && matchesAudience
       );
     });
 
@@ -139,6 +144,7 @@ export default function CoursesPage() {
     selectedLanguages,
     selectedLevels,
     selectedPrices,
+    selectedAudiences,
     sortBy,
   ]);
 
@@ -159,6 +165,7 @@ export default function CoursesPage() {
     selectedLanguages,
     selectedLevels,
     selectedPrices,
+    selectedAudiences,
     sortBy,
   ]);
 
@@ -220,30 +227,31 @@ export default function CoursesPage() {
               </div>
 
               <div className="space-y-5">
+                <CheckboxGroup title="الجمهور" items={audiences} selected={selectedAudiences} onToggle={toggleValue(setSelectedAudiences)} />
                 <CheckboxGroup
                   title="التصنيف"
                   items={classifications}
                   selected={selectedClassifications}
                   onToggle={toggleValue(setSelectedClassifications)}
                 />
-                <CheckboxGroup
+                {(!selectedAudiences.length || selectedAudiences.includes("school")) && <CheckboxGroup
                   title="المادة"
                   items={subjects}
                   selected={selectedSubjects}
                   onToggle={toggleValue(setSelectedSubjects)}
-                />
-                <CheckboxGroup
+                />}
+                {(!selectedAudiences.length || selectedAudiences.includes("school")) && <CheckboxGroup
                   title="المرحلة"
                   items={stages}
                   selected={selectedStages}
                   onToggle={toggleValue(setSelectedStages)}
-                />
-                <CheckboxGroup
+                />}
+                {(!selectedAudiences.length || selectedAudiences.includes("school")) && <CheckboxGroup
                   title="الصف"
                   items={grades}
                   selected={selectedGrades}
                   onToggle={toggleValue(setSelectedGrades)}
-                />
+                />}
                 <CheckboxGroup
                   title="اللغة"
                   items={languages}

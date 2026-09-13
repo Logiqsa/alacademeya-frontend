@@ -29,6 +29,7 @@ import PhoneDisplay from "../../account-settings/PhoneDisplay";
 import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 import LandingStatsSettings from "../dashboard/LandingStatsSettings";
 import ExchangeRatesSettings from "./ExchangeRatesSettings";
+import { AccountTypeBadge } from "../../account-settings/AccountRegistrationStatus";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -784,6 +785,7 @@ const AdminAccountSettings = () => {
               {admin.email}
             </p>
           </div>
+          <div className="mr-auto"><AccountTypeBadge /></div>
         </div>
       </div>
 

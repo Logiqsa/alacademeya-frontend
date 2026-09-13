@@ -17,6 +17,17 @@ const unwrap = (response) => {
   return data?.instructor || data?.profile || data;
 };
 
+const instructorStatusLabel = (status) =>
+  ({ active: "نشط", pending: "قيد المراجعة", suspended: "موقوف" })[status] ||
+  "غير محدد";
+
+const instructorStatusClass = (status) =>
+  ({
+    active: "bg-emerald-50 text-emerald-700",
+    pending: "bg-amber-50 text-amber-700",
+    suspended: "bg-red-50 text-red-700",
+  })[status] || "bg-gray-100 text-gray-600";
+
 export default function InstructorProfilePage() {
   const { user } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
@@ -85,7 +96,7 @@ export default function InstructorProfilePage() {
               )}
               <Link
                 to="/instructor/onboarding"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#123C91] px-4 py-2.5 text-sm font-bold text-white"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#123C91] px-4 py-2.5 text-sm font-bold !text-white"
               >
                 <Pencil size={16} /> تعديل الملف
               </Link>
@@ -131,8 +142,8 @@ export default function InstructorProfilePage() {
                         معلم
                       </span>
                     )}
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-                      {profile.status === "suspended" ? "موقوف" : "نشط"}
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${instructorStatusClass(profile.status)}`}>
+                      {instructorStatusLabel(profile.status)}
                     </span>
                   </div>
                 </div>
@@ -149,7 +160,7 @@ export default function InstructorProfilePage() {
                       <UserRound size={17} className="text-[#123C91]" /> حالة
                       الملف:{" "}
                       <strong className="text-[#17213A]">
-                        {profile.status === "suspended" ? "موقوف" : "نشط"}
+                        {instructorStatusLabel(profile.status)}
                       </strong>
                     </p>
                     <p className="flex items-center gap-2 text-sm text-[#667085]">

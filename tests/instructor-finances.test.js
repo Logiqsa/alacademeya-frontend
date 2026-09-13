@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import fs from "node:fs";
 import {
   canHaveInstructorProfile,
   getDashboardPathByRole,
@@ -52,6 +53,23 @@ test("normalizes empty earnings responses without inventing financial values", (
   });
   assert.deepEqual(normalizeEarningsCourses({ data: {} }), []);
   assert.deepEqual(normalizeEarningsTimeline({ data: {} }), []);
+});
+
+test("normalizes timeline earnings and value fields as numeric chart points", () => {
+  assert.deepEqual(
+    normalizeEarningsTimeline({
+      data: {
+        timeline: [
+          { date: "2026-09-01", currency: "EGP", earnings: 400 },
+          { date: "2026-09-02", currency: "EGP", value: 250 },
+        ],
+      },
+    }),
+    [
+      { id: "2026-09-01-EGP", date: "2026-09-01", amount: 400, currency: "EGP" },
+      { id: "2026-09-02-EGP", date: "2026-09-02", amount: 250, currency: "EGP" },
+    ],
+  );
 });
 
 test("preserves separate currencies in summaries and display formatting", () => {
@@ -171,4 +189,10 @@ test("extracts notification lists from paginated responses", () => {
   const items = [{ id: "notification-1" }];
   assert.deepEqual(extractNotificationList({ data: { items, pagination: { page: 1 } } }), items);
   assert.deepEqual(extractNotificationList(undefined), []);
+});
+
+test("the instructor earnings route mounts the payout and withdrawal workflow", () => {
+  const source = fs.readFileSync(new URL("../src/pages/teacher/EarningsPage.jsx", import.meta.url), "utf8");
+  assert.match(source, /import InstructorPayoutDashboard/);
+  assert.match(source, /<InstructorPayoutDashboard \/>/);
 });

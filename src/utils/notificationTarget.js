@@ -76,6 +76,9 @@ export const getNotificationTarget = (notification, role) => {
     if (role === "teacher") return courseId ? `/teacher/courses/${encodeURIComponent(courseId)}` : "/teacher/courses";
     if (role === "admin") return courseId ? `/admin/courses/${encodeURIComponent(courseId)}` : "/admin/courses";
   }
+  if (["COURSE_APPROVED", "COURSE_REJECTED"].includes(eventType) && role === "teacher") {
+    return courseId ? `/teacher/courses/${encodeURIComponent(courseId)}` : "/teacher/courses";
+  }
 
   if (eventType === "COURSE_ACCESS_GRANT_FAILED") {
     if (role === "admin") return courseId ? `/admin/courses/${encodeURIComponent(courseId)}` : "/admin/courses";
