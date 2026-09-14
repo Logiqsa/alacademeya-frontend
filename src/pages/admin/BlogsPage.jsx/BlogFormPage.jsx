@@ -3,12 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
-import { ChevronDown, ImagePlus } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, FileText, ImagePlus, Save, Send, X } from "lucide-react";
 import { addBlogCreatedNotification } from "../../../utils/adminLocalNotifications";
-
-// استدعاء مكتبة Quill الأساسية
-import Quill from "quill";
-import "quill/dist/quill.snow.css";
+import BlogRichTextEditor from "../../../components/admin/blogs/BlogRichTextEditor";
 
 import {
   getBlogPost,
@@ -41,11 +38,9 @@ const BlogFormPage = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
+  const [isDraftSidebarOpen, setIsDraftSidebarOpen] = useState(true);
 
   const fileInputRef = useRef(null);
-  // مراجع خاصة بمحرر Quill الحديث
-  const quillRef = useRef(null);
-  const quillInstanceRef = useRef(null);
 
   useEffect(() => {
     getBlogCategories()
@@ -66,7 +61,6 @@ const BlogFormPage = () => {
 
   useEffect(() => {
     if (!isEditMode) return;
-    setLoading(true);
     getBlogPost(id)
       .then((res) => {
         const responseData = res.data?.data;
@@ -85,42 +79,6 @@ const BlogFormPage = () => {
       .catch(() => toast.error("عذراً، تعذر تحميل بيانات المقال بنجاح."))
       .finally(() => setLoading(false));
   }, [id, isEditMode]);
-
-  // إعداد وتفعيل محرر Quill مرة واحدة عند التحميل مع جعله يمين (RTL)
-  useEffect(() => {
-    // In edit mode the editor is mounted only after the post finishes loading.
-    if (loading || !quillRef.current || quillInstanceRef.current) return;
-
-    quillInstanceRef.current = new Quill(quillRef.current, {
-      theme: "snow",
-      modules: {
-        toolbar: [
-          [{ header: [1, 2, 3, false] }],
-          ["bold", "italic", "underline", "strike"],
-          [{ color: [] }, { background: [] }],
-          [{ align: [] }],
-          [{ list: "ordered" }, { list: "bullet" }],
-          ["link", "image"],
-          ["clean"],
-        ],
-      },
-    });
-
-    // ضبط اتجاه الكتابة الافتراضي ومحاذاة السطر لليمين
-    quillInstanceRef.current.format("direction", "rtl");
-    quillInstanceRef.current.format("align", "right");
-
-    // تعيين القيمة الابتدائية لو وجدت
-    if (data.content) {
-      quillInstanceRef.current.root.innerHTML = data.content;
-    }
-
-    // تحديث الحالة عند الكتابة
-    quillInstanceRef.current.on("text-change", () => {
-      const html = quillRef.current.querySelector(".ql-editor").innerHTML;
-      setData((prev) => ({ ...prev, content: html }));
-    });
-  }, [loading]);
 
   const handleField = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
@@ -148,7 +106,7 @@ const BlogFormPage = () => {
   };
 
   const handleSave = async (status) => {
-    const editorContent = quillInstanceRef.current?.root.innerHTML ?? data.content ?? "";
+    const editorContent = data.content ?? "";
     if (!data.title.trim()) {
       toast.error("الحقل المطلوب: يرجى إدخال عنوان المقال.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -220,7 +178,8 @@ const BlogFormPage = () => {
           </h3>
         </div>
 
-        <div className="bg-white border border-[#E5E5E5] rounded-2xl p-6 shadow-sm space-y-6">
+        <div className={`grid items-start gap-5 transition-[grid-template-columns] duration-300 ${isDraftSidebarOpen ? "xl:grid-cols-[minmax(0,1fr)_300px]" : "xl:grid-cols-[minmax(0,1fr)_72px]"}`}>
+        <div className="bg-white border border-[#E5E5E5] rounded-2xl p-4 shadow-sm space-y-6 sm:p-6">
 
           {/* صورة المقال فقط، بدون ألوان غلاف */}
           <div>
@@ -360,9 +319,7 @@ const BlogFormPage = () => {
             <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
               محتوى المقال
             </label>
-            <div className="border border-[#E5E5E5] rounded-xl overflow-hidden bg-white" dir="rtl">
-              <div ref={quillRef} style={{ minHeight: "200px", direction: "rtl", textAlign: "right" }} />
-            </div>
+            <BlogRichTextEditor value={data.content} onChange={(value) => handleField("content", value)} disabled={saving} />
           </div>
 
           {/* 8. مقال مميز */}
@@ -384,33 +341,47 @@ const BlogFormPage = () => {
 
         </div>
 
-        {/* أزرار الحفظ والإلغاء السفلية */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
-          <button
-            type="button"
-            onClick={() => handleSave("published")}
-            disabled={saving}
-            className="flex-1 py-3 bg-[#123C91] text-white rounded-xl font-medium text-[14px] hover:bg-[#0d2d6d] transition-colors disabled:opacity-60"
-          >
-            {saving ? "جارٍ الحفظ..." : isEditMode ? "حفظ التعديلات" : "نشر المقال"}
-          </button>
+        <aside className="overflow-hidden rounded-2xl border border-[#DCE3EC] bg-white shadow-sm xl:sticky xl:top-0">
+          <div className={`flex items-center border-b border-[#EAECF0] p-3 ${isDraftSidebarOpen ? "justify-between" : "justify-center"}`}>
+            {isDraftSidebarOpen && <div className="flex items-center gap-2"><span className="grid size-9 place-items-center rounded-lg bg-[#EEF4FF] text-[#123C91]"><FileText size={18} /></span><div><h4 className="text-sm font-bold text-[#1F2937]">إجراءات المقال</h4><p className="text-[11px] text-[#667085]">الحفظ والنشر</p></div></div>}
+            <button type="button" onClick={() => setIsDraftSidebarOpen((open) => !open)} className="grid size-9 place-items-center rounded-lg text-[#475467] transition hover:bg-[#F2F4F7]" aria-expanded={isDraftSidebarOpen} aria-label={isDraftSidebarOpen ? "طي سايدبار المسودة" : "فتح سايدبار المسودة"} title={isDraftSidebarOpen ? "طي السايدبار" : "فتح السايدبار"}>
+              {isDraftSidebarOpen ? <ChevronRight size={19} /> : <ChevronLeft size={19} />}
+            </button>
+          </div>
 
+          {isDraftSidebarOpen ? <div className="space-y-3 p-4">
+            <div className="rounded-xl bg-[#F8FAFC] p-3 text-xs leading-6 text-[#667085]">
+              {isEditMode ? "احفظ التعديلات الحالية كمسودة أو انشر النسخة المحدثة." : "يمكنك حفظ المقال كمسودة والعودة لاستكماله لاحقًا."}
+            </div>
           <button
             type="button"
             onClick={() => handleSave("draft")}
             disabled={saving}
-            className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#575F69] font-medium text-[14px] hover:bg-gray-50 transition-colors disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#B8C7DD] py-3 text-[14px] font-bold text-[#123C91] transition hover:bg-[#F3F7FD] disabled:opacity-60"
           >
-            حفظ كمسودة
+            <Save size={17} />{saving ? "جارٍ الحفظ..." : "حفظ كمسودة"}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSave("published")}
+            disabled={saving}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#123C91] py-3 text-[14px] font-bold text-white transition hover:bg-[#0d2d6d] disabled:opacity-60"
+          >
+            <Send size={17} />{saving ? "جارٍ الحفظ..." : isEditMode ? "حفظ ونشر التعديلات" : "نشر المقال"}
           </button>
           <button
             type="button"
             onClick={() => navigate("/admin/blogs")}
             disabled={saving}
-            className="flex-1 py-3 border border-[#E5E5E5] rounded-xl text-[#123C91] font-medium text-[14px] hover:bg-gray-50 transition-colors disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-medium text-[#667085] transition hover:bg-[#F2F4F7] disabled:opacity-60"
           >
-            إلغاء
+            <X size={16} />إلغاء
           </button>
+          </div> : <div className="flex flex-col items-center gap-2 p-3">
+            <button type="button" onClick={() => handleSave("draft")} disabled={saving} className="grid size-10 place-items-center rounded-xl border border-[#B8C7DD] text-[#123C91] hover:bg-[#F3F7FD] disabled:opacity-60" aria-label="حفظ كمسودة" title="حفظ كمسودة"><Save size={18} /></button>
+            <button type="button" onClick={() => handleSave("published")} disabled={saving} className="grid size-10 place-items-center rounded-xl bg-[#123C91] text-white hover:bg-[#0d2d6d] disabled:opacity-60" aria-label="نشر المقال" title="نشر المقال"><Send size={18} /></button>
+          </div>}
+        </aside>
         </div>
 
       </div>
