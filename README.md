@@ -1,92 +1,78 @@
 # 🎓 Alacademeya Frontend
 
-واجهة منصة **الأكاديمية** التعليمية، مبنية باستخدام React وVite لتقديم تجربة موحدة للطلاب، أولياء الأمور، المعلمين، المحاضرين، والمشرفين.
+The web application for **Alacademeya**, an educational platform built with React and Vite. It provides dedicated experiences for students, parents, teachers, instructors, and administrators.
 
-## ✨ أبرز المزايا
+## ✨ Features
 
-- 📚 استعراض وشراء الدورات وإدارة المحتوى التعليمي.
-- 🧑‍🏫 لوحات مستقلة للمعلم والمحاضر وإدارة الطلاب والأرباح.
-- 🛡️ لوحة إدارة للمستخدمين، المراجعات، المدفوعات وأمان الوسائط.
-- 🎬 مشغل مخصص للفيديو والصوت مع اختصارات لوحة المفاتيح.
-- 🔔 إشعارات لحظية عبر Socket.IO مع حالات مقروء وغير مقروء.
-- 💬 محادثات مباشرة وإدارة للمجموعات والحصص والواجبات.
-- 🌍 واجهات عربية RTL متجاوبة مع مختلف أحجام الشاشات.
+- 📚 Browse and purchase courses and manage educational content.
+- 🧑‍🏫 Dedicated teacher and instructor dashboards for managing students and earnings.
+- 🛡️ Administration tools for users, course reviews, payments, and media security.
+- 🎬 Custom video and audio player with keyboard shortcuts.
+- 🔔 Real-time notifications with read and unread states.
+- 💬 Real-time messaging, groups, sessions, schedules, and assignments.
+- 🌍 Responsive Arabic-first RTL interface across desktop and mobile devices.
 
-## 🧰 التقنيات
+## 🧰 Technology Stack
 
-| المجال | الأدوات |
+| Area | Technologies |
 | --- | --- |
-| الواجهة | React 19, React Router |
-| البناء | Vite 8 |
-| التصميم | Tailwind CSS 4, Lucide React |
-| البيانات | Axios, TanStack Query |
-| النماذج | React Hook Form, Zod |
-| التحديث اللحظي | Socket.IO Client |
-| الرسوم | Recharts |
-| الاختبارات | Node.js Test Runner |
+| UI | React 19, React Router |
+| Build tooling | Vite 8 |
+| Styling | Tailwind CSS 4, Lucide React |
+| Data fetching | Axios, TanStack Query |
+| Forms and validation | React Hook Form, Zod |
+| Real-time communication | Socket.IO Client |
+| Charts | Recharts |
+| Testing | Node.js Test Runner |
 
-## 🚀 التشغيل محليًا
+## 🚀 Getting Started
 
-### المتطلبات
+### Prerequisites
 
-- Node.js إصدار حديث متوافق مع Vite 8.
+- A recent Node.js version compatible with Vite 8.
 - npm.
-- نسخة عاملة من [Alacademeya Backend](https://github.com/Logiqsa/alacademeya-backend).
+- A running instance of the [Alacademeya Backend](https://github.com/Logiqsa/alacademeya-backend).
 
-### التثبيت
+### Installation
 
 ```bash
 git clone https://github.com/Logiqsa/alacademeya-frontend.git
 cd alacademeya-frontend
 npm install
-```
-
-أنشئ ملف `.env` في جذر المشروع:
-
-```env
-VITE_API_BASE_URL=http://localhost:3000/api
-VITE_INSTRUCTOR_AGREEMENT_VERSION=1.0
-VITE_SUPPORT_USER_ID=
-```
-
-ثم شغّل بيئة التطوير:
-
-```bash
 npm run dev
 ```
 
-## 📜 الأوامر المتاحة
+## 📜 Available Scripts
 
-| الأمر | الوظيفة |
+| Command | Description |
 | --- | --- |
-| `npm run dev` | تشغيل خادم التطوير |
-| `npm run build` | إنشاء نسخة الإنتاج |
-| `npm run preview` | معاينة نسخة الإنتاج محليًا |
-| `npm run lint` | فحص جودة الكود |
-| `npm test` | تشغيل الاختبارات |
+| `npm run dev` | Start the development server |
+| `npm run build` | Create a production build |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run code-quality checks |
+| `npm test` | Run the test suite |
 
-## 🗂️ هيكل المشروع
+## 🗂️ Project Structure
 
 ```text
 src/
-├── components/   # المكونات المشتركة ومكونات الأدوار
-├── features/     # خصائص الدورات والمالية والأرباح
-├── pages/        # صفحات التطبيق
-├── services/     # طلبات API وإعدادات الروابط
-├── api/          # Socket hooks وواجهات البيانات
-├── context/      # حالة المصادقة المشتركة
-├── guards/       # حماية المسارات والصلاحيات
-└── utils/        # أدوات التنسيق والمساعدة
+├── components/   # Shared and role-specific components
+├── features/     # Course, finance, and earnings features
+├── pages/        # Application pages
+├── services/     # API requests and URL configuration
+├── api/          # Socket hooks and data interfaces
+├── context/      # Shared authentication state
+├── guards/       # Route and permission guards
+└── utils/        # Formatting and utility helpers
 ```
 
-## 🔐 ملاحظات الأمان
+## 🔐 Security Notes
 
-- لا تضع مفاتيح API أو بيانات حساسة في متغيرات تبدأ بـ `VITE_`؛ فهي تظهر داخل حزمة المتصفح.
-- جلسات تشغيل الوسائط وروابطها المؤقتة يصدرها الباك فقط.
-- لا ترفع ملف `.env` إلى Git.
-- الباك هو المصدر النهائي للتحقق من الصلاحيات.
+- Media playback sessions and temporary media URLs are issued by the backend.
+- The backend remains the source of truth for authentication and authorization.
+- Keep dependencies updated and run security checks before production deployments.
 
-## ✅ قبل إرسال التعديلات
+## ✅ Before Submitting Changes
 
 ```bash
 npm test
@@ -94,6 +80,6 @@ npm run build
 npm run lint
 ```
 
-## 📄 الترخيص
+## 📄 License
 
-هذا المشروع خاص بمنصة الأكاديمية. جميع الحقوق محفوظة.
+This is proprietary software developed for Alacademeya. All rights reserved.
