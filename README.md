@@ -1,16 +1,99 @@
-# React + Vite
+# 🎓 Alacademeya Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+واجهة منصة **الأكاديمية** التعليمية، مبنية باستخدام React وVite لتقديم تجربة موحدة للطلاب، أولياء الأمور، المعلمين، المحاضرين، والمشرفين.
 
-Currently, two official plugins are available:
+## ✨ أبرز المزايا
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 📚 استعراض وشراء الدورات وإدارة المحتوى التعليمي.
+- 🧑‍🏫 لوحات مستقلة للمعلم والمحاضر وإدارة الطلاب والأرباح.
+- 🛡️ لوحة إدارة للمستخدمين، المراجعات، المدفوعات وأمان الوسائط.
+- 🎬 مشغل مخصص للفيديو والصوت مع اختصارات لوحة المفاتيح.
+- 🔔 إشعارات لحظية عبر Socket.IO مع حالات مقروء وغير مقروء.
+- 💬 محادثات مباشرة وإدارة للمجموعات والحصص والواجبات.
+- 🌍 واجهات عربية RTL متجاوبة مع مختلف أحجام الشاشات.
 
-## React Compiler
+## 🧰 التقنيات
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| المجال | الأدوات |
+| --- | --- |
+| الواجهة | React 19, React Router |
+| البناء | Vite 8 |
+| التصميم | Tailwind CSS 4, Lucide React |
+| البيانات | Axios, TanStack Query |
+| النماذج | React Hook Form, Zod |
+| التحديث اللحظي | Socket.IO Client |
+| الرسوم | Recharts |
+| الاختبارات | Node.js Test Runner |
 
-## Expanding the ESLint configuration
+## 🚀 التشغيل محليًا
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### المتطلبات
+
+- Node.js إصدار حديث متوافق مع Vite 8.
+- npm.
+- نسخة عاملة من [Alacademeya Backend](https://github.com/Logiqsa/alacademeya-backend).
+
+### التثبيت
+
+```bash
+git clone https://github.com/novira-digital-sol/alacademeya-frontend.git
+cd alacademeya-frontend
+npm install
+```
+
+أنشئ ملف `.env` في جذر المشروع:
+
+```env
+VITE_API_BASE_URL=http://localhost:3000/api
+VITE_INSTRUCTOR_AGREEMENT_VERSION=1.0
+VITE_SUPPORT_USER_ID=
+```
+
+ثم شغّل بيئة التطوير:
+
+```bash
+npm run dev
+```
+
+## 📜 الأوامر المتاحة
+
+| الأمر | الوظيفة |
+| --- | --- |
+| `npm run dev` | تشغيل خادم التطوير |
+| `npm run build` | إنشاء نسخة الإنتاج |
+| `npm run preview` | معاينة نسخة الإنتاج محليًا |
+| `npm run lint` | فحص جودة الكود |
+| `npm test` | تشغيل الاختبارات |
+
+## 🗂️ هيكل المشروع
+
+```text
+src/
+├── components/   # المكونات المشتركة ومكونات الأدوار
+├── features/     # خصائص الدورات والمالية والأرباح
+├── pages/        # صفحات التطبيق
+├── services/     # طلبات API وإعدادات الروابط
+├── api/          # Socket hooks وواجهات البيانات
+├── context/      # حالة المصادقة المشتركة
+├── guards/       # حماية المسارات والصلاحيات
+└── utils/        # أدوات التنسيق والمساعدة
+```
+
+## 🔐 ملاحظات الأمان
+
+- لا تضع مفاتيح API أو بيانات حساسة في متغيرات تبدأ بـ `VITE_`؛ فهي تظهر داخل حزمة المتصفح.
+- جلسات تشغيل الوسائط وروابطها المؤقتة يصدرها الباك فقط.
+- لا ترفع ملف `.env` إلى Git.
+- الباك هو المصدر النهائي للتحقق من الصلاحيات.
+
+## ✅ قبل إرسال التعديلات
+
+```bash
+npm test
+npm run build
+npm run lint
+```
+
+## 📄 الترخيص
+
+هذا المشروع خاص بمنصة الأكاديمية. جميع الحقوق محفوظة.
