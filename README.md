@@ -22,7 +22,6 @@ The web application for **Alacademeya**, an educational platform built with Reac
 | Data fetching | Axios, TanStack Query |
 | Forms and validation | React Hook Form, Zod |
 | Real-time communication | Socket.IO Client |
-| Charts | Recharts |
 | Testing | Node.js Test Runner |
 
 ## 🚀 Getting Started

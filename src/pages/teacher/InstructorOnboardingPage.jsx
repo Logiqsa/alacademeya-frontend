@@ -184,7 +184,8 @@ export default function InstructorOnboardingPage() {
                 />
                 <span>
                   أوافق على اتفاقية المحاضر الحالية (الإصدار{" "}
-                  {INSTRUCTOR_AGREEMENT_VERSION}) وعلى شروط نشر المحتوى.
+                  {INSTRUCTOR_AGREEMENT_VERSION}). ستُطلب موافقة مستقلة على
+                  سياسات النشر ومشاركة الإيرادات قبل إرسال أي دورة للمراجعة.
                 </span>
               </label>
             )}

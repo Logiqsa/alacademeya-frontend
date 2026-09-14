@@ -1,14 +1,23 @@
 // ─── AccountTypePage.jsx ───────────────────────────────────────────────────
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 
 const TYPES = [
     {
+        id: "learner",
+        title: "إنشاء حساب متعلم",
+        desc: "تصفح الدورات وابدأ رحلتك التعليمية بحساب شخصي.",
+    },
+    {
+        id: "instructor",
+        title: "الانضمام كمحاضر",
+        desc: "أنشئ ملف محاضر وقدّم دوراتك التعليمية على المنصة.",
+    },
+    {
         id: "student",
-        title: "طالب",
-        desc: "طور مهاراتك وتابع رحلتك التعليمية.",
+        title: "طالب أكاديمي",
+        desc: "انضم للمجموعات والحصص وتابع دراستك الأكاديمية.",
     },
     {
         id: "parent",

@@ -24,7 +24,8 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
   const isTeacher = user?.role === "teacher";
   // Keep marketplace navigation stable while the profile identity request is
   // loading. Route guards remain the authority for the destination itself.
-  const canAccessInstructorArea = canHaveInstructorProfile(user);
+  const canAccessInstructorArea = instructor;
+  const canBecomeInstructor = canHaveInstructorProfile(user) && !instructor;
   const dashboardPath = getDashboardPathByRole(user, "/teacher/earnings");
 
   useEffect(() => {
@@ -56,6 +57,9 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
     {
       label: "رئيسي",
       items: [
+        ...(canBecomeInstructor
+          ? [{ title: "كن محاضرًا", icon: childrenIcon, path: "/instructor/onboarding" }]
+          : []),
         {
           title: "لوحة التحكم",
           icon: dashboardIcon,

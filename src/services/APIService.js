@@ -135,8 +135,6 @@ export const getMyInstructorEarnings = (params) =>
   API.get("/instructors/me/earnings", { params });
 export const getMyInstructorEarningsCourses = (params) =>
   API.get("/instructors/me/earnings/courses", { params });
-export const getMyInstructorEarningsTimeline = (params) =>
-  API.get("/instructors/me/earnings/timeline", { params });
 export const getMyInstructorBalance = () =>
   API.get("/instructors/me/balance");
 export const createMyInstructorWithdrawal = (payload) =>

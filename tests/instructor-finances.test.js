@@ -10,7 +10,6 @@ import {
   normalizeEarningsCourses,
   normalizeEarningsHistory,
   normalizeEarningsSummary,
-  normalizeEarningsTimeline,
 } from "../src/features/instructor-earnings/api/earningsApi.js";
 import { formatMoney } from "../src/utils/currencyDisplay.js";
 import { normalizeInstructorBalance } from "../src/features/instructor-payouts/api/payoutsApi.js";
@@ -52,24 +51,6 @@ test("normalizes empty earnings responses without inventing financial values", (
     currencies: [],
   });
   assert.deepEqual(normalizeEarningsCourses({ data: {} }), []);
-  assert.deepEqual(normalizeEarningsTimeline({ data: {} }), []);
-});
-
-test("normalizes timeline earnings and value fields as numeric chart points", () => {
-  assert.deepEqual(
-    normalizeEarningsTimeline({
-      data: {
-        timeline: [
-          { date: "2026-09-01", currency: "EGP", earnings: 400 },
-          { date: "2026-09-02", currency: "EGP", value: 250 },
-        ],
-      },
-    }),
-    [
-      { id: "2026-09-01-EGP", date: "2026-09-01", amount: 400, currency: "EGP" },
-      { id: "2026-09-02-EGP", date: "2026-09-02", amount: 250, currency: "EGP" },
-    ],
-  );
 });
 
 test("preserves separate currencies in summaries and display formatting", () => {

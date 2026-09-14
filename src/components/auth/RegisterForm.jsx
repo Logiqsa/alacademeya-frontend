@@ -6,6 +6,8 @@ import logo from "../../assets/icons/logo.svg";
 import { getArabicCountryName } from "../../utils/countryName";
 import { buildInternationalPhone } from "../../utils/phone";
 import { register, getCountries } from "../../services/APIService";
+import { INSTRUCTOR_AGREEMENT_VERSION } from "../../config/instructor";
+import { buildRegistrationIntent } from "../../utils/registrationIntent";
 
 const PASSWORD_REQUIREMENTS = [
   { label: "8 أحرف على الأقل", test: (value) => value.length >= 8 },
@@ -246,6 +248,9 @@ const RegisterForm = ({ type }) => {
     // المستخدم صراحةً وبترتبط مباشرة بحقل studentType في الباك إند.
     studentType: "school",
     role: type || "student",
+    headline: "",
+    bio: "",
+    instructorAgreementAccepted: false,
   });
 
   useEffect(() => {
@@ -343,6 +348,10 @@ const RegisterForm = ({ type }) => {
       toast.error("يرجى اختيار المرحلة الدراسية");
       return false;
     }
+    if (type === "instructor" && !formData.instructorAgreementAccepted) {
+      toast.error("يجب الموافقة على اتفاقية المحاضر للمتابعة");
+      return false;
+    }
     return true;
   };
 
@@ -363,8 +372,16 @@ const RegisterForm = ({ type }) => {
         passwordConfirm: formData.passwordConfirm,
         country: formData.country,
         countryCode: selectedCountry?.code,
-        role: formData.role,
       };
+
+      Object.assign(payload, buildRegistrationIntent(type));
+
+      if (type === "instructor") {
+        payload.agreementAccepted = true;
+        payload.agreementVersion = INSTRUCTOR_AGREEMENT_VERSION;
+        payload.headline = formData.headline.trim() || undefined;
+        payload.bio = formData.bio.trim() || undefined;
+      }
 
       if (type === "student") {
         payload.academicLevel =
@@ -401,8 +418,14 @@ const RegisterForm = ({ type }) => {
         <img src={logo} alt="logo" className="w-44 h-8 mb-4 cursor-pointer" />
       </Link>
       <h2 className="text-[24px] font-bold mb-4 text-[#1F2937]">
-        مرحباً بك...
+        {type === "instructor" ? "أنشئ حساب محاضر" : "مرحباً بك..."}
       </h2>
+
+      {type === "instructor" && (
+        <p className="mb-4 rounded-xl bg-[#EEF4FF] px-4 py-3 text-sm leading-6 text-[#123C91]">
+          بيانات الحساب منفصلة عن ملفك العام كمحاضر، ويمكنك تحديث الملف لاحقًا.
+        </p>
+      )}
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         {/* Full name */}
@@ -475,6 +498,37 @@ const RegisterForm = ({ type }) => {
           }
           inputClass={inputClass}
         />
+
+        {type === "instructor" && (
+          <fieldset className="space-y-4 rounded-xl border border-[#D7DEE8] bg-white p-4">
+            <legend className="px-2 text-sm font-bold text-[#123C91]">
+              الملف العام للمحاضر
+            </legend>
+            <label className="block text-[13px] font-medium text-[#1F2937]">
+              العنوان المهني <span className="font-normal text-[#98A2B3]">(اختياري)</span>
+              <input
+                name="headline"
+                value={formData.headline}
+                onChange={handleChange}
+                maxLength={120}
+                placeholder="مثال: محاضر في علوم الحاسب"
+                className={`${inputClass} mt-1`}
+              />
+            </label>
+            <label className="block text-[13px] font-medium text-[#1F2937]">
+              نبذة عامة <span className="font-normal text-[#98A2B3]">(اختياري)</span>
+              <textarea
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+                maxLength={2000}
+                rows={4}
+                placeholder="عرّف الطلاب بخبراتك ومجالاتك"
+                className={`${inputClass} mt-1 h-auto min-h-28 resize-y`}
+              />
+            </label>
+          </fieldset>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
@@ -608,9 +662,29 @@ const RegisterForm = ({ type }) => {
           </div>
         </div>
 
+        {type === "instructor" && (
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] p-4 text-sm leading-7 text-[#344054]">
+            <input
+              type="checkbox"
+              checked={formData.instructorAgreementAccepted}
+              onChange={(event) =>
+                setFormData((current) => ({
+                  ...current,
+                  instructorAgreementAccepted: event.target.checked,
+                }))
+              }
+              className="mt-1 h-4 w-4 accent-[#123C91]"
+            />
+            <span>
+              أوافق صراحةً على اتفاقية المحاضر الحالية (الإصدار {INSTRUCTOR_AGREEMENT_VERSION}).
+              ستظل موافقة سياسات النشر ومشاركة الإيرادات مطلوبة قبل إرسال أي دورة للمراجعة.
+            </span>
+          </label>
+        )}
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (type === "instructor" && !formData.instructorAgreementAccepted)}
           className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity mt-2"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >

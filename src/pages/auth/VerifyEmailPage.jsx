@@ -4,9 +4,10 @@ import { AlertCircle, CheckCircle, Loader2, Mail } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import logo from "../../assets/icons/logo.svg";
 import { AuthContext } from "../../context/AuthContext";
-import { verifyAccount } from "../../services/APIService";
+import { getMyProfile, verifyAccount } from "../../services/APIService";
 import { getAuthenticatedDestination } from "../../utils/roles";
 import { hasApiErrorCode } from "../../services/apiError";
+import { getDatabaseUserFromAccountState } from "../../utils/accountState";
 
 const invalidLinkError = (error) => {
   return hasApiErrorCode(error, "VERIFICATION_LINK_INVALID_OR_EXPIRED");
@@ -39,7 +40,7 @@ const VerifyEmailPage = () => {
     let redirectTimer;
 
     verifyAccount(verificationToken)
-      .then((response) => {
+      .then(async (response) => {
         if (!active) return;
         const jwt = response.data?.token;
         const verifiedUser = response.data?.data;
@@ -48,7 +49,27 @@ const VerifyEmailPage = () => {
           return;
         }
 
-        const sessionUser = establishSession(jwt, verifiedUser);
+        establishSession(jwt, verifiedUser);
+        let sessionUser = verifiedUser;
+        try {
+          const profileResponse = await getMyProfile();
+          if (!active) return;
+          const currentProfile = getDatabaseUserFromAccountState(profileResponse);
+          sessionUser = { ...verifiedUser, ...currentProfile };
+          if (currentProfile.capabilities?.hasInstructorProfile) {
+            sessionUser = {
+              ...sessionUser,
+              accountType: "instructor",
+              instructorStatus:
+                currentProfile.capabilities.instructorStatus,
+              instructorProfileSlug:
+                currentProfile.capabilities.instructorProfileSlug || "",
+            };
+          }
+          establishSession(jwt, sessionUser);
+        } catch {
+          // Verification succeeded; profile synchronization can retry on app load.
+        }
         const destination = getAuthenticatedDestination(sessionUser);
         setStatus("verified");
         redirectTimer = window.setTimeout(() => {

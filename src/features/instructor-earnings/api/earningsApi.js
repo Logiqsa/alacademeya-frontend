@@ -2,7 +2,6 @@ import {
   getMyInstructorEarnings,
   getMyInstructorEarningsCourses,
   getMyInstructorEarningsSummary,
-  getMyInstructorEarningsTimeline,
 } from "../../../services/APIService.js";
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response ?? {};
@@ -63,16 +62,6 @@ const financials = (item = {}) => {
     currency: currencyOf(item, currencyOf(nested, item.amount?.currency || purchase.currency || purchase.amount?.currency || "EGP")),
   };
 };
-
-const timelineAmount = (point = {}) =>
-  numberOf(
-    point.net?.amount, point.net?.value, point.net, point.netAmount,
-    point.instructorEarning, point.instructorEarnings, point.earnings,
-    point.netEarning, point.netEarnings, point.totalEarnings, point.totalNet,
-    point.amount?.amount, point.amount?.value,
-    typeof point.amount !== "object" ? point.amount : undefined,
-    point.value, point.total,
-  );
 
 const normalizeBreakdown = (value, fallbackCurrency, fallbackAmount) => {
   if (Array.isArray(value)) {
@@ -146,23 +135,6 @@ export const normalizeEarningsCourses = (response) => {
   }));
 };
 
-export const normalizeEarningsTimeline = (response) => {
-  const data = unwrap(response);
-  const direct = listOf(data, ["timeline", "points", "items", "results", "buckets"]);
-  const grouped = data.timeline && !Array.isArray(data.timeline)
-    ? Object.entries(data.timeline).flatMap(([currency, points]) => (Array.isArray(points) ? points : points?.items || points?.points || []).map((point) => ({ ...point, currency: point.currency || currency })))
-    : [];
-  const series = (Array.isArray(data.series) ? data.series : []).flatMap((item) => (item.data || item.points || item.items || []).map((point) => ({ ...point, currency: point.currency || item.currency || item.name })));
-  return [...direct, ...grouped, ...series].flatMap((item, index) => {
-    const pointDate = item.date || item.period || item.day || item.month || item.label;
-    const breakdown = item.byCurrency || item.currencyBreakdown || item.currencies || item.totalsByCurrency;
-    const normalizePoint = (point) => ({ id: point.id || `${pointDate || index}-${currencyOf(point)}`, date: point.date || point.period || point.day || point.month || point.label || pointDate, amount: timelineAmount(point), currency: financials(point).currency });
-    if (Array.isArray(breakdown)) return breakdown.map(normalizePoint);
-    if (breakdown && typeof breakdown === "object") return Object.entries(breakdown).map(([currency, values]) => normalizePoint({ ...(typeof values === "object" ? values : { net: values }), currency }));
-    return [normalizePoint(item)];
-  });
-};
-
 export const getEarningsSummary = (params = {}) =>
   getMyInstructorEarningsSummary(apiParams(params)).then(normalizeEarningsSummary);
 
@@ -171,6 +143,3 @@ export const getEarningsHistory = (params = {}) =>
 
 export const getEarningsCourses = (params = {}) =>
   getMyInstructorEarningsCourses(apiParams(params)).then(normalizeEarningsCourses);
-
-export const getEarningsTimeline = (params = {}) =>
-  getMyInstructorEarningsTimeline(apiParams(params)).then(normalizeEarningsTimeline);

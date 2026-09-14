@@ -4,7 +4,6 @@ import TeacherLayout from "../../components/teacher/layout/TeacherLayout";
 import EarningsStatsBar from "../../components/teacher/earnings/EarningsStatsBar";
 import EarningsFilters from "../../components/teacher/earnings/EarningsFilters";
 import EarningsTable from "../../components/teacher/earnings/EarningsTable";
-import EarningsTimelineChart from "../../components/teacher/earnings/EarningsTimelineChart";
 import CourseEarningsAnalytics from "../../components/teacher/earnings/CourseEarningsAnalytics";
 import InstructorPayoutDashboard from "../../components/teacher/earnings/InstructorPayoutDashboard";
 import Paginationn from "../../components/teacher/groups/students/Paginationn";
@@ -15,7 +14,6 @@ import {
   getEarningsCourses,
   getEarningsHistory,
   getEarningsSummary,
-  getEarningsTimeline,
 } from "../../features/instructor-earnings/api/earningsApi";
 
 const EMPTY_FILTERS = { from: "", to: "", courseId: "", currency: "" };
@@ -24,7 +22,6 @@ const initialSection = (data) => ({ data, loading: true, error: "" });
 const EarningsPage = () => {
   const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [interval, setIntervalValue] = useState("daily");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => getSavedPageSize(10));
   const [refreshKey, setRefreshKey] = useState(0);
@@ -32,7 +29,6 @@ const EarningsPage = () => {
     summary: initialSection(null),
     history: initialSection({ items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } }),
     courses: initialSection([]),
-    timeline: initialSection([]),
   });
 
   const query = useMemo(() => Object.fromEntries(Object.entries(filters).filter(([, value]) => value)), [filters]);
@@ -59,12 +55,6 @@ const EarningsPage = () => {
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([getEarningsTimeline({ ...query, interval })]).then(([result]) => { if (active) settle("timeline", result, "تعذر تحميل مخطط الأرباح"); });
-    return () => { active = false; };
-  }, [interval, query, refreshKey, settle]);
-
-  useEffect(() => {
-    let active = true;
     Promise.allSettled([getEarningsHistory({ ...query, page, limit: pageSize })]).then(([history]) => {
       if (!active) return;
       settle("history", history, "تعذر تحميل سجل الأرباح");
@@ -87,9 +77,8 @@ const EarningsPage = () => {
       summary: () => getEarningsSummary(query),
       history: () => getEarningsHistory({ ...query, page, limit: pageSize }),
       courses: () => getEarningsCourses(query),
-      timeline: () => getEarningsTimeline({ ...query, interval }),
     };
-    const fallbacks = { summary: "تعذر تحميل ملخص الأرباح", history: "تعذر تحميل سجل الأرباح", courses: "تعذر تحميل أداء الدورات", timeline: "تعذر تحميل مخطط الأرباح" };
+    const fallbacks = { summary: "تعذر تحميل ملخص الأرباح", history: "تعذر تحميل سجل الأرباح", courses: "تعذر تحميل أداء الدورات" };
     const [result] = await Promise.allSettled([requests[name]()]);
     settle(name, result, fallbacks[name]);
   };
@@ -107,7 +96,6 @@ const EarningsPage = () => {
 
   const applyFilters = () => { setPending(["summary", "history", "courses"]); setPage(1); setFilters({ ...draftFilters }); setRefreshKey((value) => value + 1); };
   const resetFilters = () => { setPending(["summary", "history", "courses"]); setDraftFilters(EMPTY_FILTERS); setPage(1); setFilters(EMPTY_FILTERS); setRefreshKey((value) => value + 1); };
-  const changeInterval = (value) => { if (value !== interval) { setPending(["timeline"]); setIntervalValue(value); } };
 
   return <TeacherLayout>
     <main className="mx-auto w-full max-w-400 pb-8 text-right font-['IBM_Plex_Sans_Arabic']" dir="rtl">
@@ -128,7 +116,6 @@ const EarningsPage = () => {
       <div className="space-y-6">
         <InstructorPayoutDashboard />
         <SectionState section={sections.summary} retry={() => retrySection("summary")}><EarningsStatsBar summary={sections.summary.data} /></SectionState>
-        <SectionState section={sections.timeline} retry={() => retrySection("timeline")}><EarningsTimelineChart points={sections.timeline.data} interval={interval} onIntervalChange={changeInterval} /></SectionState>
         <SectionState section={sections.courses} retry={() => retrySection("courses")}><CourseEarningsAnalytics courses={sections.courses.data} /></SectionState>
         <div role="region" aria-labelledby="earnings-history-title" className="space-y-4">
           <SectionHeading id="earnings-history-title" icon={History} title="سجل الأرباح" description="تفاصيل كل عملية بيع وخصم عمولة المنصة" />

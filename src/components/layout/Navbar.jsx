@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useContext } from "react";
 import logo from "../../assets/icons/logo.svg";
-import { ChevronDown, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { ChevronDown, GraduationCap, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { getDashboardPathByRole } from "../../utils/roles";
+import { canHaveInstructorProfile, getDashboardPathByRole, isInstructor } from "../../utils/roles";
 
 // ── الـ role بيحدد الداشبورد ──────────────────────────────────────────────
 // admin / super-admin → /admin-dashboard
@@ -26,6 +26,8 @@ const Navbar = () => {
   const accountMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const showBecomeInstructor =
+    canHaveInstructorProfile(user) && !isInstructor(user);
 
   const links = [
     { title: "الرئيسية", id: "home" },
@@ -138,6 +140,7 @@ const Navbar = () => {
                 </button>
                 {accountMenuOpen && <div className="absolute left-0 top-[calc(100%+8px)] z-60 w-56 overflow-hidden rounded-xl border border-[#E1E7EF] bg-white p-1.5 shadow-xl">
                   <button type="button" onClick={handleDashboardClick} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#344054] transition hover:bg-[#F2F6FC]"><LayoutDashboard size={18} className="text-[#123C91]" />لوحة التحكم</button>
+                  {showBecomeInstructor && <button type="button" onClick={() => { setAccountMenuOpen(false); navigate("/instructor/onboarding"); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#123C91] transition hover:bg-[#EEF4FF]"><GraduationCap size={18} />كن محاضرًا</button>}
                   <div className="my-1 border-t border-[#EEF1F5]" />
                   <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"><LogOut size={18} />تسجيل الخروج</button>
                 </div>}
@@ -218,6 +221,7 @@ const Navbar = () => {
               >
                 لوحة التحكم
               </button>
+              {showBecomeInstructor && <button onClick={() => { navigate("/instructor/onboarding"); setMenuOpen(false); setMobileAccountOpen(false); }} className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#123C91] bg-white text-[16px] font-medium text-[#123C91]"><GraduationCap size={18} />كن محاضرًا</button>}
               <button
                 onClick={handleLogout}
                 className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white text-[16px] font-medium text-red-600 transition-colors hover:bg-red-50"

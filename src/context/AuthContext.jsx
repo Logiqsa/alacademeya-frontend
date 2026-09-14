@@ -84,6 +84,17 @@ const persistUser = (source) => {
   else localStorage.removeItem("user");
 };
 
+const withInstructorCapability = (user) => {
+  const capability = user?.capabilities;
+  if (!capability?.hasInstructorProfile) return user;
+  return {
+    ...user,
+    accountType: "instructor",
+    instructorStatus: capability.instructorStatus,
+    instructorProfileSlug: capability.instructorProfileSlug || "",
+  };
+};
+
 export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
@@ -118,8 +129,11 @@ export const AuthContextProvider = ({ children }) => {
       .then(async (response) => {
         if (!active) return;
         const databaseUser = getDatabaseUserFromAccountState(response);
-        let freshUser = { ...ordinaryUser, ...databaseUser };
-        if (canHaveInstructorProfile(freshUser)) {
+        let freshUser = withInstructorCapability({ ...ordinaryUser, ...databaseUser });
+        if (
+          canHaveInstructorProfile(freshUser) &&
+          freshUser.capabilities?.hasInstructorProfile === undefined
+        ) {
           try {
             const instructorResponse = await getMyInstructorProfile();
             const instructorPayload =
