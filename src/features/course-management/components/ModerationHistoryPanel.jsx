@@ -1,4 +1,71 @@
 import { useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2, ClipboardList, Clock3, History, Inbox, LoaderCircle, XCircle } from "lucide-react";
 import { getAdminCourseModeration, getMyCourseModeration } from "../../../services/APIService";
-const unwrap=r=>r?.data?.data??r?.data??r;
-export default function ModerationHistoryPanel({courseId,admin=false}){const [items,setItems]=useState([]),[error,setError]=useState("");useEffect(()=>{if(!courseId)return;(admin?getAdminCourseModeration:getMyCourseModeration)(courseId).then(r=>{const d=unwrap(r);setItems(Array.isArray(d)?d:d?.items||d?.history||d?.rounds||[])}).catch(e=>setError(e?.response?.data?.message||"تعذر تحميل سجل المراجعة"));},[courseId,admin]);return <section className="space-y-3 rounded-xl border bg-white p-5" dir="rtl"><h2 className="font-extrabold">سجل مراجعة الدورة</h2>{error&&<p className="text-sm text-red-700">{error}</p>}{!error&&!items.length&&<p className="text-sm text-gray-500">لا توجد جولات مراجعة بعد.</p>}{items.map((x,i)=><article key={x.id||x._id||i} className="rounded-lg border p-4 text-sm"><div className="flex flex-wrap justify-between gap-2"><b>الجولة {x.submissionRound||x.round||i+1} · {x.status}</b><span>{x.submittedAt?new Date(x.submittedAt).toLocaleString("ar-EG"):""}</span></div>{x.reviewedAt&&<p>تمت المراجعة: {new Date(x.reviewedAt).toLocaleString("ar-EG")}</p>}{x.rejectionReason&&<p className="mt-2 text-red-700">{x.rejectionReason}</p>}{x.adminNotes&&<p className="mt-1 text-gray-600">{x.adminNotes}</p>}{(x.failedCriteria||[]).length>0&&<ul className="mt-2 list-inside list-disc">{x.failedCriteria.map((c,j)=><li key={j}>{c.title?.ar||c.title||c.key||c}</li>)}</ul>}{x.policyVersion&&<p className="mt-2 text-xs text-gray-500">نسخة السياسة: {x.policyVersion.version||x.policyVersion}</p>}</article>)}</section>}
+
+const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
+const STATUS = {
+  pending: { label: "قيد المراجعة", classes: "bg-amber-50 text-amber-700", icon: Clock3 },
+  submitted: { label: "تم الإرسال", classes: "bg-blue-50 text-blue-700", icon: Clock3 },
+  approved: { label: "تم الاعتماد", classes: "bg-emerald-50 text-emerald-700", icon: CheckCircle2 },
+  published: { label: "تم النشر", classes: "bg-emerald-50 text-emerald-700", icon: CheckCircle2 },
+  rejected: { label: "مرفوض", classes: "bg-red-50 text-red-700", icon: XCircle },
+};
+
+const normalizedStatus = (value) => String(value || "").trim().toLowerCase();
+const formatDate = (value) => value ? new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
+
+export default function ModerationHistoryPanel({ courseId, admin = false }) {
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!courseId) return;
+    let active = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    setError("");
+    (admin ? getAdminCourseModeration : getMyCourseModeration)(courseId)
+      .then((response) => {
+        if (!active) return;
+        const data = unwrap(response);
+        setItems(Array.isArray(data) ? data : data?.items || data?.history || data?.rounds || []);
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError?.response?.data?.message || "تعذر تحميل سجل المراجعة");
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [courseId, admin]);
+
+  return <div className="overflow-hidden rounded-2xl border border-[#E1E7EF] bg-white shadow-sm" dir="rtl">
+    <div className="flex items-center gap-3 border-b border-[#EEF1F5] px-4 py-4 sm:px-5">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#EEF4FF] text-[#123C91]"><History size={20} /></span>
+      <div><h2 className="font-extrabold text-[#1F2937]">سجل مراجعة الدورة</h2><p className="mt-0.5 text-xs text-[#667085]">تابع جولات الإرسال وقرارات فريق المراجعة</p></div>
+    </div>
+
+    {loading ? <div className="flex min-h-28 items-center justify-center gap-2 px-5 py-7 text-sm text-[#667085]"><LoaderCircle size={20} className="animate-spin text-[#123C91]" />جاري تحميل سجل المراجعة...</div>
+      : error ? <div role="alert" className="flex min-h-28 items-center justify-center gap-2 px-5 py-7 text-sm text-red-700"><AlertCircle size={20} />{error}</div>
+        : !items.length ? <div className="flex min-h-28 flex-col items-center justify-center px-5 py-7 text-center"><span className="grid size-11 place-items-center rounded-full bg-[#F2F5F9] text-[#98A2B3]"><Inbox size={21} /></span><p className="mt-3 text-sm font-bold text-[#475467]">لا توجد جولات مراجعة حتى الآن</p><p className="mt-1 text-xs text-[#98A2B3]">ستظهر هنا تفاصيل كل جولة عند إرسال الدورة للمراجعة.</p></div>
+          : <div className="space-y-3 p-4 sm:p-5">{items.map((item, index) => <ReviewRound key={item.id || item._id || index} item={item} index={index} />)}</div>}
+  </div>;
+}
+
+const ReviewRound = ({ item, index }) => {
+  const status = normalizedStatus(item.status);
+  const meta = STATUS[status] || { label: item.status || "غير محدد", classes: "bg-slate-100 text-slate-600", icon: ClipboardList };
+  const StatusIcon = meta.icon;
+  return <article className="relative rounded-xl border border-[#E1E7EF] bg-[#FCFDFE] p-4 sm:p-5">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#EAF2FF] font-extrabold text-[#123C91]">{item.submissionRound || item.round || index + 1}</span><div><h3 className="text-sm font-extrabold text-[#344054]">جولة المراجعة {item.submissionRound || item.round || index + 1}</h3><p className="mt-0.5 text-xs text-[#667085]">تم الإرسال: {formatDate(item.submittedAt)}</p></div></div>
+      <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${meta.classes}`}><StatusIcon size={13} />{meta.label}</span>
+    </div>
+    {(item.reviewedAt || item.rejectionReason || item.adminNotes || (item.failedCriteria || []).length > 0 || item.policyVersion) && <div className="mt-4 space-y-2 border-t border-[#EEF1F5] pt-4 text-sm text-[#475467]">
+      {item.reviewedAt && <p><b className="text-[#344054]">تاريخ المراجعة:</b> {formatDate(item.reviewedAt)}</p>}
+      {item.rejectionReason && <div className="rounded-lg bg-red-50 p-3 text-red-700"><b>سبب الرفض:</b> {item.rejectionReason}</div>}
+      {item.adminNotes && <div className="rounded-lg bg-[#F2F5F9] p-3"><b>ملاحظات الإدارة:</b> {item.adminNotes}</div>}
+      {(item.failedCriteria || []).length > 0 && <div><b className="text-[#344054]">المعايير غير المستوفاة:</b><ul className="mt-1 list-inside list-disc space-y-1">{item.failedCriteria.map((criterion, criterionIndex) => <li key={criterionIndex}>{criterion.title?.ar || criterion.title || criterion.key || criterion}</li>)}</ul></div>}
+      {item.policyVersion && <p className="text-xs text-[#98A2B3]">نسخة السياسة: {item.policyVersion.version || item.policyVersion}</p>}
+    </div>}
+  </article>;
+};

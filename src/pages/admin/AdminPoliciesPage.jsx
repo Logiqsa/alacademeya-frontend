@@ -1,20 +1,117 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { CalendarDays, FileCheck2, FilePlus2, LoaderCircle, Plus, Save, ShieldCheck, Upload } from "lucide-react";
 import AdminLayout from "../../components/admin/layout/AdminLayout";
 import { POLICY_LABELS } from "../../components/course/PolicyAcceptanceDialog";
 import { createAdminPolicyDraft, getAdminPolicyVersions, publishAdminPolicy, updateAdminPolicyDraft } from "../../services/APIService";
 import { getApiErrorMessage } from "../../services/apiError";
-const TYPES=Object.keys(POLICY_LABELS), unwrap=r=>r?.data?.data??r?.data??r, blank={title:{ar:"",en:""},content:{ar:"",en:""},effectiveAt:"",criteria:[],platformCommissionBps:""};
-export default function AdminPoliciesPage(){
- const queryType=new URLSearchParams(location.search).get("type"),[type,setType]=useState(TYPES.includes(queryType)?queryType:TYPES[0]),[versions,setVersions]=useState([]),[selected,setSelected]=useState(null),[form,setForm]=useState(blank),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
- const load=async()=>{setLoading(true);try{const data=unwrap(await getAdminPolicyVersions({type})),list=Array.isArray(data)?data:data?.items||data?.versions||[];setVersions(list);setSelected(list[0]||null);setForm(list[0]||blank);}catch(e){toast.error(getApiErrorMessage(e,"تعذر تحميل السياسات"));}finally{setLoading(false);}};
- // eslint-disable-next-line react-hooks/set-state-in-effect
- useEffect(()=>{load();},[type]); // eslint-disable-line react-hooks/exhaustive-deps
- const local=(field,lang,value)=>setForm(x=>({...x,[field]:{...(x[field]||{}),[lang]:value}}));
- const payload=()=>({title:form.title,content:form.content,...(form.effectiveAt?{effectiveAt:new Date(form.effectiveAt).toISOString()}:{}),...(type==="course_publishing_policy"?{criteria:form.criteria}:{}),...(type==="revenue_share_agreement"?{platformCommissionBps:Number(form.platformCommissionBps)}:{})});
- const save=async()=>{setSaving(true);try{selected?.status==="draft"?await updateAdminPolicyDraft(selected.id||selected._id,payload()):await createAdminPolicyDraft(type,payload());toast.success("تم حفظ المسودة");await load();}catch(e){toast.error(getApiErrorMessage(e,"تعذر حفظ المسودة"));}finally{setSaving(false);}};
- const publish=async()=>{setSaving(true);try{await publishAdminPolicy(selected.id||selected._id);toast.success("تم نشر النسخة");await load();}catch(e){toast.error(getApiErrorMessage(e,"تعذر نشر النسخة"));}finally{setSaving(false);}};
- const readonly=selected&&selected.status!=="draft";
- return <AdminLayout><main dir="rtl" className="space-y-5 p-6"><h1 className="text-xl font-extrabold">السياسات والاتفاقيات</h1><div className="flex gap-2 overflow-x-auto">{TYPES.map(x=><button key={x} onClick={()=>setType(x)} className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold ${x===type?"bg-[#123C91] text-white":"border bg-white"}`}>{POLICY_LABELS[x]}</button>)}</div>{loading?<p>جاري التحميل...</p>:<div className="grid gap-5 lg:grid-cols-[240px_1fr]"><aside className="space-y-2 rounded-xl border bg-white p-3"><button onClick={()=>{setSelected(null);setForm(blank);}} className="w-full rounded-lg bg-blue-50 p-3 font-bold text-[#123C91]">+ مسودة جديدة</button>{versions.map(v=><button key={v.id||v._id} onClick={()=>{setSelected(v);setForm(v);}} className="w-full rounded-lg border p-3 text-right text-sm"><b>نسخة {v.version||"مسودة"}</b><span className="block text-xs text-gray-500">{v.status}</span></button>)}</aside><section className="space-y-4 rounded-xl border bg-white p-5"><div className="grid gap-3 sm:grid-cols-2">{["ar","en"].map(lang=><div key={lang} className="space-y-2"><input disabled={readonly} value={form.title?.[lang]||""} onChange={e=>local("title",lang,e.target.value)} placeholder={`العنوان ${lang}`} className="w-full rounded-lg border p-3"/><textarea disabled={readonly} value={form.content?.[lang]||""} onChange={e=>local("content",lang,e.target.value)} placeholder={`المحتوى ${lang}`} rows="12" className="w-full rounded-lg border p-3" dir={lang==="ar"?"rtl":"ltr"}/></div>)}</div><input disabled={readonly} type="datetime-local" value={form.effectiveAt?String(form.effectiveAt).slice(0,16):""} onChange={e=>setForm({...form,effectiveAt:e.target.value})} className="rounded-lg border p-3"/>{type==="revenue_share_agreement"&&<input disabled={readonly} type="number" value={form.platformCommissionBps??""} onChange={e=>setForm({...form,platformCommissionBps:e.target.value})} placeholder="عمولة المنصة بنقاط الأساس" className="w-full rounded-lg border p-3"/>}{type==="course_publishing_policy"&&<Criteria value={form.criteria||[]} disabled={readonly} onChange={criteria=>setForm({...form,criteria})}/>} {!readonly&&<div className="flex gap-2"><button disabled={saving} onClick={save} className="rounded-lg bg-[#123C91] px-5 py-3 font-bold text-white">حفظ المسودة</button>{selected?.status==="draft"&&<button disabled={saving} onClick={publish} className="rounded-lg bg-emerald-600 px-5 py-3 font-bold text-white">نشر النسخة</button>}</div>}</section></div>}</main></AdminLayout>;
+
+const TYPES = Object.keys(POLICY_LABELS);
+const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
+const emptyPolicy = () => ({ title: { ar: "", en: "" }, content: { ar: "", en: "" }, effectiveAt: "", criteria: [], platformCommissionBps: "" });
+const STATUS_LABELS = { draft: "مسودة", published: "منشورة", archived: "مؤرشفة" };
+
+export default function AdminPoliciesPage() {
+  const queryType = new URLSearchParams(location.search).get("type");
+  const [type, setType] = useState(TYPES.includes(queryType) ? queryType : TYPES[0]);
+  const [versions, setVersions] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [form, setForm] = useState(emptyPolicy);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [activeLanguage, setActiveLanguage] = useState("ar");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = unwrap(await getAdminPolicyVersions({ type }));
+      const list = Array.isArray(data) ? data : data?.items || data?.versions || [];
+      setVersions(list);
+      setSelected(list[0] || null);
+      setForm(list[0] || emptyPolicy());
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "تعذر تحميل السياسات"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load(); }, [type]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const local = (field, lang, value) => setForm((current) => ({ ...current, [field]: { ...(current[field] || {}), [lang]: value } }));
+  const payload = () => ({
+    title: form.title,
+    content: form.content,
+    ...(form.effectiveAt ? { effectiveAt: new Date(form.effectiveAt).toISOString() } : {}),
+    ...(type === "course_publishing_policy" ? { criteria: form.criteria } : {}),
+    ...(type === "revenue_share_agreement" ? { platformCommissionBps: Number(form.platformCommissionBps) } : {}),
+  });
+  const save = async () => {
+    setSaving(true);
+    try {
+      if (selected?.status === "draft") await updateAdminPolicyDraft(selected.id || selected._id, payload());
+      else await createAdminPolicyDraft(type, payload());
+      toast.success("تم حفظ المسودة");
+      await load();
+    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر حفظ المسودة")); }
+    finally { setSaving(false); }
+  };
+  const publish = async () => {
+    setSaving(true);
+    try {
+      await publishAdminPolicy(selected.id || selected._id);
+      toast.success("تم نشر النسخة");
+      await load();
+    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر نشر النسخة")); }
+    finally { setSaving(false); }
+  };
+  const readonly = selected && selected.status !== "draft";
+
+  return <AdminLayout><main dir="rtl" className="mx-auto w-full max-w-400 space-y-5 pb-10 text-right font-['IBM_Plex_Sans_Arabic']">
+    <header className="relative overflow-hidden rounded-2xl bg-linear-to-l from-[#123C91] to-[#17689A] px-5 py-6 text-white shadow-sm sm:px-7">
+      <span className="absolute -left-10 -top-14 size-40 rounded-full bg-[#12C6B0]/20" />
+      <div className="relative flex items-center gap-4"><span className="grid size-12 shrink-0 place-items-center rounded-xl bg-white/12"><ShieldCheck /></span><div><p className="text-xs font-bold text-[#8DE9DE]">إدارة المحتوى القانوني</p><h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">السياسات والاتفاقيات</h1><p className="mt-2 text-sm text-white/75">إنشاء ومراجعة ونشر النسخ المعتمدة للمنصة.</p></div></div>
+    </header>
+
+    <nav className="flex gap-2 overflow-x-auto rounded-2xl border border-[#E1E7EF] bg-white p-2 shadow-sm" aria-label="أنواع السياسات">
+      {TYPES.map((item) => <button type="button" key={item} onClick={() => { setType(item); setActiveLanguage("ar"); }} className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition ${item === type ? "bg-[#123C91] text-white shadow-sm" : "text-[#475467] hover:bg-[#F2F6FC]"}`}>{POLICY_LABELS[item]}</button>)}
+    </nav>
+
+    {loading ? <Loading /> : <div className="grid items-start gap-5 lg:grid-cols-[260px_1fr]">
+      <aside className="rounded-2xl border border-[#E1E7EF] bg-white p-3 shadow-sm">
+        <button type="button" onClick={() => { setSelected(null); setForm(emptyPolicy()); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#EAF2FF] p-3 font-bold text-[#123C91] transition hover:bg-[#DCE9FF]"><FilePlus2 size={18} />مسودة جديدة</button>
+        <div className="mt-3 space-y-2">{versions.length ? versions.map((version) => {
+          const id = version.id || version._id;
+          const active = id && id === (selected?.id || selected?._id);
+          return <button type="button" key={id} onClick={() => { setSelected(version); setForm(version); }} className={`w-full rounded-xl border p-3 text-right transition ${active ? "border-[#123C91] bg-[#F3F7FF]" : "border-[#E1E7EF] hover:border-[#AAB8CA]"}`}><span className="flex items-center justify-between gap-2"><b className="text-sm text-[#344054]">نسخة {version.version || "مسودة"}</b><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${version.status === "published" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{STATUS_LABELS[version.status] || version.status}</span></span></button>;
+        }) : <p className="py-6 text-center text-sm text-[#98A2B3]">لا توجد نسخ سابقة</p>}</div>
+      </aside>
+
+      <div className="rounded-2xl border border-[#E1E7EF] bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-5 flex items-center gap-3 border-b border-[#EEF1F5] pb-4"><span className="grid size-10 place-items-center rounded-xl bg-[#EEF4FF] text-[#123C91]"><FileCheck2 size={19} /></span><div><h2 className="font-extrabold text-[#1F2937]">بيانات السياسة</h2><p className="mt-0.5 text-xs text-[#667085]">أدخل المحتوى باللغتين العربية والإنجليزية</p></div></div>
+        <div className="mb-5 flex w-full rounded-xl bg-[#F2F5F9] p-1 sm:w-fit" role="tablist" aria-label="لغة محتوى السياسة">
+          {[{ key: "ar", label: "العربية" }, { key: "en", label: "English" }].map((language) => <button type="button" role="tab" aria-selected={activeLanguage === language.key} key={language.key} onClick={() => setActiveLanguage(language.key)} className={`flex-1 rounded-lg px-7 py-2.5 text-sm font-bold transition sm:flex-none ${activeLanguage === language.key ? "bg-white text-[#123C91] shadow-sm" : "text-[#667085] hover:text-[#344054]"}`}>{language.label}</button>)}
+        </div>
+        <div className="rounded-2xl border border-[#E1E7EF] bg-[#FAFBFD] p-4 sm:p-5">
+          <LanguageFields key={activeLanguage} lang={activeLanguage} form={form} readonly={readonly} local={local} />
+        </div>
+        <div className="mt-5 grid gap-4 border-t border-[#EEF1F5] pt-5 md:grid-cols-2">
+          <label className="text-xs font-bold text-[#475467]"><span className="mb-1.5 flex items-center gap-2"><CalendarDays size={15} />تاريخ بدء التطبيق</span><input disabled={readonly} type="datetime-local" value={form.effectiveAt ? String(form.effectiveAt).slice(0, 16) : ""} onChange={(event) => setForm({ ...form, effectiveAt: event.target.value })} className="h-11 w-full rounded-xl border border-[#D7DEE8] px-3 text-sm outline-none focus:border-[#123C91] disabled:bg-[#F8FAFC]" /></label>
+          {type === "revenue_share_agreement" && <label className="text-xs font-bold text-[#475467]"><span className="mb-1.5 block">عمولة المنصة بنقاط الأساس</span><input disabled={readonly} type="number" value={form.platformCommissionBps ?? ""} onChange={(event) => setForm({ ...form, platformCommissionBps: event.target.value })} className="h-11 w-full rounded-xl border border-[#D7DEE8] px-3 text-sm outline-none focus:border-[#123C91] disabled:bg-[#F8FAFC]" /></label>}
+        </div>
+        {type === "course_publishing_policy" && <Criteria value={form.criteria || []} disabled={readonly} onChange={(criteria) => setForm({ ...form, criteria })} />}
+        {!readonly && <div className="mt-6 flex flex-col-reverse gap-2 border-t border-[#EEF1F5] pt-5 sm:flex-row"><button type="button" disabled={saving} onClick={save} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#123C91] px-6 font-bold text-white hover:bg-[#0E327B] disabled:opacity-50">{saving ? <LoaderCircle size={18} className="animate-spin" /> : <Save size={18} />}حفظ المسودة</button>{selected?.status === "draft" && <button type="button" disabled={saving} onClick={publish} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 font-bold text-white hover:bg-emerald-700 disabled:opacity-50"><Upload size={18} />نشر النسخة</button>}</div>}
+      </div>
+    </div>}
+  </main></AdminLayout>;
 }
-function Criteria({value,onChange,disabled}){const update=(i,patch)=>onChange(value.map((x,j)=>j===i?{...x,...patch}:x));return <div className="space-y-2"><b>معايير جودة النشر</b>{value.map((c,i)=><div key={i} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2"><input disabled={disabled} value={c.key||""} placeholder="key" onChange={e=>update(i,{key:e.target.value})}/><input disabled={disabled} value={c.title?.ar||""} placeholder="العنوان العربي" onChange={e=>update(i,{title:{...c.title,ar:e.target.value}})}/><textarea disabled={disabled} value={c.description?.ar||""} placeholder="الوصف العربي" onChange={e=>update(i,{description:{...c.description,ar:e.target.value}})}/><label><input disabled={disabled} type="checkbox" checked={c.required!==false} onChange={e=>update(i,{required:e.target.checked})}/> إلزامي</label></div>)}{!disabled&&<button onClick={()=>onChange([...value,{key:"",title:{ar:"",en:""},description:{ar:"",en:""},required:true,sortOrder:value.length}])} className="text-[#123C91]">+ إضافة معيار</button>}</div>}
+
+const Loading = () => <div className="grid min-h-64 place-items-center rounded-2xl border border-[#E1E7EF] bg-white text-[#667085]"><div className="flex items-center gap-2 text-sm"><LoaderCircle className="animate-spin" />جاري تحميل السياسات...</div></div>;
+
+const LanguageFields = ({ lang, form, readonly, local }) => <div className="space-y-2"><label className="text-xs font-bold text-[#475467]">العنوان {lang === "ar" ? "بالعربية" : "بالإنجليزية"}</label><input disabled={readonly} value={form.title?.[lang] || ""} onChange={(event) => local("title", lang, event.target.value)} placeholder={`العنوان ${lang}`} dir={lang === "ar" ? "rtl" : "ltr"} className="h-11 w-full rounded-xl border border-[#D7DEE8] px-3 text-sm outline-none focus:border-[#123C91] disabled:bg-[#F8FAFC]" /><label className="block pt-2 text-xs font-bold text-[#475467]">المحتوى {lang === "ar" ? "بالعربية" : "بالإنجليزية"}</label><textarea disabled={readonly} value={form.content?.[lang] || ""} onChange={(event) => local("content", lang, event.target.value)} placeholder={`اكتب محتوى السياسة ${lang === "ar" ? "بالعربية" : "بالإنجليزية"}`} dir={lang === "ar" ? "rtl" : "ltr"} rows={14} aria-label={`محتوى السياسة ${lang === "ar" ? "بالعربية" : "بالإنجليزية"}`} className="min-h-80 w-full resize-y rounded-xl border border-[#D7DEE8] bg-white p-4 text-sm leading-7 outline-none transition focus:border-[#123C91] focus:ring-3 focus:ring-[#123C91]/10 disabled:bg-[#F8FAFC]" /></div>;
+
+function Criteria({ value, onChange, disabled }) {
+  const update = (index, patch) => onChange(value.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
+  return <div className="mt-5 border-t border-[#EEF1F5] pt-5"><div className="flex items-center justify-between gap-3"><div><h3 className="font-extrabold text-[#1F2937]">معايير جودة النشر</h3><p className="mt-0.5 text-xs text-[#667085]">الشروط التي يجب تحققها قبل نشر الدورة</p></div>{!disabled && <button type="button" onClick={() => onChange([...value, { key: "", title: { ar: "", en: "" }, description: { ar: "", en: "" }, required: true, sortOrder: value.length }])} className="inline-flex items-center gap-1 rounded-lg bg-[#EAF2FF] px-3 py-2 text-xs font-bold text-[#123C91]"><Plus size={15} />إضافة معيار</button>}</div><div className="mt-3 space-y-3">{value.map((criterion, index) => <div key={index} className="grid gap-3 rounded-xl border border-[#E1E7EF] bg-[#FCFDFE] p-4 sm:grid-cols-2"><input disabled={disabled} value={criterion.key || ""} placeholder="المفتاح" onChange={(event) => update(index, { key: event.target.value })} className="h-10 rounded-lg border border-[#D7DEE8] px-3 text-sm" /><input disabled={disabled} value={criterion.title?.ar || ""} placeholder="العنوان العربي" onChange={(event) => update(index, { title: { ...criterion.title, ar: event.target.value } })} className="h-10 rounded-lg border border-[#D7DEE8] px-3 text-sm" /><textarea disabled={disabled} value={criterion.description?.ar || ""} placeholder="الوصف العربي" onChange={(event) => update(index, { description: { ...criterion.description, ar: event.target.value } })} className="rounded-lg border border-[#D7DEE8] p-3 text-sm sm:col-span-2" /><label className="flex items-center gap-2 text-sm font-bold text-[#475467]"><input disabled={disabled} type="checkbox" checked={criterion.required !== false} onChange={(event) => update(index, { required: event.target.checked })} className="size-4 accent-[#123C91]" />معيار إلزامي</label></div>)}</div></div>;
+}

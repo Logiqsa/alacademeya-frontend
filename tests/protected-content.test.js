@@ -11,10 +11,12 @@ test('protected playback identity is privacy-safe', () => {
 
 test('learner video and audio use scoped browser deterrents without global context-menu blocking', () => {
   const source = fs.readFileSync(new URL('../src/features/course-management/pages/student/CoursePlayerPage.jsx', import.meta.url), 'utf8');
-  assert.match(source, /controlsList='nodownload noremoteplayback'/);
-  assert.match(source, /disablePictureInPicture/);
-  assert.match(source, /onContextMenu=\{\(event\) => event\.preventDefault\(\)\}/);
-  assert.doesNotMatch(source, /document\.oncontextmenu|window\.oncontextmenu|addEventListener\(['"]contextmenu/);
+  const mediaPlayer = fs.readFileSync(new URL('../src/components/media/BrandMediaPlayer.jsx', import.meta.url), 'utf8');
+  assert.match(source, /BrandMediaPlayer/);
+  assert.match(mediaPlayer, /controlsList="nodownload noremoteplayback"/);
+  assert.match(mediaPlayer, /disablePictureInPicture/);
+  assert.match(mediaPlayer, /onContextMenu=\{\(event\) => event\.preventDefault\(\)\}/);
+  assert.doesNotMatch(`${source}\n${mediaPlayer}`, /document\.oncontextmenu|window\.oncontextmenu|addEventListener\(['"]contextmenu/);
   assert.doesNotMatch(source, /localStorage|sessionStorage|indexedDB/);
 });
 
@@ -46,13 +48,14 @@ test('opaque playback uses credentialed requests, exposes no bearer URL, and ren
   const preview = fs.readFileSync(new URL('../src/pages/CourseDetailsPage.jsx', import.meta.url), 'utf8');
   const admin = fs.readFileSync(new URL('../src/features/course-management/pages/AdminCourseDetailsPage.jsx', import.meta.url), 'utf8');
   const api = fs.readFileSync(new URL('../src/services/APIService.js', import.meta.url), 'utf8');
+  const mediaPlayer = fs.readFileSync(new URL('../src/components/media/BrandMediaPlayer.jsx', import.meta.url), 'utf8');
   assert.match(api, /media-access[\s\S]{0,160}withCredentials: true/);
   assert.match(player, /data\?\.playbackUrl/);
   assert.doesNotMatch(player, /data\?\.(?:url|token|ticket)/);
-  assert.match(player, /crossOrigin='use-credentials'/);
+  assert.match(mediaPlayer, /crossOrigin="use-credentials"/);
   assert.match(preview, /crossOrigin="use-credentials"/);
   assert.match(preview, /fetch\(ticketUrl, \{ credentials: 'include' \}\)/);
-  assert.match(admin, /crossOrigin="use-credentials"/);
+  assert.match(admin, /BrandMediaPlayer/);
   assert.match(player, /mediaRefreshRef\.current >= 1/);
   assert.match(player, /mediaRef\.current\?\.currentTime/);
   assert.match(player, /event\.currentTarget\.currentTime = savedPosition/);

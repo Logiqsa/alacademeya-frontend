@@ -13,7 +13,7 @@ import {
 } from "../../../utils/notificationTarget";
 import {
   getNotifications,
-  markNotificationRead,
+  setNotificationReadStatus,
   markAllNotificationsRead,
   deleteNotification,
 } from "../../../services/APIService"; // عدّل المسار حسب مكانه عندك
@@ -79,12 +79,12 @@ const NotificationsSection = ({ onStatsUpdate }) => {
   }, [fetchNotifications]);
 
   const handleToggleRead = async (notification) => {
-    if (notification.isRead) return;
+    const nextRead = !notification.isRead;
     try {
-      await markNotificationRead(notification.id);
+      await setNotificationReadStatus(notification.id, nextRead);
       setNotifications((prev) => {
         const updated = prev.map((n) =>
-          n.id === notification.id ? { ...n, isRead: true } : n,
+          n.id === notification.id ? { ...n, isRead: nextRead } : n,
         );
         onStatsUpdate?.(updated);
         return updated;

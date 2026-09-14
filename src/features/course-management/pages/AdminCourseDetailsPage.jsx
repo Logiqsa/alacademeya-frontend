@@ -10,11 +10,9 @@ import {
   CircleHelp,
   Download,
   FileText,
+  Headphones,
   Maximize2,
   Minimize2,
-  Eye,
-  EyeOff,
-  PencilLine,
   LayoutGrid,
   Layers3,
   LoaderCircle,
@@ -22,7 +20,6 @@ import {
   Play,
   Search,
   Star,
-  Trash2,
   Users,
   Video,
   WalletCards,
@@ -48,8 +45,8 @@ import pythonCover from "../../../assets/courses/python-course.png";
 import skillsCover from "../../../assets/courses/skills-course.png";
 import ReviewsPanel from "../components/reviews/ReviewsPanel";
 import ModerationHistoryPanel from "../components/ModerationHistoryPanel";
-import { confirmToast } from "../../../utils/confirmToast";
 import { getCourseEarningsByCourse } from "../../admin-finances/api/courseEarningsApi";
+import BrandMediaPlayer from "../../../components/media/BrandMediaPlayer";
 import {
   getAdminCourseEnrollments,
   getAdminCoursePurchases,
@@ -182,13 +179,15 @@ const StatCard = ({ icon: Icon, value, label, accent }) => (
   </div>
 );
 
-const OverviewTab = ({ course, coverSrc, totalLessons }) => {
+const OverviewTab = ({ course, coverSrc, totalLessons, totalQuizzes }) => {
   const [showCover, setShowCover] = useState(false);
   const [showPromoVideo, setShowPromoVideo] = useState(false);
   const [contentTab, setContentTab] = useState("description");
   const courseUrl = `${window.location.origin}/courses/${course.slug || course.id}`;
   const pricePerStudent = Number(course.effectivePrice ?? course.price ?? 0);
-  const commissionRateValue = course.commissionRate ?? course.platformCommissionRate;
+  const commissionRateValue = course.commissionRateBps != null
+    ? Number(course.commissionRateBps) / 100
+    : course.commissionRate ?? course.platformCommissionRate ?? course.platformCommissionPercentage ?? (course.platformCommissionBps != null ? Number(course.platformCommissionBps) / 100 : null);
   const commissionRate = commissionRateValue == null ? null : Number(commissionRateValue);
   const platformProfitPerStudent = commissionRate == null ? null : pricePerStudent * (commissionRate / 100);
   const instructorProfitPerStudent = commissionRate == null ? null : pricePerStudent - platformProfitPerStudent;
@@ -280,6 +279,10 @@ const OverviewTab = ({ course, coverSrc, totalLessons }) => {
             {totalLessons} دروس
           </span>
           <span className="inline-flex items-center gap-1.5">
+            <CircleHelp size={14} className="text-[#123C91]" />
+            {totalQuizzes} اختبارات
+          </span>
+          <span className="inline-flex items-center gap-1.5">
             <Clock3 size={14} className="text-[#123C91]" />
             {course.duration || 0} ساعة
           </span>
@@ -298,7 +301,7 @@ const OverviewTab = ({ course, coverSrc, totalLessons }) => {
             />
             <button
               type="button"
-              onClick={() => navigator.clipboard.writeText(courseUrl)}
+              onClick={async () => { try { await navigator.clipboard.writeText(courseUrl); toast.success("تم النسخ بنجاح"); } catch { toast.error("تعذر نسخ الرابط"); } }}
               className="inline-flex shrink-0 items-center gap-1.5 bg-[#123C91] px-4 text-xs font-semibold text-white"
             >
               <Copy size={14} /> نسخ
@@ -328,27 +331,23 @@ const OverviewTab = ({ course, coverSrc, totalLessons }) => {
             </button>
           </div>
         </div>
-        <div className="rounded-xl bg-[#1F2937] p-5 text-white">
-          <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px]">
-            {course.pricingType === "free" ? "مجانية" : "مدفوعة"}
-          </span>
-          <strong className="mt-5 block text-xl">{course.pricingType === "free" ? "مجاني" : money(pricePerStudent)}</strong>
-          <span className="mt-1 block text-xs text-white/60">
-            سعر بيع الدورة
-          </span>
-          <div className="mt-5 space-y-3 border-t border-white/10 pt-4 text-xs text-white/70">
-            <div className="flex justify-between">
-              <span>عمولة المنصة</span>
-              <span>{commissionRate == null ? "حسب إعداد المنصة" : `${commissionRate}%`}</span>
+        <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-[#1F2937] to-[#111827] p-5 text-white shadow-[0_12px_30px_rgba(15,23,42,.18)]">
+          <span className="absolute -left-8 -top-10 size-32 rounded-full bg-[#12C6B0]/10" />
+          <div className="relative">
+            <div className="flex items-center justify-between gap-3">
+              <span className="grid size-10 place-items-center rounded-xl bg-white/10 text-[#8DE9DE]"><WalletCards size={19} /></span>
+              <span className={`rounded-full px-3 py-1 text-[10px] font-bold ${course.pricingType === "free" ? "bg-emerald-400/15 text-emerald-200" : "bg-white/10 text-white/80"}`}>{course.pricingType === "free" ? "دورة مجانية" : "دورة مدفوعة"}</span>
             </div>
-            <div className="flex justify-between">
-              <span>ربح المنصة لكل طالب</span>
-              <span>{platformProfitPerStudent == null ? "—" : money(platformProfitPerStudent)}</span>
+            <div className="mt-5 rounded-xl border border-white/8 bg-white/5 p-4">
+              <span className="block text-xs text-white/55">سعر بيع الدورة للطالب</span>
+              <strong dir="ltr" className="mt-1.5 block text-right text-2xl font-extrabold tracking-tight">{course.pricingType === "free" ? "مجاني" : money(pricePerStudent)}</strong>
             </div>
-            <div className="flex justify-between border-t border-white/10 pt-3 font-semibold text-white">
-              <span>ربح المحاضر لكل طالب</span>
-              <span>{instructorProfitPerStudent == null ? "—" : money(instructorProfitPerStudent)}</span>
-            </div>
+            <dl className="mt-3 space-y-2">
+              <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-3 text-xs"><dt className="text-white/60">عمولة المنصة</dt><dd className="rounded-md bg-white/10 px-2 py-1 font-bold text-white">{commissionRate == null ? "غير محددة" : `${commissionRate}%`}</dd></div>
+              <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-3 text-xs"><dt className="text-white/60">ربح المنصة لكل طالب</dt><dd dir="ltr" className="text-right font-bold text-white">{platformProfitPerStudent == null ? "غير محسوب" : money(platformProfitPerStudent)}</dd></div>
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-[#12C6B0]/20 bg-[#12C6B0]/10 px-3 py-3 text-xs"><dt className="font-bold text-[#B7FFF6]">ربح المحاضر لكل طالب</dt><dd dir="ltr" className="text-right font-extrabold text-white">{instructorProfitPerStudent == null ? "غير محسوب" : money(instructorProfitPerStudent)}</dd></div>
+            </dl>
+            {commissionRate == null && course.pricingType !== "free" && <p className="mt-3 text-[10px] leading-5 text-white/45">تظهر قيم الأرباح بعد تحديد نسبة عمولة المنصة.</p>}
           </div>
         </div>
       </aside>
@@ -403,29 +402,24 @@ const PromoVideoViewer = ({ title, url, onClose }) => {
     else await viewerRef.current?.requestFullscreen();
   };
 
-  return <div className="fixed inset-0 z-[110] grid place-items-center bg-[#07142D]/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="الفيديو الترويجي" onMouseDown={(event) => event.target === event.currentTarget && close()}>
+  return <div className="fixed inset-0 z-[110] grid place-items-center bg-[#07142D]/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="الفيديو الترويجي" onMouseDown={(event) => event.target === event.currentTarget && close()} onContextMenu={(event) => event.preventDefault()}>
     <div ref={viewerRef} className={`flex w-full flex-col overflow-hidden border border-white/15 bg-[#081A3A] shadow-2xl ${fullscreen ? "h-screen max-w-none rounded-none border-0" : "max-w-5xl rounded-2xl"}`}>
       <header className="flex items-center justify-between gap-3 bg-linear-to-l from-[#123C91] to-[#1E55B3] px-4 py-3 text-white sm:px-5">
         <div className="min-w-0"><p className="text-[10px] text-[#8FE3D8]">الفيديو الترويجي</p><h2 className="truncate text-sm font-bold sm:text-base">{title}</h2></div>
         <div className="flex shrink-0 items-center gap-2"><button type="button" onClick={toggleFullscreen} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-xs font-bold transition hover:bg-white/20">{fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}<span className="hidden sm:inline">{fullscreen ? "إنهاء ملء الشاشة" : "ملء الشاشة"}</span></button><button type="button" onClick={close} className="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:bg-white/20" aria-label="إغلاق"><X size={18} /></button></div>
       </header>
-      <div className={`min-h-0 bg-black ${fullscreen ? "flex flex-1 items-center" : ""}`}><video src={url} controls controlsList="nodownload" autoPlay playsInline className={`${fullscreen ? "h-full max-h-screen" : "aspect-video"} w-full bg-black object-contain`}>متصفحك لا يدعم تشغيل الفيديو.</video></div>
+      <div className={`min-h-0 bg-black ${fullscreen ? "flex flex-1 items-center" : ""}`}><BrandMediaPlayer src={url} autoPlay className={`${fullscreen ? "h-full max-h-screen" : "aspect-video"} w-full`} /></div>
     </div>
   </div>;
 };
 
-import {
-  deleteAdminCourseLesson,
-  requestLessonMediaAccess,
-  updateAdminLessonPreview,
-} from "../../../services/APIService";
+import { requestLessonMediaAccess } from "../../../services/APIService";
 
-const CurriculumTab = ({ course, onCourseRefresh }) => {
+const CurriculumTab = ({ course }) => {
   const navigate = useNavigate();
   const [previewingLessonId, setPreviewingLessonId] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
   const [mediaFullscreen, setMediaFullscreen] = useState(false);
-  const [updatingLessonId, setUpdatingLessonId] = useState("");
   const mediaPreviewRef = useRef(null);
   useEffect(
     () => () => {
@@ -455,19 +449,23 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
       await document.exitFullscreen();
     else await mediaPreviewRef.current.requestFullscreen();
   };
-  const sections = course.curriculum?.length
-    ? course.curriculum
-    : [{ id: "empty", title: "مقدمة", lessons: [] }];
+  const sections = (course.curriculum || []).filter(
+    (section) => Array.isArray(section.lessons) && section.lessons.length > 0,
+  );
   const [openSections, setOpenSections] = useState(
     () => new Set(sections.map((section) => section.id)),
   );
   const totalLessons = sections.reduce(
-    (sum, section) => sum + section.lessons.length,
+    (sum, section) => sum + section.lessons.filter((lesson) => lesson.type !== "اختبار").length,
+    0,
+  );
+  const totalQuizzes = sections.reduce(
+    (sum, section) => sum + section.lessons.filter((lesson) => lesson.type === "اختبار").length,
     0,
   );
   const totalVideos = sections.reduce(
     (sum, section) =>
-      sum + section.lessons.filter((lesson) => lesson.type !== "اختبار").length,
+      sum + section.lessons.filter((lesson) => lesson.type === "فيديو").length,
     0,
   );
 
@@ -493,8 +491,8 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
         lesson.type === "file";
       const ticketUrl = resolveMediaUrl(data.playbackUrl);
       if (isFile) {
-        const fileResponse = await fetch(ticketUrl);
-        if (!fileResponse.ok) throw new Error("FILE_PREVIEW_FAILED");
+        const fileResponse = await fetch(ticketUrl, { credentials: "include" });
+        if (!fileResponse.ok) throw new Error("تعذر فتح ملف الدرس");
         const blob = await fileResponse.blob();
         setMediaPreview({
           url: URL.createObjectURL(blob),
@@ -518,46 +516,14 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
         url: ticketUrl,
         title: lesson.title || "محتوى الدرس",
         isFile: false,
+        type: ["صوت", "audio"].includes(
+          String(lesson.type || lesson.contentType || "").toLowerCase(),
+        ) ? "audio" : "video",
       });
     } catch (error) {
       toast.error(getApiErrorMessage(error, "تعذر تشغيل معاينة الدرس"));
     } finally {
       setPreviewingLessonId(null);
-    }
-  };
-
-  const toggleLessonPreview = async (lesson) => {
-    if (!lesson?.id || updatingLessonId) return;
-    setUpdatingLessonId(lesson.id);
-    try {
-      await updateAdminLessonPreview(course.id, lesson.id, !lesson.preview);
-      await onCourseRefresh();
-      toast.success(lesson.preview ? "تم إلغاء إتاحة المعاينة" : "تم إتاحة الدرس للمعاينة");
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, "تعذر تحديث إعداد المعاينة"));
-    } finally {
-      setUpdatingLessonId("");
-    }
-  };
-
-  const deleteLesson = async (lesson) => {
-    if (!lesson?.id || updatingLessonId) return;
-    const confirmed = await confirmToast({
-      title: "حذف الدرس؟",
-      message: `سيتم حذف درس «${lesson.title || "بدون عنوان"}» ومحتواه ومرفقاته نهائيًا.`,
-      confirmLabel: "حذف الدرس",
-      danger: true,
-    });
-    if (!confirmed) return;
-    setUpdatingLessonId(lesson.id);
-    try {
-      await deleteAdminCourseLesson(course.id, lesson.id);
-      await onCourseRefresh();
-      toast.success("تم حذف الدرس");
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, "تعذر حذف الدرس"));
-    } finally {
-      setUpdatingLessonId("");
     }
   };
 
@@ -578,6 +544,10 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
           <span className="inline-flex items-center gap-1.5">
             <BookOpen size={14} className="text-[#123C91]" />
             {totalLessons} دروس
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <CircleHelp size={14} className="text-[#123C91]" />
+            {totalQuizzes} اختبارات
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Video size={14} className="text-[#123C91]" />
@@ -614,17 +584,11 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
 
               {isOpen && (
                 <div>
-                  {(section.lessons.length
-                    ? section.lessons
-                    : [
-                        {
-                          id: `empty-${section.id}`,
-                          title: "لا توجد دروس مضافة بعد",
-                          type: "فيديو",
-                        },
-                      ]
-                  ).map((lesson, lessonIndex) => {
+                  {section.lessons.length ? section.lessons.map((lesson, lessonIndex) => {
                     const isQuiz = lesson.type === "اختبار";
+                    const isAudio = ["صوت", "audio"].includes(
+                      String(lesson.type || lesson.contentType || "").toLowerCase(),
+                    );
                     return (
                       <div
                         key={lesson.id}
@@ -641,20 +605,6 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
                           <span className="shrink-0 rounded-full bg-[#DDF7E8] px-2.5 py-1 text-[10px] font-bold text-[#17864B]">
                             متاح للمعاينة
                           </span>
-                        )}
-                        {!isQuiz && lesson.id && !String(lesson.id).startsWith("empty-") && (
-                          <div className="flex w-full gap-2 sm:w-auto">
-                            <button
-                              type="button"
-                              disabled={updatingLessonId === lesson.id}
-                              onClick={() => toggleLessonPreview(lesson)}
-                              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-semibold disabled:opacity-50 sm:flex-none ${lesson.preview ? "border-amber-200 bg-amber-50 text-amber-700" : "border-[#C9D7ED] bg-[#F4F7FF] text-[#123C91]"}`}
-                            >
-                              {lesson.preview ? <EyeOff size={14} /> : <Eye size={14} />}
-                              {lesson.preview ? "إلغاء المعاينة" : "إتاحة للمعاينة"}
-                            </button>
-                            <button type="button" disabled={updatingLessonId === lesson.id} onClick={() => deleteLesson(lesson)} className="inline-flex items-center justify-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-50"><Trash2 size={14} /> حذف</button>
-                          </div>
                         )}
                         {lesson.title &&
                           (isQuiz ? (
@@ -678,6 +628,15 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
                             >
                               {lesson.type === "ملف" ? (
                                 <FileText size={13} />
+                              ) : isAudio ? (
+                                <Headphones
+                                  size={13}
+                                  className={
+                                    previewingLessonId === lesson.id
+                                      ? "animate-pulse"
+                                      : ""
+                                  }
+                                />
                               ) : (
                                 <Video
                                   size={13}
@@ -692,12 +651,18 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
                                 ? "جاري الفتح..."
                                 : lesson.type === "ملف"
                                   ? "فتح الملف"
-                                  : "عرض الفيديو"}
+                                  : isAudio
+                                    ? "استماع"
+                                    : "عرض الفيديو"}
                             </button>
                           ))}
                       </div>
                     );
-                  })}
+                  }) : (
+                    <div className="border-t border-[#EAECF0] px-4 py-6 text-center text-sm text-[#98A2B3]">
+                      لا توجد دروس مضافة بعد
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -716,6 +681,7 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
             ref={mediaPreviewRef}
             className={`flex w-full flex-col overflow-hidden border border-white/15 bg-[#081A3A] shadow-2xl ${mediaFullscreen ? "h-screen max-w-none rounded-none border-0" : "max-w-5xl rounded-2xl"}`}
             onMouseDown={(event) => event.stopPropagation()}
+            onContextMenu={(event) => event.preventDefault()}
           >
             <header className="flex items-center justify-between bg-linear-to-l from-[#123C91] to-[#1E55B3] px-4 py-3 text-white sm:px-5">
               <div className="min-w-0">
@@ -761,6 +727,7 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
             </header>
             <div
               className={`min-h-0 bg-[#050B17] p-2 sm:p-4 ${mediaFullscreen ? "flex-1" : ""}`}
+              onContextMenu={(event) => event.preventDefault()}
             >
               {mediaPreview.isFile ? (
                 mediaPreview.mimeType.startsWith("image/") ? (
@@ -781,21 +748,16 @@ const CurriculumTab = ({ course, onCourseRefresh }) => {
                   />
                 )
               ) : (
-                <video
+                <BrandMediaPlayer
                   src={mediaPreview.url}
-                  crossOrigin="use-credentials"
-                  controls
-                  controlsList="nodownload"
+                  type={mediaPreview.type}
                   autoPlay
-                  playsInline
                   className={
                     mediaFullscreen
                       ? "h-full w-full bg-black object-contain"
                       : "max-h-[75vh] w-full rounded-lg bg-black object-contain"
                   }
-                >
-                  متصفحك لا يدعم تشغيل الفيديو.
-                </video>
+                />
               )}
             </div>
           </div>
@@ -1620,13 +1582,15 @@ const AdminCourseDetailsPage = () => {
     );
   }
   const reviewCourse = { ...course, curriculum: curriculumWithQuizzes };
-  const totalLessons =
-    curriculumWithQuizzes.reduce(
-      (sum, section) => sum + (section.lessons?.length || 0),
-      0,
-    ) ||
-    course.lessons ||
-    0;
+  const countedLessons = curriculumWithQuizzes.reduce(
+    (sum, section) => sum + (section.lessons || []).filter((lesson) => lesson.type !== "اختبار").length,
+    0,
+  );
+  const totalLessons = countedLessons || course.lessons || 0;
+  const totalQuizzes = curriculumWithQuizzes.reduce(
+    (sum, section) => sum + (section.lessons || []).filter((lesson) => lesson.type === "اختبار").length,
+    0,
+  );
   const tabs = isPendingReview
     ? [
         { id: "overview", label: "نظرة عامة", icon: LayoutGrid },
@@ -1702,19 +1666,12 @@ const AdminCourseDetailsPage = () => {
                 </button>
               </>
             ) : null}
-            <button
-              type="button"
-              onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#123C91] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0E3279] sm:w-auto"
-            >
-              <PencilLine size={16} /> تعديل البيانات الأساسية
-            </button>
           </div>
         </div>
 
         <div className="mb-4"><ModerationHistoryPanel courseId={course.id} admin /></div>
 
-        <div className="mb-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {isPendingReview ? (
             <>
               <StatCard
@@ -1728,6 +1685,12 @@ const AdminCourseDetailsPage = () => {
                 value={totalLessons}
                 label="دروس"
                 accent="bg-[#EAF2FF] text-[#3567C8]"
+              />
+              <StatCard
+                icon={CircleHelp}
+                value={totalQuizzes}
+                label="اختبارات"
+                accent="bg-[#F4EEFF] text-[#7F56D9]"
               />
               <StatCard
                 icon={WalletCards}
@@ -1781,9 +1744,10 @@ const AdminCourseDetailsPage = () => {
             course={reviewCourse}
             coverSrc={coverSrc}
             totalLessons={totalLessons}
+            totalQuizzes={totalQuizzes}
           />
         )}
-        {activeTab === "curriculum" && <CurriculumTab course={reviewCourse} onCourseRefresh={refreshCourse} />}
+        {activeTab === "curriculum" && <CurriculumTab course={reviewCourse} />}
         {activeTab === "instructor" && <InstructorTab course={course} />}
         {activeTab === "students" && <StudentsTab course={course} setStudentCount={setLiveStudentCount} />}
         {activeTab === "reviews" && <ReviewsTab course={course} onCourseRefresh={refreshCourse} />}

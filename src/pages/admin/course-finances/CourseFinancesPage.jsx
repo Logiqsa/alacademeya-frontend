@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, BarChart3, BookOpen, Check, ChevronDown, Filter, GraduationCap, LoaderCircle, RefreshCw, Search, ShoppingCart, WalletCards, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { AlertCircle, BarChart3, BookOpen, Check, ChevronDown, Filter, GraduationCap, LoaderCircle, Mail, Phone, RefreshCw, Search, ShoppingCart, UserRound, WalletCards, X } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
@@ -9,7 +9,7 @@ import { getSavedPageSize } from "../../../utils/tablePagination";
 import { formatMoney } from "../../../utils/currencyDisplay";
 import { getApiErrorMessage } from "../../../services/apiError";
 import { getAssetUrl } from "../../../services/APIService";
-import { fetchPublicInstructor } from "../../../features/course-management/api/coursesApi";
+import { fetchAdminInstructor, fetchPublicInstructor } from "../../../features/course-management/api/coursesApi";
 import { getCourseEarningsByCourse, getCourseEarningsByInstructor, getCourseEarningsLedger, getCourseEarningsSummary } from "../../../features/admin-finances/api/courseEarningsApi";
 
 const EMPTY_FILTERS = { from: "", to: "", courseId: "", instructorId: "", currency: "" };
@@ -19,21 +19,11 @@ const date = (value) => {
   const parsed = value ? new Date(value) : null;
   return parsed && !Number.isNaN(parsed.getTime()) ? new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium" }).format(parsed) : "—";
 };
-const isoDate = (value) => {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, "0");
-  const day = String(value.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-const periodDates = (interval) => {
-  const today = new Date();
-  return interval === "monthly"
-    ? { from: isoDate(new Date(today.getFullYear(), today.getMonth(), 1)), to: isoDate(today) }
-    : { from: isoDate(today), to: isoDate(today) };
-};
 const CourseFinancesPage = () => {
-  const [draftFilters, setDraftFilters] = useState(() => ({ ...EMPTY_FILTERS, ...periodDates("daily") }));
-  const [filters, setFilters] = useState(() => ({ ...EMPTY_FILTERS, ...periodDates("daily") }));
+  const [searchParams] = useSearchParams();
+  const initialCourseId = searchParams.get("courseId") || "";
+  const [draftFilters, setDraftFilters] = useState(() => ({ ...EMPTY_FILTERS, courseId: initialCourseId }));
+  const [filters, setFilters] = useState(() => ({ ...EMPTY_FILTERS, courseId: initialCourseId }));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => getSavedPageSize(10));
   const [refreshKey, setRefreshKey] = useState(0);
@@ -70,7 +60,7 @@ const CourseFinancesPage = () => {
     }
     setPending(Object.keys(sections)); setPage(1); setFilters({ ...draftFilters }); setRefreshKey((value) => value + 1);
   };
-  const resetFilters = () => { const defaults = { ...EMPTY_FILTERS, ...periodDates("daily") }; setPending(Object.keys(sections)); setDraftFilters(defaults); setFilters(defaults); setPage(1); setRefreshKey((value) => value + 1); };
+  const resetFilters = () => { const defaults = { ...EMPTY_FILTERS }; setPending(Object.keys(sections)); setDraftFilters(defaults); setFilters(defaults); setPage(1); setRefreshKey((value) => value + 1); };
 
   return <AdminLayout><main dir="rtl" className="mx-auto w-full max-w-400 space-y-6 pb-10 text-right font-['IBM_Plex_Sans_Arabic']">
     <header className="relative overflow-hidden rounded-2xl bg-linear-to-l from-[#123C91] to-[#17689A] px-5 py-7 text-white shadow-[0_10px_30px_rgba(18,60,145,.18)] sm:px-7"><div className="absolute -left-10 -top-14 size-40 rounded-full bg-[#12C6B0]/20" /><div className="relative flex items-center gap-4"><span className="grid size-12 place-items-center rounded-xl bg-white/12"><BarChart3 /></span><div><p className="text-xs font-bold text-[#8DE9DE]">لوحة الإدارة المالية</p><h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">مالية الدورات</h1><p className="mt-2 text-sm text-white/75">تحليل المبيعات وعمولة المنصة وصافي مستحقات المحاضرين.</p></div></div></header>
@@ -85,7 +75,7 @@ const CourseFinancesPage = () => {
   </main></AdminLayout>;
 };
 
-const Filters = ({ value, courses, instructors, currencies, loading, onChange, onApply, onReset }) => <div className="rounded-2xl border border-[#E1E7EF] bg-white p-4 shadow-sm sm:p-5"><Heading icon={Filter} title="تصفية النتائج" subtitle="بدون فترة محددة يعرض المخطط اليوم الحالي أو الشهر الحالي" /><div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Field label="من تاريخ"><input type="date" value={value.from} onChange={(e) => onChange("from", e.target.value)} /></Field><Field label="إلى تاريخ"><input type="date" value={value.to} onChange={(e) => onChange("to", e.target.value)} /></Field><SearchableSelect label="الدورة" value={value.courseId} options={courses} placeholder="كل الدورات" searchPlaceholder="ابحث عن دورة..." onChange={(selected) => onChange("courseId", selected)} /><SearchableSelect label="المحاضر" value={value.instructorId} options={instructors} placeholder="كل المحاضرين" searchPlaceholder="ابحث عن محاضر..." onChange={(selected) => onChange("instructorId", selected)} /><Field label="العملة"><select value={value.currency} onChange={(e) => onChange("currency", e.target.value)}><option value="">كل العملات</option>{currencies.map((item) => <option key={item}>{item}</option>)}</select></Field></div><div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row"><button type="button" onClick={onReset} disabled={loading} className="h-11 rounded-xl border px-5 font-bold text-[#475467] disabled:opacity-50">إعادة ضبط</button><button type="button" onClick={onApply} disabled={loading} className="h-11 rounded-xl bg-[#123C91] px-6 font-bold text-white disabled:opacity-50">تطبيق الفلاتر</button></div></div>;
+const Filters = ({ value, courses, instructors, currencies, loading, onChange, onApply, onReset }) => <div className="rounded-2xl border border-[#E1E7EF] bg-white p-4 shadow-sm sm:p-5"><Heading icon={Filter} title="تصفية النتائج" subtitle="بدون تحديد فترة سيتم عرض جميع المبيعات المسجلة" /><div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Field label="من تاريخ"><input type="date" value={value.from} onChange={(e) => onChange("from", e.target.value)} /></Field><Field label="إلى تاريخ"><input type="date" value={value.to} onChange={(e) => onChange("to", e.target.value)} /></Field><SearchableSelect label="الدورة" value={value.courseId} options={courses} placeholder="كل الدورات" searchPlaceholder="ابحث عن دورة..." onChange={(selected) => onChange("courseId", selected)} /><SearchableSelect label="المحاضر" value={value.instructorId} options={instructors} placeholder="كل المحاضرين" searchPlaceholder="ابحث عن محاضر..." onChange={(selected) => onChange("instructorId", selected)} /><Field label="العملة"><select value={value.currency} onChange={(e) => onChange("currency", e.target.value)}><option value="">كل العملات</option>{currencies.map((item) => <option key={item}>{item}</option>)}</select></Field></div><div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row"><button type="button" onClick={onReset} disabled={loading} className="h-11 rounded-xl border px-5 font-bold text-[#475467] disabled:opacity-50">إعادة ضبط</button><button type="button" onClick={onApply} disabled={loading} className="h-11 rounded-xl bg-[#123C91] px-6 font-bold text-white disabled:opacity-50">تطبيق الفلاتر</button></div></div>;
 const Field = ({ label, children }) => <label className="text-xs font-bold text-[#475467]"><span className="mb-1.5 block">{label}</span><span className="block [&>*]:h-11 [&>*]:w-full [&>*]:rounded-xl [&>*]:border [&>*]:border-[#D7DEE8] [&>*]:bg-white [&>*]:px-3 [&>*]:text-sm [&>*]:outline-none focus-within:[&>*]:border-[#123C91]">{children}</span></label>;
 
 const SearchableSelect = ({ label, value, options, placeholder, searchPlaceholder, onChange }) => {
@@ -117,21 +107,27 @@ const FinancialCard = ({ title, subtitle, item, courseId, onInstructor, titleIsI
 
 const Ledger = ({ items, onInstructor }) => <div className="overflow-hidden rounded-2xl border border-[#E1E7EF] bg-white shadow-sm"><div className="p-5"><Heading icon={ShoppingCart} title="سجل مبيعات الدورات" subtitle="تفاصيل قيود الأرباح المسجلة" /></div>{!items.length ? <Empty text="لا توجد مبيعات للفلاتر المحددة." /> : <><div className="hidden overflow-x-auto lg:block"><table className="w-full min-w-250 text-sm"><thead className="bg-[#F8FAFC] text-[#667085]"><tr>{["الدورة", "المحاضر", "المشتري", "المبلغ", "العمولة", "الصافي", "العملة", "التاريخ"].map((head) => <th key={head} className="px-4 py-3 text-right font-semibold">{head}</th>)}</tr></thead><tbody className="divide-y">{items.map((item) => <tr key={item.id}><td className="px-4 py-4 font-bold"><Link to={`/admin/courses/${item.courseId}`} className="text-[#123C91] hover:underline">{item.course}</Link></td><td className="px-4 py-4"><button type="button" onClick={() => onInstructor(item)} className="text-[#123C91] hover:underline">{item.instructor}</button></td><td className="px-4 py-4">{item.buyer}</td><MoneyCells item={item} /><td dir="ltr" className="px-4 py-4 text-right font-bold">{item.currency}</td><td dir="ltr" className="px-4 py-4 text-right">{date(item.date)}</td></tr>)}</tbody></table></div><div className="space-y-3 p-3 lg:hidden">{items.map((item) => <FinancialCard key={item.id} title={item.course} subtitle={`${item.instructor} · ${item.buyer} · ${date(item.date)}`} item={item} courseId={item.courseId} />)}</div></>}</div>;
 
-const InstructorModal = ({ instructor, onClose }) => {
+export const InstructorModal = ({ instructor, onClose }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("details");
   const key = instructor.instructorSlug || instructor.instructorId || instructor.id;
+  const adminId = instructor.instructorId || instructor.id;
   useEffect(() => {
     let active = true;
     if (!key) return () => { active = false; };
-    fetchPublicInstructor(key).then((data) => { if (active) setProfile(data); }).catch(() => {}).finally(() => { if (active) setLoading(false); });
+    const request = adminId ? fetchAdminInstructor(adminId) : fetchPublicInstructor(key);
+    request.then((data) => { if (active) setProfile(data); }).catch(() => fetchPublicInstructor(key).then((data) => { if (active) setProfile(data); })).catch(() => {}).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [key]);
+  }, [adminId, key]);
   const user = profile?.user || {};
   const name = user.fullName || profile?.fullName || profile?.name || instructor.instructor;
   const avatar = getAssetUrl(user.profileImage || profile?.profileImage || profile?.avatar);
-  return <div className="fixed inset-0 z-60 grid place-items-center bg-black/55 p-4 backdrop-blur-[2px]" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div role="dialog" aria-modal="true" aria-label={`تفاصيل المحاضر ${name}`} className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"><div className="relative bg-linear-to-l from-[#123C91] to-[#17689A] px-6 py-6 text-white"><button type="button" onClick={onClose} className="absolute left-4 top-4 grid size-9 place-items-center rounded-full bg-white/12 hover:bg-white/20" aria-label="إغلاق"><X size={19} /></button><div className="flex items-center gap-4">{avatar ? <img src={avatar} alt={name} className="size-18 rounded-full border-2 border-white/30 object-cover" /> : <span className="grid size-18 place-items-center rounded-full bg-white/15 text-2xl font-extrabold">{String(name || "م").charAt(0)}</span>}<div><p className="text-xs text-[#8DE9DE]">تفاصيل المحاضر</p><h2 className="mt-1 text-xl font-extrabold">{name}</h2><p className="mt-1 text-sm text-white/75">{profile?.headline || "محاضر بالأكاديمية"}</p></div></div></div><div className="p-6">{loading ? <div className="flex min-h-24 items-center justify-center gap-2 text-sm text-[#667085]"><LoaderCircle className="animate-spin" />جاري تحميل البيانات...</div> : <><p className="text-sm leading-7 text-[#667085]">{profile?.bio || "لا توجد نبذة متاحة عن هذا المحاضر."}</p><dl className="mt-5 grid gap-3 sm:grid-cols-2"><div className="rounded-xl bg-[#F7F9FC] p-3"><dt className="text-xs text-[#98A2B3]">الحالة</dt><dd className="mt-1 font-bold text-[#344054]">{profile?.status === "active" ? "نشط" : profile?.status || "غير محدد"}</dd></div><div className="rounded-xl bg-[#F7F9FC] p-3"><dt className="text-xs text-[#98A2B3]">معرّف المحاضر</dt><dd dir="ltr" className="mt-1 truncate text-right text-sm font-bold text-[#344054]">{instructor.instructorId || instructor.id || "—"}</dd></div></dl></>}</div></div></div>;
+  const email = user.email || profile?.email;
+  const phone = user.phone || profile?.phone;
+  return <div className="fixed inset-0 z-60 grid place-items-center bg-black/55 p-4 backdrop-blur-[2px]" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div role="dialog" aria-modal="true" aria-label={`تفاصيل المحاضر ${name}`} className="w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl"><div className="relative bg-linear-to-l from-[#123C91] to-[#17689A] px-6 py-6 text-white"><button type="button" onClick={onClose} className="absolute left-4 top-4 grid size-10 place-items-center rounded-full bg-white/12 hover:bg-white/20" aria-label="إغلاق"><X size={19} /></button><div className="flex items-center gap-4">{avatar ? <img src={avatar} alt={name} className="size-18 rounded-full border-2 border-white/30 object-cover" /> : <span className="grid size-18 place-items-center rounded-full bg-white/15 text-2xl font-extrabold">{String(name || "م").charAt(0)}</span>}<div><p className="text-xs text-[#8DE9DE]">ملف المحاضر</p><h2 className="mt-1 text-xl font-extrabold">{name}</h2><p className="mt-1 text-sm text-white/75">{profile?.headline || "محاضر بالأكاديمية"}</p></div></div></div><div className="border-b bg-[#F8FAFC] px-5 pt-3"><div className="flex gap-2">{[["details", "التفاصيل", UserRound], ["contact", "التواصل", Mail]].map(([id, label, Icon]) => <button key={id} type="button" onClick={() => setTab(id)} className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition ${tab === id ? "border-[#123C91] text-[#123C91]" : "border-transparent text-[#667085] hover:text-[#344054]"}`}><Icon size={16} />{label}</button>)}</div></div><div className="p-6">{loading ? <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-[#667085]"><LoaderCircle className="animate-spin" />جاري تحميل البيانات...</div> : tab === "details" ? <><p className="text-sm leading-7 text-[#667085]">{profile?.bio || "لا توجد نبذة متاحة عن هذا المحاضر."}</p><dl className="mt-5 grid gap-3 sm:grid-cols-2"><Stat label="الحالة" value={profile?.status === "active" ? "نشط" : profile?.status || "غير محدد"} /><Stat label="الدورات" value={profile?.coursesCount ?? "—"} /><Stat label="إجمالي الاشتراكات" value={profile?.totalStudents ?? "—"} /><Stat label="معرّف المحاضر" value={instructor.instructorId || instructor.id || "—"} ltr /></dl></> : <div className="space-y-3">{email ? <a href={`mailto:${email}`} className="flex items-center gap-3 rounded-xl border border-[#E1E7EF] p-4 text-[#344054] transition hover:border-[#123C91] hover:bg-[#F6F9FF]"><span className="grid size-10 place-items-center rounded-lg bg-[#EEF4FF] text-[#123C91]"><Mail size={18} /></span><span><small className="block text-[#98A2B3]">البريد الإلكتروني</small><b dir="ltr" className="block">{email}</b></span></a> : null}{phone ? <a href={`tel:${phone}`} className="flex items-center gap-3 rounded-xl border border-[#E1E7EF] p-4 text-[#344054] transition hover:border-[#123C91] hover:bg-[#F6F9FF]"><span className="grid size-10 place-items-center rounded-lg bg-[#EEF4FF] text-[#123C91]"><Phone size={18} /></span><span><small className="block text-[#98A2B3]">رقم الهاتف</small><b dir="ltr" className="block">{phone}</b></span></a> : null}{!email && !phone && <p className="rounded-xl bg-[#F8FAFC] p-6 text-center text-sm text-[#667085]">لا توجد بيانات تواصل مسجلة.</p>}</div>}</div></div></div>;
 };
+const Stat = ({ label, value, ltr = false }) => <div className="rounded-xl border border-[#EEF1F5] bg-[#F8FAFC] p-3"><dt className="text-xs text-[#98A2B3]">{label}</dt><dd dir={ltr ? "ltr" : undefined} className="mt-1 truncate text-right text-sm font-bold text-[#344054]">{value}</dd></div>;
 const Heading = ({ icon: Icon, title, subtitle }) => <div className="flex items-center gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#EEF4FF] text-[#123C91]"><Icon size={19} /></span><div><h2 className="font-extrabold text-[#1F2937]">{title}</h2><p className="mt-0.5 text-xs text-[#667085]">{subtitle}</p></div></div>;
 const Empty = ({ text }) => <div className="grid min-h-40 place-items-center px-4 text-center text-sm text-[#98A2B3]">{text}</div>;
 const Section = ({ section, retry, children }) => section.loading ? <div className="rounded-2xl border bg-white"><LoadingState compact /></div> : section.error ? <div role="alert" className="flex flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-sm text-red-700"><AlertCircle /><span>{section.error}</span><button onClick={retry} className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 font-bold text-[#123C91] shadow-sm"><RefreshCw size={15} />إعادة المحاولة</button></div> : children;

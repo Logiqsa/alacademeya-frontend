@@ -120,10 +120,23 @@ select {
   outline: none;
 }
 
+select {
+  min-height: 44px;
+  border: 1px solid #d7dee8;
+  border-radius: 12px;
+  background-color: #fff;
+  color: #344054;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+select:hover { border-color: #aab8ca; }
+select:focus { border-color: #123c91; box-shadow: 0 0 0 3px rgb(18 60 145 / 10%); }
+select:disabled { cursor: not-allowed; background-color: #f2f4f7; color: #98a2b3; }
+
 /* =========================
    SECTIONS
 ========================= */
-section {
+.landing-page > section {
   padding: 90px 0;
 }
 
@@ -247,13 +260,13 @@ section {
    RESPONSIVE
 ========================= */
 @media (max-width: 1024px) {
-  section {
+  .landing-page > section {
     padding: 70px 0;
   }
 }
 
 @media (max-width: 768px) {
-  section {
+  .landing-page > section {
     padding: 60px 0;
   }
 
@@ -263,7 +276,7 @@ section {
 }
 
 @media (max-width: 480px) {
-  section {
+  .landing-page > section {
     padding: 50px 0;
   }
 }

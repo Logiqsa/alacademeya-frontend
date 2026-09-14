@@ -149,6 +149,8 @@ export const cancelMyInstructorWithdrawal = (id) =>
   API.post(`/instructors/me/withdrawals/${encodeURIComponent(id)}/cancel`, null, { headers: { "Idempotency-Key": crypto.randomUUID() } });
 export const getPublicInstructor = (slug) =>
   API.get(`/instructors/${encodeURIComponent(slug)}`);
+export const getAdminInstructor = (id) =>
+  API.get(`/instructors/admin/${encodeURIComponent(id)}`);
 export const updateInstructorStatus = (id, payload) =>
   API.patch(`/instructors/${id}/status`, payload);
 
@@ -359,6 +361,8 @@ export const getAdminCoursePurchase = (id) =>
   API.get(`/admin/course-purchases/${id}`);
 export const getAdminInstructorWithdrawals = (params) => API.get("/admin/instructor-withdrawals", { params });
 export const getAdminInstructorWithdrawal = (id) => API.get(`/admin/instructor-withdrawals/${encodeURIComponent(id)}`);
+export const getAdminMediaSecurityEvents = (params) =>
+  API.get("/admin/media-security-events", { params });
 export const approveAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/approve`, payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
 export const rejectAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/reject`, payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
 export const confirmPaidAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/confirm-paid`, payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
@@ -648,6 +652,8 @@ export const validateDiscount = (payload) =>
 export const getNotifications = () => API.get("/notifications");
 export const markNotificationRead = (id) =>
   API.patch(`/notifications/${id}/read`);
+export const setNotificationReadStatus = (id, isRead) =>
+  API.patch(`/notifications/${id}/read-status`, { isRead });
 export const markAllNotificationsRead = () =>
   API.patch("/notifications/read-all");
 export const deleteNotification = (id) => API.delete(`/notifications/${id}`);

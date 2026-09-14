@@ -111,8 +111,11 @@ export function useSidebarUnread() {
     const socket = getSocket();
     const onAny = (eventName, payload) => {
       const event = String(eventName).toLowerCase();
-      if (event.includes("notification")) {
+      if (event === "notification") {
         setUnread((current) => ({ ...current, notifications: true }));
+        window.dispatchEvent(new CustomEvent(NOTIFICATION_RECEIVED_EVENT, { detail: payload }));
+      } else if (event.includes("notification")) {
+        refresh();
         window.dispatchEvent(new CustomEvent(NOTIFICATION_RECEIVED_EVENT, { detail: payload }));
       }
       if (event.includes("message")) {
@@ -131,7 +134,7 @@ export function useSidebarUnread() {
 
     socket.onAny(onAny);
     return () => socket.offAny(onAny);
-  }, [pathname, userId]);
+  }, [pathname, refresh, userId]);
 
   return unread;
 }

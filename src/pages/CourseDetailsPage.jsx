@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { BookOpen, Check, ChevronDown, ChevronLeft, Clock3, Download, FileText, Globe2, ListChecks, LoaderCircle, LockKeyhole, Maximize2, MessageSquareText, Minimize2, Play, Star, Target, Users, Video } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronDown, ChevronLeft, Clock3, Download, FileText, Globe2, GraduationCap, ListChecks, LoaderCircle, LockKeyhole, Maximize2, MessageSquareText, Minimize2, Play, RefreshCw, Search, Star, Target, Users, Video } from "lucide-react";
 import pythonCover from "../assets/courses/python-course.png";
 import { AuthContext } from "../context/AuthContext";
 import { enrollFreeCourse, fetchCourseAccess, fetchPublicCourse } from "../features/course-management/api/coursesApi";
@@ -12,6 +12,7 @@ import { resolveMediaUrl } from '../services/apiUrl';
 import ReviewsPanel from "../features/course-management/components/reviews/ReviewsPanel";
 import PolicyAcceptanceDialog from "../components/course/PolicyAcceptanceDialog";
 import { getMyPolicyStatus } from "../services/APIService";
+import BrandMediaPlayer from "../components/media/BrandMediaPlayer";
 
 export default function CourseDetailsPage() {
   const { slug } = useParams();
@@ -19,7 +20,7 @@ export default function CourseDetailsPage() {
   const { user } = useContext(AuthContext);
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
   const [openSection, setOpenSection] = useState(0);
   const [enrolled, setEnrolled] = useState(false);
   const [accessReason, setAccessReason] = useState("");
@@ -55,7 +56,7 @@ export default function CourseDetailsPage() {
           } catch { /* The public detail remains usable when access lookup is unavailable. */ }
         }
       })
-      .catch((err) => active && setError(err?.response?.data?.message || "لم يتم العثور على الدورة."))
+      .catch((err) => active && setError({ status: err?.response?.status, message: err?.response?.data?.message }))
       .finally(() => active && setLoading(false));
     return () => { active = false; window.clearTimeout(loadingTimer); };
   }, [slug, user]);
@@ -65,9 +66,11 @@ export default function CourseDetailsPage() {
   }, []);
 
   if (loading) return <PageState><LoaderCircle className="animate-spin" />جاري تحميل تفاصيل الدورة...</PageState>;
-  if (error || !course?.id) return <PageState><BookOpen /><span>{error || "لم يتم العثور على الدورة."}</span><Link to="/courses" className="font-bold text-[#123C91]">العودة إلى الدورات</Link></PageState>;
+  if (error || !course?.id) return <CourseUnavailable notFound={!course?.id && (!error || error.status === 404)} onBack={() => navigate(-1)} />;
 
-  const sections = course.curriculum || [];
+  const sections = (course.curriculum || []).filter(
+    (section) => Array.isArray(section.lessons) && section.lessons.length > 0,
+  );
   const lessonsCount = course.lessons || sections.reduce((total, section) => total + section.lessons.length, 0);
   const tabs = [
     { id: "description", label: "عن الدورة", icon: FileText },
@@ -287,6 +290,28 @@ export default function CourseDetailsPage() {
 }
 
 function PageState({ children }) { return <div dir="rtl" className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-[#F6F8FB] text-[#667085]">{children}</div>; }
+function CourseUnavailable({ notFound, onBack }) {
+  return <main dir="rtl" className="relative grid min-h-[68vh] overflow-hidden bg-[#F6F8FB] px-4 py-10 sm:px-6">
+    <div className="pointer-events-none absolute -right-24 top-8 size-72 rounded-full bg-[#123C91]/6" />
+    <div className="pointer-events-none absolute -bottom-24 -left-20 size-80 rounded-full bg-[#12C6B0]/8" />
+    <div className="relative m-auto grid w-full max-w-4xl overflow-hidden rounded-3xl border border-[#DCE5F1] bg-white shadow-[0_22px_70px_rgba(18,60,145,.11)] md:grid-cols-[1fr_310px]">
+      <div className="flex flex-col justify-center p-7 sm:p-10">
+        <span className="w-fit rounded-full bg-[#EEF4FF] px-3 py-1.5 text-xs font-extrabold text-[#123C91]">مركز الدورات</span>
+        <h1 className="mt-5 text-2xl font-black text-[#17213A] sm:text-3xl">{notFound ? "هذه الدورة غير موجودة" : "تعذر تحميل الدورة"}</h1>
+        <p className="mt-3 max-w-xl text-sm leading-7 text-[#667085]">{notFound ? "ربما تم حذف الدورة أو تغيير رابطها أو أنها لم تعد متاحة للنشر. يمكنك استكشاف الدورات الحالية بدلًا منها." : "حدثت مشكلة أثناء تحميل بيانات الدورة. جرّب تحديث الصفحة أو ارجع إلى قائمة الدورات."}</p>
+        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <Link to="/courses" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#123C91] px-6 py-3.5 text-sm font-bold text-white! shadow-lg shadow-[#123C91]/15 transition hover:bg-[#0E3279]"><Search size={18} />استكشف الدورات</Link>
+          {notFound ? <button type="button" onClick={onBack} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#C9D7ED] px-6 py-3.5 text-sm font-bold text-[#123C91] transition hover:bg-[#EEF4FF]"><ArrowLeft size={18} className="rotate-180" />الرجوع للخلف</button> : <button type="button" onClick={() => window.location.reload()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#C9D7ED] px-6 py-3.5 text-sm font-bold text-[#123C91] transition hover:bg-[#EEF4FF]"><RefreshCw size={18} />إعادة المحاولة</button>}
+        </div>
+      </div>
+      <div className="relative grid min-h-64 place-items-center overflow-hidden bg-linear-to-br from-[#123C91] to-[#0A255B] p-8 text-white md:min-h-105">
+        <div className="absolute -right-14 top-8 size-40 rounded-full border-[28px] border-white/5" />
+        <div className="absolute -bottom-16 -left-12 size-52 rounded-full bg-[#12C6B0]/15" />
+        <div className="relative text-center"><span className="mx-auto grid size-30 place-items-center rounded-4xl border border-white/15 bg-white/10 shadow-2xl backdrop-blur"><GraduationCap size={58} strokeWidth={1.4} className="text-[#8FE3D8]" /></span><strong className="mt-7 block text-5xl font-black">404</strong><span className="mt-2 block text-sm text-white/70">الدورة غير متاحة</span></div>
+      </div>
+    </div>
+  </main>;
+}
 function TabContent({ title, children }) { return <div role="tabpanel"><h2 className="mb-3 text-lg font-extrabold">{title}</h2>{children}</div>; }
 function List({ items }) { return <ul className="space-y-2 text-sm leading-6 text-[#667085] sm:text-base">{items.map((item) => <li key={item} className="flex gap-2"><Check size={17} className="mt-1 shrink-0 text-[#12AFA0]" />{item}</li>)}</ul>; }
 function CourseFact({ icon: Icon, value }) { return <li className="flex min-w-0 items-center gap-2 rounded-lg bg-[#F8FAFC] px-3 py-2.5"><Icon size={16} className="shrink-0 text-[#123C91]" /><span className="truncate">{value}</span></li>; }
@@ -366,13 +391,13 @@ function PromoVideoViewer({ title, url, onClose }) {
     else await viewerRef.current?.requestFullscreen();
   };
 
-  return <div className="fixed inset-0 z-[120] grid place-items-center bg-[#07142D]/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="الفيديو الترويجي" onMouseDown={(event) => event.target === event.currentTarget && close()}>
+  return <div className="fixed inset-0 z-[120] grid place-items-center bg-[#07142D]/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="الفيديو الترويجي" onMouseDown={(event) => event.target === event.currentTarget && close()} onContextMenu={(event) => event.preventDefault()}>
     <div ref={viewerRef} className={`flex w-full flex-col overflow-hidden border border-white/15 bg-[#081A3A] shadow-2xl ${fullscreen ? "h-screen max-w-none rounded-none border-0" : "max-w-5xl rounded-2xl"}`}>
       <header className="flex items-center justify-between gap-3 bg-linear-to-l from-[#123C91] to-[#1E55B3] px-4 py-3 text-white sm:px-5">
         <div className="min-w-0"><p className="text-[10px] text-[#8FE3D8]">الفيديو الترويجي</p><h2 className="truncate text-sm font-bold sm:text-base">{title}</h2></div>
         <div className="flex shrink-0 items-center gap-2"><button type="button" onClick={toggleFullscreen} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-xs font-bold transition hover:bg-white/20">{fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}<span className="hidden sm:inline">{fullscreen ? "إنهاء ملء الشاشة" : "ملء الشاشة"}</span></button><button type="button" onClick={close} className="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:bg-white/20" aria-label="إغلاق"><X size={18} /></button></div>
       </header>
-      <div className={`min-h-0 bg-black ${fullscreen ? "flex flex-1 items-center" : ""}`}><video src={url} controls controlsList="nodownload" autoPlay playsInline className={`${fullscreen ? "h-full max-h-screen" : "aspect-video"} w-full bg-black object-contain`}>متصفحك لا يدعم تشغيل الفيديو.</video></div>
+      <div className={`min-h-0 bg-black ${fullscreen ? "flex flex-1 items-center" : ""}`}><BrandMediaPlayer src={url} autoPlay className={`${fullscreen ? "h-full max-h-screen" : "aspect-video"} w-full`} /></div>
     </div>
   </div>;
 }

@@ -2,6 +2,7 @@ export const NOTIFICATION_RECEIVED_EVENT = "alacademeya:notification-received";
 
 export const NOTIFICATION_TYPES = Object.freeze([
   "COURSE_PURCHASE_SUCCESS",
+  "COURSE_PURCHASE_SUCCEEDED",
   "NEW_COURSE_SALE",
   "COURSE_ACCESS_GRANT_FAILED",
   "WITHDRAWAL_REQUEST_CREATED",
@@ -16,10 +17,12 @@ export const NOTIFICATION_TYPES = Object.freeze([
   "NEW_COURSE_REVIEW",
   "COURSE_APPROVED",
   "COURSE_REJECTED",
+  "COURSE_SUBMITTED_FOR_REVIEW",
 ]);
 
 const TYPE_META = {
   COURSE_PURCHASE_SUCCESS: { ar: "تم شراء الدورة بنجاح", en: "Course purchase successful", category: "academic", kind: "course" },
+  COURSE_PURCHASE_SUCCEEDED: { ar: "عملية شراء دورة جديدة", en: "New course purchase", category: "system", kind: "sale" },
   NEW_COURSE_SALE: { ar: "عملية بيع جديدة لدورة", en: "New course sale", category: "system", kind: "sale" },
   COURSE_ACCESS_GRANT_FAILED: { ar: "تعذر منح الوصول إلى الدورة", en: "Course access grant failed", category: "system", kind: "warning" },
   WITHDRAWAL_REQUEST_CREATED: { ar: "تم إنشاء طلب السحب", en: "Withdrawal request created", category: "system", kind: "withdrawal" },
@@ -34,6 +37,7 @@ const TYPE_META = {
   NEW_COURSE_REVIEW: { ar: "تقييم جديد للدورة", en: "New course review", category: "academic", kind: "review" },
   COURSE_APPROVED: { ar: "تمت الموافقة على الدورة", en: "Course approved", category: "academic", kind: "course" },
   COURSE_REJECTED: { ar: "تحتاج الدورة إلى تعديلات", en: "Course changes required", category: "academic", kind: "course" },
+  COURSE_SUBMITTED_FOR_REVIEW: { ar: "طلب مراجعة دورة جديد", en: "New course review request", category: "system", kind: "course" },
 };
 
 const normalizeType = (value) =>
@@ -50,6 +54,20 @@ export const localizedNotificationText = (value, locale = "ar") => {
   if (typeof value === "string") return value;
   if (!value || typeof value !== "object") return "";
   return value[locale] || value[locale === "ar" ? "en" : "ar"] || value.text || value.message || "";
+};
+
+const ISO_DATE_PATTERN = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z/g;
+
+const humanizeNotificationDates = (text, locale = "ar") => {
+  if (!text) return text;
+  const formatter = new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en", {
+    dateStyle: "long",
+    timeStyle: "short",
+  });
+  return text.replace(ISO_DATE_PATTERN, (value) => {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : formatter.format(parsed);
+  });
 };
 
 export const getNotificationTypeLabel = (type, locale = "ar") => {
@@ -75,7 +93,7 @@ export const getNotificationPresentation = (notification = {}, locale = "ar") =>
   return {
     type,
     title,
-    description: description || (locale === "en" ? "Open the notification for available details." : "افتح الإشعار لعرض التفاصيل المتاحة."),
+    description: humanizeNotificationDates(description, locale) || (locale === "en" ? "Open the notification for available details." : "افتح الإشعار لعرض التفاصيل المتاحة."),
     category: meta?.category || "system",
     kind: meta?.kind || "unknown",
   };

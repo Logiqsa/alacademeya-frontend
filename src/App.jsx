@@ -126,6 +126,7 @@ import InstructorCommissionRatesPage from "./pages/teacher/InstructorCommissionR
 import InstructorOnboardingPage from "./pages/teacher/InstructorOnboardingPage";
 import InstructorProfilePage from "./pages/teacher/InstructorProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
+import MediaSecurityEventsPage from "./pages/admin/MediaSecurityEventsPage";
 
 function App() {
   const { user, checkingAccountState } = useContext(AuthContext);
@@ -691,6 +692,14 @@ function App() {
           }
         />
         <Route
+          path="/teacher/courses/:courseId/quizzes/:lessonId"
+          element={
+            <InstructorGuard requireProfile={false}>
+              <AdminQuizReviewPage mode="teacher" />
+            </InstructorGuard>
+          }
+        />
+        <Route
           path="/teacher/instructor-profile"
           element={
             <InstructorGuard>
@@ -778,6 +787,7 @@ function App() {
               )
             }
           />
+          <Route path="/admin/security/media" element={user ? <MediaSecurityEventsPage /> : <Navigate to="/login" replace />} />
           <Route
             path="/admin/notifications"
             element={

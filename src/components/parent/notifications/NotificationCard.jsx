@@ -1,5 +1,5 @@
 
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 import NotificationTypeIcon from "../../shared/NotificationTypeIcon";
 
 const NotificationCard = ({
@@ -51,15 +51,15 @@ const NotificationCard = ({
           </span>
         </div>
 
-        {!isRead && <button
+        {onToggleRead && <button
           onClick={(event) => {
             event.stopPropagation();
             onToggleRead();
           }}
           className="flex items-center justify-center sm:justify-start gap-1 text-[13px] sm:text-[14px] text-[#1F2937] hover:text-[#123C91] transition-colors self-start sm:self-center"
         >
-          <Eye size={15} />
-          <span>وضع علامة كمقروءة</span>
+          {isRead ? <EyeOff size={15} /> : <Eye size={15} />}
+          <span>{isRead ? "وضع علامة كغير مقروءة" : "وضع علامة كمقروءة"}</span>
         </button>}
         <button
           type="button"

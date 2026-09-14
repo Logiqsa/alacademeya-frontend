@@ -6,6 +6,7 @@ import {
   UsersRound,
   CalendarClock,
   ShieldCheck,
+  ShieldAlert,
   GraduationCap,
   BookOpen,
   Tags,
@@ -65,6 +66,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
           title: "مالية الدورات",
           icon: PiggyBank,
           path: "/admin/course-finances",
+          end: true,
         },
         { title: "طلبات السحب", icon: WalletCards, path: "/admin/course-finances/withdrawals" },
       ],
@@ -84,6 +86,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
     {
       label: "التواصل والنظام",
       items: [
+        { title: "أمان الوسائط", icon: ShieldAlert, path: "/admin/security/media" },
         { title: "الرسائل", icon: MessageSquare, path: "/admin/messages" },
         { title: "الإشعارات", icon: Bell, path: "/admin/notifications" },
         { title: "المدونة", icon: Newspaper, path: "/admin/blogs" },
@@ -168,7 +171,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  end={item.path.endsWith("-dashboard")}
+                  end={item.end || item.path.endsWith("-dashboard")}
                   className={({ isActive }) => `
                 flex
                 items-center

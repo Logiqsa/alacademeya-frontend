@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import NotificationCard from "./NotificationCard";
 import {
-  markNotificationRead,
+  setNotificationReadStatus,
   markAllNotificationsRead,
   deleteNotification,
   getTeachers,
@@ -27,7 +27,7 @@ import {
 } from "../../../services/APIService";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import {
-  markAdminLocalNotificationRead,
+  setAdminLocalNotificationReadStatus,
   markAllAdminLocalNotificationsRead,
   deleteAdminLocalNotification,
 } from "../../../utils/adminLocalNotifications";
@@ -390,22 +390,21 @@ const NotificationsSection = ({
   const toggleRead = async (n) => {
     const id = n._id || n.id;
     const prevState = notifications;
-
-    if (n.isRead) return;
+    const nextRead = !n.isRead;
 
     onChange?.(
       notifications.map((x) =>
-        (x._id || x.id) === id ? { ...x, isRead: true } : x,
+        (x._id || x.id) === id ? { ...x, isRead: nextRead } : x,
       ),
     );
 
     if (n._local) {
-      markAdminLocalNotificationRead(id);
+      setAdminLocalNotificationReadStatus(id, nextRead);
       return;
     }
 
     try {
-      await markNotificationRead(id);
+      await setNotificationReadStatus(id, nextRead);
     } catch (err) {
       onChange?.(prevState); // rollback
       toast.error(err.response?.data?.message || "تعذر تحديث حالة الإشعار");

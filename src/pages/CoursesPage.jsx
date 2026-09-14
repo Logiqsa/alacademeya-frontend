@@ -45,7 +45,7 @@ export default function CoursesPage() {
   const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("popular");
-  const [filterOpen, setFilterOpen] = useState(true);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [selectedClassifications, setSelectedClassifications] = useState([]);
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [selectedStages, setSelectedStages] = useState([]);

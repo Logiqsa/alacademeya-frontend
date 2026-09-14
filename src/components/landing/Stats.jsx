@@ -84,23 +84,20 @@ export default function Stats() {
   const formatted = (value) => Number(value || 0).toLocaleString("en-US");
 
   return (
-    <section className="w-full bg-[#1F2937] flex justify-center items-center">
-      <div
-        className="
-          w-full
-          px-6 py-8 md:px-12 md:py-10
-          grid grid-cols-2 md:grid-cols-4
-          gap-6
-          items-center
-        "
-      >
-        <Counter value={formatted(stats.teachers)} label="معلم" />
-        <Counter value={formatted(stats.students)} label="طالب" />
-        <Counter value={formatted(stats.courses)} label="دورة تدريبية" />
-        <Counter
-          value={`${formatted(stats.satisfaction)}%`}
-          label="رضا المعلمين"
-        />
+    <section className="flex w-full items-center justify-center bg-[#1F2937]">
+      <div className="w-full px-6 py-8 md:px-12 md:py-10">
+        <div className="grid grid-cols-2 items-center gap-6 md:grid-cols-4">
+          <Counter value={formatted(stats.teachers)} label="معلم" />
+          <Counter value={formatted(stats.students)} label="طالب" />
+          <Counter value={formatted(stats.courses)} label="دورة تدريبية" />
+          <Counter
+            value={`${formatted(stats.satisfaction)}%`}
+            label="رضا المعلمين"
+          />
+        </div>
+        <p className="mt-7 border-t border-white/10 pt-5 text-center font-['IBM_Plex_Sans_Arabic'] text-sm font-medium text-white/70 md:text-base">
+          موثوق به من آلاف الطلاب والمعلمين
+        </p>
       </div>
     </section>
   );

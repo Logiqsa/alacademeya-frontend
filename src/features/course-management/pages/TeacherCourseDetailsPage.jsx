@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   BookOpen,
   ChevronDown,
@@ -30,7 +31,13 @@ import { fetchTeacherCourse, fetchTeacherCourseEnrollments } from "../api/course
 import ReviewsPanel from "../components/reviews/ReviewsPanel";
 import ModerationHistoryPanel from "../components/ModerationHistoryPanel";
 import { resolveMediaUrl } from "../../../services/apiUrl";
+import {
+  requestLessonAttachmentAccess,
+  requestLessonMediaAccess,
+} from "../../../services/APIService";
+import { getApiErrorMessage } from "../../../services/apiError";
 import { getEarningsCourses, getEarningsHistory } from "../../instructor-earnings/api/earningsApi";
+import BrandMediaPlayer from "../../../components/media/BrandMediaPlayer";
 
 const tabs = [
   { id: "overview", label: "نظرة عامة", icon: LayoutGrid },
@@ -66,13 +73,15 @@ const StatCard = ({ icon: Icon, value, label, accent }) => (
   </div>
 );
 
-const OverviewTab = ({ course, coverSrc, totalLessons }) => {
+const OverviewTab = ({ course, coverSrc, totalLessons, totalQuizzes }) => {
   const [showCover, setShowCover] = useState(false);
   const [showPromoVideo, setShowPromoVideo] = useState(false);
   const [contentTab, setContentTab] = useState("description");
   const courseUrl = `${window.location.origin}/courses/${course.slug || course.id}`;
   const pricePerStudent = Number(course.effectivePrice ?? course.price ?? 0);
-  const commissionRateValue = course.commissionRate ?? course.platformCommissionRate;
+  const commissionRateValue = course.commissionRateBps != null
+    ? Number(course.commissionRateBps) / 100
+    : course.commissionRate ?? course.platformCommissionRate ?? course.platformCommissionPercentage ?? (course.platformCommissionBps != null ? Number(course.platformCommissionBps) / 100 : null);
   const commissionRate = commissionRateValue == null ? null : Number(commissionRateValue);
   const platformProfitPerStudent = commissionRate == null ? null : pricePerStudent * (commissionRate / 100);
   const teacherProfitPerStudent = commissionRate == null ? null : pricePerStudent - platformProfitPerStudent;
@@ -125,6 +134,7 @@ const OverviewTab = ({ course, coverSrc, totalLessons }) => {
         <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-[#EAECF0] pt-4 text-[14px] text-[#667085]">
           <span className="inline-flex items-center gap-1.5"><Layers3 size={14} className="text-[#123C91]" />{course.curriculum?.length || 0} أقسام</span>
           <span className="inline-flex items-center gap-1.5"><Video size={14} className="text-[#123C91]" />{totalLessons} دروس</span>
+          <span className="inline-flex items-center gap-1.5"><CircleHelp size={14} className="text-[#123C91]" />{totalQuizzes} اختبارات</span>
           <span className="inline-flex items-center gap-1.5"><Clock3 size={14} className="text-[#123C91]" />{course.duration || 0} ساعة</span>
         </div>
 
@@ -132,7 +142,7 @@ const OverviewTab = ({ course, coverSrc, totalLessons }) => {
           <label className="mb-2 block text-[14px] font-semibold text-[#344054]">رابط مشاركة الدورة</label>
           <div className="flex overflow-hidden rounded-md border border-[#D0D5DD]">
             <input readOnly dir="ltr" value={courseUrl} className="h-10 min-w-0 flex-1 bg-[#F9FAFB] px-3 text-left text-xs text-[#667085] outline-none" />
-            <button type="button" onClick={() => navigator.clipboard.writeText(courseUrl)} className="inline-flex items-center gap-1.5 bg-[#123C91] px-4 text-xs font-semibold text-white">
+            <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(courseUrl); toast.success("تم النسخ بنجاح"); } catch { toast.error("تعذر نسخ الرابط"); } }} className="inline-flex items-center gap-1.5 bg-[#123C91] px-4 text-xs font-semibold text-white">
               <Copy size={14} /> نسخ
             </button>
           </div>
@@ -216,22 +226,30 @@ const PromoVideoViewer = ({ title, url, onClose }) => {
     else await viewerRef.current?.requestFullscreen();
   };
 
-  return <div className="fixed inset-0 z-[110] grid place-items-center bg-[#07142D]/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="الفيديو الترويجي" onMouseDown={(event) => event.target === event.currentTarget && close()}>
+  return <div className="fixed inset-0 z-[110] grid place-items-center bg-[#07142D]/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="الفيديو الترويجي" onMouseDown={(event) => event.target === event.currentTarget && close()} onContextMenu={(event) => event.preventDefault()}>
     <div ref={viewerRef} className={`flex w-full flex-col overflow-hidden border border-white/15 bg-[#081A3A] shadow-2xl ${fullscreen ? "h-screen max-w-none rounded-none border-0" : "max-w-5xl rounded-2xl"}`}>
       <header className="flex items-center justify-between gap-3 bg-linear-to-l from-[#123C91] to-[#1E55B3] px-4 py-3 text-white sm:px-5">
         <div className="min-w-0"><p className="text-[10px] text-[#8FE3D8]">الفيديو الترويجي</p><h2 className="truncate text-sm font-bold sm:text-base">{title}</h2></div>
         <div className="flex shrink-0 items-center gap-2"><button type="button" onClick={toggleFullscreen} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-xs font-bold transition hover:bg-white/20">{fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}<span className="hidden sm:inline">{fullscreen ? "إنهاء ملء الشاشة" : "ملء الشاشة"}</span></button><button type="button" onClick={close} className="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:bg-white/20" aria-label="إغلاق"><X size={18} /></button></div>
       </header>
-      <div className={`min-h-0 bg-black ${fullscreen ? "flex flex-1 items-center" : ""}`}><video src={url} controls controlsList="nodownload" autoPlay playsInline className={`${fullscreen ? "h-full max-h-screen" : "aspect-video"} w-full bg-black object-contain`}>متصفحك لا يدعم تشغيل الفيديو.</video></div>
+      <div className={`min-h-0 bg-black ${fullscreen ? "flex flex-1 items-center" : ""}`}><BrandMediaPlayer src={url} autoPlay className={`${fullscreen ? "h-full max-h-screen" : "aspect-video"} w-full`} /></div>
     </div>
   </div>;
 };
 
 const CurriculumTab = ({ course }) => {
-  const sections = course.curriculum || [];
+  const navigate = useNavigate();
+  const sections = (course.curriculum || []).filter(
+    (section) => Array.isArray(section.lessons) && section.lessons.length > 0,
+  );
   const [openSections, setOpenSections] = useState(() => new Set(sections[0]?.id ? [sections[0].id] : []));
-  const totalLessons = sections.reduce((sum, section) => sum + (section.lessons?.length || 0), 0);
-  const totalVideos = sections.reduce((sum, section) => sum + (section.lessons || []).filter((lesson) => lesson.type !== "ملف" && lesson.type !== "اختبار").length, 0);
+  const [openingResource, setOpeningResource] = useState("");
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const [mediaFullscreen, setMediaFullscreen] = useState(false);
+  const mediaPreviewRef = useRef(null);
+  const totalLessons = sections.reduce((sum, section) => sum + section.lessons.filter((lesson) => lesson.type !== "اختبار").length, 0);
+  const totalQuizzes = sections.reduce((sum, section) => sum + section.lessons.filter((lesson) => lesson.type === "اختبار").length, 0);
+  const totalVideos = sections.reduce((sum, section) => sum + section.lessons.filter((lesson) => lesson.type === "فيديو").length, 0);
   const toggleSection = (sectionId) => setOpenSections((current) => {
     const next = new Set(current);
     if (next.has(sectionId)) next.delete(sectionId);
@@ -239,12 +257,69 @@ const CurriculumTab = ({ course }) => {
     return next;
   });
 
+  useEffect(() => () => {
+    if (mediaPreview?.objectUrl) URL.revokeObjectURL(mediaPreview.url);
+  }, [mediaPreview]);
+
+  useEffect(() => {
+    const syncFullscreen = () => setMediaFullscreen(document.fullscreenElement === mediaPreviewRef.current);
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+
+  const closeMediaPreview = async () => {
+    if (document.fullscreenElement === mediaPreviewRef.current) await document.exitFullscreen();
+    setMediaPreview(null);
+  };
+
+  const toggleMediaFullscreen = async () => {
+    if (!mediaPreviewRef.current) return;
+    if (document.fullscreenElement === mediaPreviewRef.current) await document.exitFullscreen();
+    else await mediaPreviewRef.current.requestFullscreen();
+  };
+
+  const openProtectedResource = async ({ lesson, attachment }) => {
+    const lessonId = lesson?.id || lesson?._id;
+    const attachmentId = attachment?.id || attachment?._id;
+    if (!course?.id || !lessonId || openingResource) return;
+    const resourceKey = attachmentId || lessonId;
+    setOpeningResource(resourceKey);
+    try {
+      const response = attachmentId
+        ? await requestLessonAttachmentAccess(course.id, lessonId, attachmentId)
+        : await requestLessonMediaAccess(course.id, lessonId);
+      const data = response?.data?.data ?? response?.data ?? response;
+      if (!data?.playbackUrl) throw new Error("PREVIEW_URL_MISSING");
+      const url = resolveMediaUrl(data.playbackUrl);
+      const isFile = Boolean(attachmentId) || ["ملف", "document", "file"].includes(lesson.type);
+      if (isFile) {
+        const fileResponse = await fetch(url, { credentials: "include" });
+        if (!fileResponse.ok) throw new Error("FILE_PREVIEW_FAILED");
+        const blob = await fileResponse.blob();
+        setMediaPreview({
+          url: URL.createObjectURL(blob),
+          objectUrl: true,
+          isFile: true,
+          mimeType: blob.type || data.mimeType || "application/octet-stream",
+          title: attachment?.name || attachment?.originalName || lesson.title || "محتوى الدرس",
+        });
+      } else {
+        setMediaPreview({ url, objectUrl: false, isFile: false, type: ["صوت", "audio"].includes(String(lesson.type || lesson.contentType || "").toLowerCase()) ? "audio" : "video", title: lesson.title || "محتوى الدرس" });
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "تعذر فتح المحتوى"));
+    } finally {
+      setOpeningResource("");
+    }
+  };
+
   return <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
     <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#EAECF0] px-4 py-5 sm:px-6">
       <div><h3 className="font-bold text-[#1F2937]">محتوى المنهج الدراسي</h3><p className="mt-1 text-[13px] text-[#667085] sm:text-[14px]">عرض تسلسل الموضوعات والدروس داخل كل قسم.</p></div>
       <div className="flex flex-wrap gap-3 text-xs text-[#667085] sm:gap-4">
         <span className="inline-flex items-center gap-1.5"><Layers3 size={14} className="text-[#123C91]" />{sections.length} أقسام</span>
         <span className="inline-flex items-center gap-1.5"><BookOpen size={14} className="text-[#123C91]" />{totalLessons} دروس</span>
+        <span className="inline-flex items-center gap-1.5"><CircleHelp size={14} className="text-[#123C91]" />{totalQuizzes} اختبارات</span>
         <span className="inline-flex items-center gap-1.5"><Video size={14} className="text-[#123C91]" />{totalVideos} فيديو</span>
       </div>
     </div>
@@ -258,16 +333,24 @@ const CurriculumTab = ({ course }) => {
             <span className="text-xs text-[#667085]">{section.lessons?.length || 0} دروس</span>
             <ChevronDown size={17} className={`shrink-0 text-[#123C91] transition-transform ${isOpen ? "rotate-180" : ""}`} />
           </button>
-          {isOpen && <div>{(section.lessons?.length ? section.lessons : [{ id: `empty-${section.id}`, title: "لا توجد دروس مضافة بعد" }]).map((lesson, lessonIndex) => <div key={lesson.id} className="flex flex-wrap items-center gap-3 border-t border-[#EAECF0] px-4 py-3 text-[13px] sm:flex-nowrap sm:text-[14px]">
+          {isOpen && <div>{section.lessons?.length ? section.lessons.map((lesson, lessonIndex) => <div key={lesson.id} className="flex flex-wrap items-center gap-3 border-t border-[#EAECF0] px-4 py-3 text-[13px] sm:flex-nowrap sm:text-[14px]">
             <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#F2F4F7] text-[11px] text-[#667085]">{lessonIndex + 1}</span>
             <span className="min-w-0 flex-1 text-[#344054]">{lesson.title || "درس بدون عنوان"}</span>
             {lesson.preview && <span className="shrink-0 rounded-full bg-[#DDF7E8] px-2.5 py-1 text-[10px] font-bold text-[#17864B]">متاح للمعاينة</span>}
             {lesson.type && <span className="inline-flex shrink-0 items-center gap-1.5 text-xs text-[#667085]">{lesson.type === "ملف" ? <FileText size={14} /> : <Video size={14} />}{lesson.type}</span>}
-          </div>)}</div>}
+            {lesson.type === "اختبار" ? <button type="button" onClick={() => navigate(`/teacher/courses/${course.id}/quizzes/${lesson.id || lesson._id}`)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#123C91] bg-[#F4F7FF] px-3 py-1.5 text-xs font-semibold text-[#123C91] transition hover:bg-[#E8EEFF]"><CircleHelp size={14} />عرض الاختبار</button> : <button type="button" disabled={Boolean(openingResource)} onClick={() => openProtectedResource({ lesson })} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#123C91] bg-white px-3 py-1.5 text-xs font-semibold text-[#123C91] transition hover:bg-[#EEF6FF] disabled:cursor-wait disabled:opacity-60">{openingResource === (lesson.id || lesson._id) ? <LoaderCircle size={14} className="animate-spin" /> : <Play size={14} />}فتح المحتوى</button>}
+            {!!lesson.attachments?.length && <div className="flex flex-wrap gap-1.5">{lesson.attachments.map((attachment) => { const attachmentId = attachment.id || attachment._id; return <button key={attachmentId || attachment.name} type="button" disabled={Boolean(openingResource)} onClick={() => openProtectedResource({ lesson, attachment })} title={attachment.name || attachment.originalName || "مرفق"} className="inline-flex max-w-48 items-center gap-1.5 rounded-lg border border-[#D0D5DD] bg-white px-2.5 py-1.5 text-xs text-[#344054] hover:border-[#123C91] hover:text-[#123C91] disabled:cursor-wait disabled:opacity-60">{openingResource === attachmentId ? <LoaderCircle size={13} className="animate-spin" /> : <Download size={13} />}<span className="truncate">{attachment.name || attachment.originalName || "فتح المرفق"}</span></button>; })}</div>}
+          </div>) : <div className="border-t border-[#EAECF0] px-4 py-6 text-center text-sm text-[#98A2B3]">لا توجد دروس مضافة بعد</div>}</div>}
         </div>;
       })}
-      {!sections.length && <p className="py-8 text-center text-sm text-[#98A2B3]">لا توجد أقسام أو دروس مضافة بعد.</p>}
+      {!sections.length && <p className="py-8 text-center text-sm text-[#98A2B3]">لا توجد دروس مضافة بعد.</p>}
     </div>
+    {mediaPreview && <div className="fixed inset-0 z-[110] grid place-items-center bg-[#07142D]/90 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label={mediaPreview.title} onMouseDown={closeMediaPreview} onContextMenu={(event) => event.preventDefault()}>
+      <div ref={mediaPreviewRef} className={`flex w-full flex-col overflow-hidden border border-white/15 bg-[#081A3A] shadow-2xl ${mediaFullscreen ? "h-screen max-w-none rounded-none border-0" : "max-w-5xl rounded-2xl"}`} onMouseDown={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()}>
+        <header className="flex items-center justify-between gap-3 bg-linear-to-l from-[#123C91] to-[#1E55B3] px-4 py-3 text-white sm:px-5"><div className="min-w-0"><p className="text-[10px] text-[#8FE3D8]">محتوى الدرس</p><h3 className="truncate text-sm font-bold sm:text-base">{mediaPreview.title}</h3></div><div className="flex shrink-0 items-center gap-2"><button type="button" onClick={toggleMediaFullscreen} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-xs font-bold transition hover:bg-white/20">{mediaFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}{mediaFullscreen ? "إنهاء ملء الشاشة" : "ملء الشاشة"}</button><button type="button" onClick={closeMediaPreview} className="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:bg-white/20" aria-label="إغلاق"><X size={18} /></button></div></header>
+        <div className={`min-h-0 bg-[#050B17] p-2 sm:p-4 ${mediaFullscreen ? "flex-1" : ""}`} onContextMenu={(event) => event.preventDefault()}>{mediaPreview.isFile ? (mediaPreview.mimeType.startsWith("image/") ? <img src={mediaPreview.url} alt={mediaPreview.title} draggable={false} className={mediaFullscreen ? "h-full w-full bg-white object-contain" : "mx-auto max-h-[75vh] max-w-full rounded-lg bg-white object-contain"} /> : <iframe src={`${mediaPreview.url}#toolbar=0`} title={mediaPreview.title} className={`${mediaFullscreen ? "h-full" : "h-[75vh] rounded-lg"} w-full bg-white`} />) : <BrandMediaPlayer src={mediaPreview.url} type={mediaPreview.type} autoPlay className={mediaFullscreen ? "h-full w-full" : "aspect-video max-h-[75vh] w-full rounded-lg"} />}</div>
+      </div>
+    </div>}
   </div>;
 };
 
@@ -571,7 +654,21 @@ const TeacherCourseDetailsPage = () => {
     return <TeacherLayout breadcrumbLabels={{ courseId: "تفاصيل الدورة" }}><div dir="rtl" className="rounded-xl bg-white p-10 text-center"><BookOpen className="mx-auto mb-3 text-[#98A2B3]" /><p className="text-[#667085]">لم يتم العثور على الدورة.</p><Link to="/teacher/courses" className="mt-4 inline-block font-semibold text-[#123C91]">العودة إلى الدورات</Link></div></TeacherLayout>;
   }
 
-  const totalLessons = course.curriculum?.reduce((sum, section) => sum + section.lessons.length, 0) || course.lessons || 0;
+  const curriculumWithQuizzes = (course.curriculum || []).map((section) => ({
+    ...section,
+    lessons: [...(section.lessons || [])],
+  }));
+  if (course.quizzes?.length && curriculumWithQuizzes.length) {
+    curriculumWithQuizzes[0].lessons.push(...course.quizzes.map((quiz) => ({
+      ...quiz,
+      id: quiz._id || quiz.id,
+      type: "اختبار",
+    })));
+  }
+  const displayCourse = { ...course, curriculum: curriculumWithQuizzes };
+  const countedLessons = curriculumWithQuizzes.reduce((sum, section) => sum + section.lessons.filter((lesson) => lesson.type !== "اختبار").length, 0);
+  const totalLessons = countedLessons || course.lessons || 0;
+  const totalQuizzes = curriculumWithQuizzes.reduce((sum, section) => sum + section.lessons.filter((lesson) => lesson.type === "اختبار").length, 0);
   const uploadedCover = typeof course.cover === "object" ? course.cover.previewUrl || course.cover.dataUrl : "";
   const coverSrc = uploadedCover || course.coverImage || "";
   const canEditCourse = ["draft", "rejected"].includes(course.rawStatus) ||
@@ -604,7 +701,7 @@ const TeacherCourseDetailsPage = () => {
               </div>
             )}
           </div>
-          {canEditCourse && <button type="button" onClick={() => navigate(`/teacher/courses/${course.id}/edit`)} className="rounded-md bg-[#123C91] px-5 py-2.5 text-sm font-semibold text-white">تعديل الدورة</button>}
+          {canEditCourse && <button type="button" onClick={() => navigate(`/teacher/courses/${course.id}/edit`)} className="rounded-md bg-[#123C91] px-5 py-2.5 text-sm font-semibold text-white">{course.rawStatus === "rejected" ? "تعديل وإعادة الإرسال" : "تعديل الدورة"}</button>}
         </div>
 
         <div className="mb-4 grid gap-3 md:grid-cols-3">
@@ -620,8 +717,8 @@ const TeacherCourseDetailsPage = () => {
           </nav>
         </div>
 
-        {activeTab === "overview" && <OverviewTab course={course} coverSrc={coverSrc} totalLessons={totalLessons} />}
-        {activeTab === "curriculum" && <CurriculumTab course={course} />}
+        {activeTab === "overview" && <OverviewTab course={displayCourse} coverSrc={coverSrc} totalLessons={totalLessons} totalQuizzes={totalQuizzes} />}
+        {activeTab === "curriculum" && <CurriculumTab course={displayCourse} />}
         {activeTab === "instructor" && <InstructorTab course={course} />}
         {activeTab === "students" && <StudentsTab course={course} setStudentCount={setLiveStudentCount} />}
         {activeTab === "reviews" && <ReviewsTab course={course} onCourseRefresh={refreshCourse} />}

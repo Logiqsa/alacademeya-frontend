@@ -14,6 +14,7 @@ import {
   getMyTeacherCourse,
   getMyTeacherCourseEnrollments,
   getMyCourseEnrollments,
+  getAdminInstructor,
   getAllAdminCourses,
   getPendingAdminCourses,
   approveMarketplaceCourse,
@@ -343,6 +344,9 @@ export const normalizeCourse = (source = {}) => {
             studentsData.length),
     ),
     revenue: Number(course.revenue ?? 0),
+    platformCommissionBps: course.platformCommissionBps,
+    platformCommissionPercentage: course.platformCommissionPercentage,
+    instructorSharePercentage: course.instructorSharePercentage,
     createdAt: course.createdAt || source.createdAt,
     submittedAt:
       course.submittedAt ||
@@ -700,6 +704,12 @@ export const fetchPublicInstructor = async (slug) => {
   return normalizeInstructor(data?.instructor || data);
 };
 
+export const fetchAdminInstructor = async (id) => {
+  const response = await getAdminInstructor(id);
+  const data = response?.data?.data ?? response?.data ?? response;
+  return normalizeInstructor(data?.instructor || data);
+};
+
 export const enrollFreeCourse = async (courseId) => {
   const response = await enrollInMarketplaceCourse(courseId);
   return response?.data?.data ?? response?.data ?? response;
@@ -867,8 +877,11 @@ const coursePayload = (course) => {
   };
 };
 
+const responseData = (response) =>
+  response?.data?.data ?? response?.data ?? response;
+
 const responseCourse = (response) => {
-  const data = response?.data?.data ?? response?.data ?? response;
+  const data = responseData(response);
   return data?.course || data;
 };
 
@@ -883,6 +896,7 @@ export const saveCourseToApi = async ({
   admin = false,
   submit = false,
   onProgress = () => {},
+  onCourseCreated = () => {},
 }) => {
   onProgress({ label: "جاري حفظ بيانات الدورة", percent: 0 });
   const payload = coursePayload(course);
@@ -909,6 +923,7 @@ export const saveCourseToApi = async ({
     });
     const created = responseCourse(response);
     id = created?._id || created?.id;
+    if (id) onCourseCreated(id);
     if (id) response = await updateMarketplaceCourse(id, payload);
   }
   let saved = responseCourse(response);
@@ -999,9 +1014,8 @@ export const saveCourseToApi = async ({
         title: section.title,
         description: section.description || "",
       });
-      savedSection =
-        responseCourse(sectionResponse)?.section ||
-        responseCourse(sectionResponse);
+      const sectionData = responseData(sectionResponse);
+      savedSection = sectionData?.section || sectionData;
     }
     const sectionId = savedSection?._id || savedSection?.id;
     if (!sectionId) continue;
@@ -1041,7 +1055,7 @@ export const saveCourseToApi = async ({
           );
         } else {
           const quizResponse = await createCourseQuiz(id, quizPayload);
-          const quizData = responseCourse(quizResponse);
+          const quizData = responseData(quizResponse);
           savedQuiz = quizData?.quiz || quizData;
         }
         const quizId = savedQuiz?._id || savedQuiz?.id;
@@ -1106,7 +1120,7 @@ export const saveCourseToApi = async ({
               quizId,
               questionPayload,
             );
-            const questionData = responseCourse(questionResponse);
+            const questionData = responseData(questionResponse);
             savedQuestion = questionData?.question || questionData;
           }
           const questionId = savedQuestion?._id || savedQuestion?.id;
@@ -1163,9 +1177,8 @@ export const saveCourseToApi = async ({
           contentType: lessonContentType,
           isPreview: Boolean(lesson.preview),
         });
-        savedLesson =
-          responseCourse(lessonResponse)?.lesson ||
-          responseCourse(lessonResponse);
+        const lessonData = responseData(lessonResponse);
+        savedLesson = lessonData?.lesson || lessonData;
       }
       const lessonId = savedLesson?._id || savedLesson?.id;
       if (lessonId) {

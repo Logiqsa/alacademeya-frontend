@@ -1,11 +1,22 @@
 import { MdEmail } from "react-icons/md";
 import { FaWhatsapp } from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTelegram, FaTiktok, FaXTwitter, FaYoutube } from "react-icons/fa6";
 import logo from "../../assets/icons/logo.svg";
-import fbIcon from "../../assets/icons/facebook.png";
 import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
+
+const SOCIAL_META = {
+  facebook: { label: "فيسبوك", icon: FaFacebookF },
+  instagram: { label: "إنستجرام", icon: FaInstagram },
+  youtube: { label: "يوتيوب", icon: FaYoutube },
+  tiktok: { label: "تيك توك", icon: FaTiktok },
+  x: { label: "X", icon: FaXTwitter },
+  linkedin: { label: "لينكدإن", icon: FaLinkedinIn },
+  telegram: { label: "تليجرام", icon: FaTelegram },
+};
 
 const Footer = () => {
   const { contactSettings } = useContactSettings();
+  const socialLinks = (contactSettings?.socialLinks || []).filter((link) => link.enabled !== false && SOCIAL_META[link.platform]);
   const handleScroll = (id) => {
     if (id === "top") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -85,20 +96,12 @@ const Footer = () => {
         )}
 
         {/* ================= SOCIAL ================= */}
-        <div>
+        {!!socialLinks.length && <div>
           <h2 className="font-['Tajawal'] font-bold text-[24px] text-[#1F2937] mb-5">تابعنا</h2>
-          <div className="flex gap-4 w-44 h-8">
-            <a
-              href="https://www.facebook.com/share/1eL4DDQxiF/?mibextid=wwXIfr"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="فيسبوك"
-              className="w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform duration-300"
-            >
-              <img src={fbIcon} alt="فيسبوك" className="w-full h-full object-contain" />
-            </a>
+          <div className="flex max-w-52 flex-wrap gap-3">
+            {socialLinks.map((link) => { const meta = SOCIAL_META[link.platform]; const Icon = meta.icon; return <a key={link.platform} href={link.url} target="_blank" rel="noopener noreferrer" aria-label={meta.label} title={meta.label} className="grid size-10 place-items-center rounded-xl bg-white text-[#123C91] shadow-sm ring-1 ring-[#D6E3F2] transition hover:-translate-y-0.5 hover:bg-[#123C91] hover:text-white"><Icon size={19} /></a>; })}
           </div>
-        </div>
+        </div>}
       </div>
 
       <div className="mt-12 pt-8 text-center border-t border-[#1F293733]">

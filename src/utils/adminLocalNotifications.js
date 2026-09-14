@@ -40,6 +40,12 @@ export const markAdminLocalNotificationRead = (id) => {
   );
 };
 
+export const setAdminLocalNotificationReadStatus = (id, isRead) => {
+  save(getAdminLocalNotifications().map((notification) =>
+    notification._id === id ? { ...notification, isRead: Boolean(isRead) } : notification,
+  ));
+};
+
 export const markAllAdminLocalNotificationsRead = () => {
   save(getAdminLocalNotifications().map((notification) => ({ ...notification, isRead: true })));
 };

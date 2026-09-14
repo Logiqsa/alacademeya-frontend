@@ -1,6 +1,7 @@
 import {
   Check,
   Eye,
+  EyeOff,
   Trash2,
 } from "lucide-react";
 import NotificationTypeIcon from "../../shared/NotificationTypeIcon";
@@ -133,27 +134,27 @@ const NotificationCard = ({
           </span>
         </div>
 
-        {!isRead && <button
+        {onToggleRead && <button
           type="button"
           onClick={(event) => {
             event.stopPropagation();
             onToggleRead();
           }}
-          aria-label={compact ? "وضع علامة كمقروءة" : undefined}
-          title={compact ? "وضع علامة كمقروءة" : undefined}
+          aria-label={compact ? (isRead ? "وضع علامة كغير مقروءة" : "وضع علامة كمقروءة") : undefined}
+          title={compact ? (isRead ? "وضع علامة كغير مقروءة" : "وضع علامة كمقروءة") : undefined}
           className={compact
             ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#D7E3F8] bg-white text-[#123C91] transition-colors hover:border-[#123C91] hover:bg-[#F0F5FF]"
             : "flex items-center justify-center sm:justify-start gap-1 text-[13px] sm:text-[14px] text-[#1F2937] hover:text-[#123C91] transition-colors self-start sm:self-center"
           }
         >
           {compact ? (
-            <Check size={18} strokeWidth={2.5} />
+            isRead ? <EyeOff size={18} strokeWidth={2.2} /> : <Check size={18} strokeWidth={2.5} />
           ) : (
-            <Eye size={15} />
+            isRead ? <EyeOff size={15} /> : <Eye size={15} />
           )}
 
           {!compact && <span>
-            وضع علامة كمقروءة
+            {isRead ? "وضع علامة كغير مقروءة" : "وضع علامة كمقروءة"}
           </span>}
         </button>}
         {!compact && <button

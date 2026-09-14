@@ -1,4 +1,4 @@
-import { Check, Trash2 } from "lucide-react";
+import { Check, EyeOff, Trash2 } from "lucide-react";
 import NotificationTypeIcon from "../../shared/NotificationTypeIcon";
 
 const NotificationCard = ({ title, description, time, type, kind, isRead, onToggleRead, onOpen, onDelete }) => {
@@ -34,9 +34,7 @@ const NotificationCard = ({ title, description, time, type, kind, isRead, onTogg
           <span className="block mt-2 text-[12px] text-[#1F2937BF]">{time}</span>
         </div>
 
-        {/* ⚠️ الـ backend مفيهوش endpoint لتحديد الإشعار كـ"غير مقروء" مرة ثانية،
-            فالزرار بيظهر بس لما تكون الإشعار لسه غير مقروءة */}
-        {!isRead && (
+        {onToggleRead && (
           <button
             onClick={(event) => {
               event.stopPropagation();
@@ -44,8 +42,8 @@ const NotificationCard = ({ title, description, time, type, kind, isRead, onTogg
             }}
             className="flex items-center justify-center sm:justify-start gap-1 text-[13px] sm:text-[14px] text-[#123C91] hover:underline self-start sm:self-center shrink-0"
           >
-            <Check size={15} />
-            <span>تحديد كمقروءة</span>
+            {isRead ? <EyeOff size={15} /> : <Check size={15} />}
+            <span>{isRead ? "تحديد كغير مقروءة" : "تحديد كمقروءة"}</span>
           </button>
         )}
         <button

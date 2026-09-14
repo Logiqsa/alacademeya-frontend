@@ -11,7 +11,7 @@ import {
 import NotificationCard from "./NotificationCard";
 import {
   getNotifications,
-  markNotificationRead,
+  setNotificationReadStatus,
   markAllNotificationsRead,
   deleteNotification,
 } from "../../../services/APIService";
@@ -65,12 +65,12 @@ const NotificationsSection = ({ onStatsUpdate }) => {
   }, [fetchNotifications]);
 
   const handleToggleRead = async (notification) => {
-    if (notification.isRead) return;
+    const nextRead = !notification.isRead;
     try {
-      await markNotificationRead(notification._id ?? notification.id);
+      await setNotificationReadStatus(notification._id ?? notification.id, nextRead);
       const updated = notifications.map((n) =>
         (n._id ?? n.id) === (notification._id ?? notification.id)
-          ? { ...n, isRead: true }
+          ? { ...n, isRead: nextRead }
           : n,
       );
       setNotifications(updated);

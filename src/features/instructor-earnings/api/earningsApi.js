@@ -14,7 +14,16 @@ const numberOf = (...values) => {
 const currencyOf = (source, fallback = "EGP") =>
   String(source?.currency || source?.currencyCode || fallback).toUpperCase();
 const idOf = (source, fallback = "") =>
-  (typeof source === "string" ? source : source?._id || source?.id || source?.courseId?._id || source?.courseId?.id) || fallback;
+  (typeof source === "string"
+    ? source
+    : source?._id ||
+      source?.id ||
+      source?.course?._id ||
+      source?.course?.id ||
+      source?.courseId?._id ||
+      source?.courseId?.id ||
+      (typeof source?.course === "string" ? source.course : "") ||
+      (typeof source?.courseId === "string" ? source.courseId : "")) || fallback;
 const courseNameOf = (source) => {
   const course = source?.course || source?.courseId;
   const title = course?.title || source?.courseTitle || source?.title || source?.name;

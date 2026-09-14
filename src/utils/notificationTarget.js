@@ -44,6 +44,12 @@ export const getNotificationTarget = (notification, role) => {
     return role === "teacher" ? "/teacher/messages" : `/${role}/messages`;
   }
 
+  if (["WITHDRAWAL_REQUEST_CREATED", "NEW_WITHDRAWAL_REQUEST", "WITHDRAWAL_APPROVED", "WITHDRAWAL_REJECTED", "WITHDRAWAL_PAID"].includes(eventType)) {
+    return role === "admin"
+      ? "/admin/course-finances/withdrawals"
+      : "/teacher/earnings";
+  }
+
   const explicitTarget =
     notification.targetUrl ??
     notification.url ??
@@ -52,13 +58,6 @@ export const getNotificationTarget = (notification, role) => {
     notification.data?.url;
   if (typeof explicitTarget === "string" && explicitTarget.startsWith("/")) {
     return explicitTarget;
-  }
-
-  if (["WITHDRAWAL_REQUEST_CREATED", "WITHDRAWAL_APPROVED", "WITHDRAWAL_REJECTED", "WITHDRAWAL_PAID"].includes(eventType)) {
-    return role === "admin" ? "/admin/course-finances" : "/teacher/earnings";
-  }
-  if (eventType === "NEW_WITHDRAWAL_REQUEST") {
-    return role === "admin" ? "/admin/course-finances" : "/teacher/earnings";
   }
 
   if (eventType === "CERTIFICATE_ISSUED") {
@@ -75,6 +74,14 @@ export const getNotificationTarget = (notification, role) => {
   if (["NEW_COURSE_SALE", "NEW_COURSE_REVIEW"].includes(eventType)) {
     if (role === "teacher") return courseId ? `/teacher/courses/${encodeURIComponent(courseId)}` : "/teacher/courses";
     if (role === "admin") return courseId ? `/admin/courses/${encodeURIComponent(courseId)}` : "/admin/courses";
+  }
+  if (eventType === "COURSE_PURCHASE_SUCCEEDED" && role === "admin") {
+    return courseId
+      ? `/admin/course-finances?courseId=${encodeURIComponent(courseId)}`
+      : "/admin/course-finances";
+  }
+  if (eventType === "COURSE_SUBMITTED_FOR_REVIEW" && role === "admin") {
+    return courseId ? `/admin/courses/${encodeURIComponent(courseId)}` : "/admin/courses";
   }
   if (["COURSE_APPROVED", "COURSE_REJECTED"].includes(eventType) && role === "teacher") {
     return courseId ? `/teacher/courses/${encodeURIComponent(courseId)}` : "/teacher/courses";

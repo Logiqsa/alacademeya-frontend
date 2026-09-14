@@ -7,7 +7,10 @@ import {
   Loader2,
   Mail,
   MessageCircle,
+  Plus,
+  Trash2,
 } from "lucide-react";
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTelegram, FaTiktok, FaXTwitter, FaYoutube } from "react-icons/fa6";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -77,6 +80,16 @@ const PASSWORD_RULES = [
     label: "لا يحتوي على مسافات",
     test: (p) => p.length > 0 && !/\s/.test(p),
   },
+];
+
+const SOCIAL_PLATFORMS = [
+  { id: "facebook", label: "Facebook", icon: FaFacebookF },
+  { id: "instagram", label: "Instagram", icon: FaInstagram },
+  { id: "youtube", label: "YouTube", icon: FaYoutube },
+  { id: "tiktok", label: "TikTok", icon: FaTiktok },
+  { id: "x", label: "X", icon: FaXTwitter },
+  { id: "linkedin", label: "LinkedIn", icon: FaLinkedinIn },
+  { id: "telegram", label: "Telegram", icon: FaTelegram },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -231,7 +244,7 @@ const PasswordRulesList = ({ password }) => (
 );
 
 const ContactSettingsCard = () => {
-  const [form, setForm] = useState({ email: "", whatsappNumber: "" });
+  const [form, setForm] = useState({ email: "", whatsappNumber: "", socialLinks: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -244,6 +257,7 @@ const ContactSettingsCard = () => {
           setForm({
             email: data.email || "",
             whatsappNumber: data.phone || data.whatsappNumber || "",
+            socialLinks: Array.isArray(data.socialLinks) ? data.socialLinks : [],
           });
         }
       })
@@ -263,18 +277,26 @@ const ContactSettingsCard = () => {
       setError("رقم واتساب يجب أن يبدأ بـ + وكود الدولة، مثال: +201001234567");
       return;
     }
+    if (form.socialLinks.some((link) => {
+      try { const url = new URL(link.url); return !["http:", "https:"].includes(url.protocol); } catch { return true; }
+    })) {
+      setError("يرجى إدخال رابط صحيح يبدأ بـ https:// لكل منصة مضافة");
+      return;
+    }
 
     setSaving(true);
     try {
       const res = await updateContactSettings({
         email: form.email.trim(),
         phone: form.whatsappNumber.trim(),
+        socialLinks: form.socialLinks.map((link) => ({ ...link, url: link.url.trim() })),
       });
       const data = res.data?.data;
       if (data) {
         setForm({
           email: data.email || "",
           whatsappNumber: data.phone || data.whatsappNumber || "",
+          socialLinks: Array.isArray(data.socialLinks) ? data.socialLinks : [],
         });
       }
       toast.success(res.data?.message || "تم تحديث وسائل التواصل بنجاح");
@@ -338,6 +360,19 @@ const ContactSettingsCard = () => {
               placeholder="+201001234567"
               className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) outline-none focus:border-(--primary)"
             />
+          </div>
+          <div className="sm:col-span-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div><h4 className="text-sm font-bold text-[#344054]">روابط السوشيال ميديا</h4><p className="mt-1 text-xs text-[#667085]">أضف المنصات التي تريد إظهارها في الموقع، ويمكنك إخفاء أي رابط مؤقتًا.</p></div>
+              <select value="" onChange={(event) => { const platform = event.target.value; if (platform) setForm((old) => ({ ...old, socialLinks: [...old.socialLinks, { platform, url: "", enabled: true }] })); }} className="h-10 rounded-lg border border-[#C9D3E1] bg-white px-3 text-sm font-semibold text-[#123C91] outline-none focus:border-[#123C91]">
+                <option value="">+ إضافة منصة</option>
+                {SOCIAL_PLATFORMS.filter((platform) => !form.socialLinks.some((link) => link.platform === platform.id)).map((platform) => <option key={platform.id} value={platform.id}>{platform.label}</option>)}
+              </select>
+            </div>
+            <div className="mt-4 space-y-3">
+              {form.socialLinks.map((link) => { const platform = SOCIAL_PLATFORMS.find((item) => item.id === link.platform); const Icon = platform?.icon || Plus; return <div key={link.platform} className="flex flex-col gap-2 rounded-xl border border-[#E1E7EF] bg-white p-3 sm:flex-row sm:items-center"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#EAF2FF] text-[#123C91]"><Icon size={18} /></span><div className="min-w-0 flex-1"><label className="mb-1 block text-xs font-bold text-[#475467]">{platform?.label || link.platform}</label><input dir="ltr" type="url" value={link.url} onChange={(event) => setForm((old) => ({ ...old, socialLinks: old.socialLinks.map((item) => item.platform === link.platform ? { ...item, url: event.target.value } : item) }))} placeholder={`https://${link.platform}.com/...`} className="h-10 w-full rounded-lg border border-[#D7DEE8] px-3 text-sm outline-none focus:border-[#123C91]" /></div><label className="inline-flex shrink-0 items-center gap-2 text-xs font-semibold text-[#475467]"><input type="checkbox" checked={link.enabled !== false} onChange={(event) => setForm((old) => ({ ...old, socialLinks: old.socialLinks.map((item) => item.platform === link.platform ? { ...item, enabled: event.target.checked } : item) }))} className="size-4 accent-[#123C91]" />ظاهر</label><button type="button" onClick={() => setForm((old) => ({ ...old, socialLinks: old.socialLinks.filter((item) => item.platform !== link.platform) }))} className="grid size-9 shrink-0 place-items-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50" aria-label={`حذف ${platform?.label || link.platform}`}><Trash2 size={16} /></button></div>; })}
+              {!form.socialLinks.length && <p className="py-4 text-center text-xs text-[#98A2B3]">لم تتم إضافة روابط سوشيال بعد.</p>}
+            </div>
           </div>
         </div>
       )}

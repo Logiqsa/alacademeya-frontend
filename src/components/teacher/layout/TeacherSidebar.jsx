@@ -1,8 +1,9 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
-import { getDashboardPathByRole, isInstructor } from "../../../utils/roles";
+import { getDashboardPathByRole, isInstructor, canHaveInstructorProfile } from "../../../utils/roles";
+import { getMyInstructorProfile } from "../../../services/APIService";
 
 import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
@@ -17,11 +18,40 @@ import logoutIcon from "../../../assets/icons/logout.png";
 
 const TeacherSidebar = ({ isOpen, setIsOpen }) => {
   const unread = useSidebarUnread();
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, updateUser } = useContext(AuthContext);
+  const checkedInstructorUserRef = useRef(null);
   const instructor = isInstructor(user);
   const isTeacher = user?.role === "teacher";
-  const canAccessInstructorArea = instructor && user?.instructorStatus !== "suspended";
+  // Keep marketplace navigation stable while the profile identity request is
+  // loading. Route guards remain the authority for the destination itself.
+  const canAccessInstructorArea = canHaveInstructorProfile(user);
   const dashboardPath = getDashboardPathByRole(user, "/teacher/earnings");
+
+  useEffect(() => {
+    const userKey = user?.id || user?._id || user?.userId || user?.email || user?.username || user?.role;
+    if (!canHaveInstructorProfile(user) || instructor || checkedInstructorUserRef.current === userKey) return;
+    checkedInstructorUserRef.current = userKey;
+    let active = true;
+    const timers = [];
+    const syncInstructor = (attempt = 0) => getMyInstructorProfile()
+      .then((response) => {
+        if (!active) return;
+        const payload = response.data?.data || response.data;
+        const profile = payload?.instructor || payload?.profile || payload;
+        const instructorId = profile?.id || profile?._id;
+        if (!instructorId) return;
+        updateUser((current) => ({ ...current, accountType: "instructor", instructorId, instructorStatus: profile.status, instructorProfileSlug: profile.profileSlug || profile.slug || "" }));
+      })
+      .catch((error) => {
+        if (!active) return;
+        const missingProfile = error.response?.status === 404;
+        if (!missingProfile && attempt < 2) {
+          timers.push(window.setTimeout(() => syncInstructor(attempt + 1), 700 * (attempt + 1)));
+        }
+      });
+    syncInstructor();
+    return () => { active = false; timers.forEach((timer) => window.clearTimeout(timer)); };
+  }, [instructor, updateUser, user]);
   const menuSections = [
     {
       label: "رئيسي",

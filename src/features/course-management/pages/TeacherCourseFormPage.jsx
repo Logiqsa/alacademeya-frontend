@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BadgeCheck,
   ChevronLeft,
   ChevronRight,
+  FileText,
   Film,
   GripVertical,
   Image as ImageIcon,
@@ -53,9 +54,9 @@ const EMPTY_COURSE = {
   language: "عربي",
   description: "",
   shortDescription: "",
-  requirements: "",
+  requirements: [],
   outcomes: [],
-  targetAudience: "",
+  targetAudience: [],
   academicCurriculum: "",
   academicStage: "",
   academicGrade: "",
@@ -390,6 +391,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   const [commission, setCommission] = useState(null);
   const [policyOpen, setPolicyOpen] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     getCourseMarketplaceConfig().then((response) => setCommission(response?.data?.data ?? response?.data)).catch(() => setCommission(null));
@@ -502,11 +504,17 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           subject: item.subjectId || "",
           titleEn: item.titleEn || "",
           requirements: Array.isArray(item.requirements)
-            ? item.requirements.join("\n")
-            : item.requirements || "",
+            ? item.requirements
+            : String(item.requirements || "")
+                .split(/[,\n]/)
+                .map((value) => value.trim())
+                .filter(Boolean),
           targetAudience: Array.isArray(item.targetAudience)
-            ? item.targetAudience.join("\n")
-            : item.targetAudience || "",
+            ? item.targetAudience
+            : String(item.targetAudience || "")
+                .split(/[,\n]/)
+                .map((value) => value.trim())
+                .filter(Boolean),
           tags: item.tags || [],
           curriculum: loadedCurriculum,
           cover: item.coverImage
@@ -608,7 +616,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   };
 
   const save = async (status = course.status, policyChecked = false) => {
-    if (saving) return;
+    if (savingRef.current) return;
     if (!isAdminFlow && status === "قيد المراجعة" && !policyChecked) {
       try {
         const policyStatus = (await getMyPolicyStatus())?.data?.data;
@@ -760,6 +768,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         return;
       }
     }
+    savingRef.current = true;
     setSaving(true);
     setUploadStatus({ label: "جاري تجهيز الدورة", percent: 0 });
     const savingToast = toast.loading(
@@ -774,6 +783,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         admin: isAdminFlow,
         submit: status === "قيد المراجعة",
         onProgress: setUploadStatus,
+        onCourseCreated: (createdId) => {
+          setExistingCourse((current) => current || { ...course, id: createdId });
+        },
       });
       toast.success(
         existingCourse ? "تم تعديل الدورة بنجاح" : "تم إنشاء الدورة بنجاح",
@@ -795,13 +807,21 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         toast.dismiss(savingToast);
         return;
       }
+      const apiError = normalizeApiError(error);
+      if (apiError.code === "COURSE_NOT_FOUND" && !courseId) {
+        setExistingCourse(null);
+        toast.error(
+          "المسودة السابقة لم تعد موجودة. احتفظنا ببياناتك؛ اضغط إرسال مرة أخرى لإنشاء مسودة جديدة.",
+          { id: savingToast, duration: 7000 },
+        );
+        return;
+      }
       if (error.savedCourseId) {
         setExistingCourse((current) => ({
           ...(current || course),
           id: error.savedCourseId,
         }));
       }
-      const apiError = normalizeApiError(error);
       const validationDetails = apiError.errors
         ? Object.values(apiError.errors).flat().filter(Boolean).join("، ")
         : "";
@@ -824,6 +844,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         { id: savingToast },
       );
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -1103,30 +1124,24 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   placeholder="اكتب وصفًا شاملًا للدورة..."
                 />
               </label>
-              <label className="block space-y-2 text-right text-sm font-medium text-[#1F2937]">
-                متطلبات الدورة
-                <textarea
-                  className={`${inputClass} h-20 py-3`}
-                  value={course.requirements}
-                  onChange={(e) => update("requirements", e.target.value)}
-                  placeholder="اكتب متطلبات الالتحاق بالدورة..."
-                />
-              </label>
+              <TagsField
+                label="متطلبات الدورة"
+                values={course.requirements}
+                onChange={(values) => update("requirements", values)}
+                placeholder="اكتب متطلبًا مثل: معرفة أساسيات البرمجة"
+              />
               <TagsField
                 label="ماذا سيتعلم الطالب؟"
                 values={course.outcomes}
                 onChange={(values) => update("outcomes", values)}
                 placeholder="اكتب ناتج تعلم مثل: إتقان الأساسيات"
               />
-              <label className="block space-y-2 text-right text-sm font-medium text-[#1F2937]">
-                لمن هذه الدورة؟
-                <input
-                  className={inputClass}
-                  value={course.targetAudience || ""}
-                  onChange={(e) => update("targetAudience", e.target.value)}
-                  placeholder="اكتب الفئات المستهدفة بهذه الدورة..."
-                />
-              </label>
+              <TagsField
+                label="لمن هذه الدورة؟"
+                values={course.targetAudience}
+                onChange={(values) => update("targetAudience", values)}
+                placeholder="اكتب فئة مثل: المبتدئون في البرمجة"
+              />
               <TagsField
                 label="الوسوم"
                 values={course.tags}
@@ -2052,6 +2067,29 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   }}
                 />
               </label>
+              {activeModalLesson(contentModal)?.media && (
+                <div className="mt-3 rounded-xl border border-[#DCE6F5] bg-[#F7FAFF] p-3">
+                  <p className="mb-2 text-[11px] font-medium text-[#667085]">
+                    ملف محتوى الدرس
+                  </p>
+                  <div className="flex items-start gap-2 text-sm text-[#344054]">
+                    <FileText size={17} className="mt-0.5 shrink-0 text-[#123C91]" />
+                    <span
+                      dir="auto"
+                      className="min-w-0 break-all font-medium"
+                      title={
+                        activeModalLesson(contentModal).media.name ||
+                        activeModalLesson(contentModal).media.originalName ||
+                        "محتوى الدرس"
+                      }
+                    >
+                      {activeModalLesson(contentModal).media.name ||
+                        activeModalLesson(contentModal).media.originalName ||
+                        "محتوى الدرس"}
+                    </span>
+                  </div>
+                </div>
+              )}
               {activeModalLesson(contentModal)?.type === "فيديو" &&
                 activeModalLesson(contentModal)?.media?.previewUrl && (
                   <video
@@ -2106,12 +2144,20 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                     (attachment) => (
                       <div
                         key={attachment.id || attachment._id}
-                        className="flex items-center justify-between rounded-lg bg-[#F8FAFC] px-3 py-2 text-xs"
+                        className="rounded-lg border border-[#EAECF0] bg-[#F8FAFC] px-3 py-2.5 text-xs"
                       >
-                        <span className="min-w-0 flex-1 truncate">
-                          {attachment.name || attachment.originalName || "مرفق"}
-                        </span>
-                        <select
+                        <div className="flex items-start gap-2 text-[#344054]">
+                          <FileText size={15} className="mt-0.5 shrink-0 text-[#123C91]" />
+                          <span
+                            dir="auto"
+                            className="min-w-0 break-all font-medium"
+                            title={attachment.name || attachment.originalName || "مرفق"}
+                          >
+                            {attachment.name || attachment.originalName || "مرفق"}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2 border-t border-[#EAECF0] pt-2">
+                          <select
                           aria-label="وضع الوصول للمرفق"
                           value={attachment.accessMode || "downloadable"}
                           onChange={(event) => {
@@ -2124,12 +2170,12 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                               ),
                             });
                           }}
-                          className="mx-2 rounded-md border border-[#D0D5DD] bg-white px-2 py-1 text-xs"
+                          className="min-w-0 flex-1 rounded-md border border-[#D0D5DD] bg-white px-2 py-1 text-xs"
                         >
                           <option value="view_only">عرض فقط / View only</option>
                           <option value="downloadable">قابل للتنزيل / Downloadable</option>
                         </select>
-                        <button
+                          <button
                           type="button"
                           onClick={() =>
                             updateLesson(
@@ -2146,10 +2192,12 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                               },
                             )
                           }
-                          className="text-red-600"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                            className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-red-200 bg-white text-red-600 hover:bg-red-50"
+                            aria-label={`حذف ${attachment.name || attachment.originalName || "المرفق"}`}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </div>
                     ),
                   )}

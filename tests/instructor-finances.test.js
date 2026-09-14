@@ -168,13 +168,24 @@ test("renders unknown notifications with a safe localized fallback", () => {
   assert.equal(getNotificationPresentation({}, "ar").kind, "unknown");
 });
 
+test("renders ISO timestamps in notification copy as a readable localized date", () => {
+  const presentation = getNotificationPresentation({
+    type: "WITHDRAWAL_APPROVED",
+    body: { ar: "من المتوقع إتمام التحويل في 2026-09-15T18:42:11.328Z" },
+  }, "ar");
+  assert.match(presentation.description, /2026|٢٠٢٦/);
+  assert.doesNotMatch(presentation.description, /T18:42:11\.328Z/);
+});
+
 test("routes new notifications to safe existing pages and tolerates deleted entities", () => {
   assert.equal(getNotificationTarget({ type: "COURSE_PURCHASE_SUCCESS", data: { courseId: "course-1" } }, "student"), "/learn/course-1");
   assert.equal(getNotificationTarget({ type: "CERTIFICATE_ISSUED", courseId: "course-1" }, "student"), "/certificate/course-1");
   assert.equal(getNotificationTarget({ type: "QUIZ_PASSED" }, "student"), "/student-dashboard/courses");
   assert.equal(getNotificationTarget({ type: "NEW_COURSE_REVIEW", courseId: "course-1" }, "teacher"), "/teacher/courses/course-1");
   assert.equal(getNotificationTarget({ type: "WITHDRAWAL_PAID" }, "teacher"), "/teacher/earnings");
-  assert.equal(getNotificationTarget({ type: "NEW_WITHDRAWAL_REQUEST" }, "admin"), "/admin/course-finances");
+  assert.equal(getNotificationTarget({ type: "NEW_WITHDRAWAL_REQUEST" }, "admin"), "/admin/course-finances/withdrawals");
+  assert.equal(getNotificationTarget({ type: "WITHDRAWAL_REQUEST_CREATED", targetUrl: "/admin/course-finances" }, "admin"), "/admin/course-finances/withdrawals");
+  assert.equal(getNotificationTarget({ type: "COURSE_PURCHASE_SUCCEEDED", data: { courseId: "course-1" } }, "admin"), "/admin/course-finances?courseId=course-1");
   assert.equal(getNotificationTarget({ type: "CERTIFICATE_ISSUED" }, "student"), "/student-dashboard/courses");
 });
 

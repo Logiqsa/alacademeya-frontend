@@ -31,6 +31,7 @@ import {
   getApiErrorMessage,
   normalizeApiError,
 } from "../../../services/apiError";
+import { getEarningsCourses } from "../../instructor-earnings/api/earningsApi";
 
 const statusStyles = {
   منشور: "bg-[#DDF7E8] text-[#17864B]",
@@ -60,7 +61,8 @@ const CourseActionsMenu = ({ position, courseStatus, onAction, onClose }) => (
       {[
         {
           action: "edit",
-          label: "تعديل",
+          label:
+            courseStatus === "rejected" ? "تعديل وإعادة الإرسال" : "تعديل",
           icon: SquarePen,
           show: ["draft", "rejected"].includes(courseStatus),
         },
@@ -130,7 +132,26 @@ const TeacherCoursesPage = () => {
           instructorProfileSlug: instructorProfile.profileSlug || "",
         }));
         const items = await fetchTeacherCourses();
-        if (active) setTeacherCourses(items);
+        const earningsResult = await Promise.allSettled([getEarningsCourses()]);
+        if (!active) return;
+
+        const earningsByCourse = new Map();
+        if (earningsResult[0].status === "fulfilled") {
+          earningsResult[0].value.forEach((earning) => {
+            const courseId = String(earning.id);
+            const current = earningsByCourse.get(courseId) || 0;
+            earningsByCourse.set(courseId, current + Number(earning.net || 0));
+          });
+        }
+
+        setTeacherCourses(
+          items.map((course) => ({
+            ...course,
+            revenue: earningsByCourse.has(String(course.id))
+              ? earningsByCourse.get(String(course.id))
+              : course.revenue,
+          })),
+        );
       } catch (error) {
         if (!active) return;
         const apiError = normalizeApiError(error);
@@ -254,7 +275,13 @@ const TeacherCoursesPage = () => {
       }
     }
     if (action === "delete") {
-      if (selectedCourse.rawStatus === "archived") {
+      const permanentlyDeletableStatuses = [
+        "draft",
+        "pending_review",
+        "rejected",
+        "archived",
+      ];
+      if (permanentlyDeletableStatuses.includes(selectedCourse.rawStatus)) {
         const confirmed = await confirmToast({
           title: "حذف الدورة نهائيًا",
           message: `هل تريد حذف دورة «${selectedCourse.title}» نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.`,
@@ -276,7 +303,7 @@ const TeacherCoursesPage = () => {
         }
         return;
       }
-      const archivableStatuses = ["draft", "rejected", "published"];
+      const archivableStatuses = ["published"];
       if (!archivableStatuses.includes(selectedCourse.rawStatus)) {
         toast.error(
           selectedCourse.rawStatus === "pending_review"
@@ -519,12 +546,19 @@ const TeacherCoursesPage = () => {
                         <span className="rounded-md bg-[#EAF2FF] p-2 text-[#3567C8]">
                           <BookOpen size={18} />
                         </span>
-                        <Link
-                          to={`/teacher/courses/${course.id}`}
-                          className="font-semibold text-[#1F2937] transition hover:text-[#123C91] hover:underline"
-                        >
-                          {course.title}
-                        </Link>
+                        <div className="min-w-0">
+                          <Link
+                            to={`/teacher/courses/${course.id}`}
+                            className="font-semibold text-[#1F2937] transition hover:text-[#123C91] hover:underline"
+                          >
+                            {course.title}
+                          </Link>
+                          {course.rawStatus === "rejected" && course.rejectedReason && (
+                            <p className="mt-1 max-w-80 truncate text-xs text-red-600" title={course.rejectedReason}>
+                              سبب الرفض: {course.rejectedReason}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -561,7 +595,7 @@ const TeacherCoursesPage = () => {
                     <td className="px-4 py-4 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button type="button" onClick={() => handleAction("details", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-[#DCE3EC] text-[#123C91] transition hover:border-[#123C91] hover:bg-[#EEF4FF]" aria-label={`عرض تفاصيل ${course.title}`} title="عرض التفاصيل"><Eye size={17} /></button>
-                        {["draft", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600 transition hover:bg-red-50" aria-label={`${course.rawStatus === "archived" ? "حذف" : "أرشفة"} ${course.title}`} title={course.rawStatus === "archived" ? "حذف الدورة نهائيًا" : "أرشفة الدورة"}><Trash2 size={17} /></button>}
+                        {["draft", "pending_review", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600 transition hover:bg-red-50" aria-label={`${course.rawStatus === "published" ? "أرشفة" : "حذف"} ${course.title}`} title={course.rawStatus === "published" ? "أرشفة الدورة" : "حذف الدورة نهائيًا"}><Trash2 size={17} /></button>}
                         {["draft", "rejected", "published"].includes(course.rawStatus) && <button type="button" aria-label={`إجراءات إضافية ${course.title}`} aria-expanded={actionsMenu?.courseId === course.id} onClick={(event) => toggleActionsMenu(event, course.id)} className="grid h-9 w-9 place-items-center rounded-lg text-[#475467] hover:bg-[#EEF2F6]" title="إجراءات إضافية"><EllipsisVertical size={17} /></button>}
                       </div>
                     </td>
@@ -601,7 +635,7 @@ const TeacherCoursesPage = () => {
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <button type="button" onClick={() => handleAction("details", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-[#DCE3EC] text-[#123C91]" aria-label={`عرض تفاصيل ${course.title}`}><Eye size={17} /></button>
-                  {["draft", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600" aria-label={`${course.rawStatus === "archived" ? "حذف" : "أرشفة"} ${course.title}`} title={course.rawStatus === "archived" ? "حذف الدورة نهائيًا" : "أرشفة الدورة"}><Trash2 size={17} /></button>}
+                  {["draft", "pending_review", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600" aria-label={`${course.rawStatus === "published" ? "أرشفة" : "حذف"} ${course.title}`} title={course.rawStatus === "published" ? "أرشفة الدورة" : "حذف الدورة نهائيًا"}><Trash2 size={17} /></button>}
                 </div>
               </div>
 
@@ -615,6 +649,12 @@ const TeacherCoursesPage = () => {
                   {course.status}
                 </span>
               </div>
+
+              {course.rawStatus === "rejected" && course.rejectedReason && (
+                <div className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs leading-6 text-red-700">
+                  <strong>سبب الرفض:</strong> {course.rejectedReason}
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-2 text-center border-t border-[#F1F2F4] pt-3">
                 <div>

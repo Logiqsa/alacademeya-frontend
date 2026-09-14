@@ -126,14 +126,14 @@ const ExchangeRatesSettings = () => {
   };
 
   return (
-    <section className="rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-lg font-bold text-[#123C91]">إدارة أسعار الصرف</h2>
-      <p className="mt-1 text-sm text-[#6B7280]">
-        قيمة وحدة واحدة من العملة بالجنيه المصري.
-      </p>
+    <section className="h-fit self-start rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-4">
+        <h2 className="text-lg font-bold leading-7 text-[#123C91]">إدارة أسعار الصرف</h2>
+        <p className="mt-1 text-sm leading-6 text-[#6B7280]">قيمة وحدة واحدة من العملة بالجنيه المصري.</p>
+      </div>
       <form
         onSubmit={addCurrency}
-        className="mt-5 grid gap-3 rounded-xl border border-dashed border-[#B8C8E8] bg-[#F8FAFF] p-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid items-end gap-3 rounded-xl border border-dashed border-[#B8C8E8] bg-[#F8FAFF] p-4 sm:grid-cols-2 xl:grid-cols-4"
       >
         <label className="text-sm font-medium text-[#374151]">
           اسم العملة
@@ -196,7 +196,7 @@ const ExchangeRatesSettings = () => {
         <button
           type="submit"
           disabled={adding}
-          className="mt-auto flex h-11 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-medium !text-white disabled:opacity-60 lg:col-start-4"
+          className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[#123C91] px-5 text-sm font-medium !text-white transition hover:bg-[#0E3279] disabled:opacity-60 xl:col-start-4"
         >
           {adding ? (
             <Loader2 size={16} className="animate-spin" />
