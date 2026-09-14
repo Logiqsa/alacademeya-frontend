@@ -36,7 +36,7 @@
 ### التثبيت
 
 ```bash
-git clone https://github.com/novira-digital-sol/alacademeya-frontend.git
+git clone https://github.com/Logiqsa/alacademeya-frontend.git
 cd alacademeya-frontend
 npm install
 ```
