@@ -25,6 +25,7 @@ const BrandMediaPlayer = forwardRef(function BrandMediaPlayer({
   onPause,
   onEnded,
   onError,
+  onToggleFullscreen,
 }, forwardedRef) {
   const mediaRef = useRef(null);
   const containerRef = useRef(null);
@@ -110,6 +111,10 @@ const BrandMediaPlayer = forwardRef(function BrandMediaPlayer({
     showFeedback("volume", `${Math.round(next * 100)}%`);
   };
   const toggleFullscreen = async () => {
+    if (onToggleFullscreen) {
+      await onToggleFullscreen();
+      return;
+    }
     if (document.fullscreenElement === containerRef.current) await document.exitFullscreen();
     else await containerRef.current?.requestFullscreen();
   };
