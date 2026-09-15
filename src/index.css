@@ -216,7 +216,7 @@ select:disabled { cursor: not-allowed; background-color: #f2f4f7; color: #98a2b3
 
 /* Blog editor: Quill's default skin is LTR-oriented, so the structural rules
    below keep the toolbar usable while the writing surface remains Arabic-first. */
-.blog-rich-editor .ql-toolbar.ql-snow {
+.rich-text-editor .ql-toolbar.ql-snow {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -226,40 +226,47 @@ select:disabled { cursor: not-allowed; background-color: #f2f4f7; color: #98a2b3
   padding: 10px 12px;
 }
 
-.blog-rich-editor .ql-toolbar .ql-formats {
+.rich-text-editor .ql-toolbar .ql-formats {
   margin: 0 0 0 6px;
 }
 
-.blog-rich-editor .ql-container.ql-snow {
+.rich-text-editor .ql-container.ql-snow {
   border: 0;
   font-family: "IBM Plex Sans Arabic", sans-serif;
   font-size: 15px;
 }
 
-.blog-rich-editor .ql-editor {
+.rich-text-editor .ql-editor {
   min-height: 360px;
   padding: 20px;
-  direction: rtl;
-  text-align: right;
   line-height: 1.9;
 }
 
-.blog-rich-editor .ql-editor.ql-blank::before {
+.rich-text-editor .ql-editor.ql-blank::before {
   left: auto;
   right: 20px;
   color: #98a2b3;
   font-style: normal;
 }
 
-.blog-rich-editor .ql-editor img,
-.blog-rich-editor .ql-editor iframe {
+.rich-text-editor .ql-editor img,
+.rich-text-editor .ql-editor iframe {
   max-width: 100%;
 }
 
 @media (max-width: 640px) {
-  .blog-rich-editor .ql-toolbar.ql-snow { padding: 8px; }
-  .blog-rich-editor .ql-editor { min-height: 280px; padding: 14px; }
+  .rich-text-editor .ql-toolbar.ql-snow { padding: 8px; }
+  .rich-text-editor .ql-editor { min-height: 280px; padding: 14px; }
 }
+
+.policy-rich-content h1 { font-size: 1.75rem; font-weight: 800; }
+.policy-rich-content { white-space: pre-wrap; }
+.policy-rich-content h2 { font-size: 1.4rem; font-weight: 800; }
+.policy-rich-content h3 { font-size: 1.15rem; font-weight: 700; }
+.policy-rich-content ul { list-style: disc; padding-inline-start: 1.5rem; }
+.policy-rich-content ol { list-style: decimal; padding-inline-start: 1.5rem; }
+.policy-rich-content blockquote { border-inline-start: 4px solid #b8c7dd; margin-block: 1rem; padding-inline-start: 1rem; color: #475467; }
+.policy-rich-content a { color: #123c91; text-decoration: underline; }
 
 /* =========================
    TEXT SELECTION

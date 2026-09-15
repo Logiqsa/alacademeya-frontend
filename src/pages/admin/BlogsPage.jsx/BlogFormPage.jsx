@@ -5,7 +5,7 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import { ChevronDown, ChevronLeft, ChevronRight, FileText, ImagePlus, Save, Send, X } from "lucide-react";
 import { addBlogCreatedNotification } from "../../../utils/adminLocalNotifications";
-import BlogRichTextEditor from "../../../components/admin/blogs/BlogRichTextEditor";
+import RichTextEditor from "../../../components/shared/RichTextEditor";
 
 import {
   getBlogPost,
@@ -319,7 +319,7 @@ const BlogFormPage = () => {
             <label className="block text-[14px] font-medium text-[#1F2937] mb-2 text-right">
               محتوى المقال
             </label>
-            <BlogRichTextEditor value={data.content} onChange={(value) => handleField("content", value)} disabled={saving} />
+            <RichTextEditor value={data.content} onChange={(value) => handleField("content", value)} disabled={saving} ariaLabel="محتوى المقال" placeholder="ابدأ كتابة محتوى المقال هنا…" />
           </div>
 
           {/* 8. مقال مميز */}

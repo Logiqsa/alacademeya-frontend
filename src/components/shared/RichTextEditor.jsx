@@ -13,12 +13,24 @@ const TOOLBAR = [
   ["clean"],
 ];
 
-const BlogRichTextEditor = ({ value, onChange, disabled = false }) => {
+const RichTextEditor = ({
+  value,
+  onChange,
+  disabled = false,
+  direction = "rtl",
+  language = "ar",
+  placeholder = "ابدأ الكتابة هنا…",
+  ariaLabel = "محرر النص",
+}) => {
   const containerRef = useRef(null);
   const editorRef = useRef(null);
   const onChangeRef = useRef(onChange);
   const initialValueRef = useRef(value);
   const initialDisabledRef = useRef(disabled);
+  const initialDirectionRef = useRef(direction);
+  const initialLanguageRef = useRef(language);
+  const initialPlaceholderRef = useRef(placeholder);
+  const initialAriaLabelRef = useRef(ariaLabel);
   const [characterCount, setCharacterCount] = useState(0);
 
   useEffect(() => {
@@ -28,15 +40,17 @@ const BlogRichTextEditor = ({ value, onChange, disabled = false }) => {
   useEffect(() => {
     if (!containerRef.current || editorRef.current) return undefined;
 
-    const editor = new Quill(containerRef.current, {
+    const container = containerRef.current;
+    const editor = new Quill(container, {
       theme: "snow",
-      placeholder: "ابدأ كتابة محتوى المقال هنا…",
+      placeholder: initialPlaceholderRef.current,
       modules: { toolbar: TOOLBAR, history: { delay: 800, maxStack: 100, userOnly: true } },
     });
     editorRef.current = editor;
-    editor.root.setAttribute("dir", "rtl");
-    editor.root.setAttribute("lang", "ar");
-    editor.root.setAttribute("aria-label", "محتوى المقال");
+    editor.root.setAttribute("dir", initialDirectionRef.current);
+    editor.root.setAttribute("lang", initialLanguageRef.current);
+    editor.root.setAttribute("aria-label", initialAriaLabelRef.current);
+    editor.root.style.textAlign = initialDirectionRef.current === "rtl" ? "right" : "left";
     editor.root.innerHTML = initialValueRef.current || "";
     editor.enable(!initialDisabledRef.current);
     setCharacterCount(Math.max(0, editor.getText().trimEnd().length));
@@ -49,6 +63,9 @@ const BlogRichTextEditor = ({ value, onChange, disabled = false }) => {
 
     return () => {
       editor.off("text-change", handleTextChange);
+      editor.getModule("toolbar")?.container?.remove();
+      container.replaceChildren();
+      container.removeAttribute("class");
       editorRef.current = null;
     };
   }, []);
@@ -58,14 +75,14 @@ const BlogRichTextEditor = ({ value, onChange, disabled = false }) => {
   }, [disabled]);
 
   return (
-    <div className={`blog-rich-editor overflow-hidden rounded-xl border bg-white transition ${disabled ? "opacity-60" : "focus-within:border-[#123C91] focus-within:ring-3 focus-within:ring-[#123C91]/10"}`}>
+    <div className={`rich-text-editor overflow-hidden rounded-xl border bg-white transition ${disabled ? "opacity-70" : "focus-within:border-[#123C91] focus-within:ring-3 focus-within:ring-[#123C91]/10"}`}>
       <div ref={containerRef} />
-      <div className="flex items-center justify-between border-t border-[#E5E7EB] bg-[#F8FAFC] px-4 py-2 text-[11px] text-[#667085]">
-        <span>يمكنك تنسيق النص وإضافة الروابط والصور والفيديو</span>
-        <span aria-live="polite">{characterCount.toLocaleString("ar-EG")} حرف</span>
+      <div className="flex items-center justify-between gap-3 border-t border-[#E5E7EB] bg-[#F8FAFC] px-4 py-2 text-[11px] text-[#667085]">
+        <span>تنسيق النص وإضافة الروابط والوسائط</span>
+        <span className="shrink-0" aria-live="polite">{characterCount.toLocaleString(language === "ar" ? "ar-EG" : "en-US")} {language === "ar" ? "حرف" : "characters"}</span>
       </div>
     </div>
   );
 };
 
-export default BlogRichTextEditor;
+export default RichTextEditor;
