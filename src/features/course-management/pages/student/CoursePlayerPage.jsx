@@ -12,6 +12,7 @@ import { CircleHelp } from 'lucide-react';
 import ProtectedContentWatermark from '../../../../components/course/ProtectedContentWatermark';
 import BrandMediaPlayer from '../../../../components/media/BrandMediaPlayer';
 import { getProtectedContentIdentity } from '../../../../utils/protectedContentIdentity';
+import { isInstructor } from '../../../../utils/roles';
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 const titleOf = (value) => value?.ar || value?.en || value || 'الدورة';
@@ -52,8 +53,15 @@ export default function CoursePlayerPage() {
   const lastSavedPositionRef = useRef(0);
   const mediaRefreshRef = useRef(0);
   const pendingResumePositionRef = useRef(null);
-  const Layout = user?.role === 'teacher' ? TeacherLayout : StudentLayout;
-  const libraryPath = user?.role === 'teacher' ? '/teacher/my-courses' : '/student-dashboard/courses';
+  const instructorView = user?.role === 'teacher' || isInstructor(user);
+  const learnerOnly = user?.role === 'user' && !isInstructor(user);
+  const Layout = instructorView ? TeacherLayout : StudentLayout;
+  const layoutProps = instructorView ? {} : { marketplaceOnly: learnerOnly };
+  const libraryPath = instructorView
+    ? '/teacher/my-courses'
+    : learnerOnly
+      ? '/learner-dashboard'
+      : '/student-dashboard/courses';
 
   const load = async () => {
     const data = unwrap(await getCourseLearningView(courseId));
@@ -204,8 +212,8 @@ export default function CoursePlayerPage() {
     finally { setWorking(false); }
   };
 
-  if (loading) return <Layout><div className='grid min-h-[60vh] place-items-center'><LoaderCircle className='animate-spin text-[#123C91]' /></div></Layout>;
-  if (!view) return <Layout><div dir='rtl' className='p-10 text-center'><h1 className='text-xl font-bold'>{loadError?.code === 'COURSE_ACCESS_REVOKED' ? 'تم سحب الوصول إلى هذه الدورة' : 'تعذر تحميل الدورة'}</h1><p className='mt-2 text-sm text-gray-500'>{loadError?.message}</p><Link to={libraryPath} className='mt-5 inline-block font-bold text-[#123C91]'>العودة إلى دوراتي</Link></div></Layout>;
+  if (loading) return <Layout {...layoutProps}><div className='grid min-h-[60vh] place-items-center'><LoaderCircle className='animate-spin text-[#123C91]' /></div></Layout>;
+  if (!view) return <Layout {...layoutProps}><div dir='rtl' className='p-10 text-center'><h1 className='text-xl font-bold'>{loadError?.code === 'COURSE_ACCESS_REVOKED' ? 'تم سحب الوصول إلى هذه الدورة' : 'تعذر تحميل الدورة'}</h1><p className='mt-2 text-sm text-gray-500'>{loadError?.message}</p><Link to={libraryPath} className='mt-5 inline-block font-bold text-[#123C91]'>العودة إلى دوراتي</Link></div></Layout>;
 
   const currentMediaType = mediaTypeOf(currentLesson);
   const activeMediaUrl = mediaLessonId === currentLesson?.id ? mediaUrl : '';
@@ -214,7 +222,7 @@ export default function CoursePlayerPage() {
   const isLearnerPlayback = !['teacher', 'admin', 'super-admin'].includes(user?.role);
   const isPdf = currentMediaType === 'document' && mediaMimeType.toLowerCase() === 'application/pdf';
 
-  return <Layout><div dir='rtl' className='min-h-full rounded-2xl bg-[#F4F7FB] p-2 text-[#202936] sm:p-3 lg:p-4'>
+  return <Layout {...layoutProps}><div dir='rtl' className='min-h-full rounded-2xl bg-[#F4F7FB] p-2 text-[#202936] sm:p-3 lg:p-4'>
     <div className='mx-auto max-w-[1450px]'><div className='mb-6 overflow-hidden rounded-2xl bg-linear-to-l from-[#123C91] via-[#174BAE] to-[#116B91] px-5 py-5 text-white shadow-[0_12px_30px_rgba(18,60,145,0.18)] sm:px-7'>
       <nav className='mb-3 flex items-center gap-2 text-xs text-white/75'><Link to={libraryPath} className='font-bold !text-white transition hover:opacity-80'>دوراتي</Link><ChevronLeft size={14} /><span className='truncate'>{titleOf(view.course.title)}</span></nav>
       <div className='flex flex-wrap items-end justify-between gap-4'><div><span className='mb-2 block text-xs font-semibold text-[#8EF0E3]'>أنت تتعلم الآن</span><h1 className='text-xl font-extrabold sm:text-2xl'>{titleOf(view.course.title)}</h1></div><div className='min-w-44 rounded-xl bg-white/10 px-4 py-3 backdrop-blur'><div className='mb-2 flex justify-between text-xs'><span>تقدم الدورة</span><b dir='ltr'>{Math.round(progress)}%</b></div><div className='h-2 overflow-hidden rounded-full bg-white/20'><div className='h-full rounded-full bg-[#26D6C1] transition-all duration-500' style={{ width: `${progress}%` }} /></div></div></div>

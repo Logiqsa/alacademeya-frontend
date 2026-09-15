@@ -139,7 +139,7 @@ export default function CourseDetailsPage() {
       setEnrolled(true);
       setCourse((current) => ({ ...current, students: Number(current.students || 0) + 1 }));
       toast.success("تم الاشتراك في الدورة بنجاح");
-      navigate("/student-dashboard/courses");
+      navigate(`/learn/${course.id}`);
     } catch (requestError) {
       if (requestError?.response?.data?.code === "POLICY_ACCEPTANCE_REQUIRED") { setPendingAcquisition("free"); setTermsOpen(true); }
       else toast.error(requestError?.response?.data?.message || "تعذر الاشتراك في الدورة");
@@ -151,7 +151,7 @@ export default function CourseDetailsPage() {
       navigate("/login", { state: { from: `/courses/${course.slug}` } });
     } else if (accessReason === "admin") navigate(`/admin/courses/${course.id}`);
     else if (accessReason === "instructor") navigate(`/teacher/courses/${course.id}`);
-    else if (enrolled) navigate("/student-dashboard/courses");
+    else if (enrolled) navigate(`/learn/${course.id}`);
     else if (course.price > 0) {
       setSubmitting(true);
       try {
@@ -270,7 +270,7 @@ export default function CourseDetailsPage() {
               <CourseFact icon={Globe2} value={course.language || "غير محددة"} />
               <CourseFact icon={Check} value={course.level || "كل المستويات"} />
             </ul>
-            <button type="button" onClick={subscribe} disabled={submitting} className="h-12 w-full rounded-xl bg-[#123C91] text-sm font-bold text-white shadow-sm transition hover:bg-[#0E3279] disabled:opacity-60">{submitting ? "جاري التنفيذ..." : accessReason === "admin" ? "إدارة الدورة" : accessReason === "instructor" ? "إدارة دورتي" : enrolled ? "اذهب إلى دوراتي" : course.price > 0 ? "اشترك في الدورة" : "ابدأ الدورة مجانًا"}</button>
+            <button type="button" onClick={subscribe} disabled={submitting} className="h-12 w-full rounded-xl bg-[#123C91] text-sm font-bold text-white shadow-sm transition hover:bg-[#0E3279] disabled:opacity-60">{submitting ? "جاري التنفيذ..." : accessReason === "admin" ? "إدارة الدورة" : accessReason === "instructor" ? "إدارة دورتي" : enrolled ? "تابع التعلم" : course.price > 0 ? "اشترك في الدورة" : "ابدأ الدورة مجانًا"}</button>
           </div>
         </aside>
       </div>

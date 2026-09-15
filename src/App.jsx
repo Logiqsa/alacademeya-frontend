@@ -127,6 +127,8 @@ import InstructorOnboardingPage from "./pages/teacher/InstructorOnboardingPage";
 import InstructorProfilePage from "./pages/teacher/InstructorProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import MediaSecurityEventsPage from "./pages/admin/MediaSecurityEventsPage";
+import InstructorAgreementPage from "./pages/InstructorAgreementPage";
+import InstructorDashboardPage from "./pages/teacher/InstructorDashboardPage";
 
 function App() {
   const { user, checkingAccountState } = useContext(AuthContext);
@@ -186,6 +188,10 @@ function App() {
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/courses/:slug" element={<CourseDetailsPage />} />
           <Route path="/instructors/:id" element={<InstructorPage />} />
+          <Route path="/policies/instructor-agreement" element={<InstructorAgreementPage />} />
+          <Route path="/policies/course-publishing" element={<InstructorAgreementPage policyType="course_publishing_policy" />} />
+          <Route path="/policies/revenue-share" element={<InstructorAgreementPage policyType="revenue_share_agreement" />} />
+          <Route path="/policies/course-terms" element={<InstructorAgreementPage policyType="learner_course_terms" />} />
         </Route>
         {/* Auth */}
         <Route
@@ -337,6 +343,14 @@ function App() {
           }
         />
         {/* ✅ Student — محمي بـ StudentGuard */}
+        <Route
+          path="/learner-dashboard"
+          element={
+            <StudentGuard>
+              <StudentCoursesPage dashboard="learner" />
+            </StudentGuard>
+          }
+        />
         <Route
           path="/student-dashboard"
           element={
@@ -986,6 +1000,14 @@ function App() {
             }
           />
         </Route>
+        <Route
+          path="/instructor-dashboard"
+          element={
+            <InstructorGuard requireActiveStatus>
+              <InstructorDashboardPage />
+            </InstructorGuard>
+          }
+        />
         <Route
           path="/instructor/onboarding"
           element={

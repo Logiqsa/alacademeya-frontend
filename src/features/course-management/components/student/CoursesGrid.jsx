@@ -17,7 +17,7 @@ export default function CoursesGrid({ courses = [], onCancel = null }) {
   const navigate = useNavigate();
 
   return (
-    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),290px))] justify-center gap-4 sm:justify-start">
       {courses.map((course) => {
         const progress = course.progressData?.percentage || 0;
         const completedLessons = course.progressData?.completedLessons || 0;
@@ -28,43 +28,43 @@ export default function CoursesGrid({ courses = [], onCancel = null }) {
           <article
             key={course.id || course.slug}
             onClick={() => course.enrollmentStatus !== 'revoked' && navigate(`/learn/${course.id}`)}
-            className={`group overflow-hidden rounded-xl border border-[#DFE5EC] bg-white shadow-xs transition-all duration-300 ${course.enrollmentStatus === 'revoked' ? 'opacity-70' : 'cursor-pointer hover:-translate-y-1 hover:shadow-lg'}`}
+            className={`group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#DFE5EC] bg-white shadow-xs transition-all duration-300 ${course.enrollmentStatus === 'revoked' ? 'opacity-70' : 'cursor-pointer hover:-translate-y-1 hover:border-[#C8D5E8] hover:shadow-lg'}`}
           >
-            <div className="relative aspect-1.85/1 overflow-hidden bg-[#E8EDF2]">
-              <img src={course.coverImage || courseCovers[course.cover] || pythonCover} alt={course.title} className="h-full w-full object-cover" />
+            <div className="relative aspect-video overflow-hidden bg-[#E8EDF2]">
+              <img src={course.coverImage || courseCovers[course.cover] || pythonCover} alt={course.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
               <span className={`absolute right-2 top-2 rounded-full px-2 py-1 text-[10px] font-bold ${completed ? "bg-[#E5F7E9] text-[#18753C]" : "bg-white text-[#123C91]"}`}>
                 {course.enrollmentStatus === 'revoked' ? 'تم سحب الوصول' : course.rawStatus === 'archived' ? 'مؤرشفة — الوصول متاح' : completed ? "مكتملة" : progress === 0 ? "لم تبدأ" : "قيد التعلم"}
               </span>
               {completed && <span className="absolute left-2 top-0 flex h-9 w-7 items-center justify-center rounded-b-md bg-[#F6C64A] text-white"><Award size={15} /></span>}
             </div>
 
-            <div className="p-4 text-right">
-              <div className="mb-3 flex items-center text-[14px]">
-                <span className="rounded-full bg-[#EAF4FF] px-2.5 py-1 font-semibold text-[#123C91]">{course.classification || course.category}</span>
-                <span className="px-2.5 py-1 text-[#7B8490]">{course.level}</span>
+            <div className="flex grow flex-col p-3.5 text-right">
+              <div className="mb-2 flex flex-wrap items-center gap-1 text-xs">
+                <span className="rounded-full bg-[#EAF4FF] px-2 py-1 font-semibold text-[#123C91]">{course.classification || course.category}</span>
+                <span className="rounded-full bg-[#F0F4F8] px-2 py-1 text-[#7B8490]">{course.level}</span>
               </div>
               <Link
                 to={course.rawStatus === 'archived' ? `/learn/${course.id}` : `/courses/${course.slug}`}
                 onClick={(e) => e.stopPropagation()}
-                className="mb-3 line-clamp-2 text-[17px] font-bold leading-7 text-[#1F2937] transition-colors group-hover:text-[#123C91]">
+                className="mb-2 line-clamp-2 text-base font-bold leading-6 text-[#1F2937] transition-colors group-hover:text-[#123C91]">
 
                 {course.title}
               </Link>
-              <div className="mb-4 flex items-center gap-2">
+              <div className="mb-3 flex items-center gap-2">
                 <Link
                   to={`/instructors/${encodeURIComponent(course.instructorSlug || course.instructorId || course.instructor)}`}
                   className="flex items-center gap-2 group/inst"
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-[#12C6B0] to-[#123C91] text-[13px] font-bold text-white shadow-xs">
-                    {course.instructor.charAt(0)}
+                    {course.instructor?.charAt(0) || "م"}
                   </span>
                   <span className="text-[14px] font-medium text-[#4B5563] underline decoration-transparent underline-offset-4 transition-all duration-300 group-hover/inst:text-[#123C91] group-hover/inst:decoration-[#123C91]">
-                    {course.instructor}
+                    {course.instructor || "محاضر الأكاديمية"}
                   </span>
                 </Link>
               </div>
 
-              <div className="mt-4">
+              <div className="mt-auto border-t border-[#EDF0F4] pt-3">
                 <div className="mb-1 flex items-center justify-between text-[10px] text-[#89939F]">
                   <span>{progress}%</span>
                   <span className="flex items-center gap-1"><Clock3 size={11} /> {completedLessons} / {totalLessons} درس</span>
@@ -72,7 +72,7 @@ export default function CoursesGrid({ courses = [], onCancel = null }) {
                 <div className="h-1.5 overflow-hidden rounded-full bg-[#E6E9ED]">
                   <div className={`h-full rounded-full ${completed ? "bg-[#19804A]" : "bg-[#123C91]"}`} style={{ width: `${progress}%` }} />
                 </div>
-                <p className="mt-2 text-[14px] text-[#8B95A1]">{completed ? "أحسنت! لقد أكملت الدورة" : progress === 0 ? "لم تبدأ هذه الدورة بعد" : progress === 100 ? "أكملت الدروس، وتبقت متطلبات أخرى" : `آخر ما أكملته: ${course.progressData?.lastCompletedTitle || "أحد دروس الدورة"}`}</p>
+                <p className="mt-2 line-clamp-1 text-xs text-[#8B95A1]">{completed ? "أحسنت! لقد أكملت الدورة" : progress === 0 ? "لم تبدأ هذه الدورة بعد" : progress === 100 ? "أكملت الدروس، وتبقت متطلبات أخرى" : `آخر ما أكملته: ${course.progressData?.lastCompletedTitle || "أحد دروس الدورة"}`}</p>
               </div>
 
               {course.enrollmentStatus === 'revoked' ? (
@@ -86,7 +86,7 @@ export default function CoursesGrid({ courses = [], onCancel = null }) {
                 <Link
                   to={`/learn/${course.id}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="mx-auto mt-6 flex h-12 w-[320px] items-center justify-center gap-2 rounded-lg bg-[#123C91] px-4 font-['Tajawal'] text-[16px] font-medium leading-none tracking-normal !text-white"
+                  className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#123C91] px-4 font-['Tajawal'] text-sm font-bold leading-none !text-white transition hover:bg-[#0F3278]"
                 >
                   {progress === 0 ? "ابدأ الدورة" : "متابعة التعلم"} <span className="mr-2">←</span>
                 </Link>

@@ -38,6 +38,12 @@ const Navbar = () => {
     { title: "المدونه", id: "blog" },
     { title: "الأسئلة الشائعة", id: "faq" },
   ];
+  const policyLinks = [
+    { title: "اتفاقية المحاضر", to: "/policies/instructor-agreement" },
+    { title: "سياسة نشر الدورات", to: "/policies/course-publishing" },
+    { title: "اتفاقية مشاركة الإيرادات", to: "/policies/revenue-share" },
+    { title: "شروط شراء والالتحاق بالدورات", to: "/policies/course-terms" },
+  ];
 
   const scrollToSection = (id, behavior = "smooth") => {
     const section = document.getElementById(id);
@@ -122,6 +128,18 @@ const Navbar = () => {
                 {item.title}
               </button>
             ))}
+            <div className="group relative">
+              <button type="button" className="relative inline-flex items-center gap-1 text-[16px] font-medium text-primary transition-all duration-300 hover:text-[#12C6B0]! group-focus-within:text-[#12C6B0]">
+                الاتفاقيات <ChevronDown size={16} className="transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180" />
+              </button>
+              <div className="invisible absolute right-0 top-[calc(100%+12px)] z-60 w-64 translate-y-2 rounded-xl border border-[#E1E7EF] bg-white p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                {policyLinks.map((item) => (
+                  <Link key={item.to} to={item.to} className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-[#344054] transition hover:bg-[#EEF4FF] hover:text-[#123C91]">
+                    {item.title}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* DESKTOP BUTTONS */}
@@ -204,6 +222,16 @@ const Navbar = () => {
               {item.title}
             </button>
           ))}
+          <div className="border-t border-[#E6ECF3] pt-5">
+            <p className="mb-3 text-sm font-bold text-[#667085]">الاتفاقيات والسياسات</p>
+            <div className="flex flex-col gap-3">
+              {policyLinks.map((item) => (
+                <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)} className="text-sm font-medium text-[#123C91] hover:text-[#12C6B0]">
+                  {item.title}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* BUTTONS */}

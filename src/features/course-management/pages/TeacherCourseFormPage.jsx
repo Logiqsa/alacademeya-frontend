@@ -2051,19 +2051,42 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                       event.target.value = "";
                       return;
                     }
+                    const targetSectionId = contentModal.sectionId;
+                    const targetLessonId = contentModal.lessonId;
+                    const previewUrl = URL.createObjectURL(file);
                     updateLesson(
-                      contentModal.sectionId,
-                      contentModal.lessonId,
+                      targetSectionId,
+                      targetLessonId,
                       {
                         media: {
                           file,
                           name: file.name,
                           type: file.type,
                           size: file.size,
-                          previewUrl: URL.createObjectURL(file),
+                          previewUrl,
                         },
                       },
                     );
+                    if (!isDocument) {
+                      const media = document.createElement(
+                        lessonType === "صوت" ? "audio" : "video",
+                      );
+                      media.preload = "metadata";
+                      media.onloadedmetadata = () => {
+                        const durationSeconds = Math.round(media.duration || 0);
+                        if (durationSeconds > 0) {
+                          updateLesson(
+                            targetSectionId,
+                            targetLessonId,
+                            {
+                              durationSeconds,
+                              duration: Math.max(1, Math.ceil(durationSeconds / 60)),
+                            },
+                          );
+                        }
+                      };
+                      media.src = previewUrl;
+                    }
                   }}
                 />
               </label>

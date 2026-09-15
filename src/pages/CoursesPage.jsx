@@ -207,11 +207,20 @@ export default function CoursesPage() {
           </label>
         </div>
 
-        <div className={`grid items-start gap-5 ${
+        <div className={`grid items-start gap-5 transition-[grid-template-columns] duration-300 ease-out ${
           filterOpen ? "lg:grid-cols-[230px_1fr]" : "lg:grid-cols-[56px_1fr]"
         }`}>
-          {filterOpen && (
-            <aside className="rounded-lg border border-[#DDE4EC] bg-white p-5 shadow-sm lg:sticky lg:top-5">
+          <div className="relative min-w-0">
+            <div
+              aria-hidden={!filterOpen}
+              className={`grid origin-top transition-[grid-template-rows,opacity,transform] duration-300 ease-out ${
+                filterOpen
+                  ? "visible grid-rows-[1fr] scale-y-100 opacity-100"
+                  : "invisible pointer-events-none grid-rows-[0fr] scale-y-95 opacity-0"
+              }`}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <aside className="rounded-lg border border-[#DDE4EC] bg-white p-5 shadow-sm lg:sticky lg:top-5">
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-base font-bold text-[#1F2937]">
                   <SlidersHorizontal size={18} /> تصفية النتائج
@@ -282,13 +291,15 @@ export default function CoursesPage() {
               >
                 إعادة ضبط
               </button>
-            </aside>
-          )}
+                </aside>
+              </div>
+            </div>
 
-          {!filterOpen && (
             <button
               onClick={() => setFilterOpen(true)}
-              className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-[#DDE4EC] bg-white text-[#556171] transition-colors hover:border-[#123C91] hover:text-[#123C91]"
+              className={`absolute right-0 top-0 flex h-14 w-14 items-center justify-center rounded-xl border border-[#DDE4EC] bg-white text-[#556171] transition-[opacity,transform,border-color,color] duration-300 hover:border-[#123C91] hover:text-[#123C91] ${
+                filterOpen ? "invisible pointer-events-none scale-90 opacity-0" : "visible scale-100 opacity-100"
+              }`}
               aria-label="فتح الفلاتر"
               title="فتح الفلاتر"
             >
@@ -299,7 +310,7 @@ export default function CoursesPage() {
                 </span>
               )}
             </button>
-          )}
+          </div>
 
           <main>
             {loading ? (
@@ -307,9 +318,9 @@ export default function CoursesPage() {
             ) : loadError ? (
               <div className="rounded-lg border border-red-200 bg-red-50 py-20 text-center text-red-700">{loadError}</div>
             ) : filteredCourses.length ? (
-              <div className={`grid gap-5 sm:grid-cols-2 ${filterOpen ? "xl:grid-cols-3" : "lg:grid-cols-3"}`}>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),280px))] justify-center gap-4 sm:justify-start">
                 {paginatedCourses.map((course) => (
-                  <CourseCard key={course.id} course={course} />
+                  <CourseCard key={course.id} course={course} compact />
                 ))}
               </div>
             ) : (

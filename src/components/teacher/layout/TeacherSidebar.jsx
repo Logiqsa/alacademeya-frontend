@@ -26,7 +26,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
   // loading. Route guards remain the authority for the destination itself.
   const canAccessInstructorArea = instructor;
   const canBecomeInstructor = canHaveInstructorProfile(user) && !instructor;
-  const dashboardPath = getDashboardPathByRole(user, "/teacher/earnings");
+  const dashboardPath = getDashboardPathByRole(user, "/instructor-dashboard");
 
   useEffect(() => {
     const userKey = user?.id || user?._id || user?.userId || user?.email || user?.username || user?.role;
@@ -81,6 +81,11 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
         ...(canAccessInstructorArea
           ? [
               {
+                title: "إنشاء دورة",
+                icon: dashboardIcon,
+                path: "/teacher/courses/new",
+              },
+              {
                 title: "ملفي الشخصي",
                 icon: childrenIcon,
                 path: "/teacher/instructor-profile",
@@ -103,6 +108,16 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
                 title: "الأرباح",
                 icon: dashboardIcon,
                 path: "/teacher/earnings",
+              },
+              {
+                title: "السحوبات",
+                icon: dashboardIcon,
+                path: "/teacher/earnings#withdrawals",
+              },
+              {
+                title: "الاتفاقيات",
+                icon: dashboardIcon,
+                path: "/policies/instructor-agreement",
               },
             ]
           : []),
@@ -172,7 +187,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
           </Link>
         )}
 
-        <button
+        {isTeacher && <button
           onClick={() => setIsOpen(!isOpen)}
           className="
             w-16
@@ -190,7 +205,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
             alt="toggle"
             className="object-contain w-7 h-7"
           />
-        </button>
+        </button>}
       </div>
 
       {/* Menu */}

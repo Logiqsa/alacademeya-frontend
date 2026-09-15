@@ -10,7 +10,7 @@ import {
 } from "../utils/roles";
 import { getMyInstructorProfile } from "../services/APIService";
 
-const InstructorGuard = ({ children, requireProfile = true, allowSuspended = false }) => {
+const InstructorGuard = ({ children, requireProfile = true, allowSuspended = false, requireActiveStatus = false }) => {
   const { user, updateUser, checkingAccountState } = useContext(AuthContext);
   const [profileCheck, setProfileCheck] = useState({ state: "idle", profile: null });
 
@@ -20,7 +20,7 @@ const InstructorGuard = ({ children, requireProfile = true, allowSuspended = fal
     canHaveInstructorProfile(user) &&
     isActivated(user) &&
     !isAwaitingApproval(user) &&
-    !isInstructor(user);
+    (!isInstructor(user) || (requireActiveStatus && !user?.instructorStatus));
 
   useEffect(() => {
     if (!needsBackendProfileCheck) return;
@@ -74,6 +74,9 @@ const InstructorGuard = ({ children, requireProfile = true, allowSuspended = fal
   const instructorStatus =
     profileCheck.profile?.status || user.instructorStatus;
   if (instructorStatus === "suspended" && !allowSuspended) {
+    return <Navigate to="/account-state" replace />;
+  }
+  if (requireActiveStatus && instructorStatus !== "active") {
     return <Navigate to="/account-state" replace />;
   }
   if (!isInstructor(user) && profileCheck.state !== "ready") {

@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { LoaderCircle } from "lucide-react";
+import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import { AuthContext } from "../../context/AuthContext";
 import {
@@ -127,6 +128,9 @@ export default function InstructorOnboardingPage() {
         dir="rtl"
         className="mx-auto w-full max-w-2xl rounded-2xl border bg-white p-6 shadow-sm sm:p-8"
       >
+        <Link to="/" className="mb-7 block w-fit" aria-label="العودة إلى الرئيسية">
+          <img src={logo} alt="الأكاديمية" className="h-9 w-auto" />
+        </Link>
         <h1 className="text-2xl font-extrabold text-[#1F2937]">
           {profile ? "ملف المحاضر" : "الانضمام كمحاضر"}
         </h1>
@@ -183,8 +187,16 @@ export default function InstructorOnboardingPage() {
                   className="mt-1"
                 />
                 <span>
-                  أوافق على اتفاقية المحاضر الحالية (الإصدار{" "}
-                  {INSTRUCTOR_AGREEMENT_VERSION}). ستُطلب موافقة مستقلة على
+                  أوافق على{" "}
+                  <Link
+                    to="/policies/instructor-agreement"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-bold text-[#123C91] underline underline-offset-4"
+                  >
+                    اتفاقية المحاضر الحالية (الإصدار {INSTRUCTOR_AGREEMENT_VERSION})
+                  </Link>
+                  . ستُطلب موافقة مستقلة على
                   سياسات النشر ومشاركة الإيرادات قبل إرسال أي دورة للمراجعة.
                 </span>
               </label>

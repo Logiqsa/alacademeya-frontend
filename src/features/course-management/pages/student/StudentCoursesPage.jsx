@@ -15,6 +15,7 @@ const PAGE_SIZE = 6;
 
 const StudentCoursesPage = ({ dashboard = "student" }) => {
   const Layout = dashboard === "teacher" ? TeacherLayout : StudentLayout;
+  const isCourseLearnerDashboard = dashboard === "learner";
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [certificateCourse, setCertificateCourse] = useState(null);
   const [page, setPage] = useState(1);
@@ -53,10 +54,10 @@ const StudentCoursesPage = ({ dashboard = "student" }) => {
   };
 
   return (
-    <Layout>
+    <Layout marketplaceOnly={isCourseLearnerDashboard}>
       <div className="mx-auto max-w-7xl p-1 sm:p-4" dir="rtl">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <div><h1 className="text-2xl font-extrabold text-[#1F2937]">دوراتي</h1><p className="mt-1 text-sm text-[#7B8490]">تابع تقدمك في الدورات المسجلة</p></div>
+          <div><h1 className="text-2xl font-extrabold text-[#1F2937]">{isCourseLearnerDashboard ? "لوحة التعلم" : "دوراتي"}</h1><p className="mt-1 text-sm text-[#7B8490]">تابع تقدمك في الدورات المسجلة</p></div>
           <Link to="/courses" className="flex h-11 items-center gap-2 rounded-lg border border-[#DDE4EC] bg-white px-4 text-sm font-bold text-[#123C91] transition hover:border-[#123C91]">
             <Compass size={17} /> اكتشاف دورات جديدة
           </Link>

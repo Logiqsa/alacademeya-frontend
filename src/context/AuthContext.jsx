@@ -69,6 +69,7 @@ const userDataForStorage = (source) => {
     "instructorStatus",
     "instructorProfileSlug",
     "timezone",
+    "watermarkIdentity",
   ];
 
   return Object.fromEntries(
@@ -199,6 +200,16 @@ export const AuthContextProvider = ({ children }) => {
     const responseUser = res.data.data;
     const token = res.data.token;
     let finalUser = establishSession(token, responseUser);
+
+    try {
+      const profileResponse = await getMyProfile();
+      const databaseUser = getDatabaseUserFromAccountState(profileResponse);
+      finalUser = withInstructorCapability({ ...finalUser, ...databaseUser });
+      persistUser(finalUser);
+      setUser(finalUser);
+    } catch {
+      // Keep the authenticated session; the regular account-state refresh can retry.
+    }
 
     if (canHaveInstructorProfile(finalUser)) {
       try {

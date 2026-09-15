@@ -104,7 +104,12 @@ export const getDashboardPathByRole = (user, fallback = "/") => {
   const isPendingReview = isAwaitingApproval(user);
 
   if (user?.role === "user" && isInstructor(user)) {
-    return isApproved ? "/teacher/earnings" : "/pending";
+    if (user?.instructorStatus === "suspended") return "/account-state";
+    return isApproved ? "/instructor-dashboard" : "/pending";
+  }
+
+  if (role === "user") {
+    return isApproved ? "/learner-dashboard" : "/pending";
   }
 
   if (role === "teacher") {

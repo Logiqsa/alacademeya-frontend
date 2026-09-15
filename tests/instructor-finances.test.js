@@ -41,7 +41,7 @@ test("detects both supported instructor account shapes and rejects role alone", 
   assert.equal(isInstructor(teacherInstructor), true);
   assert.equal(isInstructor({ ...activeAccount, role: "teacher" }), false);
   assert.equal(isInstructor({ ...activeAccount, role: "student", instructorId: "instructor-1" }), false);
-  assert.equal(getDashboardPathByRole(userInstructor), "/teacher/earnings");
+  assert.equal(getDashboardPathByRole({ ...userInstructor, instructorStatus: "active" }), "/instructor-dashboard");
 });
 
 test("normalizes empty earnings responses without inventing financial values", () => {

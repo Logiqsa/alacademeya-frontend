@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
-import { Library, Wallet } from "lucide-react";
+import { Compass, GraduationCap, Library, Wallet } from "lucide-react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
 
@@ -16,9 +16,9 @@ import subscriptionIcon from "../../../assets/icons/subscription.png";
 import settingsIcon from "../../../assets/icons/settings.png";
 import logoutIcon from "../../../assets/icons/logout.png";
 
-const StudentSidebar = ({ isOpen, setIsOpen }) => {
+const StudentSidebar = ({ isOpen, setIsOpen, marketplaceOnly = false }) => {
   const unread = useSidebarUnread();
-  const menu = [
+  const academicMenu = [
     {
       title: "لوحة التحكم",
       icon: dashboardIcon,
@@ -62,6 +62,13 @@ const StudentSidebar = ({ isOpen, setIsOpen }) => {
       path: "/student/settings",
     },
   ];
+
+  const marketplaceMenu = [
+    { title: "لوحة التعلم", icon: dashboardIcon, path: "/learner-dashboard" },
+    { title: "استكشاف الدورات", icon: Compass, isLucide: true, path: "/courses" },
+    { title: "كن محاضرًا", icon: GraduationCap, isLucide: true, path: "/instructor/onboarding" },
+  ];
+  const menu = marketplaceOnly ? marketplaceMenu : academicMenu;
 
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();

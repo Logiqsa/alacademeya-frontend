@@ -3,6 +3,7 @@ import { FaWhatsapp } from "react-icons/fa";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTelegram, FaTiktok, FaXTwitter, FaYoutube } from "react-icons/fa6";
 import logo from "../../assets/icons/logo.svg";
 import useContactSettings, { whatsappLink } from "../../hooks/useContactSettings";
+import { Link } from "react-router-dom";
 
 const SOCIAL_META = {
   facebook: { label: "فيسبوك", icon: FaFacebookF },
@@ -61,6 +62,16 @@ const Footer = () => {
           <ul className="space-y-3">
             <li><button onClick={() => handleScroll("features")} className="text-primary hover:text-[#12C6B0] transition-colors duration-300">عن الأكاديمية</button></li>
             <li><button onClick={() => handleScroll("faq")} className="text-primary hover:text-[#12C6B0] transition-colors duration-300">الأسئلة الشائعة</button></li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="mb-5 font-['Tajawal'] text-[24px] font-bold text-[#1F2937]">الاتفاقيات والسياسات</h2>
+          <ul className="space-y-3 text-sm">
+            <li><Link to="/policies/instructor-agreement" className="text-primary transition-colors duration-300 hover:text-[#12C6B0]">اتفاقية المحاضر</Link></li>
+            <li><Link to="/policies/course-publishing" className="text-primary transition-colors duration-300 hover:text-[#12C6B0]">سياسة نشر الدورات</Link></li>
+            <li><Link to="/policies/revenue-share" className="text-primary transition-colors duration-300 hover:text-[#12C6B0]">اتفاقية مشاركة الإيرادات</Link></li>
+            <li><Link to="/policies/course-terms" className="text-primary transition-colors duration-300 hover:text-[#12C6B0]">شروط شراء الدورات</Link></li>
           </ul>
         </div>
 

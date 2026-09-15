@@ -1,12 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { maskEmail, shortenDisplayName } from '../src/utils/protectedContentIdentity.js';
+import { getProtectedContentIdentity, shortenDisplayName } from '../src/utils/protectedContentIdentity.js';
 
 test('protected playback identity is privacy-safe', () => {
-  assert.equal(shortenDisplayName({ fullName: 'Ahmed Mohamed Hassan' }), 'Ahmed H.');
-  assert.equal(maskEmail('Ahmed.Person@gmail.com'), 'ah***@gmail.com');
-  assert.doesNotMatch(maskEmail('Ahmed.Person@gmail.com'), /Ahmed\.Person/i);
+  assert.equal(shortenDisplayName('Ahmed Mohamed Hassan'), 'Ahmed Mohamed Hassan');
+  const identity = getProtectedContentIdentity({
+    _id: '507f1f77bcf86cd799439011',
+    email: 'Ahmed.Person@gmail.com',
+    watermarkIdentity: { displayName: 'Ahmed Mohamed Hassan', viewerId: 'a7k9q2m4tx' },
+  });
+  assert.deepEqual(identity, { displayName: 'Ahmed Mohamed Hassan', viewerId: 'A7K9Q2M4TX' });
+  assert.doesNotMatch(JSON.stringify(identity), /Ahmed\.Person@gmail\.com|507f1f77bcf86cd799439011/i);
+  assert.equal(getProtectedContentIdentity({ watermarkIdentity: { viewerId: 'A7K9Q2M4TX' } }).displayName, 'متعلم');
 });
 
 test('learner video and audio use scoped browser deterrents without global context-menu blocking', () => {
@@ -26,6 +32,8 @@ test('watermark is non-interactive and changes among multiple positions', () => 
   assert.match(source, /POSITIONS/);
   assert.match(source, /setTimeout/);
   assert.match(source, /Math\.random/);
+  assert.match(source, /viewerId/);
+  assert.doesNotMatch(source, /maskedEmail|email|userId|_id/);
 });
 
 test('attachment access modes drive distinct learner actions and instructor selection', () => {

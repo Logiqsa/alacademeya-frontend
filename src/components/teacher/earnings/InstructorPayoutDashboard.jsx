@@ -127,7 +127,7 @@ const InstructorPayoutDashboard = () => {
     } catch (error) { toast.error(getApiErrorMessage(error, "تعذر إلغاء طلب السحب.")); }
   };
 
-  return <section aria-labelledby="payout-title" className="space-y-4">
+  return <section id="withdrawals" aria-labelledby="payout-title" className="scroll-mt-5 space-y-4">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-[#EEF4FF] text-[#123C91]"><HandCoins size={20} /></span><div><h2 id="payout-title" className="text-lg font-bold text-[#1F2937]">الرصيد والسحوبات</h2><p className="mt-0.5 text-xs text-[#667085]">الأرصدة وحالات الطلبات كما يحسبها الخادم</p></div></div>
       <button type="button" onClick={openModal} disabled={!withdrawalEnabled} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#123C91] px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-[#98A2B3]"><WalletCards size={17} />طلب سحب</button>

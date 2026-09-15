@@ -10,7 +10,7 @@ const POSITIONS = [
 
 const nextDelay = () => 11000 + Math.floor(Math.random() * 9000);
 
-export default function ProtectedContentWatermark({ displayName, maskedEmail }) {
+export default function ProtectedContentWatermark({ displayName, viewerId }) {
   const [position, setPosition] = useState(() => Math.floor(Math.random() * POSITIONS.length));
 
   useEffect(() => {
@@ -28,14 +28,15 @@ export default function ProtectedContentWatermark({ displayName, maskedEmail }) 
     return () => window.clearTimeout(timeout);
   }, []);
 
-  if (!displayName && !maskedEmail) return null;
+  if (!viewerId) return null;
   return (
     <div
       aria-hidden='true'
       className={`pointer-events-none absolute z-10 max-w-[70%] select-none rounded-md bg-black/25 px-2.5 py-1.5 text-start text-[10px] font-semibold leading-4 text-white/55 shadow-sm backdrop-blur-[1px] transition-[left,right,top,bottom,transform] duration-700 sm:text-xs ${POSITIONS[position]}`}
     >
-      <span className='block truncate' dir='auto'>{displayName}</span>
-      {maskedEmail && <span className='block truncate' dir='ltr'>{maskedEmail}</span>}
+      <span className='truncate' dir='auto'>{displayName || 'متعلم'}</span>
+      <span className='px-1 text-white/40'>•</span>
+      <span dir='ltr'>{viewerId}</span>
     </div>
   );
 }

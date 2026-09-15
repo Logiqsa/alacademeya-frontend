@@ -10,7 +10,7 @@ const getInitialSidebarState = () => {
   return window.innerWidth >= MOBILE_BREAKPOINT;
 };
 
-const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel }) => {
+const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, marketplaceOnly = false }) => {
 
   const [isOpen, setIsOpen] = useState(getInitialSidebarState);
 
@@ -36,12 +36,13 @@ const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel }) =
         <StudentSidebar
           isOpen={isOpen}
           setIsOpen={setIsOpen}
+          marketplaceOnly={marketplaceOnly}
         />
       </div>
 
       <main className="flex-1 h-full overflow-y-auto p-3 md:p-6">
          <Breadcrumbs
-           homeTo="/student-dashboard"
+           homeTo={marketplaceOnly ? "/learner-dashboard" : "/student-dashboard"}
            dynamicLabels={breadcrumbLabels}
            currentPageLabel={breadcrumbCurrentLabel}
          />

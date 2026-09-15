@@ -1166,6 +1166,10 @@ export const saveCourseToApi = async ({
         await updateCourseLesson(id, existingLessonId, {
           title: lesson.title,
           description: lesson.description || "",
+          durationSeconds: Math.max(
+            0,
+            Number(lesson.durationSeconds ?? Number(lesson.duration || 0) * 60),
+          ),
           ...(!lesson.media?.file ? { contentType: lessonContentType } : {}),
           isPreview: Boolean(lesson.preview),
         });
@@ -1174,6 +1178,10 @@ export const saveCourseToApi = async ({
         const lessonResponse = await createCourseLesson(id, sectionId, {
           title: lesson.title,
           description: lesson.description || "",
+          durationSeconds: Math.max(
+            0,
+            Number(lesson.durationSeconds ?? Number(lesson.duration || 0) * 60),
+          ),
           contentType: lessonContentType,
           isPreview: Boolean(lesson.preview),
         });
@@ -1198,6 +1206,12 @@ export const saveCourseToApi = async ({
           contentType,
           progressHandler(`جاري رفع محتوى الدرس: ${lesson.title}`),
         );
+        await updateCourseLesson(id, lessonId, {
+          durationSeconds: Math.max(
+            0,
+            Number(lesson.durationSeconds ?? Number(lesson.duration || 0) * 60),
+          ),
+        });
       }
       if (lessonId) {
         const storedAttachments = savedLesson.attachments || [];
