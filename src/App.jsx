@@ -109,6 +109,7 @@ import CourseDetailsPage from "./pages/CourseDetailsPage";
 import ExamPage from "./pages/student/ExamPage";
 import ExamResultPage from "./pages/student/ExamResultPage";
 import CourseCertificatePage from "./pages/CourseCertificatePage";
+import CertificateVerificationPage from "./pages/CertificateVerificationPage";
 import TeacherCoursesPage from "./features/course-management/pages/TeacherCoursesPage";
 import TeacherCourseFormPage from "./features/course-management/pages/TeacherCourseFormPage";
 import TeacherCourseDetailsPage from "./features/course-management/pages/TeacherCourseDetailsPage";
@@ -188,6 +189,8 @@ function App() {
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/courses/:slug" element={<CourseDetailsPage />} />
           <Route path="/instructors/:id" element={<InstructorPage />} />
+          <Route path="/certificates/verify" element={<CertificateVerificationPage />} />
+          <Route path="/certificates/verify/:certificateNumber" element={<CertificateVerificationPage />} />
           <Route path="/policies/instructor-agreement" element={<InstructorAgreementPage />} />
           <Route path="/policies/course-publishing" element={<InstructorAgreementPage policyType="course_publishing_policy" />} />
           <Route path="/policies/revenue-share" element={<InstructorAgreementPage policyType="revenue_share_agreement" />} />

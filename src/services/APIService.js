@@ -406,8 +406,8 @@ export const submitCourseQuizAttempt = (courseId, quizId, payload) =>
   API.post(`/courses/${courseId}/quizzes/${quizId}/attempts`, payload);
 export const getMyCourseQuizAttempts = (courseId, quizId) =>
   API.get(`/courses/${courseId}/quizzes/${quizId}/attempts`);
-export const verifyCourseCertificate = (verificationCode) =>
-  API.get(`/certificates/verify/${encodeURIComponent(verificationCode)}`);
+export const verifyCourseCertificate = (reference) =>
+  API.get(`/certificates/verify/${encodeURIComponent(reference)}`);
 export const getCourseCertificate = (id) => API.get(`/certificates/${id}`);
 export const getAdminCourseCertificates = (params) =>
   API.get("/admin/certificates", { params });

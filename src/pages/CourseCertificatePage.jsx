@@ -3,7 +3,8 @@ import { Award, Check, Copy, ExternalLink, LoaderCircle, Printer } from 'lucide-
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import StudentLayout from '../components/student/layout/StudentLayout';
-import logo from '../assets/icons/logo.svg';
+import certificateTemplate from '../../templates/certificate.png';
+import blankCertificateValues from '../../templates/certificate-values-blank.png';
 import { claimCourseCertificate, getCourseCertificateState } from '../services/APIService';
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
@@ -13,7 +14,7 @@ const localizedText = (value, fallback = '') => {
   return value.ar || value.en || fallback;
 };
 const formatDate = (value) => value
-  ? new Intl.DateTimeFormat('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value))
+  ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value))
   : '—';
 
 export default function CourseCertificatePage() {
@@ -61,9 +62,9 @@ export default function CourseCertificatePage() {
     </StudentLayout>
   );
 
-  const courseTitle = localizedText(certificate.courseTitle, state.course?.title);
+  const courseTitle = localizedText(certificate.courseTitle) || localizedText(state.course?.title);
   const completionDate = certificate.completionDate || state.completedAt || certificate.issuedAt;
-  const verificationUrl = `https://api.alacademeya.com/api/certificates/verify/${encodeURIComponent(certificate.verificationCode)}`;
+  const verificationUrl = `${window.location.origin}/certificates/verify/${encodeURIComponent(certificate.certificateNumber)}`;
   const copyVerification = async () => {
     try {
       await navigator.clipboard.writeText(verificationUrl);
@@ -76,7 +77,7 @@ export default function CourseCertificatePage() {
   return (
     <StudentLayout>
       <main dir='rtl' className='certificate-page min-h-screen bg-[#F4F7FB] px-4 py-8 sm:px-6'>
-        <style>{`@media print { @page { size: A4 landscape; margin: 0; } body * { visibility: hidden; } .certificate-sheet, .certificate-sheet * { visibility: visible; } .certificate-sheet { position: fixed !important; inset: 0 !important; width: 297mm !important; height: 210mm !important; box-shadow: none !important; border-radius: 0 !important; } .certificate-actions, header, aside, nav { display: none !important; } }`}</style>
+        <style>{`@media print { @page { size: A4 landscape; margin: 0; } body * { visibility: hidden; } .certificate-sheet, .certificate-sheet * { visibility: visible; } .certificate-sheet { position: fixed !important; top: 6mm !important; left: 0 !important; width: 297mm !important; height: auto !important; aspect-ratio: 800 / 533 !important; box-shadow: none !important; border-radius: 0 !important; } .certificate-actions, header, aside, nav { display: none !important; } }`}</style>
         <div className='mx-auto max-w-6xl'>
           <div className='certificate-actions mb-6 text-center'>
             <div className='mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#D9F9F4] text-[#079C89]'><Check size={27} strokeWidth={3} /></div>
@@ -84,43 +85,28 @@ export default function CourseCertificatePage() {
             <p className='mt-1 text-sm text-[#667085]'>يمكنك طباعتها أو حفظها بصيغة PDF ومشاركة رابط التحقق الرسمي.</p>
           </div>
 
-          <section className='certificate-sheet relative mx-auto aspect-[1.414/1] w-full overflow-hidden rounded-2xl bg-[#FCFBF7] shadow-[0_20px_60px_rgba(18,60,145,.16)]'>
-            <div className='absolute inset-3 border border-[#C7A95A]' />
-            <div className='absolute inset-5 border-[3px] border-[#123C91]' />
-            <div className='absolute inset-7 border border-[#C7A95A]/70' />
-            <div aria-hidden className='absolute -left-24 -top-24 h-64 w-64 rotate-45 border-[24px] border-[#123C91]/[.06]' />
-            <div aria-hidden className='absolute -bottom-24 -right-24 h-64 w-64 rotate-45 border-[24px] border-[#123C91]/[.06]' />
-            <div aria-hidden className='absolute inset-0 grid place-items-center text-[22vw] font-black text-[#123C91]/[.025]'>A</div>
-
-            <div className='relative flex h-full flex-col items-center px-[8%] py-[6%] text-center text-[#17213A]'>
-              <img src={logo} alt='الأكاديمية' className='h-12 w-auto sm:h-16' />
-              <p className='mt-2 text-[10px] font-bold tracking-[.35em] text-[#68748A] sm:text-xs'>ALACADEMEYA</p>
-              <div className='mt-[3%] h-px w-28 bg-[#C7A95A]' />
-              <h2 className='mt-[2%] font-serif text-2xl font-bold tracking-[.12em] text-[#123C91] sm:text-5xl'>شهادة إتمام</h2>
-              <p className='mt-2 text-xs text-[#68748A] sm:text-base'>تشهد الأكاديمية بأن</p>
-              <h3 className='mt-[2%] border-b-2 border-[#C7A95A] px-8 pb-2 text-2xl font-black text-[#17213A] sm:text-5xl'>{certificate.learnerName}</h3>
-              <p className='mt-[2%] text-xs text-[#68748A] sm:text-base'>قد أتم بنجاح متطلبات الدورة التدريبية</p>
-              <h4 className='mt-2 max-w-3xl text-lg font-extrabold text-[#123C91] sm:text-3xl'>{courseTitle}</h4>
-
-              <div className='mt-auto grid w-full grid-cols-3 items-end gap-3 text-[9px] sm:text-sm'>
-                <div className='text-right'>
-                  <p className='font-bold text-[#17213A]'>{formatDate(completionDate)}</p>
-                  <div className='mt-2 h-px bg-[#AAB4C5]' />
-                  <p className='mt-1 text-[#68748A]'>تاريخ إتمام الدورة</p>
-                </div>
-                <div className='flex flex-col items-center'>
-                  <div className='grid h-12 w-12 place-items-center rounded-full border-2 border-[#C7A95A] bg-[#123C91] text-white shadow sm:h-20 sm:w-20'>
-                    <Award className='h-7 w-7 sm:h-11 sm:w-11' />
-                  </div>
-                  <p className='mt-2 font-mono text-[8px] font-bold text-[#68748A] sm:text-xs'>{certificate.certificateNumber}</p>
-                </div>
-                <div className='text-left'>
-                  <p className='font-bold text-[#17213A]'>{certificate.instructorName || 'محاضر الدورة'}</p>
-                  <div className='mt-2 h-px bg-[#AAB4C5]' />
-                  <p className='mt-1 text-[#68748A]'>محاضر الدورة</p>
-                </div>
+          <section dir='ltr' className='certificate-sheet relative mx-auto aspect-[800/533] w-full overflow-hidden shadow-[0_20px_60px_rgba(18,60,145,.16)]'>
+            <img src={certificateTemplate} alt='' aria-hidden='true' className='absolute inset-0 h-full w-full' />
+            <svg aria-hidden='true' className='absolute inset-0 h-full w-full' viewBox='0 0 800 533' preserveAspectRatio='none'>
+              <defs>
+                <clipPath id='certificate-value-patches'>
+                  <rect x='285' y='233' width='230' height='52' />
+                  <rect x='312' y='345' width='176' height='38' />
+                  <rect x='88' y='391' width='155' height='33' />
+                  <rect x='588' y='392' width='118' height='33' />
+                </clipPath>
+              </defs>
+              <image href={blankCertificateValues} width='800' height='533' preserveAspectRatio='none' clipPath='url(#certificate-value-patches)' />
+            </svg>
+            <div className='certificate-overlays absolute inset-0 text-center text-[#17213A]'>
+              <h3 dir='auto' className='certificate-learner'>{certificate.learnerName}</h3>
+              <h4 dir='auto' className='certificate-course'>{courseTitle}</h4>
+              <p dir='auto' className='certificate-instructor'>{certificate.instructorName || '—'}</p>
+              <div className='certificate-footer certificate-id'>
+                <span>Certificate ID</span>
+                <strong>{certificate.certificateNumber}</strong>
               </div>
-              <p className='mt-[2%] max-w-full truncate font-mono text-[7px] text-[#98A2B3] sm:text-[10px]'>رمز التحقق: {certificate.verificationCode}</p>
+              <p className='certificate-date'>{formatDate(completionDate)}</p>
             </div>
           </section>
 

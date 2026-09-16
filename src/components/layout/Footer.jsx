@@ -62,6 +62,7 @@ const Footer = () => {
           <ul className="space-y-3">
             <li><button onClick={() => handleScroll("features")} className="text-primary hover:text-[#12C6B0] transition-colors duration-300">عن الأكاديمية</button></li>
             <li><button onClick={() => handleScroll("faq")} className="text-primary hover:text-[#12C6B0] transition-colors duration-300">الأسئلة الشائعة</button></li>
+            <li><Link to="/certificates/verify" className="text-primary hover:text-[#12C6B0] transition-colors duration-300">التحقق من الشهادة</Link></li>
           </ul>
         </div>
 

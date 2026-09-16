@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Tajaw al:wght@300;400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap");
 
 @import "tailwindcss";
 
@@ -56,6 +56,89 @@ body {
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.certificate-page {
+  font-family: "IBM Plex Sans", "IBM Plex Sans Arabic", sans-serif;
+}
+
+.certificate-page h1 {
+  font-family: "Tajawal", sans-serif;
+}
+
+.certificate-sheet {
+  container-type: inline-size;
+}
+
+.certificate-overlays > * {
+  position: absolute;
+  margin: 0;
+}
+
+.certificate-learner,
+.certificate-course {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 76%;
+  line-height: 1.2;
+}
+
+.certificate-learner {
+  top: 45%;
+  font-family: Georgia, "Times New Roman", "Liberation Serif", "IBM Plex Sans Arabic", serif;
+  font-size: 3.8cqw;
+  font-weight: 400;
+  color: #123c91;
+}
+
+.certificate-course {
+  top: 64.2%;
+  width: 75%;
+  font-family: Georgia, "Times New Roman", "Liberation Serif", "IBM Plex Sans Arabic", "Tajawal", serif;
+  font-size: 2.7cqw;
+  font-weight: 400;
+  color: #123c91;
+}
+
+.certificate-instructor {
+  top: 74.5%;
+  left: 10%;
+  width: 20%;
+  font-family: "IBM Plex Sans", "IBM Plex Sans Arabic", "Tajawal", sans-serif;
+  font-size: 2.4cqw;
+  font-style: italic;
+  text-align: center;
+  color: #344054;
+}
+
+.certificate-id {
+  top: 77%;
+  left: 36.5%;
+  width: 27%;
+  display: flex;
+  flex-direction: column;
+  gap: .8cqw;
+  font-size: 1.7cqw;
+  line-height: 1.2;
+  text-align: center;
+  color: #596375;
+}
+
+.certificate-id strong {
+  font-size: 1.85cqw;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  color: #123c91;
+}
+
+.certificate-date {
+  top: 74.8%;
+  right: 10%;
+  width: 20%;
+  font-family: "IBM Plex Sans", "IBM Plex Sans Arabic", "Tajawal", sans-serif;
+  font-size: 2.1cqw;
+  text-align: center;
+  color: #123c91;
 }
 
 /* =========================
