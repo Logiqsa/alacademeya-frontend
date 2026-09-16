@@ -1,30 +1,58 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, CircleHelp, LoaderCircle, RotateCcw, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getCourseQuiz, submitCourseQuizAttempt } from '../../services/APIService';
+import { getCourseQuiz, getMyCourseQuizAttempts, submitCourseQuizAttempt } from '../../services/APIService';
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 
-export default function InlineCourseQuiz({ courseId, quizId, onClose, onCompleted }) {
+export default function InlineCourseQuiz({ courseId, quizId, onClose, onCompleted, onCompleteLesson }) {
   const [quiz, setQuiz] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const [attemptHistoryError, setAttemptHistoryError] = useState(false);
 
   useEffect(() => {
     let active = true;
-    getCourseQuiz(courseId, quizId)
-      .then((response) => {
+    const loadQuiz = async () => {
+      let nextQuiz = null;
+      try {
+        const response = await getCourseQuiz(courseId, quizId);
         if (!active) return;
-        setQuiz(unwrap(response));
-        setResult(null);
+        nextQuiz = unwrap(response);
+        setQuiz(nextQuiz);
+        let lastAttempt = null;
+        if (nextQuiz.attemptsRemaining === 0) {
+          const attemptsResponse = await getMyCourseQuizAttempts(courseId, quizId);
+          if (!active) return;
+          const attempts = unwrap(attemptsResponse);
+          lastAttempt = Array.isArray(attempts)
+            ? attempts.reduce((latest, attempt) =>
+                !latest || Number(attempt.attemptNumber) > Number(latest.attemptNumber)
+                  ? attempt : latest, null)
+            : null;
+        }
+        setAttemptHistoryError(false);
+        setResult(lastAttempt ? {
+          ...lastAttempt,
+          attemptsUsed: nextQuiz.attemptsUsed,
+          attemptsRemaining: 0,
+          maxAttempts: nextQuiz.maxAttempts,
+          finalAttempt: true,
+        } : null);
         setAnswers({});
         setCurrentQuestion(0);
-      })
-      .catch((error) => toast.error(error?.response?.data?.message || 'تعذر تحميل الاختبار'))
-      .finally(() => { if (active) setLoading(false); });
+      } catch (error) {
+        if (!active) return;
+        if (nextQuiz?.attemptsRemaining === 0) setAttemptHistoryError(true);
+        toast.error(error?.response?.data?.message || (nextQuiz?.attemptsRemaining === 0 ? 'تعذر تحميل نتيجة آخر محاولة' : 'تعذر تحميل الاختبار'));
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    loadQuiz();
     return () => { active = false; };
   }, [courseId, quizId]);
 
@@ -43,7 +71,7 @@ export default function InlineCourseQuiz({ courseId, quizId, onClose, onComplete
         })),
       });
       const submittedResult = unwrap(response);
-      setResult(submittedResult);
+      setResult({ ...submittedResult, finalAttempt: submittedResult.attemptsRemaining === 0 });
       setQuiz((current) => ({
         ...current,
         attemptsUsed: submittedResult.attemptsUsed,
@@ -54,6 +82,7 @@ export default function InlineCourseQuiz({ courseId, quizId, onClose, onComplete
     } catch (error) {
       if (error?.response?.data?.code === 'QUIZ_MAX_ATTEMPTS_REACHED') {
         setQuiz((current) => ({ ...current, attemptsRemaining: 0 }));
+        setAttemptHistoryError(true);
       }
       toast.error(error?.response?.data?.message || 'تعذر تسليم الاختبار');
     } finally {
@@ -62,12 +91,15 @@ export default function InlineCourseQuiz({ courseId, quizId, onClose, onComplete
   };
 
   if (loading) return <div className='grid h-full w-full place-items-center'><LoaderCircle className='animate-spin text-[#79A7FF]' /></div>;
-  if (!quiz || !questions.length) return <div className='p-8 text-center text-white/75'>لا توجد أسئلة متاحة في هذا الاختبار.</div>;
+  if (!quiz) return <div className='p-8 text-center text-white/75'>تعذر تحميل الاختبار.</div>;
+  if (quiz.attemptsRemaining === 0 && !result) return <div className='flex h-full w-full items-center justify-center p-4'><div className='w-full max-w-xl rounded-2xl bg-white p-6 text-center text-[#202936]'><h2 className='text-xl font-extrabold'>انتهت محاولات الاختبار</h2><p className='mt-3 text-sm text-[#667085]'>{attemptHistoryError ? 'تعذر تحميل نتيجة آخر محاولة حاليًا.' : 'لا توجد نتيجة مسجلة لآخر محاولة.'}</p><button type='button' onClick={onClose} className='mt-5 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white'>العودة للدروس</button></div></div>;
   if (result) {
     const score = result.score || result;
     const canRetry = !result.passed && (result.attemptsRemaining === null || result.attemptsRemaining > 0);
-    return <div className='flex h-full w-full items-center justify-center overflow-y-auto p-4 sm:p-8'><div className='w-full max-w-xl rounded-2xl bg-white p-6 text-center text-[#202936] shadow-2xl'><span className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${result.passed ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>{result.passed ? <CheckCircle2 size={32} /> : <XCircle size={32} />}</span><h2 className='mt-4 text-xl font-extrabold'>{result.passed ? 'أحسنت، اجتزت الاختبار!' : 'لم تصل إلى درجة النجاح بعد'}</h2><strong className={`mt-3 block text-4xl ${result.passed ? 'text-emerald-600' : 'text-red-600'}`}>{Math.round(Number(score.percentage) || 0)}%</strong><p className='mt-2 text-sm text-[#667085]'>أجبت عن {Number(score.correctCount) || 0} من {Number(score.totalQuestions) || questions.length} إجابات صحيحة</p>{result.maxAttempts != null && <p className='mt-2 text-xs font-bold text-[#667085]'>المحاولة {result.attemptsUsed} من {result.maxAttempts} · المتبقي {result.attemptsRemaining}</p>}<div className='mt-5 flex justify-center gap-2'>{canRetry && <button type='button' onClick={() => { setResult(null); setAnswers({}); setCurrentQuestion(0); }} className='inline-flex items-center gap-2 rounded-xl border border-[#123C91] px-5 py-2.5 text-sm font-bold text-[#123C91]'><RotateCcw size={16} />إعادة المحاولة</button>}<button type='button' onClick={onClose} className='rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white'>العودة للدروس</button></div></div></div>;
+    return <div className='flex h-full w-full items-center justify-center overflow-y-auto p-4 sm:p-8'><div className='w-full max-w-xl rounded-2xl bg-white p-6 text-center text-[#202936] shadow-2xl'><span className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${result.passed ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>{result.passed ? <CheckCircle2 size={32} /> : <XCircle size={32} />}</span><h2 className='mt-4 text-xl font-extrabold'>{result.finalAttempt ? 'انتهى الاختبار — نتيجة آخر محاولة' : result.passed ? 'أحسنت، اجتزت الاختبار!' : 'لم تصل إلى درجة النجاح بعد'}</h2><strong className={`mt-3 block text-4xl ${result.passed ? 'text-emerald-600' : 'text-red-600'}`}>{Math.round(Number(score.percentage) || 0)}%</strong><p className='mt-2 text-sm font-bold text-[#667085]'>{result.passed ? 'ناجح' : 'لم تجتز الاختبار'}</p>{score.correctCount != null && score.totalQuestions != null && <p className='mt-2 text-sm text-[#667085]'>أجبت عن {score.correctCount} من {score.totalQuestions} إجابات صحيحة</p>}{result.maxAttempts != null && <p className='mt-2 text-xs font-bold text-[#667085]'>المحاولة {result.attemptsUsed} من {result.maxAttempts} · المتبقي {result.attemptsRemaining}</p>}<div className='mt-5 flex flex-wrap justify-center gap-2'>{result.finalAttempt && onCompleteLesson && <button type='button' onClick={onCompleteLesson} className='rounded-xl bg-[#078C79] px-5 py-2.5 text-sm font-bold text-white'>إكمال الدرس الحالي</button>}{canRetry && <button type='button' onClick={() => { setResult(null); setAnswers({}); setCurrentQuestion(0); }} className='inline-flex items-center gap-2 rounded-xl border border-[#123C91] px-5 py-2.5 text-sm font-bold text-[#123C91]'><RotateCcw size={16} />إعادة المحاولة</button>}<button type='button' onClick={onClose} className='rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white'>العودة للدروس</button></div></div></div>;
   }
+
+  if (!questions.length) return <div className='p-8 text-center text-white/75'>لا توجد أسئلة متاحة في هذا الاختبار.</div>;
 
   const question = questions[currentQuestion];
   const questionId = question.id || question._id;
