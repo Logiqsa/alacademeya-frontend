@@ -66,6 +66,7 @@ import {
   deleteCourseLessonAttachment,
 } from "../../../services/APIService";
 import { normalizeApiError } from "../../../services/apiError";
+import { countCompletedLessons } from "./lessonProgress";
 
 const valueOf = (value, fallback = "") => {
   if (value == null) return fallback;
@@ -738,12 +739,36 @@ export const fetchTeacherCourseEnrollments = async (id) =>
 
 export const fetchStudentCourses = async (params) => {
   const enrollments = listOf(await getMyCourseEnrollments(params));
-  return enrollments.map((enrollment) => ({
+  const courses = enrollments.map((enrollment) => ({
     ...normalizeCourse(enrollment),
     enrollmentStatus: enrollment.status || "active",
     enrollmentRevokedAt: enrollment.revokedAt,
     enrollmentRevocationReason: enrollment.revocationReason,
   }));
+  // The enrollment summary can omit completedLessonsCount even when it has a
+  // progress percentage. The learning view contains the actual lesson states.
+  const withLessonCounts = async (course) => {
+    if (!course.id || course.enrollmentStatus === "revoked") return course;
+    const view = await fetchCourseLearningView(course.id);
+    const lessonCounts = countCompletedLessons(view?.curriculum);
+    if (!lessonCounts) return course;
+    return {
+      ...course,
+      progressData: {
+        ...course.progressData,
+        ...lessonCounts,
+      },
+    };
+  };
+  const results = [];
+  for (let index = 0; index < courses.length; index += 5) {
+    results.push(...await Promise.allSettled(
+      courses.slice(index, index + 5).map(withLessonCounts),
+    ));
+  }
+  return results.map((result, index) =>
+    result.status === "fulfilled" ? result.value : courses[index],
+  );
 };
 
 export const fetchAdminCourses = async (params) => {
