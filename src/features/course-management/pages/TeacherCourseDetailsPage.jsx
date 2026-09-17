@@ -38,6 +38,7 @@ import {
 import { getApiErrorMessage } from "../../../services/apiError";
 import { getEarningsCourses, getEarningsHistory } from "../../instructor-earnings/api/earningsApi";
 import BrandMediaPlayer from "../../../components/media/BrandMediaPlayer";
+import { formatCourseDuration } from "../../../utils/courseDuration";
 
 const tabs = [
   { id: "overview", label: "نظرة عامة", icon: LayoutGrid },
@@ -135,7 +136,7 @@ const OverviewTab = ({ course, coverSrc, totalLessons, totalQuizzes }) => {
           <span className="inline-flex items-center gap-1.5"><Layers3 size={14} className="text-[#123C91]" />{course.curriculum?.length || 0} أقسام</span>
           <span className="inline-flex items-center gap-1.5"><Video size={14} className="text-[#123C91]" />{totalLessons} دروس</span>
           <span className="inline-flex items-center gap-1.5"><CircleHelp size={14} className="text-[#123C91]" />{totalQuizzes} اختبارات</span>
-          <span className="inline-flex items-center gap-1.5"><Clock3 size={14} className="text-[#123C91]" />{course.duration || 0} ساعة</span>
+          <span className="inline-flex items-center gap-1.5"><Clock3 size={14} className="text-[#123C91]" />{formatCourseDuration(course)}</span>
         </div>
 
         <div className="mt-5">

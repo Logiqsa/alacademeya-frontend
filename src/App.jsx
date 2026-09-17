@@ -109,6 +109,7 @@ import CourseDetailsPage from "./pages/CourseDetailsPage";
 import ExamPage from "./pages/student/ExamPage";
 import ExamResultPage from "./pages/student/ExamResultPage";
 import CourseCertificatePage from "./pages/CourseCertificatePage";
+import MyCertificatesPage from "./pages/MyCertificatesPage";
 import CertificateVerificationPage from "./pages/CertificateVerificationPage";
 import TeacherCoursesPage from "./features/course-management/pages/TeacherCoursesPage";
 import TeacherCourseFormPage from "./features/course-management/pages/TeacherCourseFormPage";
@@ -522,6 +523,7 @@ function App() {
             </StudentGuard>
           }
         />
+        <Route path="/my-certificates" element={<StudentGuard><MyCertificatesPage /></StudentGuard>} />
         {/* ✅ Teacher — محمي بـ TeacherGuard */}
         <Route
           path="/teacher-dashboard"

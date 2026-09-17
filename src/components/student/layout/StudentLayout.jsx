@@ -40,7 +40,7 @@ const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, mar
         />
       </div>
 
-      <main className="flex-1 h-full overflow-y-auto p-3 md:p-6">
+      <main data-route-scroll className="flex-1 h-full overflow-y-auto p-3 md:p-6">
          <Breadcrumbs
            homeTo={marketplaceOnly ? "/learner-dashboard" : "/student-dashboard"}
            dynamicLabels={breadcrumbLabels}

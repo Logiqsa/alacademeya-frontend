@@ -5,11 +5,13 @@ import App from "./App";
 import "./index.css";
 // main.jsx
 import { AuthContextProvider } from "./context/AuthContext";
+import ScrollToTopOnNavigate from "./components/navigation/ScrollToTopOnNavigate";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthContextProvider>
       <BrowserRouter>
+        <ScrollToTopOnNavigate />
         <App />
       </BrowserRouter>
     </AuthContextProvider>

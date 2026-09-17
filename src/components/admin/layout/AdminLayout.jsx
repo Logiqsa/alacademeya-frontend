@@ -45,7 +45,7 @@ const AdminLayout = ({ children }) => {
         <AdminSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
       </div>
 
-      <main className="admin-main-scroll h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 md:p-6">
+      <main data-route-scroll className="admin-main-scroll h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 md:p-6">
         {children}
       </main>
     </div>

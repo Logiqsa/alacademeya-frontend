@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Filter, Minus, Search, SlidersHorizontal } from "lucide-react";
 import CourseCard from "../components/courses/CourseCard";
-import { fetchPublicCourses } from "../features/course-management/api/coursesApi";
+import { fetchPublicCourses, fetchStudentCourses } from "../features/course-management/api/coursesApi";
+import { AuthContext } from "../context/AuthContext";
 
 const classifications = ["تقنية", "تأسيس أطفال", "تربية"];
 const subjects = ["لغة عربية", "رياضيات", "فيزياء", "كيمياء"];
@@ -40,7 +41,9 @@ const CheckboxGroup = ({ title, items, selected, onToggle }) => (
 );
 
 export default function CoursesPage() {
+  const { user } = useContext(AuthContext);
   const [courses, setCourses] = useState([]);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
@@ -65,7 +68,23 @@ export default function CoursesPage() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!user) return undefined;
+    let active = true;
+    fetchStudentCourses()
+      .then((items) => { if (active) setEnrolledCourses(items); })
+      .catch(() => { /* Public courses remain available if enrollment lookup fails. */ });
+    return () => { active = false; };
+  }, [user]);
+
+  const enrollmentByCourseId = useMemo(() => new Map(
+    (user ? enrolledCourses : [])
+      .filter((course) => course.enrollmentStatus !== 'revoked')
+      .map((course) => [String(course.id), course]),
+  ), [enrolledCourses, user]);
+
   const toggleValue = (setter) => (value) => {
+    setCurrentPage(1);
     setter((current) =>
       current.includes(value)
         ? current.filter((item) => item !== value)
@@ -74,6 +93,7 @@ export default function CoursesPage() {
   };
 
   const resetFilters = () => {
+    setCurrentPage(1);
     setSelectedClassifications([]);
     setSelectedSubjects([]);
     setSelectedStages([]);
@@ -154,21 +174,6 @@ export default function CoursesPage() {
     currentPage * COURSES_PER_PAGE,
   );
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [
-    query,
-    selectedClassifications,
-    selectedSubjects,
-    selectedStages,
-    selectedGrades,
-    selectedLanguages,
-    selectedLevels,
-    selectedPrices,
-    selectedAudiences,
-    sortBy,
-  ]);
-
   return (
     <div className="min-h-screen bg-white py-14" dir="rtl">
       <div className="mx-auto w-full max-w-[1500px] px-4 md:px-8">
@@ -186,7 +191,7 @@ export default function CoursesPage() {
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8A94A3]" size={18} />
             <input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => { setQuery(event.target.value); setCurrentPage(1); }}
               placeholder="بحث..."
               className="h-12 w-full rounded-lg border border-[#DDE4EC] bg-white pr-12 pl-4 text-right text-sm outline-none focus:border-[#123C91]"
             />
@@ -195,7 +200,7 @@ export default function CoursesPage() {
           <label className="relative block">
             <select
               value={sortBy}
-              onChange={(event) => setSortBy(event.target.value)}
+              onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }}
               className="h-12 w-full appearance-none rounded-lg border border-[#DDE4EC] bg-white px-4 pl-10 text-sm text-[#556171] outline-none focus:border-[#123C91]"
             >
               <option value="popular">الأكثر شعبية</option>
@@ -320,7 +325,7 @@ export default function CoursesPage() {
             ) : filteredCourses.length ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),280px))] justify-center gap-4 sm:justify-start">
                 {paginatedCourses.map((course) => (
-                  <CourseCard key={course.id} course={course} compact />
+                  <CourseCard key={course.id} course={course} enrollment={enrollmentByCourseId.get(String(course.id))} compact />
                 ))}
               </div>
             ) : (

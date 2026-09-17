@@ -18,6 +18,7 @@ import logoutIcon from "../../../assets/icons/logout.png";
 const ParentSidebar = ({ isOpen, setIsOpen }) => {
   const unread = useSidebarUnread();
   const menu = [
+    { title: "شهاداتي", icon: dashboardIcon, path: "/my-certificates" },
     {
       title: "لوحة التحكم",
       icon: dashboardIcon,

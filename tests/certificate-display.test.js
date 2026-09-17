@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
+import { shortInstructorName } from '../src/utils/certificateDisplay.js';
 
 const page = readFileSync(new URL('../src/pages/CourseCertificatePage.jsx', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
@@ -8,10 +9,12 @@ const styles = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8'
 test('certificate artwork and verification link use the public certificateNumber', () => {
   const sheet = page.match(/<section[^>]*className='certificate-sheet[\s\S]*?<\/section>/)?.[0];
   assert.ok(sheet, 'certificate sheet exists');
-  for (const field of ['learnerName', 'courseTitle', 'instructorName', 'certificateNumber']) {
+  for (const field of ['learnerName', 'courseTitle', 'certificateNumber']) {
     assert.match(sheet, new RegExp(`certificate\\.${field}|\\{${field}\\}`));
   }
   assert.match(sheet, /formatDate\(completionDate\)/);
+  assert.match(sheet, /\{displayInstructorName\}/);
+  assert.match(page, /shortInstructorName\(certificate\.instructorName\)/);
   assert.match(sheet, /Certificate ID/);
   assert.doesNotMatch(sheet, /CERTIFICATE OF COMPLETION|This certifies that|has successfully completed the course/);
   assert.match(sheet, /<h4 dir='auto' className='certificate-course'>\{courseTitle\}<\/h4>/);
@@ -24,6 +27,13 @@ test('certificate artwork and verification link use the public certificateNumber
   assert.doesNotMatch(page, /certificate\.verificationCode/);
   assert.match(page, /verify\/\$\{encodeURIComponent\(certificate\.certificateNumber\)\}/);
   assert.match(page, /\.certificate-sheet, \.certificate-sheet \* \{ visibility: visible; \}/);
+});
+
+test('certificate keeps the instructor signature on one line with two names', () => {
+  assert.equal(shortInstructorName('  Mahmoud   Said   Mahmoud  '), 'Mahmoud Said');
+  assert.equal(shortInstructorName('محمود سعيد محمد'), 'محمود سعيد');
+  assert.equal(shortInstructorName(''), '—');
+  assert.match(styles, /\.certificate-instructor\s*\{[^}]*white-space: nowrap;/);
 });
 
 test('certificate headings and body use the requested font families', () => {

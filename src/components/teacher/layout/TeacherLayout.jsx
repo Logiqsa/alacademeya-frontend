@@ -42,7 +42,7 @@ const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel }) =
           setIsOpen={setIsOpen}
         />
       </div>
-      <main className="flex-1 h-full overflow-y-auto p-3 md:p-6">
+      <main data-route-scroll className="flex-1 h-full overflow-y-auto p-3 md:p-6">
          <Breadcrumbs
            homeTo={getDashboardPathByRole(user, "/teacher-dashboard")}
            dynamicLabels={breadcrumbLabels}

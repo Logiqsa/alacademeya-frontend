@@ -47,6 +47,7 @@ import ReviewsPanel from "../components/reviews/ReviewsPanel";
 import ModerationHistoryPanel from "../components/ModerationHistoryPanel";
 import { getCourseEarningsByCourse } from "../../admin-finances/api/courseEarningsApi";
 import BrandMediaPlayer from "../../../components/media/BrandMediaPlayer";
+import { formatCourseDuration } from "../../../utils/courseDuration";
 import {
   getAdminCourseEnrollments,
   getAdminCoursePurchases,
@@ -284,7 +285,7 @@ const OverviewTab = ({ course, coverSrc, totalLessons, totalQuizzes }) => {
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Clock3 size={14} className="text-[#123C91]" />
-            {course.duration || 0} ساعة
+            {formatCourseDuration(course)}
           </span>
         </div>
 

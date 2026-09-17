@@ -1,18 +1,25 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import CourseCard from "../courses/CourseCard";
 import { fetchPublicCourses } from "../../features/course-management/api/coursesApi";
 
 export default function FeaturedCourses() {
   const [courses, setCourses] = useState([]);
+  const [reference, setReference] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Public courses are already restricted by the API to approved/published items.
-    fetchPublicCourses({ limit: 6 })
+    fetchPublicCourses({ sort: "bestselling", limit: 6 })
       .then((items) => setCourses(items.slice(0, 6)))
       .catch(() => setCourses([]));
   }, []);
+  const verifyCertificate = (event) => {
+    event.preventDefault();
+    const value = reference.trim();
+    if (value) navigate(`/certificates/verify/${encodeURIComponent(value)}`);
+  };
   return (
     <section id="courses" className="w-full bg-[#FBFCFE] py-12 sm:py-16" dir="rtl">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
@@ -41,6 +48,15 @@ export default function FeaturedCourses() {
           >
             عرض جميع الدورات <ArrowLeft size={18} />
           </Link>
+        </div>
+        <div className="mx-auto mt-12 max-w-3xl rounded-2xl border border-[#DDE6F2] bg-white p-5 shadow-sm sm:p-8">
+          <h3 className="text-xl font-extrabold text-[#123C91]">التحقق من الشهادة</h3>
+          <p className="mt-2 text-sm text-[#657080]">أدخل رقم الشهادة المكتوب عليها لعرض نتيجة التحقق الرسمية.</p>
+          <form onSubmit={verifyCertificate} className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <label htmlFor="featured-certificate-reference" className="sr-only">رقم الشهادة</label>
+            <input id="featured-certificate-reference" dir="ltr" value={reference} onChange={(event) => setReference(event.target.value)} maxLength={128} required autoComplete="off" placeholder="CERT-2026-A7B9C2D4" className="min-w-0 flex-1 rounded-xl border border-[#C9D5E5] px-4 py-3 text-left outline-none focus:border-[#123C91] focus:ring-2 focus:ring-[#123C91]/15" />
+            <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#123C91] px-7 py-3 font-bold text-white hover:bg-[#0E3279]"><Search size={18} />تحقق من الشهادة</button>
+          </form>
         </div>
       </div>
     </section>

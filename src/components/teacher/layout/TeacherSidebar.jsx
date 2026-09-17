@@ -78,6 +78,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
     {
       label: "المحتوى والأرباح",
       items: [
+        { title: "شهاداتي", icon: dashboardIcon, path: "/my-certificates" },
         ...(canAccessInstructorArea
           ? [
               {

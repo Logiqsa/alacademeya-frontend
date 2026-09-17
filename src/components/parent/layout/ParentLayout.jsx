@@ -36,7 +36,7 @@ const ParentLayout = ({ children }) => {
         />
       </div>
 
-      <main className="flex-1 h-full overflow-y-auto p-4 md:p-6">
+      <main data-route-scroll className="flex-1 h-full overflow-y-auto p-4 md:p-6">
          <Breadcrumbs homeTo="/parent-dashboard" />
         <AccountStatusNotice />
         {children}

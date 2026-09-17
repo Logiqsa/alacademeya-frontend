@@ -97,7 +97,7 @@ function CertificateVerificationContent({ certificateNumber }) {
                   ['Completion Date', formatDate(result.completionDate)],
                   ['Issued Date', formatDate(result.issuedAt)],
                 ].map(([label, value]) => (
-                  <div key={label} className={label === 'Course' ? 'sm:col-span-2' : ''}>
+                  <div key={label}>
                     <dt className='text-sm text-[#667085]'>{label}</dt>
                     <dd dir={label === 'Course' ? 'auto' : undefined} className='mt-1 break-words font-semibold'>{value || '—'}</dd>
                   </div>

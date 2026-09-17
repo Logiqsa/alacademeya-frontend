@@ -67,6 +67,7 @@ import {
 } from "../../../services/APIService";
 import { normalizeApiError } from "../../../services/apiError";
 import { countCompletedLessons } from "./lessonProgress";
+import { retryCourseSaveStep } from "./retryCourseSaveStep";
 
 const valueOf = (value, fallback = "") => {
   if (value == null) return fallback;
@@ -328,6 +329,7 @@ export const normalizeCourse = (source = {}) => {
     duration: Number(
       course.durationHours ?? course.totalDurationHours ?? course.duration ?? 0,
     ),
+    durationSeconds: Number(course.durationSeconds ?? 0),
     lessons: Number(lessonCount),
     averageRating: Number(course.averageRating ?? course.rating ?? 0),
     ratingCount: Number(course.ratingCount ?? 0),
@@ -922,15 +924,24 @@ export const saveCourseToApi = async ({
   submit = false,
   onProgress = () => {},
   onCourseCreated = () => {},
+  onTaskStatus = () => {},
+  onRetryRequired,
+  onEntityCreated = () => {},
+  onFileSaved = () => {},
 }) => {
+  const runStep = (key, label, operation) => {
+    onProgress({ label, percent: 0 });
+    return retryCourseSaveStep({ key, label, operation, onStatus: onTaskStatus, onRetryRequired });
+  };
   onProgress({ label: "جاري حفظ بيانات الدورة", percent: 0 });
+  onTaskStatus({ key: 'course', label: 'حفظ بيانات الدورة', status: 'running' });
   const payload = coursePayload(course);
   let response;
   let id = courseId;
   if (courseId) {
-    response = await (admin
+    response = await runStep('course', 'حفظ بيانات الدورة', () => (admin
       ? updateAdminCourse(courseId, payload)
-      : updateMarketplaceCourse(courseId, payload));
+      : updateMarketplaceCourse(courseId, payload)));
   } else {
     // Paid courses are validated during creation, so their price must be sent
     // in the first request rather than waiting for the follow-up PATCH.
@@ -949,11 +960,12 @@ export const saveCourseToApi = async ({
     const created = responseCourse(response);
     id = created?._id || created?.id;
     if (id) onCourseCreated(id);
-    if (id) response = await updateMarketplaceCourse(id, payload);
+    if (id) response = await runStep('course', 'استكمال بيانات الدورة', () => updateMarketplaceCourse(id, payload));
   }
   let saved = responseCourse(response);
   id = saved?._id || saved?.id || id;
   if (!id) throw new Error("لم يُرجع الخادم معرّف الدورة");
+  onTaskStatus({ key: 'course', label: 'حفظ بيانات الدورة', status: 'done' });
 
   const progressHandler = (label) => (event) => {
     const percent = event.total
@@ -961,18 +973,22 @@ export const saveCourseToApi = async ({
       : 0;
     onProgress({ label, percent });
   };
-  if (course.cover?.file)
-    await (admin ? uploadAdminCourseCover : uploadCourseCover)(
+  if (course.cover?.file) {
+    await runStep('cover', 'رفع صورة الغلاف', () => (admin ? uploadAdminCourseCover : uploadCourseCover)(
       id,
       course.cover.file,
       progressHandler("جاري رفع صورة الغلاف"),
-    );
-  if (course.promoVideo?.file)
-    await (admin ? uploadAdminCoursePromoVideo : uploadCoursePromoVideo)(
+    ));
+    onFileSaved({ type: 'cover', file: course.cover.file });
+  }
+  if (course.promoVideo?.file) {
+    await runStep('promo', 'رفع الفيديو الترويجي', () => (admin ? uploadAdminCoursePromoVideo : uploadCoursePromoVideo)(
       id,
       course.promoVideo.file,
       progressHandler("جاري رفع الفيديو الترويجي"),
-    );
+    ));
+    onFileSaved({ type: 'promo', file: course.promoVideo.file });
+  }
 
   // Admin edits are intentionally limited to metadata and public media.
   // Curriculum ownership remains with the instructor.
@@ -984,18 +1000,10 @@ export const saveCourseToApi = async ({
   let storedSections = [];
   let storedQuizzes = [];
   if (courseId) {
-    try {
-      const detail = responseCourse(
-        await (admin ? getAdminCourse(id) : getMyTeacherCourse(id)),
-      );
-      storedSections =
-        detail?.sections ||
-        detail?.curriculum_sections ||
-        (Array.isArray(detail?.curriculum) ? detail.curriculum : []);
-      storedQuizzes = Array.isArray(detail?.quizzes) ? detail.quizzes : [];
-    } catch {
-      storedSections = [];
-    }
+    const detail = responseCourse(await runStep('course', 'تحميل المحتوى المحفوظ', () => (admin ? getAdminCourse(id) : getMyTeacherCourse(id))));
+    storedSections = detail?.sections || detail?.curriculum_sections || (Array.isArray(detail?.curriculum) ? detail.curriculum : []);
+    storedQuizzes = Array.isArray(detail?.quizzes) ? detail.quizzes : [];
+    onTaskStatus({ key: 'course', label: 'حفظ بيانات الدورة', status: 'done' });
   }
 
   const retainedSectionIds = new Set();
@@ -1020,30 +1028,53 @@ export const saveCourseToApi = async ({
     sectionIndex += 1
   ) {
     const section = course.curriculum[sectionIndex];
+    const sectionKey = `section:${section.id}`;
+    onTaskStatus({ key: sectionKey, label: section.title, status: 'running' });
     let savedSection = storedSections.find(
       (item) =>
         String(item._id || item.id) === String(section._id || section.id),
     );
     if (!savedSection && courseId && !section._isNew) {
-      throw reconciliationError("القسم");
+      const error = reconciliationError('القسم');
+      onTaskStatus({ key: sectionKey, label: section.title, status: 'failed', error });
+      throw error;
     }
     const existingSectionId = savedSection?._id || savedSection?.id;
     if (existingSectionId) {
-      await updateCourseSection(id, existingSectionId, {
+      await runStep(sectionKey, 'حفظ القسم', () => updateCourseSection(id, existingSectionId, {
         title: section.title,
         description: section.description || "",
-      });
+      }));
     }
     if (!savedSection) {
-      const sectionResponse = await createCourseSection(id, {
-        title: section.title,
-        description: section.description || "",
+      const sectionResponse = await runStep(sectionKey, 'إنشاء القسم', async () => {
+        try {
+          return await createCourseSection(id, {
+            title: section.title,
+            description: section.description || '',
+          });
+        } catch (error) {
+          // The server may have created it even when the response was lost.
+          try {
+            const detail = responseCourse(await (admin ? getAdminCourse(id) : getMyTeacherCourse(id)));
+            const sections = detail?.sections || detail?.curriculum_sections || detail?.curriculum || [];
+            const candidate = sections[sectionIndex];
+            const candidateId = candidate?._id || candidate?.id;
+            if (candidateId && candidate.title === section.title && !storedSections.some((item) => String(item._id || item.id) === String(candidateId)) && !retainedSectionIds.has(String(candidateId))) return candidate;
+          } catch { /* Keep the original create error for retry. */ }
+          throw error;
+        }
       });
       const sectionData = responseData(sectionResponse);
       savedSection = sectionData?.section || sectionData;
     }
     const sectionId = savedSection?._id || savedSection?.id;
-    if (!sectionId) continue;
+    if (!sectionId) {
+      const error = new Error('لم يُرجع الخادم معرّف القسم');
+      onTaskStatus({ key: sectionKey, label: section.title, status: 'failed', error });
+      throw error;
+    }
+    onEntityCreated({ type: 'section', localId: section.id, serverId: sectionId });
     retainedSectionIds.add(String(sectionId));
     orderedSectionIds.push(String(sectionId));
     const storedLessons = savedSection.lessons || [];
@@ -1055,6 +1086,8 @@ export const saveCourseToApi = async ({
       lessonIndex += 1
     ) {
       const lesson = section.lessons[lessonIndex];
+      const lessonKey = `lesson:${lesson.id}`;
+      onTaskStatus({ key: lessonKey, label: lesson.title, status: 'running' });
       if (lesson.type === "اختبار") {
         let savedQuiz = storedQuizzes.find(
           (quiz) =>
@@ -1062,7 +1095,9 @@ export const saveCourseToApi = async ({
             String(lesson.quizId || lesson._id || lesson.id),
         );
         if (!savedQuiz && lesson.quizId) {
-          throw reconciliationError("الاختبار");
+          const error = reconciliationError('الاختبار');
+          onTaskStatus({ key: lessonKey, label: lesson.title, status: 'failed', error });
+          throw error;
         }
         const quizPayload = {
           title: lesson.title || "اختبار الدورة",
@@ -1073,18 +1108,36 @@ export const saveCourseToApi = async ({
           lesson: lesson.lessonId || null,
         };
         if (savedQuiz) {
-          await updateCourseQuiz(
+          await runStep(lessonKey, 'حفظ الاختبار', () => updateCourseQuiz(
             id,
             savedQuiz._id || savedQuiz.id,
             quizPayload,
-          );
+          ));
         } else {
-          const quizResponse = await createCourseQuiz(id, quizPayload);
+          const quizResponse = await runStep(lessonKey, 'إنشاء الاختبار', async () => {
+            try { return await createCourseQuiz(id, quizPayload); }
+            catch (error) {
+              try {
+                const detail = responseCourse(await (admin ? getAdminCourse(id) : getMyTeacherCourse(id)));
+                const candidate = (detail?.quizzes || []).find((item) => {
+                  const candidateId = String(item._id || item.id);
+                  return item.title === quizPayload.title && !storedQuizzes.some((stored) => String(stored._id || stored.id) === candidateId) && !retainedQuizIds.has(candidateId);
+                });
+                if (candidate) return candidate;
+              } catch { /* Keep the original create error for retry. */ }
+              throw error;
+            }
+          });
           const quizData = responseData(quizResponse);
           savedQuiz = quizData?.quiz || quizData;
         }
         const quizId = savedQuiz?._id || savedQuiz?.id;
-        if (!quizId) continue;
+        if (!quizId) {
+          const error = new Error('لم يُرجع الخادم معرّف الاختبار');
+          onTaskStatus({ key: lessonKey, label: lesson.title, status: 'failed', error });
+          throw error;
+        }
+        onEntityCreated({ type: 'quiz', sectionId: section.id, localId: lesson.id, serverId: quizId });
         retainedQuizIds.add(String(quizId));
         orderedQuizIds.push(String(quizId));
         const storedQuestions = savedQuiz.questions || [];
@@ -1117,6 +1170,7 @@ export const saveCourseToApi = async ({
                   : "حدد إجابة صحيحة واحدة للسؤال «" + questionText + "»",
             );
             quizValidationError.savedCourseId = id;
+            onTaskStatus({ key: lessonKey, label: lesson.title, status: 'failed', error: quizValidationError });
             throw quizValidationError;
           }
           const questionPayload = {
@@ -1130,26 +1184,41 @@ export const saveCourseToApi = async ({
               String(question._id || question.id),
           );
           if (!savedQuestion && !question._isNew) {
-            throw reconciliationError("سؤال الاختبار");
+            const error = reconciliationError('سؤال الاختبار');
+            onTaskStatus({ key: lessonKey, label: lesson.title, status: 'failed', error });
+            throw error;
           }
           if (savedQuestion) {
-            await updateCourseQuizQuestion(
+            await runStep(lessonKey, 'حفظ سؤال الاختبار', () => updateCourseQuizQuestion(
               id,
               quizId,
               savedQuestion._id || savedQuestion.id,
               questionPayload,
-            );
+            ));
           } else {
-            const questionResponse = await addCourseQuizQuestion(
-              id,
-              quizId,
-              questionPayload,
-            );
+            const questionResponse = await runStep(lessonKey, 'إضافة سؤال الاختبار', async () => {
+              try { return await addCourseQuizQuestion(id, quizId, questionPayload); }
+              catch (error) {
+                try {
+                  const detail = responseCourse(await (admin ? getAdminCourse(id) : getMyTeacherCourse(id)));
+                  const currentQuiz = (detail?.quizzes || []).find((item) => String(item._id || item.id) === String(quizId));
+                  const candidate = (currentQuiz?.questions || []).find((item) => {
+                    const candidateId = String(item._id || item.id);
+                    return item.text === questionPayload.text && !storedQuestions.some((stored) => String(stored._id || stored.id) === candidateId) && !orderedQuestionIds.includes(candidateId);
+                  });
+                  if (candidate) return candidate;
+                } catch { /* Keep the original create error for retry. */ }
+                throw error;
+              }
+            });
             const questionData = responseData(questionResponse);
             savedQuestion = questionData?.question || questionData;
           }
           const questionId = savedQuestion?._id || savedQuestion?.id;
-          if (questionId) orderedQuestionIds.push(String(questionId));
+          if (questionId) {
+            orderedQuestionIds.push(String(questionId));
+            onEntityCreated({ type: 'question', sectionId: section.id, lessonId: lesson.id, localId: question.id, serverId: questionId });
+          }
         }
         const retainedQuestionIds = new Set(orderedQuestionIds);
         for (const storedQuestion of storedQuestions) {
@@ -1158,11 +1227,12 @@ export const saveCourseToApi = async ({
             storedQuestionId &&
             !retainedQuestionIds.has(String(storedQuestionId))
           ) {
-            await deleteCourseQuizQuestion(id, quizId, storedQuestionId);
+            await runStep(lessonKey, 'حذف سؤال قديم', () => deleteCourseQuizQuestion(id, quizId, storedQuestionId));
           }
         }
         if (orderedQuestionIds.length > 1)
-          await reorderCourseQuizQuestions(id, quizId, orderedQuestionIds);
+          await runStep(lessonKey, 'ترتيب أسئلة الاختبار', () => reorderCourseQuizQuestions(id, quizId, orderedQuestionIds));
+        onTaskStatus({ key: lessonKey, label: lesson.title, status: 'done' });
         continue;
       }
       let savedLesson = storedLessons.find(
@@ -1176,11 +1246,13 @@ export const saveCourseToApi = async ({
       if (!savedLesson && previousLocation) {
         savedLesson = previousLocation.lesson;
         if (String(previousLocation.sectionId) !== String(sectionId)) {
-          await moveCourseLesson(id, requestedLessonId, sectionId, lessonIndex);
+          await runStep(lessonKey, 'نقل الدرس', () => moveCourseLesson(id, requestedLessonId, sectionId, lessonIndex));
         }
       }
       if (!savedLesson && courseId && !lesson._isNew) {
-        throw reconciliationError("الدرس");
+        const error = reconciliationError('الدرس');
+        onTaskStatus({ key: lessonKey, label: lesson.title, status: 'failed', error });
+        throw error;
       }
       const lessonContentType =
         { فيديو: "video", ملف: "document", صوت: "audio", مستند: "document" }[
@@ -1188,7 +1260,7 @@ export const saveCourseToApi = async ({
         ] || String(lesson.type || "video").toLowerCase();
       const existingLessonId = savedLesson?._id || savedLesson?.id;
       if (existingLessonId) {
-        await updateCourseLesson(id, existingLessonId, {
+        await runStep(lessonKey, 'حفظ الدرس', () => updateCourseLesson(id, existingLessonId, {
           title: lesson.title,
           description: lesson.description || "",
           durationSeconds: Math.max(
@@ -1197,46 +1269,62 @@ export const saveCourseToApi = async ({
           ),
           ...(!lesson.media?.file ? { contentType: lessonContentType } : {}),
           isPreview: Boolean(lesson.preview),
-        });
+        }));
       }
       if (!savedLesson) {
-        const lessonResponse = await createCourseLesson(id, sectionId, {
-          title: lesson.title,
-          description: lesson.description || "",
-          durationSeconds: Math.max(
-            0,
-            Number(lesson.durationSeconds ?? Number(lesson.duration || 0) * 60),
-          ),
-          contentType: lessonContentType,
-          isPreview: Boolean(lesson.preview),
+        const lessonResponse = await runStep(lessonKey, 'إنشاء الدرس', async () => {
+          try {
+            return await createCourseLesson(id, sectionId, {
+              title: lesson.title,
+              description: lesson.description || '',
+              durationSeconds: Math.max(0, Number(lesson.durationSeconds ?? Number(lesson.duration || 0) * 60)),
+              contentType: lessonContentType,
+              isPreview: Boolean(lesson.preview),
+            });
+          } catch (error) {
+            try {
+              const detail = responseCourse(await (admin ? getAdminCourse(id) : getMyTeacherCourse(id)));
+              const sections = detail?.sections || detail?.curriculum_sections || detail?.curriculum || [];
+              const currentSection = sections.find((item) => String(item._id || item.id) === String(sectionId));
+              const candidate = currentSection?.lessons?.[lessonIndex];
+              const candidateId = candidate?._id || candidate?.id;
+              if (candidateId && candidate.title === lesson.title && !storedLessons.some((item) => String(item._id || item.id) === String(candidateId)) && !retainedLessonIds.has(String(candidateId))) return candidate;
+            } catch { /* Keep the original create error for retry. */ }
+            throw error;
+          }
         });
         const lessonData = responseData(lessonResponse);
         savedLesson = lessonData?.lesson || lessonData;
       }
       const lessonId = savedLesson?._id || savedLesson?.id;
-      if (lessonId) {
-        retainedLessonIds.add(String(lessonId));
-        orderedLessonIds.push(String(lessonId));
+      if (!lessonId) {
+        const error = new Error('لم يُرجع الخادم معرّف الدرس');
+        onTaskStatus({ key: lessonKey, label: lesson.title, status: 'failed', error });
+        throw error;
       }
+      onEntityCreated({ type: 'lesson', sectionId: section.id, localId: lesson.id, serverId: lessonId });
+      retainedLessonIds.add(String(lessonId));
+      orderedLessonIds.push(String(lessonId));
       if (lessonId && lesson.media?.file) {
         const contentType = lesson.media.file.type?.startsWith("video/")
           ? "video"
           : lesson.media.file.type?.startsWith("audio/")
             ? "audio"
             : "document";
-        await uploadCourseLessonMedia(
+        await runStep(lessonKey, 'رفع ملف الدرس', () => uploadCourseLessonMedia(
           id,
           lessonId,
           lesson.media.file,
           contentType,
           progressHandler(`جاري رفع محتوى الدرس: ${lesson.title}`),
-        );
-        await updateCourseLesson(id, lessonId, {
+        ));
+        await runStep(lessonKey, 'حفظ مدة الدرس', () => updateCourseLesson(id, lessonId, {
           durationSeconds: Math.max(
             0,
             Number(lesson.durationSeconds ?? Number(lesson.duration || 0) * 60),
           ),
-        });
+        }));
+        onFileSaved({ type: 'media', sectionId: section.id, lessonId: lesson.id, file: lesson.media.file });
       }
       if (lessonId) {
         const storedAttachments = savedLesson.attachments || [];
@@ -1251,7 +1339,7 @@ export const saveCourseToApi = async ({
             attachmentId &&
             !retainedAttachmentIds.has(String(attachmentId))
           ) {
-            await deleteCourseLessonAttachment(id, lessonId, attachmentId);
+            await runStep(lessonKey, 'حذف مرفق قديم', () => deleteCourseLessonAttachment(id, lessonId, attachmentId));
           } else if (attachmentId) {
             const desired = (lesson.attachments || []).find(
               (item) => String(item._id || item.id || "") === String(attachmentId),
@@ -1259,12 +1347,12 @@ export const saveCourseToApi = async ({
             const desiredMode = desired?.accessMode || "downloadable";
             const storedMode = attachment.accessMode || "downloadable";
             if (desiredMode !== storedMode) {
-              await updateCourseLessonAttachmentAccessMode(
+              await runStep(lessonKey, 'حفظ صلاحية المرفق', () => updateCourseLessonAttachmentAccessMode(
                 id,
                 lessonId,
                 attachmentId,
                 desiredMode,
-              );
+              ));
             }
           }
         }
@@ -1274,15 +1362,36 @@ export const saveCourseToApi = async ({
             .filter((item) => (item.accessMode || "downloadable") === accessMode)
             .map((item) => item.file);
           if (!attachmentFiles.length) continue;
-          await uploadCourseLessonAttachments(
-            id,
-            lessonId,
-            attachmentFiles,
-            accessMode,
-            progressHandler(`جاري رفع مرفقات الدرس: ${lesson.title}`),
-          );
+          const uploadResponse = await runStep(lessonKey, 'رفع مرفقات الدرس', async () => {
+            try {
+              return await uploadCourseLessonAttachments(
+                id, lessonId, attachmentFiles, accessMode,
+                progressHandler(`جاري رفع مرفقات الدرس: ${lesson.title}`),
+              );
+            } catch (error) {
+              // A lost response can follow a successful upload. Reuse those
+              // attachments before offering another upload of the same files.
+              try {
+                const detail = responseCourse(await (admin ? getAdminCourse(id) : getMyTeacherCourse(id)));
+                const sections = detail?.sections || detail?.curriculum_sections || detail?.curriculum || [];
+                const currentSection = sections.find((item) => String(item._id || item.id) === String(sectionId));
+                const currentLesson = currentSection?.lessons?.find((item) => String(item._id || item.id) === String(lessonId));
+                const oldIds = new Set(storedAttachments.map((item) => String(item._id || item.id)));
+                const available = (currentLesson?.attachments || []).filter((item) => !oldIds.has(String(item._id || item.id)) && (item.accessMode || 'downloadable') === accessMode);
+                const recovered = attachmentFiles.map((file) => {
+                  const index = available.findIndex((item) => item.originalName === file.name && item.size === file.size);
+                  return index < 0 ? null : available.splice(index, 1)[0];
+                });
+                if (recovered.every(Boolean)) return { data: recovered };
+              } catch { /* Keep the original upload error for retry. */ }
+              throw error;
+            }
+          });
+          const savedAttachments = responseData(uploadResponse);
+          attachmentFiles.forEach((file, index) => onFileSaved({ type: 'attachment', sectionId: section.id, lessonId: lesson.id, file, saved: Array.isArray(savedAttachments) ? savedAttachments[index] : null }));
         }
       }
+      onTaskStatus({ key: lessonKey, label: lesson.title, status: 'done' });
     }
     for (const storedLesson of storedLessons) {
       const storedLessonId = storedLesson._id || storedLesson.id;
@@ -1297,14 +1406,15 @@ export const saveCourseToApi = async ({
           ),
         )
       ) {
-        await deleteCourseLesson(id, storedLessonId);
+        await runStep(sectionKey, 'حذف درس قديم', () => deleteCourseLesson(id, storedLessonId));
       }
     }
     if (orderedLessonIds.length > 1)
-      await reorderCourseLessons(id, sectionId, orderedLessonIds);
+      await runStep(sectionKey, 'ترتيب دروس القسم', () => reorderCourseLessons(id, sectionId, orderedLessonIds));
+    onTaskStatus({ key: sectionKey, label: section.title, status: 'done' });
   }
   if (orderedSectionIds.length > 1)
-    await reorderCourseSections(id, orderedSectionIds);
+    await runStep('course', 'ترتيب أقسام الدورة', () => reorderCourseSections(id, orderedSectionIds));
   for (const storedQuiz of storedQuizzes) {
     const storedQuizId = storedQuiz._id || storedQuiz.id;
     const wasLoadedIntoEditor = (course.editableQuizIds || []).includes(
@@ -1315,16 +1425,17 @@ export const saveCourseToApi = async ({
       wasLoadedIntoEditor &&
       !retainedQuizIds.has(String(storedQuizId))
     ) {
-      await deleteCourseQuiz(id, storedQuizId);
+      await runStep('course', 'حذف اختبار قديم', () => deleteCourseQuiz(id, storedQuizId));
     }
   }
-  if (orderedQuizIds.length > 1) await reorderCourseQuizzes(id, orderedQuizIds);
+  if (orderedQuizIds.length > 1) await runStep('course', 'ترتيب الاختبارات', () => reorderCourseQuizzes(id, orderedQuizIds));
   for (const storedSection of storedSections) {
     const storedSectionId = storedSection?._id || storedSection?.id;
     if (storedSectionId && !retainedSectionIds.has(String(storedSectionId))) {
-      await deleteCourseSection(id, storedSectionId);
+      await runStep('course', 'حذف قسم قديم', () => deleteCourseSection(id, storedSectionId));
     }
   }
+  onTaskStatus({ key: 'course', label: 'حفظ بيانات الدورة', status: 'done' });
   if (submit) {
     const verificationDetail = responseCourse(
       await (admin ? getAdminCourse(id) : getMyTeacherCourse(id)),
@@ -1349,10 +1460,13 @@ export const saveCourseToApi = async ({
       throw mediaError;
     }
     onProgress({ label: "جاري إرسال الدورة للمراجعة", percent: 100 });
+    onTaskStatus({ key: 'submit', label: 'إرسال الدورة للمراجعة', status: 'running' });
     try {
       const submitResponse = await submitMarketplaceCourse(id);
       saved = responseCourse(submitResponse) || saved;
+      onTaskStatus({ key: 'submit', label: 'إرسال الدورة للمراجعة', status: 'done' });
     } catch (error) {
+      onTaskStatus({ key: 'submit', label: 'إرسال الدورة للمراجعة', status: 'failed', error });
       error.savedCourseId = id;
       throw error;
     }

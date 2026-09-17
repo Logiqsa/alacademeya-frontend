@@ -13,6 +13,7 @@ import ReviewsPanel from "../features/course-management/components/reviews/Revie
 import PolicyAcceptanceDialog from "../components/course/PolicyAcceptanceDialog";
 import { getMyPolicyStatus } from "../services/APIService";
 import BrandMediaPlayer from "../components/media/BrandMediaPlayer";
+import { formatCourseDuration } from "../utils/courseDuration";
 
 export default function CourseDetailsPage() {
   const { slug } = useParams();
@@ -193,7 +194,7 @@ export default function CourseDetailsPage() {
               <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
                 <span className="rounded-full bg-white/90 px-3 py-1 text-[#123C91]">{course.category || "دورة تعليمية"}</span>
                 <span className="rounded-full bg-black/35 px-3 py-1 backdrop-blur-sm">{course.level}</span>
-                {!!course.duration && <span className="inline-flex items-center gap-1 rounded-full bg-black/35 px-3 py-1 backdrop-blur-sm"><Clock3 size={13} />{course.duration} ساعة</span>}
+                <span className="inline-flex items-center gap-1 rounded-full bg-black/35 px-3 py-1 backdrop-blur-sm"><Clock3 size={13} />{formatCourseDuration(course)}</span>
               </div>
             </div>
           </div>
@@ -266,7 +267,7 @@ export default function CourseDetailsPage() {
             <ul className="mb-5 grid grid-cols-2 gap-2 text-sm text-[#5F6A78]">
               <CourseFact icon={Users} value={`${Number(course.students || 0).toLocaleString("ar-EG")} طالب`} />
               <CourseFact icon={BookOpen} value={`${lessonsCount} درس`} />
-              <CourseFact icon={Clock3} value={course.duration ? `${course.duration} ساعة` : "المدة غير محددة"} />
+              <CourseFact icon={Clock3} value={formatCourseDuration(course)} />
               <CourseFact icon={Globe2} value={course.language || "غير محددة"} />
               <CourseFact icon={Check} value={course.level || "كل المستويات"} />
             </ul>

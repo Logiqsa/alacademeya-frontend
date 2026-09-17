@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Award, Check, Copy, ExternalLink, LoaderCircle, Printer } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import StudentLayout from '../components/student/layout/StudentLayout';
+import CertificateOwnerLayout from '../components/certificate/CertificateOwnerLayout';
 import certificateTemplate from '../../templates/certificate.png';
 import blankCertificateValues from '../../templates/certificate-values-blank.png';
 import { claimCourseCertificate, getCourseCertificateState } from '../services/APIService';
+import { shortInstructorName } from '../utils/certificateDisplay';
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 const localizedText = (value, fallback = '') => {
@@ -45,24 +46,25 @@ export default function CourseCertificatePage() {
   }, [courseId]);
 
   if (loading) return (
-    <StudentLayout><div className='grid min-h-[65vh] place-items-center'><LoaderCircle className='animate-spin text-[#123C91]' size={38} /></div></StudentLayout>
+    <CertificateOwnerLayout><div className='grid min-h-[65vh] place-items-center'><LoaderCircle className='animate-spin text-[#123C91]' size={38} /></div></CertificateOwnerLayout>
   );
 
   const certificate = state?.certificate;
-  if (error || !state?.issued || !certificate) return (
-    <StudentLayout>
+  if (error || !state?.issued || !certificate || certificate.status === 'revoked') return (
+    <CertificateOwnerLayout>
       <main dir='rtl' className='grid min-h-[65vh] place-items-center bg-[#F7F9FC] px-4'>
         <div className='max-w-lg rounded-2xl bg-white p-10 text-center shadow-sm'>
           <Award className='mx-auto text-[#AAB4C5]' size={58} />
           <h1 className='mt-5 text-2xl font-extrabold text-[#17213A]'>الشهادة غير متاحة بعد</h1>
-          <p className='mt-3 leading-7 text-[#667085]'>{error || state?.reason || 'أكمل جميع الدروس والاختبارات المطلوبة للحصول على الشهادة.'}</p>
+          <p className='mt-3 leading-7 text-[#667085]'>{error || (certificate?.status === 'revoked' ? 'هذه الشهادة ملغاة ولا يمكن عرضها أو التحقق منها.' : state?.reason) || 'أكمل جميع الدروس والاختبارات المطلوبة للحصول على الشهادة.'}</p>
           <Link to={`/learn/${courseId}`} className='mt-7 inline-flex rounded-lg bg-[#123C91] px-6 py-3 font-bold text-white'>العودة إلى الدورة</Link>
         </div>
       </main>
-    </StudentLayout>
+    </CertificateOwnerLayout>
   );
 
   const courseTitle = localizedText(certificate.courseTitle) || localizedText(state.course?.title);
+  const displayInstructorName = shortInstructorName(certificate.instructorName);
   const completionDate = certificate.completionDate || state.completedAt || certificate.issuedAt;
   const verificationUrl = `${window.location.origin}/certificates/verify/${encodeURIComponent(certificate.certificateNumber)}`;
   const copyVerification = async () => {
@@ -75,14 +77,13 @@ export default function CourseCertificatePage() {
   };
 
   return (
-    <StudentLayout>
-      <main dir='rtl' className='certificate-page min-h-screen bg-[#F4F7FB] px-4 py-8 sm:px-6'>
+    <CertificateOwnerLayout>
+      <main dir='rtl' className='certificate-page certificate-page-screen bg-[#F4F7FB] px-3 py-3 sm:px-5'>
         <style>{`@media print { @page { size: A4 landscape; margin: 0; } body * { visibility: hidden; } .certificate-sheet, .certificate-sheet * { visibility: visible; } .certificate-sheet { position: fixed !important; top: 6mm !important; left: 0 !important; width: 297mm !important; height: auto !important; aspect-ratio: 800 / 533 !important; box-shadow: none !important; border-radius: 0 !important; } .certificate-actions, header, aside, nav { display: none !important; } }`}</style>
         <div className='mx-auto max-w-6xl'>
-          <div className='certificate-actions mb-6 text-center'>
-            <div className='mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#D9F9F4] text-[#079C89]'><Check size={27} strokeWidth={3} /></div>
-            <h1 className='mt-3 text-2xl font-extrabold text-[#17213A]'>تهانينا، تم إصدار شهادتك بنجاح</h1>
-            <p className='mt-1 text-sm text-[#667085]'>يمكنك طباعتها أو حفظها بصيغة PDF ومشاركة رابط التحقق الرسمي.</p>
+          <div className='certificate-actions mb-3 flex flex-wrap items-center justify-center gap-2 text-center'>
+            <div className='grid h-9 w-9 place-items-center rounded-full bg-[#D9F9F4] text-[#079C89]'><Check size={20} strokeWidth={3} /></div>
+            <h1 className='text-lg font-extrabold text-[#17213A]'>تم إصدار شهادتك بنجاح</h1>
           </div>
 
           <section dir='ltr' className='certificate-sheet relative mx-auto aspect-[800/533] w-full overflow-hidden shadow-[0_20px_60px_rgba(18,60,145,.16)]'>
@@ -101,7 +102,7 @@ export default function CourseCertificatePage() {
             <div className='certificate-overlays absolute inset-0 text-center text-[#17213A]'>
               <h3 dir='auto' className='certificate-learner'>{certificate.learnerName}</h3>
               <h4 dir='auto' className='certificate-course'>{courseTitle}</h4>
-              <p dir='auto' className='certificate-instructor'>{certificate.instructorName || '—'}</p>
+              <p dir='auto' className='certificate-instructor' title={certificate.instructorName}>{displayInstructorName}</p>
               <div className='certificate-footer certificate-id'>
                 <span>Certificate ID</span>
                 <strong>{certificate.certificateNumber}</strong>
@@ -110,13 +111,14 @@ export default function CourseCertificatePage() {
             </div>
           </section>
 
-          <div className='certificate-actions mt-6 flex flex-wrap justify-center gap-3'>
-            <button onClick={() => window.print()} className='flex items-center gap-2 rounded-xl bg-[#123C91] px-6 py-3 font-bold text-white shadow-sm hover:bg-[#0E3279]'><Printer size={18} />طباعة أو حفظ PDF</button>
-            <button onClick={copyVerification} className='flex items-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-6 py-3 font-bold text-[#344054] hover:bg-[#F9FAFB]'><Copy size={18} />نسخ رابط التحقق</button>
-            <a href={verificationUrl} target='_blank' rel='noreferrer' className='flex items-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-6 py-3 font-bold text-[#344054] hover:bg-[#F9FAFB]'><ExternalLink size={18} />التحقق من الشهادة</a>
+          <div className='certificate-actions mt-3 flex flex-wrap justify-center gap-2'>
+            <button onClick={() => window.print()} className='flex items-center gap-2 rounded-xl bg-[#123C91] px-4 py-2 font-bold text-white shadow-sm hover:bg-[#0E3279]'><Printer size={18} />طباعة أو حفظ PDF</button>
+            <button onClick={copyVerification} className='flex items-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-4 py-2 font-bold text-[#344054] hover:bg-[#F9FAFB]'><Copy size={18} />نسخ رابط التحقق</button>
+            <a href={verificationUrl} target='_blank' rel='noreferrer' className='flex items-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-4 py-2 font-bold text-[#344054] hover:bg-[#F9FAFB]'><ExternalLink size={18} />التحقق من الشهادة</a>
+            <Link to='/my-certificates' className='flex items-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-4 py-2 font-bold text-[#344054] hover:bg-[#F9FAFB]'><Award size={18} />شهاداتي</Link>
           </div>
         </div>
       </main>
-    </StudentLayout>
+    </CertificateOwnerLayout>
   );
 }

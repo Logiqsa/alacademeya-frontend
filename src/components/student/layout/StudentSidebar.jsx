@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
-import { Compass, GraduationCap, Library, Wallet } from "lucide-react";
+import { Award, Compass, GraduationCap, Library, Wallet } from "lucide-react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
 
@@ -35,6 +35,7 @@ const StudentSidebar = ({ isOpen, setIsOpen, marketplaceOnly = false }) => {
       path: "/student/groups",
     },
     { title: "مكتبتي", icon: Library, isLucide: true, path: "/student-dashboard/courses" },
+    { title: "شهاداتي", icon: Award, isLucide: true, path: "/my-certificates" },
     {
       title: "الجدول",
       icon: scheduleIcon,
@@ -66,6 +67,7 @@ const StudentSidebar = ({ isOpen, setIsOpen, marketplaceOnly = false }) => {
   const marketplaceMenu = [
     { title: "لوحة التعلم", icon: dashboardIcon, path: "/learner-dashboard" },
     { title: "استكشاف الدورات", icon: Compass, isLucide: true, path: "/courses" },
+    { title: "شهاداتي", icon: Award, isLucide: true, path: "/my-certificates" },
     { title: "كن محاضرًا", icon: GraduationCap, isLucide: true, path: "/instructor/onboarding" },
   ];
   const menu = marketplaceOnly ? marketplaceMenu : academicMenu;

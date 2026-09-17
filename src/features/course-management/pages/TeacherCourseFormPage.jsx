@@ -23,6 +23,7 @@ import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import PolicyAcceptanceDialog from "../../../components/course/PolicyAcceptanceDialog";
 import CourseStepsNavigation from "../components/CourseStepsNavigation";
+import CourseUploadProgress from "../components/CourseUploadProgress";
 import {
   addCourseCategory,
   fetchAdminCourse,
@@ -384,6 +385,10 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   const [showInstructorOptions, setShowInstructorOptions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState({ label: "", percent: 0 });
+  const [uploadTaskStatuses, setUploadTaskStatuses] = useState({});
+  const [retryRequest, setRetryRequest] = useState(null);
+  const [showUploadProgress, setShowUploadProgress] = useState(false);
+  const [submitRequested, setSubmitRequested] = useState(false);
   const [step, setStep] = useState(0);
   const [contentModal, setContentModal] = useState(null);
   const [quizModal, setQuizModal] = useState(null);
@@ -767,9 +772,22 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         setStep(1);
         return;
       }
+      const untimedMediaLesson = course.curriculum.flatMap((section) => section.lessons || []).find((lesson) =>
+        ['فيديو', 'صوت', 'video', 'audio'].includes(lesson.type) &&
+        !(Number(lesson.durationSeconds ?? Number(lesson.duration || 0) * 60) > 0),
+      );
+      if (untimedMediaLesson) {
+        toast.error(`أدخل مدة الدرس «${untimedMediaLesson.title}» بالدقائق قبل إرسال الدورة`);
+        setStep(1);
+        return;
+      }
     }
     savingRef.current = true;
     setSaving(true);
+    setShowUploadProgress(true);
+    setSubmitRequested(status === "قيد المراجعة");
+    setUploadTaskStatuses({});
+    setRetryRequest(null);
     setUploadStatus({ label: "جاري تجهيز الدورة", percent: 0 });
     const savingToast = toast.loading(
       status === "قيد المراجعة"
@@ -783,9 +801,48 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         admin: isAdminFlow,
         submit: status === "قيد المراجعة",
         onProgress: setUploadStatus,
+        onTaskStatus: (task) => setUploadTaskStatuses((current) => ({ ...current, [task.key]: task })),
+        onRetryRequired: (request) => setRetryRequest(request),
         onCourseCreated: (createdId) => {
           setExistingCourse((current) => current || { ...course, id: createdId });
         },
+        onEntityCreated: ({ type, sectionId, lessonId, localId, serverId }) => setCourse((current) => ({
+          ...current,
+          curriculum: current.curriculum.map((section) => {
+            if (type === 'section' && section.id === localId) return { ...section, _id: serverId, _isNew: false };
+            if (section.id !== sectionId) return section;
+            return {
+              ...section,
+              lessons: section.lessons.map((lesson) => {
+                if (type === 'lesson' && lesson.id === localId) return { ...lesson, _id: serverId, _isNew: false };
+                if (type === 'quiz' && lesson.id === localId) return { ...lesson, quizId: serverId };
+                if (type === 'question' && lesson.id === lessonId) return {
+                  ...lesson,
+                  quiz: (lesson.quiz || []).map((question) => question.id === localId ? { ...question, _id: serverId, _isNew: false } : question),
+                };
+                return lesson;
+              }),
+            };
+          }),
+        })),
+        onFileSaved: ({ type, sectionId, lessonId, file, saved }) => setCourse((current) => {
+          if (type === 'cover' || type === 'promo') {
+            const field = type === 'cover' ? 'cover' : 'promoVideo';
+            return current[field]?.file === file ? { ...current, [field]: { ...current[field], file: null } } : current;
+          }
+          return {
+            ...current,
+            curriculum: current.curriculum.map((section) => section.id === sectionId ? {
+              ...section,
+              lessons: section.lessons.map((lesson) => {
+                if (lesson.id !== lessonId) return lesson;
+                if (type === 'media' && lesson.media?.file === file) return { ...lesson, media: { ...lesson.media, file: null, url: lesson.media.url || lesson.media.previewUrl || 'uploaded' } };
+                if (type === 'attachment' && saved) return { ...lesson, attachments: (lesson.attachments || []).map((attachment) => attachment.file === file ? { ...attachment, ...saved, file: null } : attachment) };
+                return lesson;
+              }),
+            } : section),
+          };
+        }),
       });
       toast.success(
         existingCourse ? "تم تعديل الدورة بنجاح" : "تم إنشاء الدورة بنجاح",
@@ -804,9 +861,14 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
       if (error?.response?.data?.code === "POLICY_ACCEPTANCE_REQUIRED") {
         setPendingSubmission(true);
         setPolicyOpen(true);
+        setShowUploadProgress(false);
         toast.dismiss(savingToast);
         return;
       }
+      setUploadStatus((current) => ({ ...current, label: 'توقف الحفظ بسبب خطأ' }));
+      setUploadTaskStatuses((current) => Object.values(current).some((task) => task.status === 'failed')
+        ? current
+        : { ...current, [status === 'قيد المراجعة' && current.course?.status === 'done' ? 'submit' : 'course']: { status: 'failed', error } });
       const apiError = normalizeApiError(error);
       if (apiError.code === "COURSE_NOT_FOUND" && !courseId) {
         setExistingCourse(null);
@@ -1579,11 +1641,15 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                             <input
                               type="number"
                               min="0"
-                              className="w-8 bg-transparent text-center outline-none"
+                              step="any"
+                              aria-label={`مدة الدرس ${lesson.title || lessonIndex + 1} بالدقائق`}
+                              title="مدة الدرس بالدقائق؛ تُحسب مدة الدورة تلقائيًا"
+                              className="w-12 bg-transparent text-center outline-none"
                               value={lesson.duration || ""}
                               onChange={(e) =>
                                 updateLesson(section.id, lesson.id, {
                                   duration: Number(e.target.value),
+                                  durationSeconds: Math.round(Number(e.target.value) * 60),
                                 })
                               }
                               placeholder="0"
@@ -1975,20 +2041,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
               )}
             </div>
           </div>
-          {saving && (
-            <div className="mx-2 mt-3 sm:mx-4 md:mx-6 lg:mx-8" dir="rtl">
-              <div className="mb-1 flex justify-between text-xs text-[#667085]">
-                <span>{uploadStatus.label}</span>
-                <span>{uploadStatus.percent}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-[#E5E7EB]">
-                <div
-                  className="h-full rounded-full bg-[#12AFA0] transition-all"
-                  style={{ width: `${uploadStatus.percent}%` }}
-                />
-              </div>
-            </div>
-          )}
+          {showUploadProgress && <CourseUploadProgress course={course} statuses={uploadTaskStatuses} retryRequest={retryRequest} uploadStatus={uploadStatus} saving={saving} submitRequested={submitRequested} showCurriculum={!isAdminFlow || !courseId} onRetry={() => { const request = retryRequest; setRetryRequest(null); request?.retry(); }} onCancel={() => { const request = retryRequest; setRetryRequest(null); request?.cancel(); }} />}
         </section>
 
         {contentModal && (

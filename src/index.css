@@ -62,6 +62,16 @@ body {
   font-family: "IBM Plex Sans", "IBM Plex Sans Arabic", sans-serif;
 }
 
+.certificate-page-screen .certificate-sheet {
+  width: min(100%, calc(150dvh - 420px));
+}
+
+@media (max-width: 640px) and (min-height: 550px) {
+  .certificate-page-screen .certificate-sheet {
+    width: 100%;
+  }
+}
+
 .certificate-page h1 {
   font-family: "Tajawal", sans-serif;
 }
@@ -102,12 +112,15 @@ body {
 
 .certificate-instructor {
   top: 74.5%;
-  left: 10%;
-  width: 20%;
+  left: 8.5%;
+  width: 23%;
   font-family: "IBM Plex Sans", "IBM Plex Sans Arabic", "Tajawal", sans-serif;
-  font-size: 2.4cqw;
+  font-size: 2.1cqw;
   font-style: italic;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: #344054;
 }
 
@@ -138,7 +151,7 @@ body {
   font-family: "IBM Plex Sans", "IBM Plex Sans Arabic", "Tajawal", sans-serif;
   font-size: 2.1cqw;
   text-align: center;
-  color: #123c91;
+  color: #344054;
 }
 
 /* =========================
