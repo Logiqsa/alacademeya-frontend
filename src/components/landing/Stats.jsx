@@ -1,10 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useInView } from "framer-motion";
-import {
-  getLandingStats,
-  LANDING_STATS_EVENT,
-  LANDING_STATS_STORAGE_KEY,
-} from "../../utils/landingStats";
 
 const Counter = ({ value, label, duration = 2 }) => {
   const nodeRef = useRef(null);
@@ -64,23 +59,7 @@ const Counter = ({ value, label, duration = 2 }) => {
   );
 };
 
-export default function Stats() {
-  const [stats, setStats] = useState(getLandingStats);
-
-  useEffect(() => {
-    const refresh = (event) => {
-      if (!event.key || event.key === LANDING_STATS_STORAGE_KEY) {
-        setStats(getLandingStats());
-      }
-    };
-    window.addEventListener("storage", refresh);
-    window.addEventListener(LANDING_STATS_EVENT, refresh);
-    return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener(LANDING_STATS_EVENT, refresh);
-    };
-  }, []);
-
+export default function Stats({ stats }) {
   const formatted = (value) => Number(value || 0).toLocaleString("en-US");
 
   return (

@@ -459,6 +459,9 @@ export const deleteMarketplaceCourse = (id) => API.delete(`/courses/${id}`);
 export const getContactSettings = () => API.get("/contact-settings");
 export const updateContactSettings = (payload) =>
   API.patch("/contact-settings", payload);
+export const getLandingPageSettings = () => API.get("/landing-page-settings");
+export const updateLandingPageSettings = (payload) =>
+  API.patch("/landing-page-settings", payload);
 
 // ─── Exchange rates ─────────────────────────────────────────────────────────
 export const getExchangeRates = () => API.get("/exchange-rates");

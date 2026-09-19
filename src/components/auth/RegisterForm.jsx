@@ -364,9 +364,9 @@ const RegisterForm = ({ type }) => {
       const selectedCountry = countries.find((c) => c.id === formData.country);
 
       const payload = {
-        fullName: formData.fullName,
-        username: formData.username,
-        email: formData.email,
+        fullName: formData.fullName.trim(),
+        username: formData.username.trim(),
+        email: formData.email.trim().toLowerCase(),
         phone: buildInternationalPhone(phoneCode, formData.phone),
         password: formData.password,
         passwordConfirm: formData.passwordConfirm,
@@ -405,30 +405,31 @@ const RegisterForm = ({ type }) => {
     "w-full h-12 p-4 rounded-lg border border-[#1F293733] bg-[#F9FAFA] focus:outline-none focus:border-[#123C91] text-[14px] text-[#1F2937] placeholder:text-[#9CA3AF] transition-colors";
 
   return (
-    <div className="relative w-full max-w-175 mx-auto p-6">
+    <div className="relative mx-auto w-full max-w-175 px-4 py-7 sm:px-6 sm:py-9">
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 text-[14px] font-medium text-[#123C91] hover:underline"
+        className="mb-5 inline-flex items-center gap-2 text-[14px] font-medium text-[#123C91] hover:underline"
       >
         <ArrowRight size={17} />
         رجوع
       </button>
-      <Link to="/">
-        <img src={logo} alt="logo" className="w-44 h-8 mb-4 cursor-pointer" />
+      <Link to="/" className="mb-5 block w-fit">
+        <img src={logo} alt="logo" className="h-8 w-44 cursor-pointer" />
       </Link>
-      <h2 className="text-[24px] font-bold mb-4 text-[#1F2937]">
+      <h2 className="mb-2 text-[24px] font-bold text-[#1F2937]">
         {type === "instructor" ? "أنشئ حساب محاضر" : "مرحباً بك..."}
       </h2>
 
       {type === "instructor" && (
-        <p className="mb-4 rounded-xl bg-[#EEF4FF] px-4 py-3 text-sm leading-6 text-[#123C91]">
+        <p className="mb-6 rounded-xl border border-[#D9E6FA] bg-[#EEF4FF] px-4 py-3 text-sm leading-6 text-[#123C91]">
           بيانات الحساب منفصلة عن ملفك العام كمحاضر، ويمكنك تحديث الملف لاحقًا.
         </p>
       )}
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className={type === "instructor" ? "space-y-5" : "mt-5 space-y-4"} onSubmit={handleSubmit}>
         {/* Full name */}
+        <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="block text-sm font-medium mb-1 text-[#1F2937]">
             الاسم الكامل
@@ -436,6 +437,7 @@ const RegisterForm = ({ type }) => {
           <input
             name="fullName"
             type="text"
+            autoComplete="name"
             placeholder="أدخل اسمك الكامل"
             value={formData.fullName}
             onChange={handleChange}
@@ -451,12 +453,14 @@ const RegisterForm = ({ type }) => {
           <input
             name="email"
             type="email"
+            autoComplete="email"
             placeholder="example@mail.com"
             value={formData.email}
             onChange={handleChange}
             className={inputClass}
             required
           />
+        </div>
         </div>
 
         {type === "student" && (
@@ -500,7 +504,7 @@ const RegisterForm = ({ type }) => {
         />
 
         {type === "instructor" && (
-          <fieldset className="space-y-4 rounded-xl border border-[#D7DEE8] bg-white p-4">
+          <fieldset className="space-y-5 rounded-xl border border-[#D7DEE8] bg-white p-4 sm:p-5">
             <legend className="px-2 text-sm font-bold text-[#123C91]">
               الملف العام للمحاضر
             </legend>
@@ -663,8 +667,9 @@ const RegisterForm = ({ type }) => {
         </div>
 
         {type === "instructor" && (
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] p-4 text-sm leading-7 text-[#344054]">
+          <div className="flex items-start gap-3 rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] p-4 text-sm leading-7 text-[#344054] sm:p-5">
             <input
+              id="instructor-agreement"
               type="checkbox"
               checked={formData.instructorAgreementAccepted}
               onChange={(event) =>
@@ -673,13 +678,25 @@ const RegisterForm = ({ type }) => {
                   instructorAgreementAccepted: event.target.checked,
                 }))
               }
-              className="mt-1 h-4 w-4 accent-[#123C91]"
+              className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer accent-[#123C91]"
             />
-            <span>
-              أوافق صراحةً على اتفاقية المحاضر الحالية (الإصدار {INSTRUCTOR_AGREEMENT_VERSION}).
-              ستظل موافقة سياسات النشر ومشاركة الإيرادات مطلوبة قبل إرسال أي دورة للمراجعة.
-            </span>
-          </label>
+            <div>
+              <label htmlFor="instructor-agreement" className="cursor-pointer">
+                أوافق صراحةً على{" "}
+              </label>
+              <Link
+                to="/policies/instructor-agreement"
+                target="_blank"
+                rel="noreferrer"
+                className="font-bold text-[#123C91] underline decoration-[#123C91]/40 underline-offset-4 transition hover:text-[#0E3279]"
+              >
+                اتفاقية المحاضر الحالية (الإصدار {INSTRUCTOR_AGREEMENT_VERSION})
+              </Link>
+              <span>
+                . ستظل موافقة سياسات النشر ومشاركة الإيرادات مطلوبة قبل إرسال أي دورة للمراجعة.
+              </span>
+            </div>
+          </div>
         )}
 
         <button

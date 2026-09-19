@@ -31,6 +31,8 @@ const AuthLayout = ({ children }) => {
     pathname === "/verify-email" ||
     pathname === "/register" ||
     pathname.startsWith("/register/");
+  const longRegistrationForm =
+    pathname === "/register" || pathname.startsWith("/register/");
 
   useEffect(() => {
     const duration = 4000;
@@ -55,7 +57,7 @@ const AuthLayout = ({ children }) => {
   return (
     <div className="min-h-screen flex md:h-screen md:overflow-hidden">
 
-      <div className="w-full md:h-screen md:w-1/2 flex items-center justify-center overflow-y-auto overscroll-contain bg-white px-6">
+      <div className={`flex w-full justify-center overflow-y-auto overscroll-contain bg-white px-4 sm:px-6 md:h-screen md:w-1/2 ${longRegistrationForm ? "items-start" : "items-center"}`}>
         {children}
       </div>
 
