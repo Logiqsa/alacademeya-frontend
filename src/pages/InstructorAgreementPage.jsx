@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FileText, LoaderCircle, RefreshCw } from "lucide-react";
 import { getCurrentPolicy } from "../services/APIService";
+import { normalizeRichTextHtml } from "../utils/richTextHtml";
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 const localized = (value) => {
@@ -83,7 +84,7 @@ export default function InstructorAgreementPage({
             )}
             <article
               className="policy-rich-content text-sm leading-8 text-[#344054] sm:text-base"
-              dangerouslySetInnerHTML={{ __html: localized(policy?.content) }}
+              dangerouslySetInnerHTML={{ __html: normalizeRichTextHtml(localized(policy?.content)) }}
             />
           </div>
         )}

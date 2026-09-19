@@ -6,6 +6,7 @@ import RichTextEditor from "../../components/shared/RichTextEditor";
 import { POLICY_LABELS } from "../../components/course/PolicyAcceptanceDialog";
 import { createAdminPolicyDraft, getAdminPolicyVersions, publishAdminPolicy, updateAdminPolicyDraft } from "../../services/APIService";
 import { getApiErrorMessage } from "../../services/apiError";
+import { normalizeRichTextHtml } from "../../utils/richTextHtml";
 
 const TYPES = Object.keys(POLICY_LABELS);
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
@@ -44,7 +45,9 @@ export default function AdminPoliciesPage() {
   const local = (field, lang, value) => setForm((current) => ({ ...current, [field]: { ...(current[field] || {}), [lang]: value } }));
   const payload = () => ({
     title: form.title,
-    content: form.content,
+    content: Object.fromEntries(
+      Object.entries(form.content || {}).map(([language, content]) => [language, normalizeRichTextHtml(content)]),
+    ),
     ...(form.effectiveAt ? { effectiveAt: new Date(form.effectiveAt).toISOString() } : {}),
     ...(type === "course_publishing_policy" ? {
       criteria: (form.criteria || []).map((criterion, index) => ({

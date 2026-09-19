@@ -74,11 +74,11 @@ const RichTextEditor = ({
       editor.setSelection(range.index + insertedLength, 0, "silent");
     };
     editor.on("text-change", handleTextChange);
-    editor.root.addEventListener("paste", handlePaste);
+    editor.root.addEventListener("paste", handlePaste, true);
 
     return () => {
       editor.off("text-change", handleTextChange);
-      editor.root.removeEventListener("paste", handlePaste);
+      editor.root.removeEventListener("paste", handlePaste, true);
       editor.getModule("toolbar")?.container?.remove();
       container.replaceChildren();
       container.removeAttribute("class");
