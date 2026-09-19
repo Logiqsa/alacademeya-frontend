@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { CalendarDays, ChevronLeft, ChevronRight, FileCheck2, FilePlus2, History, LoaderCircle, Plus, Save, ShieldCheck, Upload } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, FileCheck2, FilePlus2, History, LoaderCircle, Plus, ShieldCheck, Upload } from "lucide-react";
 import AdminLayout from "../../components/admin/layout/AdminLayout";
 import RichTextEditor from "../../components/shared/RichTextEditor";
 import { POLICY_LABELS } from "../../components/course/PolicyAcceptanceDialog";
@@ -10,7 +10,7 @@ import { getApiErrorMessage } from "../../services/apiError";
 const TYPES = Object.keys(POLICY_LABELS);
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 const emptyPolicy = () => ({ title: { ar: "", en: "" }, content: { ar: "", en: "" }, effectiveAt: "", criteria: [], platformCommissionBps: "" });
-const STATUS_LABELS = { draft: "مسودة", published: "منشورة", archived: "مؤرشفة" };
+const STATUS_LABELS = { draft: "غير منشورة", published: "منشورة", retired: "سابقة" };
 
 export default function AdminPoliciesPage() {
   const queryType = new URLSearchParams(location.search).get("type");
@@ -49,23 +49,17 @@ export default function AdminPoliciesPage() {
     ...(type === "course_publishing_policy" ? { criteria: form.criteria } : {}),
     ...(type === "revenue_share_agreement" ? { platformCommissionBps: Number(form.platformCommissionBps) } : {}),
   });
-  const save = async () => {
-    setSaving(true);
-    try {
-      if (selected?.status === "draft") await updateAdminPolicyDraft(selected.id || selected._id, payload());
-      else await createAdminPolicyDraft(type, payload());
-      toast.success("تم حفظ المسودة");
-      await load();
-    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر حفظ المسودة")); }
-    finally { setSaving(false); }
-  };
   const publish = async () => {
     setSaving(true);
     try {
-      await publishAdminPolicy(selected.id || selected._id);
-      toast.success("تم نشر النسخة");
+      const response = selected?.status === "draft"
+        ? await updateAdminPolicyDraft(selected.id || selected._id, payload())
+        : await createAdminPolicyDraft(type, payload());
+      const policy = unwrap(response);
+      await publishAdminPolicy(policy.id || policy._id);
+      toast.success("تم نشر الاتفاقية");
       await load();
-    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر نشر النسخة")); }
+    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر نشر الاتفاقية")); }
     finally { setSaving(false); }
   };
   const readonly = selected && selected.status !== "draft";
@@ -84,14 +78,14 @@ export default function AdminPoliciesPage() {
       <aside className="overflow-hidden rounded-2xl border border-[#E1E7EF] bg-white shadow-sm lg:sticky lg:top-0">
         <div className={`flex items-center border-b border-[#EEF1F5] p-3 ${isVersionsSidebarOpen ? "justify-between" : "justify-center"}`}>
           {isVersionsSidebarOpen && <span className="flex items-center gap-2 text-sm font-extrabold text-[#344054]"><History size={17} className="text-[#123C91]" />نسخ السياسة</span>}
-          <button type="button" onClick={() => setIsVersionsSidebarOpen((open) => !open)} className="grid size-9 place-items-center rounded-lg text-[#475467] transition hover:bg-[#F2F4F7]" aria-expanded={isVersionsSidebarOpen} aria-label={isVersionsSidebarOpen ? "طي سايدبار المسودات" : "فتح سايدبار المسودات"} title={isVersionsSidebarOpen ? "طي السايدبار" : "فتح السايدبار"}>{isVersionsSidebarOpen ? <ChevronRight size={19} /> : <ChevronLeft size={19} />}</button>
+          <button type="button" onClick={() => setIsVersionsSidebarOpen((open) => !open)} className="grid size-9 place-items-center rounded-lg text-[#475467] transition hover:bg-[#F2F4F7]" aria-expanded={isVersionsSidebarOpen} aria-label={isVersionsSidebarOpen ? "طي قائمة الإصدارات" : "فتح قائمة الإصدارات"} title={isVersionsSidebarOpen ? "طي القائمة" : "فتح القائمة"}>{isVersionsSidebarOpen ? <ChevronRight size={19} /> : <ChevronLeft size={19} />}</button>
         </div>
-        {isVersionsSidebarOpen ? <div className="p-3"><button type="button" onClick={() => { setSelected(null); setForm(emptyPolicy()); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#EAF2FF] p-3 font-bold text-[#123C91] transition hover:bg-[#DCE9FF]"><FilePlus2 size={18} />مسودة جديدة</button>
+        {isVersionsSidebarOpen ? <div className="p-3"><button type="button" onClick={() => { setSelected(null); setForm(emptyPolicy()); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#EAF2FF] p-3 font-bold text-[#123C91] transition hover:bg-[#DCE9FF]"><FilePlus2 size={18} />إصدار جديد</button>
         <div className="mt-3 space-y-2">{versions.length ? versions.map((version) => {
           const id = version.id || version._id;
           const active = id && id === (selected?.id || selected?._id);
           return <button type="button" key={id} onClick={() => { setSelected(version); setForm(version); }} className={`w-full rounded-xl border p-3 text-right transition ${active ? "border-[#123C91] bg-[#F3F7FF]" : "border-[#E1E7EF] hover:border-[#AAB8CA]"}`}><span className="flex items-center justify-between gap-2"><b className="text-sm text-[#344054]">نسخة {version.version || "مسودة"}</b><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${version.status === "published" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{STATUS_LABELS[version.status] || version.status}</span></span></button>;
-        }) : <p className="py-6 text-center text-sm text-[#98A2B3]">لا توجد نسخ سابقة</p>}</div></div> : <div className="flex justify-center p-3"><button type="button" onClick={() => { setSelected(null); setForm(emptyPolicy()); }} className="grid size-10 place-items-center rounded-xl bg-[#EAF2FF] text-[#123C91] transition hover:bg-[#DCE9FF]" aria-label="مسودة جديدة" title="مسودة جديدة"><FilePlus2 size={19} /></button></div>}
+        }) : <p className="py-6 text-center text-sm text-[#98A2B3]">لا توجد نسخ سابقة</p>}</div></div> : <div className="flex justify-center p-3"><button type="button" onClick={() => { setSelected(null); setForm(emptyPolicy()); }} className="grid size-10 place-items-center rounded-xl bg-[#EAF2FF] text-[#123C91] transition hover:bg-[#DCE9FF]" aria-label="إصدار جديد" title="إصدار جديد"><FilePlus2 size={19} /></button></div>}
       </aside>
 
       <div className="rounded-2xl border border-[#E1E7EF] bg-white p-4 shadow-sm sm:p-6">
@@ -107,7 +101,7 @@ export default function AdminPoliciesPage() {
           {type === "revenue_share_agreement" && <label className="text-xs font-bold text-[#475467]"><span className="mb-1.5 block">عمولة المنصة بنقاط الأساس</span><input disabled={readonly} type="number" value={form.platformCommissionBps ?? ""} onChange={(event) => setForm({ ...form, platformCommissionBps: event.target.value })} className="h-11 w-full rounded-xl border border-[#D7DEE8] px-3 text-sm outline-none focus:border-[#123C91] disabled:bg-[#F8FAFC]" /></label>}
         </div>
         {type === "course_publishing_policy" && <Criteria value={form.criteria || []} disabled={readonly} onChange={(criteria) => setForm({ ...form, criteria })} />}
-        {!readonly && <div className="mt-6 flex flex-col-reverse gap-2 border-t border-[#EEF1F5] pt-5 sm:flex-row"><button type="button" disabled={saving} onClick={save} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#123C91] px-6 font-bold text-white hover:bg-[#0E327B] disabled:opacity-50">{saving ? <LoaderCircle size={18} className="animate-spin" /> : <Save size={18} />}حفظ المسودة</button>{selected?.status === "draft" && <button type="button" disabled={saving} onClick={publish} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 font-bold text-white hover:bg-emerald-700 disabled:opacity-50"><Upload size={18} />نشر النسخة</button>}</div>}
+        {!readonly && <div className="mt-6 border-t border-[#EEF1F5] pt-5"><button type="button" disabled={saving} onClick={publish} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{saving ? <LoaderCircle size={18} className="animate-spin" /> : <Upload size={18} />}{saving ? "جاري النشر..." : "نشر الاتفاقية"}</button></div>}
       </div>
     </div>}
   </main></AdminLayout>;
