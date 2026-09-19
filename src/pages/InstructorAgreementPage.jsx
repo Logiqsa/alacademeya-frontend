@@ -74,9 +74,9 @@ export default function InstructorAgreementPage({
           </div>
         ) : (
           <div className="p-5 sm:p-8">
-            {policy?.effectiveAt && (
+            {policy?.publishedAt && (
               <p className="mb-5 text-xs text-[#667085]">
-                تاريخ السريان: {new Date(policy.effectiveAt).toLocaleDateString("ar-EG")}
+                تاريخ النشر: {new Date(policy.publishedAt).toLocaleDateString("ar-EG")}
               </p>
             )}
             <article
