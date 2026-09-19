@@ -35,3 +35,10 @@ test("published policies use a readable preview and collapsed criteria", () => {
   assert.match(source, /<details className="mt-5/);
   assert.match(source, /معايير ومفاتيح نشر الدورات/);
 });
+
+test("a retired policy can be republished as the new current version", () => {
+  assert.match(source, /selected\.status !== "retired"/);
+  assert.match(source, /await createAdminPolicyDraft\(type, payload\(\)\)/);
+  assert.match(source, /await publishAdminPolicy\(policy\.id \|\| policy\._id\)/);
+  assert.match(source, /نشر هذه النسخة مجددًا/);
+});

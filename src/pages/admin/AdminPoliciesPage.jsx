@@ -89,6 +89,18 @@ export default function AdminPoliciesPage() {
     } catch (error) { toast.error(getApiErrorMessage(error, "تعذر إلغاء نشر الاتفاقية")); }
     finally { setSaving(false); }
   };
+  const republishSelected = async () => {
+    if (!selected || selected.status !== "retired") return;
+    setSaving(true);
+    try {
+      const response = await createAdminPolicyDraft(type, payload());
+      const policy = unwrap(response);
+      await publishAdminPolicy(policy.id || policy._id);
+      toast.success("تم نشر النسخة السابقة كإصدار جديد");
+      await load();
+    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر إعادة نشر النسخة")); }
+    finally { setSaving(false); }
+  };
   const readonly = selected && selected.status !== "draft";
 
   return <AdminLayout><main dir="rtl" className="mx-auto w-full max-w-400 space-y-5 pb-10 text-right font-['IBM_Plex_Sans_Arabic']">
@@ -116,7 +128,7 @@ export default function AdminPoliciesPage() {
       </aside>
 
       <div className="rounded-2xl border border-[#E1E7EF] bg-white p-4 shadow-sm sm:p-6">
-        <div className="mb-5 flex flex-wrap items-center gap-3 border-b border-[#EEF1F5] pb-4"><span className="grid size-10 place-items-center rounded-xl bg-[#EEF4FF] text-[#123C91]"><FileCheck2 size={19} /></span><div className="min-w-0 flex-1"><h2 className="font-extrabold text-[#1F2937]">بيانات السياسة</h2><p className="mt-0.5 text-xs text-[#667085]">أدخل المحتوى باللغتين العربية والإنجليزية</p></div>{readonly && <div className="flex flex-wrap items-center gap-2"><button type="button" disabled={saving} onClick={editSelected} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#123C91] px-4 text-xs font-bold text-white"><Pencil size={15} />تعديل</button>{selected?.status === "published" && <button type="button" disabled={saving} onClick={retireSelected} className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 px-4 text-xs font-bold text-red-700 hover:bg-red-50"><Archive size={15} />إلغاء النشر</button>}</div>}</div>
+        <div className="mb-5 flex flex-wrap items-center gap-3 border-b border-[#EEF1F5] pb-4"><span className="grid size-10 place-items-center rounded-xl bg-[#EEF4FF] text-[#123C91]"><FileCheck2 size={19} /></span><div className="min-w-0 flex-1"><h2 className="font-extrabold text-[#1F2937]">بيانات السياسة</h2><p className="mt-0.5 text-xs text-[#667085]">أدخل المحتوى باللغتين العربية والإنجليزية</p></div>{readonly && <div className="flex flex-wrap items-center gap-2"><button type="button" disabled={saving} onClick={editSelected} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#123C91] px-4 text-xs font-bold text-white"><Pencil size={15} />تعديل</button>{selected?.status === "retired" && <button type="button" disabled={saving} onClick={republishSelected} className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700"><Upload size={15} />{saving ? "جاري النشر..." : "نشر هذه النسخة مجددًا"}</button>}{selected?.status === "published" && <button type="button" disabled={saving} onClick={retireSelected} className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 px-4 text-xs font-bold text-red-700 hover:bg-red-50"><Archive size={15} />إلغاء النشر</button>}</div>}</div>
         <div className="mb-5 flex w-full rounded-xl bg-[#F2F5F9] p-1 sm:w-fit" role="tablist" aria-label="لغة محتوى السياسة">
           {[{ key: "ar", label: "العربية" }, { key: "en", label: "English" }].map((language) => <button type="button" role="tab" aria-selected={activeLanguage === language.key} key={language.key} onClick={() => setActiveLanguage(language.key)} className={`flex-1 rounded-lg px-7 py-2.5 text-sm font-bold transition sm:flex-none ${activeLanguage === language.key ? "bg-white text-[#123C91] shadow-sm" : "text-[#667085] hover:text-[#344054]"}`}>{language.label}</button>)}
         </div>
