@@ -12,6 +12,7 @@ const TYPES = Object.keys(POLICY_LABELS);
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 const emptyPolicy = () => ({ title: { ar: "", en: "" }, content: { ar: "", en: "" }, effectiveAt: "", criteria: [], platformCommissionBps: "" });
 const STATUS_LABELS = { draft: "غير منشورة", published: "منشورة", retired: "سابقة" };
+const commissionPercentage = (basisPoints) => basisPoints === "" || basisPoints == null ? "" : Number(basisPoints) / 100;
 
 export default function AdminPoliciesPage() {
   const queryType = new URLSearchParams(location.search).get("type");
@@ -137,7 +138,7 @@ export default function AdminPoliciesPage() {
         </div>
         <div className="mt-5 grid gap-4 border-t border-[#EEF1F5] pt-5 md:grid-cols-2">
           <label className="text-xs font-bold text-[#475467]"><span className="mb-1.5 flex items-center gap-2"><CalendarDays size={15} />تاريخ بدء التطبيق</span><input disabled={readonly} type="datetime-local" value={form.effectiveAt ? String(form.effectiveAt).slice(0, 16) : ""} onChange={(event) => setForm({ ...form, effectiveAt: event.target.value })} className="h-11 w-full rounded-xl border border-[#D7DEE8] px-3 text-sm outline-none focus:border-[#123C91] disabled:bg-[#F8FAFC]" /></label>
-          {type === "revenue_share_agreement" && <label className="text-xs font-bold text-[#475467]"><span className="mb-1.5 block">عمولة المنصة بنقاط الأساس</span><input disabled={readonly} type="number" value={form.platformCommissionBps ?? ""} onChange={(event) => setForm({ ...form, platformCommissionBps: event.target.value })} className="h-11 w-full rounded-xl border border-[#D7DEE8] px-3 text-sm outline-none focus:border-[#123C91] disabled:bg-[#F8FAFC]" /></label>}
+          {type === "revenue_share_agreement" && <label className="text-xs font-bold text-[#475467]"><span className="mb-1.5 block">عمولة المنصة (%)</span><div className="relative"><input disabled={readonly} type="number" min="0" max="100" step="0.01" dir="ltr" value={commissionPercentage(form.platformCommissionBps)} onChange={(event) => setForm({ ...form, platformCommissionBps: event.target.value === "" ? "" : Math.round(Number(event.target.value) * 100) })} className="h-11 w-full rounded-xl border border-[#D7DEE8] px-9 text-left text-sm outline-none focus:border-[#123C91] disabled:bg-[#F8FAFC]" /><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#667085]">%</span></div><small className="mt-1.5 block font-normal leading-5 text-[#667085]">يجب أن تطابق نسبة العمولة التشغيلية المعتمدة على السيرفر. تعديلها هنا لا يغيّر إعداد العمولة العام.</small></label>}
         </div>
         {type === "course_publishing_policy" && <Criteria value={form.criteria || []} disabled={readonly} onChange={(criteria) => setForm({ ...form, criteria })} />}
         {!readonly && <div className="mt-6 flex flex-wrap gap-2 border-t border-[#EEF1F5] pt-5"><button type="button" disabled={saving} onClick={publish} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{saving ? <LoaderCircle size={18} className="animate-spin" /> : <Upload size={18} />}{saving ? "جاري النشر..." : "نشر الاتفاقية"}</button></div>}

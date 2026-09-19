@@ -42,3 +42,9 @@ test("a retired policy can be republished as the new current version", () => {
   assert.match(source, /await publishAdminPolicy\(policy\.id \|\| policy\._id\)/);
   assert.match(source, /نشر هذه النسخة مجددًا/);
 });
+
+test("revenue share commission is entered as a percentage and sent as basis points", () => {
+  assert.match(source, /عمولة المنصة \(%\)/);
+  assert.match(source, /Math\.round\(Number\(event\.target\.value\) \* 100\)/);
+  assert.match(source, /تعديلها هنا لا يغيّر إعداد العمولة العام/);
+});
