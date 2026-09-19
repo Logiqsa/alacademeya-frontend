@@ -18,6 +18,8 @@ test("plain HTML pasted into the rich text editor is imported as formatted conte
 test("encoded policy markup is normalized for saving and public rendering", () => {
   assert.match(normalizer, /HTML_TEXT_PATTERN\.test\(visibleText\)/);
   assert.match(normalizer, /sanitizeTree\(normalized\.body\)/);
+  assert.match(normalizer, /repairReversedRtlTags/);
+  assert.match(normalizer, /plainTextFallback/);
   assert.match(adminPolicy, /normalizeRichTextHtml\(content\)/);
   assert.match(publicPolicy, /normalizeRichTextHtml\(localized\(policy\?\.content\)\)/);
 });

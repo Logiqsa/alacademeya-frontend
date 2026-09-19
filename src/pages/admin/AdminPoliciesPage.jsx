@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { CalendarDays, ChevronLeft, ChevronRight, FileCheck2, FilePlus2, History, LoaderCircle, Plus, ShieldCheck, Upload } from "lucide-react";
+import { Archive, CalendarDays, ChevronLeft, ChevronRight, Copy, FileCheck2, FilePlus2, History, LoaderCircle, Pencil, Plus, ShieldCheck, Trash2, Upload } from "lucide-react";
 import AdminLayout from "../../components/admin/layout/AdminLayout";
 import RichTextEditor from "../../components/shared/RichTextEditor";
 import { POLICY_LABELS } from "../../components/course/PolicyAcceptanceDialog";
-import { createAdminPolicyDraft, getAdminPolicyVersions, publishAdminPolicy, updateAdminPolicyDraft } from "../../services/APIService";
+import { createAdminPolicyDraft, getAdminPolicyVersions, publishAdminPolicy, retireAdminPolicy, updateAdminPolicyDraft } from "../../services/APIService";
 import { getApiErrorMessage } from "../../services/apiError";
 import { normalizeRichTextHtml } from "../../utils/richTextHtml";
 
@@ -52,7 +52,7 @@ export default function AdminPoliciesPage() {
     ...(type === "course_publishing_policy" ? {
       criteria: (form.criteria || []).map((criterion, index) => ({
         ...criterion,
-        key: `criterion_${index + 1}`,
+        key: /^[a-z0-9_-]+$/.test(criterion.key || "") ? criterion.key : `criterion_${index + 1}`,
         sortOrder: index,
       })),
     } : {}),
@@ -69,6 +69,24 @@ export default function AdminPoliciesPage() {
       toast.success("تم نشر الاتفاقية");
       await load();
     } catch (error) { toast.error(getApiErrorMessage(error, "تعذر نشر الاتفاقية")); }
+    finally { setSaving(false); }
+  };
+  const editSelected = () => {
+    setForm({
+      ...selected,
+      content: Object.fromEntries(Object.entries(selected.content || {}).map(([language, content]) => [language, normalizeRichTextHtml(content)])),
+    });
+    setSelected(null);
+    toast.success("يمكنك تعديل المحتوى ثم نشره كإصدار جديد");
+  };
+  const retireSelected = async () => {
+    if (!selected || !window.confirm("سيتم إلغاء نشر الاتفاقية وإخفاؤها عن المستخدمين. هل تريد المتابعة؟")) return;
+    setSaving(true);
+    try {
+      await retireAdminPolicy(selected.id || selected._id);
+      toast.success("تم إلغاء نشر الاتفاقية مع الاحتفاظ بسجل الإصدارات");
+      await load();
+    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر إلغاء نشر الاتفاقية")); }
     finally { setSaving(false); }
   };
   const readonly = selected && selected.status !== "draft";
@@ -98,7 +116,7 @@ export default function AdminPoliciesPage() {
       </aside>
 
       <div className="rounded-2xl border border-[#E1E7EF] bg-white p-4 shadow-sm sm:p-6">
-        <div className="mb-5 flex items-center gap-3 border-b border-[#EEF1F5] pb-4"><span className="grid size-10 place-items-center rounded-xl bg-[#EEF4FF] text-[#123C91]"><FileCheck2 size={19} /></span><div><h2 className="font-extrabold text-[#1F2937]">بيانات السياسة</h2><p className="mt-0.5 text-xs text-[#667085]">أدخل المحتوى باللغتين العربية والإنجليزية</p></div></div>
+        <div className="mb-5 flex flex-wrap items-center gap-3 border-b border-[#EEF1F5] pb-4"><span className="grid size-10 place-items-center rounded-xl bg-[#EEF4FF] text-[#123C91]"><FileCheck2 size={19} /></span><div className="min-w-0 flex-1"><h2 className="font-extrabold text-[#1F2937]">بيانات السياسة</h2><p className="mt-0.5 text-xs text-[#667085]">أدخل المحتوى باللغتين العربية والإنجليزية</p></div><button type="button" onClick={() => { navigator.clipboard.writeText(type); toast.success("تم نسخ المفتاح"); }} className="inline-flex items-center gap-2 rounded-lg border border-[#D7DEE8] px-3 py-2 text-xs font-bold text-[#475467]" title="نسخ مفتاح الاتفاقية"><Copy size={14} /><code dir="ltr">{type}</code></button></div>
         <div className="mb-5 flex w-full rounded-xl bg-[#F2F5F9] p-1 sm:w-fit" role="tablist" aria-label="لغة محتوى السياسة">
           {[{ key: "ar", label: "العربية" }, { key: "en", label: "English" }].map((language) => <button type="button" role="tab" aria-selected={activeLanguage === language.key} key={language.key} onClick={() => setActiveLanguage(language.key)} className={`flex-1 rounded-lg px-7 py-2.5 text-sm font-bold transition sm:flex-none ${activeLanguage === language.key ? "bg-white text-[#123C91] shadow-sm" : "text-[#667085] hover:text-[#344054]"}`}>{language.label}</button>)}
         </div>
@@ -110,7 +128,7 @@ export default function AdminPoliciesPage() {
           {type === "revenue_share_agreement" && <label className="text-xs font-bold text-[#475467]"><span className="mb-1.5 block">عمولة المنصة بنقاط الأساس</span><input disabled={readonly} type="number" value={form.platformCommissionBps ?? ""} onChange={(event) => setForm({ ...form, platformCommissionBps: event.target.value })} className="h-11 w-full rounded-xl border border-[#D7DEE8] px-3 text-sm outline-none focus:border-[#123C91] disabled:bg-[#F8FAFC]" /></label>}
         </div>
         {type === "course_publishing_policy" && <Criteria value={form.criteria || []} disabled={readonly} onChange={(criteria) => setForm({ ...form, criteria })} />}
-        {!readonly && <div className="mt-6 border-t border-[#EEF1F5] pt-5"><button type="button" disabled={saving} onClick={publish} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{saving ? <LoaderCircle size={18} className="animate-spin" /> : <Upload size={18} />}{saving ? "جاري النشر..." : "نشر الاتفاقية"}</button></div>}
+        <div className="mt-6 flex flex-wrap gap-2 border-t border-[#EEF1F5] pt-5">{!readonly ? <button type="button" disabled={saving} onClick={publish} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{saving ? <LoaderCircle size={18} className="animate-spin" /> : <Upload size={18} />}{saving ? "جاري النشر..." : "نشر الاتفاقية"}</button> : <><button type="button" disabled={saving} onClick={editSelected} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#123C91] px-5 font-bold text-white"><Pencil size={17} />تعديل كإصدار جديد</button>{selected?.status === "published" && <button type="button" disabled={saving} onClick={retireSelected} className="inline-flex h-11 items-center gap-2 rounded-xl border border-red-200 px-5 font-bold text-red-700 hover:bg-red-50"><Archive size={17} />إلغاء نشر الاتفاقية</button>}</>}</div>
       </div>
     </div>}
   </main></AdminLayout>;
@@ -126,5 +144,5 @@ const LanguageFields = ({ lang, form, readonly, local }) => {
 
 function Criteria({ value, onChange, disabled }) {
   const update = (index, patch) => onChange(value.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
-  return <div className="mt-5 border-t border-[#EEF1F5] pt-5"><div className="flex items-center justify-between gap-3"><div><h3 className="font-extrabold text-[#1F2937]">معايير جودة النشر</h3><p className="mt-0.5 text-xs text-[#667085]">الشروط التي يجب تحققها قبل نشر الدورة</p></div>{!disabled && <button type="button" onClick={() => onChange([...value, { title: { ar: "", en: "" }, description: { ar: "", en: "" }, required: true, sortOrder: value.length }])} className="inline-flex items-center gap-1 rounded-lg bg-[#EAF2FF] px-3 py-2 text-xs font-bold text-[#123C91]"><Plus size={15} />إضافة معيار</button>}</div><div className="mt-3 space-y-3">{value.map((criterion, index) => <div key={index} className="grid gap-3 rounded-xl border border-[#E1E7EF] bg-[#FCFDFE] p-4"><input disabled={disabled} value={criterion.title?.ar || ""} placeholder="عنوان المعيار" onChange={(event) => update(index, { title: { ...criterion.title, ar: event.target.value } })} className="h-10 rounded-lg border border-[#D7DEE8] px-3 text-sm" /><textarea disabled={disabled} value={criterion.description?.ar || ""} placeholder="وصف المعيار" onChange={(event) => update(index, { description: { ...criterion.description, ar: event.target.value } })} className="rounded-lg border border-[#D7DEE8] p-3 text-sm" /><label className="flex items-center gap-2 text-sm font-bold text-[#475467]"><input disabled={disabled} type="checkbox" checked={criterion.required !== false} onChange={(event) => update(index, { required: event.target.checked })} className="size-4 accent-[#123C91]" />معيار إلزامي</label></div>)}</div></div>;
+  return <div className="mt-5 border-t border-[#EEF1F5] pt-5"><div className="flex items-center justify-between gap-3"><div><h3 className="font-extrabold text-[#1F2937]">معايير جودة النشر</h3><p className="mt-0.5 text-xs text-[#667085]">الشروط التي يجب تحققها قبل نشر الدورة</p></div>{!disabled && <button type="button" onClick={() => onChange([...value, { key: `criterion_${value.length + 1}`, title: { ar: "", en: "" }, description: { ar: "", en: "" }, required: true, sortOrder: value.length }])} className="inline-flex items-center gap-1 rounded-lg bg-[#EAF2FF] px-3 py-2 text-xs font-bold text-[#123C91]"><Plus size={15} />إضافة معيار</button>}</div><div className="mt-3 space-y-3">{value.map((criterion, index) => <div key={index} className="grid gap-3 rounded-xl border border-[#E1E7EF] bg-[#FCFDFE] p-4"><div className="flex items-center justify-between gap-3"><code dir="ltr" className="rounded bg-[#EEF2F6] px-2 py-1 text-xs text-[#475467]">{criterion.key || `criterion_${index + 1}`}</code>{!disabled && <button type="button" onClick={() => onChange(value.filter((_, itemIndex) => itemIndex !== index))} className="inline-flex items-center gap-1 text-xs font-bold text-red-600"><Trash2 size={14} />حذف المعيار</button>}</div><input disabled={disabled} value={criterion.title?.ar || ""} placeholder="عنوان المعيار" onChange={(event) => update(index, { title: { ...criterion.title, ar: event.target.value } })} className="h-10 rounded-lg border border-[#D7DEE8] px-3 text-sm" /><textarea disabled={disabled} value={criterion.description?.ar || ""} placeholder="وصف المعيار" onChange={(event) => update(index, { description: { ...criterion.description, ar: event.target.value } })} className="rounded-lg border border-[#D7DEE8] p-3 text-sm" /><label className="flex items-center gap-2 text-sm font-bold text-[#475467]"><input disabled={disabled} type="checkbox" checked={criterion.required !== false} onChange={(event) => update(index, { required: event.target.checked })} className="size-4 accent-[#123C91]" />معيار إلزامي</label></div>)}</div></div>;
 }
