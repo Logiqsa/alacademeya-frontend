@@ -29,6 +29,7 @@ const CourseFinancesPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [initialized, setInitialized] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState(null);
+  const [filterOptions, setFilterOptions] = useState({ courses: [], instructors: [] });
   const [sections, setSections] = useState({ summary: initialSection(null), courses: initialSection([]), instructors: initialSection([]), ledger: initialSection({ items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } }) });
   const query = useMemo(() => Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== "")), [filters]);
   const setPending = useCallback((names) => setSections((current) => { const next = { ...current }; names.forEach((name) => { next[name] = { ...current[name], loading: true, error: "" }; }); return next; }), []);
@@ -43,14 +44,26 @@ const CourseFinancesPage = () => {
     return () => { active = false; };
   }, [page, pageSize, query, refreshKey, settle]);
 
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([getCourseEarningsByCourse({}), getCourseEarningsByInstructor({})]).then(([courses, instructors]) => {
+      if (!active) return;
+      setFilterOptions({
+        courses: courses.status === "fulfilled" ? courses.value : [],
+        instructors: instructors.status === "fulfilled" ? instructors.value : [],
+      });
+    });
+    return () => { active = false; };
+  }, []);
+
   const retry = async (name) => {
     setPending([name]);
     const calls = { summary: () => getCourseEarningsSummary(query), courses: () => getCourseEarningsByCourse(query), instructors: () => getCourseEarningsByInstructor(query), ledger: () => getCourseEarningsLedger({ ...query, page, limit: pageSize }) };
     const messages = { summary: "تعذر تحميل الملخص المالي", courses: "تعذر تحميل أداء الدورات", instructors: "تعذر تحميل أداء المحاضرين", ledger: "تعذر تحميل سجل المبيعات" };
     const [result] = await Promise.allSettled([calls[name]()]); settle(name, result, messages[name]);
   };
-  const courseOptions = useMemo(() => [...new Map([...sections.courses.data, ...sections.ledger.data.items].filter((item) => item.courseId || item.id).map((item) => [String(item.courseId || item.id), { id: item.courseId || item.id, name: item.course }])).values()], [sections.courses.data, sections.ledger.data.items]);
-  const instructorOptions = useMemo(() => [...new Map([...sections.instructors.data, ...sections.courses.data, ...sections.ledger.data.items].filter((item) => item.instructorId || item.id).map((item) => [String(item.instructorId || item.id), { id: item.instructorId || item.id, name: item.instructor }])).values()], [sections.courses.data, sections.instructors.data, sections.ledger.data.items]);
+  const courseOptions = useMemo(() => [...new Map([...filterOptions.courses, ...sections.courses.data, ...sections.ledger.data.items].filter((item) => item.courseId || item.id).map((item) => [String(item.courseId || item.id), { id: item.courseId || item.id, name: item.course }])).values()], [filterOptions.courses, sections.courses.data, sections.ledger.data.items]);
+  const instructorOptions = useMemo(() => [...new Map([...filterOptions.instructors, ...sections.instructors.data, ...sections.courses.data, ...sections.ledger.data.items].filter((item) => item.instructorId || item.id).map((item) => [String(item.instructorId || item.id), { id: item.instructorId || item.id, name: item.instructor }])).values()], [filterOptions.instructors, sections.courses.data, sections.instructors.data, sections.ledger.data.items]);
   const currencies = useMemo(() => [...new Set([...(sections.summary.data?.currencies || []).map((item) => item.currency), ...sections.courses.data.map((item) => item.currency), ...sections.ledger.data.items.map((item) => item.currency)].filter(Boolean))].sort(), [sections]);
   const anyLoading = Object.values(sections).some((item) => item.loading);
   const applyFilters = () => {
