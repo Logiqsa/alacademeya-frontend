@@ -13,6 +13,8 @@ const TOOLBAR = [
   ["clean"],
 ];
 
+const HTML_TEXT_PATTERN = /<\/?(?:div|h[1-6]|p|ul|ol|li|strong|b|em|i|u|br|blockquote|a)(?:\s[^>]*)?>/i;
+
 const RichTextEditor = ({
   value,
   onChange,
@@ -59,10 +61,24 @@ const RichTextEditor = ({
       setCharacterCount(Math.max(0, editor.getText().trimEnd().length));
       if (source === "user") onChangeRef.current(editor.root.innerHTML);
     };
+    const handlePaste = (event) => {
+      const pastedText = event.clipboardData?.getData("text/plain")?.trim();
+      if (!pastedText || !HTML_TEXT_PATTERN.test(pastedText)) return;
+
+      event.preventDefault();
+      const range = editor.getSelection(true) || { index: editor.getLength() - 1, length: 0 };
+      const lengthBeforePaste = editor.getLength();
+      if (range.length) editor.deleteText(range.index, range.length, "user");
+      editor.clipboard.dangerouslyPasteHTML(range.index, pastedText, "user");
+      const insertedLength = editor.getLength() - lengthBeforePaste + range.length;
+      editor.setSelection(range.index + insertedLength, 0, "silent");
+    };
     editor.on("text-change", handleTextChange);
+    editor.root.addEventListener("paste", handlePaste);
 
     return () => {
       editor.off("text-change", handleTextChange);
+      editor.root.removeEventListener("paste", handlePaste);
       editor.getModule("toolbar")?.container?.remove();
       container.replaceChildren();
       container.removeAttribute("class");
