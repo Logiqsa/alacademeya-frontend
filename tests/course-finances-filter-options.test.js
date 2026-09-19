@@ -17,3 +17,9 @@ test("finance filters hide redundant fields and scope courses by instructor", ()
   assert.match(source, /placeholder=\{value\.instructorId \? "كل دورات المحاضر" : "كل الدورات"\}/);
   assert.doesNotMatch(source, /<Field label="العملة">/);
 });
+
+test("finance summary uses stable western numerals and a short apply label", () => {
+  assert.match(source, /toLocaleString\("en-US"/);
+  assert.match(source, />تطبيق<\/button>/);
+  assert.doesNotMatch(source, />تطبيق الفلاتر<\/button>/);
+});
