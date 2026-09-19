@@ -4,6 +4,7 @@ import { ChevronDown, GraduationCap, LayoutDashboard, LogOut, Menu, X } from "lu
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { canHaveInstructorProfile, getDashboardPathByRole, isInstructor } from "../../utils/roles";
+import useLandingPageSettings from "../../hooks/useLandingPageSettings";
 
 // ── الـ role بيحدد الداشبورد ──────────────────────────────────────────────
 // admin / super-admin → /admin-dashboard
@@ -26,18 +27,19 @@ const Navbar = () => {
   const accountMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { sections } = useLandingPageSettings();
   const showBecomeInstructor =
     canHaveInstructorProfile(user) && !isInstructor(user);
 
   const links = [
     { title: "الرئيسية", id: "home" },
-    { title: "الدورات", id: "courses" },
-    { title: "الباقات", id: "pricing" },
-    { title: "عن الأكاديمية", id: "features" },
-    { title: "المميزات", id: "services" },
-    { title: "المدونه", id: "blog" },
-    { title: "الأسئلة الشائعة", id: "faq" },
-  ];
+    { title: "الدورات", id: "courses", sectionKey: "featuredCourses" },
+    { title: "الباقات", id: "pricing", sectionKey: "pricing" },
+    { title: "عن الأكاديمية", id: "features", sectionKey: "features" },
+    { title: "المميزات", id: "services", sectionKey: "services" },
+    { title: "المدونه", id: "blog", sectionKey: "blog" },
+    { title: "الأسئلة الشائعة", id: "faq", sectionKey: "faq" },
+  ].filter((item) => !item.sectionKey || sections[item.sectionKey]);
   const policyLinks = [
     { title: "اتفاقية المحاضر", to: "/policies/instructor-agreement" },
     { title: "سياسة نشر الدورات", to: "/policies/course-publishing" },

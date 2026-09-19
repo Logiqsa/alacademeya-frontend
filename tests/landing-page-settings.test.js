@@ -6,6 +6,7 @@ const landing = readFileSync(new URL("../src/pages/Landing.jsx", import.meta.url
 const admin = readFileSync(new URL("../src/components/admin/dashboard/LandingStatsSettings.jsx", import.meta.url), "utf8");
 const hook = readFileSync(new URL("../src/hooks/useLandingPageSettings.js", import.meta.url), "utf8");
 const api = readFileSync(new URL("../src/services/APIService.js", import.meta.url), "utf8");
+const navbar = readFileSync(new URL("../src/components/layout/Navbar.jsx", import.meta.url), "utf8");
 
 test("landing sections use public backend visibility settings", () => {
   assert.match(landing, /useLandingPageSettings\(\)/);
@@ -14,6 +15,14 @@ test("landing sections use public backend visibility settings", () => {
   }
   assert.match(hook, /getLandingPageSettings\(\)/);
   assert.doesNotMatch(hook, /localStorage/);
+});
+
+test("navbar hides links for landing sections disabled by the admin", () => {
+  assert.match(navbar, /const \{ sections \} = useLandingPageSettings\(\)/);
+  for (const key of ["featuredCourses", "pricing", "features", "blog", "services", "faq"]) {
+    assert.match(navbar, new RegExp(`sectionKey: "${key}"`));
+  }
+  assert.match(navbar, /\.filter\(\(item\) => !item\.sectionKey \|\| sections\[item\.sectionKey\]\)/);
 });
 
 test("admin can persist visibility and all four landing statistics", () => {
