@@ -46,7 +46,13 @@ export default function AdminPoliciesPage() {
     title: form.title,
     content: form.content,
     ...(form.effectiveAt ? { effectiveAt: new Date(form.effectiveAt).toISOString() } : {}),
-    ...(type === "course_publishing_policy" ? { criteria: form.criteria } : {}),
+    ...(type === "course_publishing_policy" ? {
+      criteria: (form.criteria || []).map((criterion, index) => ({
+        ...criterion,
+        key: `criterion_${index + 1}`,
+        sortOrder: index,
+      })),
+    } : {}),
     ...(type === "revenue_share_agreement" ? { platformCommissionBps: Number(form.platformCommissionBps) } : {}),
   });
   const publish = async () => {
@@ -117,5 +123,5 @@ const LanguageFields = ({ lang, form, readonly, local }) => {
 
 function Criteria({ value, onChange, disabled }) {
   const update = (index, patch) => onChange(value.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
-  return <div className="mt-5 border-t border-[#EEF1F5] pt-5"><div className="flex items-center justify-between gap-3"><div><h3 className="font-extrabold text-[#1F2937]">معايير جودة النشر</h3><p className="mt-0.5 text-xs text-[#667085]">الشروط التي يجب تحققها قبل نشر الدورة</p></div>{!disabled && <button type="button" onClick={() => onChange([...value, { key: "", title: { ar: "", en: "" }, description: { ar: "", en: "" }, required: true, sortOrder: value.length }])} className="inline-flex items-center gap-1 rounded-lg bg-[#EAF2FF] px-3 py-2 text-xs font-bold text-[#123C91]"><Plus size={15} />إضافة معيار</button>}</div><div className="mt-3 space-y-3">{value.map((criterion, index) => <div key={index} className="grid gap-3 rounded-xl border border-[#E1E7EF] bg-[#FCFDFE] p-4 sm:grid-cols-2"><input disabled={disabled} value={criterion.key || ""} placeholder="المفتاح" onChange={(event) => update(index, { key: event.target.value })} className="h-10 rounded-lg border border-[#D7DEE8] px-3 text-sm" /><input disabled={disabled} value={criterion.title?.ar || ""} placeholder="العنوان العربي" onChange={(event) => update(index, { title: { ...criterion.title, ar: event.target.value } })} className="h-10 rounded-lg border border-[#D7DEE8] px-3 text-sm" /><textarea disabled={disabled} value={criterion.description?.ar || ""} placeholder="الوصف العربي" onChange={(event) => update(index, { description: { ...criterion.description, ar: event.target.value } })} className="rounded-lg border border-[#D7DEE8] p-3 text-sm sm:col-span-2" /><label className="flex items-center gap-2 text-sm font-bold text-[#475467]"><input disabled={disabled} type="checkbox" checked={criterion.required !== false} onChange={(event) => update(index, { required: event.target.checked })} className="size-4 accent-[#123C91]" />معيار إلزامي</label></div>)}</div></div>;
+  return <div className="mt-5 border-t border-[#EEF1F5] pt-5"><div className="flex items-center justify-between gap-3"><div><h3 className="font-extrabold text-[#1F2937]">معايير جودة النشر</h3><p className="mt-0.5 text-xs text-[#667085]">الشروط التي يجب تحققها قبل نشر الدورة</p></div>{!disabled && <button type="button" onClick={() => onChange([...value, { title: { ar: "", en: "" }, description: { ar: "", en: "" }, required: true, sortOrder: value.length }])} className="inline-flex items-center gap-1 rounded-lg bg-[#EAF2FF] px-3 py-2 text-xs font-bold text-[#123C91]"><Plus size={15} />إضافة معيار</button>}</div><div className="mt-3 space-y-3">{value.map((criterion, index) => <div key={index} className="grid gap-3 rounded-xl border border-[#E1E7EF] bg-[#FCFDFE] p-4"><input disabled={disabled} value={criterion.title?.ar || ""} placeholder="عنوان المعيار" onChange={(event) => update(index, { title: { ...criterion.title, ar: event.target.value } })} className="h-10 rounded-lg border border-[#D7DEE8] px-3 text-sm" /><textarea disabled={disabled} value={criterion.description?.ar || ""} placeholder="وصف المعيار" onChange={(event) => update(index, { description: { ...criterion.description, ar: event.target.value } })} className="rounded-lg border border-[#D7DEE8] p-3 text-sm" /><label className="flex items-center gap-2 text-sm font-bold text-[#475467]"><input disabled={disabled} type="checkbox" checked={criterion.required !== false} onChange={(event) => update(index, { required: event.target.checked })} className="size-4 accent-[#123C91]" />معيار إلزامي</label></div>)}</div></div>;
 }
