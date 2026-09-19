@@ -28,3 +28,10 @@ test("published policies can be copied into a new edition or retired", () => {
   assert.match(source, /حذف المعيار/);
   assert.doesNotMatch(source, /تعديل كإصدار جديد/);
 });
+
+test("published policies use a readable preview and collapsed criteria", () => {
+  assert.match(source, /if \(readonly\) return <article/);
+  assert.match(source, /dangerouslySetInnerHTML=\{\{ __html: normalizeRichTextHtml/);
+  assert.match(source, /<details className="mt-5/);
+  assert.match(source, /معايير ومفاتيح نشر الدورات/);
+});
