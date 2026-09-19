@@ -24,7 +24,7 @@ test("published policies can be copied into a new edition or retired", () => {
   assert.match(source, /<Pencil size=\{15\} \/>تعديل/);
   assert.match(source, /retireAdminPolicy/);
   assert.match(source, /إلغاء نشر الاتفاقية/);
-  assert.match(source, /navigator\.clipboard\.writeText\(type\)/);
+  assert.doesNotMatch(source, /navigator\.clipboard\.writeText\(type\)/);
   assert.match(source, /حذف المعيار/);
   assert.doesNotMatch(source, /تعديل كإصدار جديد/);
 });
