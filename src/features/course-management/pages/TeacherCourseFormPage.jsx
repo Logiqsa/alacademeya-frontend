@@ -90,6 +90,21 @@ const extractOptions = (response, key) => {
   return data?.[key] || data?.items || data?.results || [];
 };
 
+const FILE_MIME_BY_EXTENSION = {
+  mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime", mkv: "video/x-matroska", avi: "video/x-msvideo",
+  mp3: "audio/mpeg", m4a: "audio/mp4", wav: "audio/wav", ogg: "audio/ogg",
+  jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp",
+  pdf: "application/pdf", doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ppt: "application/vnd.ms-powerpoint", pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation", txt: "text/plain",
+};
+
+const normalizeSelectedFile = (file) => {
+  if (!file || file.type) return file;
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const inferredType = FILE_MIME_BY_EXTENSION[extension];
+  return inferredType ? new File([file], file.name, { type: inferredType, lastModified: file.lastModified }) : file;
+};
+
 const UploadBox = ({
   label,
   accept,
@@ -106,6 +121,7 @@ const UploadBox = ({
 
   const handleFile = (file) => {
     if (!file) return;
+    file = normalizeSelectedFile(file);
     setPendingFile({
       file,
       name: file.name,
@@ -157,7 +173,10 @@ const UploadBox = ({
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 p-3">
             <span className="min-w-0 flex-1 truncate text-xs font-normal text-[#667085]">
-              {value.name}
+              {value.name || "ملف مرفوع"}
+            </span>
+            <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${value.file ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+              {value.file ? "تم الاختيار · ينتظر الرفع" : "مرفوع"}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -844,8 +863,11 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           };
         }),
       });
+      const submittedForReview = !isAdminFlow && status === "قيد المراجعة";
       toast.success(
-        existingCourse ? "تم تعديل الدورة بنجاح" : "تم إنشاء الدورة بنجاح",
+        submittedForReview
+          ? "تم حفظ الدورة وإرسالها للمراجعة"
+          : existingCourse ? "تم تعديل الدورة بنجاح" : "تم إنشاء الدورة بنجاح",
         { id: savingToast },
       );
       const savedCourseId = saved?.id || existingCourse?.id || courseId;
@@ -1501,7 +1523,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                 />
                 <UploadBox
                   label="فيديو ترويجي"
-                  accept="video/mp4,video/webm,video/quicktime"
+                  accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo,.mp4,.webm,.mov,.mkv,.avi"
                   value={course.promoVideo}
                   onChange={(file) => update("promoVideo", file)}
                   onRemove={() => update("promoVideo", "")}
@@ -2074,20 +2096,22 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                 <span className="mt-1 text-xs text-[#98A2B3]">
                   {activeModalLesson(contentModal)?.type === "ملف"
                     ? "PDF, DOC, DOCX, PPT, PPTX, JPG, PNG"
-                    : "MP4, WebM, MOV"}
+                    : activeModalLesson(contentModal)?.type === "صوت"
+                      ? "MP3, M4A, WAV, OGG, WebM"
+                      : "MP4, WebM, MOV, MKV, AVI"}
                 </span>
                 <input
                   type="file"
                   accept={
                     activeModalLesson(contentModal)?.type === "ملف"
-                      ? ".pdf,.doc,.docx,.ppt,.pptx,image/jpeg,image/png"
+                      ? ".pdf,.doc,.docx,.ppt,.pptx,.txt,image/jpeg,image/png,image/webp"
                       : activeModalLesson(contentModal)?.type === "صوت"
-                        ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4"
-                        : "video/mp4,video/webm,video/quicktime"
+                        ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/webm,.mp3,.m4a,.wav,.ogg,.webm"
+                        : "video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo,.mp4,.webm,.mov,.mkv,.avi"
                   }
                   className="sr-only"
                   onChange={(event) => {
-                    const file = event.target.files?.[0];
+                    const file = normalizeSelectedFile(event.target.files?.[0]);
                     if (!file) return;
                     const lessonType = activeModalLesson(contentModal)?.type;
                     const isDocument = lessonType === "ملف";
@@ -2162,6 +2186,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                       {activeModalLesson(contentModal).media.name ||
                         activeModalLesson(contentModal).media.originalName ||
                         "محتوى الدرس"}
+                    </span>
+                    <span className={`mr-auto shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${activeModalLesson(contentModal).media.file ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+                      {activeModalLesson(contentModal).media.file ? "تم الاختيار · ينتظر حفظ الدورة" : "مرفوع"}
                     </span>
                   </div>
                 </div>

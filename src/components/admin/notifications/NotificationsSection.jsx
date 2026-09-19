@@ -156,7 +156,7 @@ const isNewUserNotification = (notification) => {
 
 const JOIN_ROLE_OPTIONS = [
   { value: "all", label: "كل الأنواع" },
-  { value: "teacher", label: "معلم" },
+  { value: "teacher", label: "محاضر" },
   { value: "student", label: "طالب" },
   { value: "parent", label: "ولي أمر" },
   { value: "admin", label: "مشرف" },
@@ -175,7 +175,7 @@ const notificationUserRole = (notification) => {
     if (role) {
       const normalized = String(role).trim().toLowerCase();
       if (["super-admin", "super_admin"].includes(normalized)) return "admin";
-      if (["معلم", "teacher"].includes(normalized)) return "teacher";
+      if (["محاضر", "instructor", "معلم", "teacher"].includes(normalized)) return "teacher";
       if (["طالب", "student"].includes(normalized)) return "student";
       if (["ولي أمر", "ولي امر", "parent"].includes(normalized))
         return "parent";
@@ -187,7 +187,7 @@ const notificationUserRole = (notification) => {
   const searchable = [localizedText(notification.title), descOf(notification)]
     .join(" ")
     .toLowerCase();
-  if (searchable.includes("معلم") || searchable.includes("teacher"))
+  if (searchable.includes("محاضر") || searchable.includes("instructor") || searchable.includes("معلم") || searchable.includes("teacher"))
     return "teacher";
   if (searchable.includes("طالب") || searchable.includes("student"))
     return "student";
@@ -495,7 +495,7 @@ const NotificationsSection = ({
           username: user.username,
           role:
             {
-              teacher: "معلم",
+              teacher: "محاضر",
               student: "طالب",
               parent: "ولي أمر",
               admin: "مشرف",
@@ -569,7 +569,7 @@ const NotificationsSection = ({
         grades: listLabel(teacher.grades ?? teacher.grade),
         curricula: listLabel(teacher.curriculums ?? teacher.curriculum),
         fileUrls: getTeacherFileUrls(teacher),
-        role: "معلم",
+        role: "محاضر",
         isTeacher: true,
       });
     } catch (err) {
