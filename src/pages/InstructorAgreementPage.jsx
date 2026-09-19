@@ -55,9 +55,6 @@ export default function InstructorAgreementPage({
               <h1 className="text-xl font-extrabold sm:text-2xl">
                 {localized(policy?.title) || POLICY_TITLES[policyType]}
               </h1>
-              {policy?.version && (
-                <p className="mt-1 text-sm text-white/75">الإصدار {policy.version}</p>
-              )}
             </div>
           </div>
         </header>
