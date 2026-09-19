@@ -19,3 +19,9 @@ test("instructor notifications use the instructor label", () => {
   assert.match(notifications, /"محاضر", "instructor"/);
   assert.match(notifications, /teacher: "محاضر"/);
 });
+
+test("admin purchase notifications link the course title to its details page", () => {
+  assert.match(notifications, /notificationCourse/);
+  assert.match(notifications, /linkedText=\{course\.id \? course\.title/);
+  assert.match(notifications, /`\/admin\/courses\/\$\{encodeURIComponent\(course\.id\)\}`/);
+});

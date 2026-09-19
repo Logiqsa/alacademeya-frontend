@@ -30,6 +30,9 @@ const NotificationCard = ({
   onDelete,
   personName,
   onPersonClick,
+  linkedText,
+  linkedTextTitle,
+  onLinkedTextClick,
   compact = false,
 }) => {
   const isAcademic = type === "academic";
@@ -38,6 +41,9 @@ const NotificationCard = ({
   const safeDescription = getLocalizedText(description, "ar");
   const personIndex = personName
     ? safeDescription.indexOf(personName)
+    : -1;
+  const linkedTextIndex = linkedText
+    ? safeDescription.indexOf(linkedText)
     : -1;
 
   return (
@@ -110,6 +116,22 @@ const NotificationCard = ({
                   {personName}
                 </button>
                 {safeDescription.slice(personIndex + personName.length)}
+              </>
+            ) : linkedTextIndex >= 0 && onLinkedTextClick ? (
+              <>
+                {safeDescription.slice(0, linkedTextIndex)}
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onLinkedTextClick();
+                  }}
+                  className="font-semibold text-[#123C91] underline decoration-[#123C91]/40 underline-offset-2 hover:decoration-[#123C91]"
+                  title={linkedTextTitle}
+                >
+                  {linkedText}
+                </button>
+                {safeDescription.slice(linkedTextIndex + linkedText.length)}
               </>
             ) : (
               safeDescription

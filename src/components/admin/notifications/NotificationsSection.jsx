@@ -110,6 +110,11 @@ const descOf = (n) => {
 const idOf = (value) =>
   value?.id ?? value?._id ?? (typeof value === "string" ? value : null);
 
+const notificationCourse = (notification) => ({
+  id: idOf(notification.courseId) || idOf(notification.course) || idOf(notification.data?.courseId) || idOf(notification.data?.course) || idOf(notification.metadata?.courseId),
+  title: localizedText(notification.courseTitle ?? notification.data?.courseTitle ?? notification.metadata?.courseTitle),
+});
+
 const notificationTeacherId = (notification) => {
   const sources = [notification, notification.data, notification.metadata];
   for (const source of sources) {
@@ -623,6 +628,13 @@ const NotificationsSection = ({
     }
   };
 
+  const handleCourseOpen = async (notification) => {
+    const course = notificationCourse(notification);
+    if (!course.id) return;
+    if (!notification.isRead) await toggleRead(notification);
+    navigate(`/admin/courses/${encodeURIComponent(course.id)}`);
+  };
+
   const handleDelete = async (notification) => {
     const id = notification._id || notification.id;
     try {
@@ -823,6 +835,7 @@ const NotificationsSection = ({
           {displayedNotifications.map((n) => {
             const id = n._id || n.id;
             const presentation = getNotificationPresentation(n, "ar");
+            const course = notificationCourse(n);
             return (
               <NotificationCard
                 key={id}
@@ -849,6 +862,9 @@ const NotificationsSection = ({
                     ? () => handleTeacherDetails(n)
                     : undefined
                 }
+                linkedText={course.id ? course.title : undefined}
+                linkedTextTitle="عرض الدورة"
+                onLinkedTextClick={course.id && course.title ? () => handleCourseOpen(n) : undefined}
                 onDelete={() => handleDelete(n)}
                 compact={compact}
               />
