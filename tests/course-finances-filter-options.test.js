@@ -23,3 +23,9 @@ test("finance summary uses stable western numerals and a short apply label", () 
   assert.match(source, />تطبيق<\/button>/);
   assert.doesNotMatch(source, />تطبيق الفلاتر<\/button>/);
 });
+
+test("finance sections use sales-focused Arabic headings", () => {
+  assert.match(source, /تفاصيل مبيعات الدورات/);
+  assert.match(source, /مبيعات المحاضرين/);
+  assert.match(source, /title="سجل المبيعات"/);
+});
