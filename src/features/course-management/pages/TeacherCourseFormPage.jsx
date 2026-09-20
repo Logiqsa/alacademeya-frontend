@@ -417,6 +417,33 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   const [pendingSubmission, setPendingSubmission] = useState(false);
   const savingRef = useRef(false);
 
+  const goToUploadProblem = (key, task) => {
+    let targetId = "course-editor-top";
+    if (key === "cover" || key === "promo") {
+      setStep(0);
+      targetId = key === "cover" ? "course-cover-upload" : "course-promo-upload";
+    } else if (key.startsWith("section:") || key.startsWith("lesson:")) {
+      setStep(1);
+      targetId = `course-${key.replace(":", "-")}`;
+      if (key.startsWith("lesson:") && task?.label?.includes("رفع")) {
+        const lessonId = key.slice("lesson:".length);
+        const section = course.curriculum.find((item) =>
+          item.lessons?.some((lesson) => String(lesson.id) === lessonId),
+        );
+        const lesson = section?.lessons.find((item) => String(item.id) === lessonId);
+        if (section && lesson) setContentModal({ sectionId: section.id, lessonId: lesson.id });
+      }
+    } else if (key === "submit") {
+      setStep(3);
+      targetId = "course-review-step";
+    } else {
+      setStep(0);
+    }
+    window.setTimeout(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  };
+
   useEffect(() => {
     getCourseMarketplaceConfig().then((response) => setCommission(response?.data?.data ?? response?.data)).catch(() => setCommission(null));
   }, []);
@@ -1167,7 +1194,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           <CourseStepsNavigation currentStep={visibleStep + 1} steps={visibleSteps} />
         </div>
 
-        <section className="rounded-2xl border border-[#E5E5E5] bg-white px-4 py-6 shadow-[0px_0px_3px_0px_rgba(0,0,0,0.08)] sm:px-8 sm:py-7 md:px-12 md:py-8 lg:px-16">
+        <section id="course-editor-top" className="rounded-2xl border border-[#E5E5E5] bg-white px-4 py-6 shadow-[0px_0px_3px_0px_rgba(0,0,0,0.08)] sm:px-8 sm:py-7 md:px-12 md:py-8 lg:px-16">
           {step === 0 && (
             <div className="mx-2 space-y-6 sm:mx-4 sm:space-y-7 sm:-mt-8 md:mx-6 lg:mx-8 lg:-mt-12">
               <div>
@@ -1513,22 +1540,22 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                 </div>
               )}
               <div className="grid gap-6 border-t border-[#EAECF0] pt-6 sm:grid-cols-2">
-                <UploadBox
-                  label="صورة الغلاف"
-                  accept="image/png,image/jpeg,image/webp"
-                  value={course.cover}
-                  onChange={(file) => update("cover", file)}
-                  onRemove={() => update("cover", "")}
-                  icon={ImageIcon}
-                />
-                <UploadBox
-                  label="فيديو ترويجي"
-                  accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo,.mp4,.webm,.mov,.mkv,.avi"
-                  value={course.promoVideo}
-                  onChange={(file) => update("promoVideo", file)}
-                  onRemove={() => update("promoVideo", "")}
-                  icon={Film}
-                />
+                <div id="course-cover-upload"><UploadBox
+                    label="صورة الغلاف"
+                    accept="image/png,image/jpeg,image/webp"
+                    value={course.cover}
+                    onChange={(file) => update("cover", file)}
+                    onRemove={() => update("cover", "")}
+                    icon={ImageIcon}
+                  /></div>
+                <div id="course-promo-upload"><UploadBox
+                    label="فيديو ترويجي"
+                    accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo,.mp4,.webm,.mov,.mkv,.avi"
+                    value={course.promoVideo}
+                    onChange={(file) => update("promoVideo", file)}
+                    onRemove={() => update("promoVideo", "")}
+                    icon={Film}
+                  /></div>
               </div>
             </div>
           )}
@@ -1575,6 +1602,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
               {course.curriculum.map((section, sectionIndex) => (
                 <div
                   key={section.id}
+                  id={`course-section-${section.id}`}
                   className="overflow-hidden rounded-xl border border-[#DDE2E8] bg-white"
                 >
                   <div className="flex items-center gap-2 border-b border-[#E7EBF0] bg-[#EEF6FF] px-3 py-3 sm:px-4">
@@ -1624,6 +1652,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                     {section.lessons.map((lesson, lessonIndex) => (
                       <div
                         key={lesson.id}
+                        id={`course-lesson-${lesson.id}`}
                         className="border-b border-[#EAECF0] px-3 py-3 last:border-b-0 sm:px-4"
                       >
                         <div className="flex flex-wrap items-center gap-2 xl:grid xl:flex-nowrap xl:grid-cols-[18px_26px_minmax(170px,1fr)_105px_80px_auto_auto_34px]">
@@ -1939,7 +1968,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           )}
 
           {step === 3 && (
-            <div className="mx-2 space-y-5 sm:mx-4 sm:-mt-8 md:mx-6 lg:mx-8 lg:-mt-12">
+            <div id="course-review-step" className="mx-2 space-y-5 sm:mx-4 sm:-mt-8 md:mx-6 lg:mx-8 lg:-mt-12">
               <div>
                 <h2 className="font-bold text-[#1F2937]">مراجعة الدورة</h2>
                 <p className="mt-1 text-[14px] text-[#667085]">
@@ -2063,7 +2092,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
               )}
             </div>
           </div>
-          {showUploadProgress && <CourseUploadProgress course={course} statuses={uploadTaskStatuses} retryRequest={retryRequest} uploadStatus={uploadStatus} saving={saving} submitRequested={submitRequested} showCurriculum={!isAdminFlow || !courseId} onRetry={() => { const request = retryRequest; setRetryRequest(null); request?.retry(); }} onCancel={() => { const request = retryRequest; setRetryRequest(null); request?.cancel(); }} />}
+          {showUploadProgress && <CourseUploadProgress course={course} statuses={uploadTaskStatuses} retryRequest={retryRequest} uploadStatus={uploadStatus} saving={saving} submitRequested={submitRequested} showCurriculum={!isAdminFlow || !courseId} onRetry={() => { const request = retryRequest; setRetryRequest(null); request?.retry(); }} onCancel={() => { const request = retryRequest; setRetryRequest(null); request?.cancel(); }} onGoTo={goToUploadProblem} />}
         </section>
 
         {contentModal && (

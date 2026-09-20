@@ -38,6 +38,41 @@ html {
   scroll-behavior: smooth;
 }
 
+/* A single visual language for destructive actions across tables, cards and dialogs. */
+button.delete-action,
+button[aria-label*="حذف"],
+button[title^="حذف"] {
+  border: 1px solid #fda4af !important;
+  background-color: #fff1f2 !important;
+  color: #be123c !important;
+  font-weight: 700;
+  transition: border-color 160ms ease, background-color 160ms ease,
+    color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+button.delete-action:hover:not(:disabled),
+button[aria-label*="حذف"]:hover:not(:disabled),
+button[title^="حذف"]:hover:not(:disabled) {
+  border-color: #e11d48 !important;
+  background-color: #ffe4e6 !important;
+  color: #9f1239 !important;
+}
+
+button.delete-action:focus-visible,
+button[aria-label*="حذف"]:focus-visible,
+button[title^="حذف"]:focus-visible {
+  outline: 2px solid #fb7185;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgb(251 113 133 / 18%);
+}
+
+button.delete-action:disabled,
+button[aria-label*="حذف"]:disabled,
+button[title^="حذف"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 /* ========================= GLOBAL RESET ========================= */
 
 /* =========================

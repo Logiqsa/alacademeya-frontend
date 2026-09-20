@@ -1,4 +1,4 @@
-import { Check, CircleAlert, LoaderCircle, RotateCcw } from 'lucide-react';
+import { Check, CircleAlert, LoaderCircle, LocateFixed, RotateCcw } from 'lucide-react';
 
 const statusStyles = {
   done: 'bg-[#E6F7EE] text-[#178044]',
@@ -13,7 +13,7 @@ function StatusIcon({ status }) {
   </span>;
 }
 
-export default function CourseUploadProgress({ course, statuses, retryRequest, uploadStatus, saving, submitRequested, showCurriculum = true, onRetry, onCancel }) {
+export default function CourseUploadProgress({ course, statuses, retryRequest, uploadStatus, saving, submitRequested, showCurriculum = true, onRetry, onCancel, onGoTo }) {
   const row = (key, title, indent = false) => {
     const item = statuses[key] || { status: 'pending' };
     const activeRetry = retryRequest?.key === key;
@@ -24,7 +24,10 @@ export default function CourseUploadProgress({ course, statuses, retryRequest, u
         {item.status === 'running' && item.label && <p className='text-xs text-[#667085]'>{item.label}</p>}
         {item.status === 'failed' && <p className='text-xs text-[#B42318]'>{item.error?.response?.data?.message || item.error?.message || 'تعذر إكمال الرفع'}</p>}
       </div>
-      {activeRetry && <button type='button' onClick={onRetry} className='inline-flex shrink-0 items-center gap-1 rounded-lg border border-[#B42318] px-2.5 py-1.5 text-xs font-bold text-[#B42318] hover:bg-[#FFF3F1]'><RotateCcw size={14} />إعادة المحاولة</button>}
+      {item.status === 'failed' && <div className='flex shrink-0 flex-wrap items-center gap-2'>
+        {onGoTo && <button type='button' onClick={() => onGoTo(key, item)} className='inline-flex items-center gap-1 rounded-lg border border-[#D0D5DD] px-2.5 py-1.5 text-xs font-bold text-[#344054] hover:border-[#123C91] hover:bg-[#F5F8FF] hover:text-[#123C91]'><LocateFixed size={14} />اذهب للمشكلة</button>}
+        {activeRetry && <button type='button' onClick={onRetry} className='inline-flex items-center gap-1 rounded-lg border border-[#B42318] px-2.5 py-1.5 text-xs font-bold text-[#B42318] hover:bg-[#FFF3F1]'><RotateCcw size={14} />إعادة المحاولة</button>}
+      </div>}
     </li>;
   };
 
