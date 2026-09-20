@@ -6,11 +6,13 @@ import "./index.css";
 // main.jsx
 import { AuthContextProvider } from "./context/AuthContext";
 import ScrollToTopOnNavigate from "./components/navigation/ScrollToTopOnNavigate";
+import RouteSeo from "./components/seo/RouteSeo";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthContextProvider>
       <BrowserRouter>
+        <RouteSeo />
         <ScrollToTopOnNavigate />
         <App />
       </BrowserRouter>

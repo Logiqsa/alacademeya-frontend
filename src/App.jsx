@@ -1,136 +1,92 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useContext } from "react";
+import { Component, Suspense, useContext } from "react";
 import toast, { Toaster, ToastBar } from "react-hot-toast";
 
 import HomeLayout from "./components/layout/HomeLayout";
 import Landing from "./pages/Landing";
-import LoginPage from "./pages/auth/LoginPage";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import RegisterPage from "./pages/auth/RegisterPage";
-import CheckEmailPage from "./pages/auth/CheckEmailPage";
-import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
-import TeacherDetailsPage from "./pages/auth/TeacherDetailsPage";
-import PendingPage from "./pages/auth/PendingPage";
-import { AccountTypePage } from "./pages/auth/AccountTypePage";
-
-import Home from "./pages/parent/Home";
-import AddChildPage from "./pages/parent/add-child/AddChildPage";
-import LessonsSchedule from "./pages/parent/LessonsSchedule";
-import Notifications from "./pages/parent/Notifications";
-import SubscriptionPage from "./pages/parent/SubscriptionPage";
-import ChildrenPage from "./pages/parent/ChildrenPage";
 
 import { AuthContext } from "./context/AuthContext";
 import { getDashboardPathByRole } from "./utils/roles";
 
-import RegisterSuccessPage from "./pages/auth/RegisterSuccessPage";
-import TeacherHome from "./pages/teacher/TeacherHome";
-import StudentHome from "./pages/student/StudentHome";
-import StudentGroupsPage from "./pages/student/StudentGroupsPage";
-import StudentSchedulePage from "./pages/student/SchedulePage";
-import StudentDetailsPages from "./pages/auth/StudentDetailsPages";
-import StudentSubjectsPages from "./pages/auth/StudentSubjectsPages";
-import StudentPackagesPage from "./pages/auth/StudentPackagesPage";
-import StudentOrderSummaryPage from "./pages/auth/StudentOrderSummaryPage";
-import SubscriptionOrderStatusPage from "./pages/student/SubscriptionOrderStatusPage";
-import GroupsPage from "./pages/teacher/groups/GroupsPage";
-import GroupLessonsPage from "./pages/teacher/groups/GroupLessonsPage";
-import GroupStudentsPage from "./pages/teacher/groups/GroupStudentsPage";
-import StudentDetailsPage from "./pages/teacher/groups/StudentDetailsPage";
-// import CreateGroupPage from "./components/teacher/groups/CreateGroupPage";
-import CreateLessonPage from "./components/teacher/groups/lessons/CreateLessonPage";
-import AssignmentsPage from "./pages/teacher/assignments/AssignmentsPage";
-import Schedule from "./pages/teacher/schedule/Schedule";
-import Messages from "./pages/parent/Messages";
-import LessonDetailsPage from "./pages/teacher/groups/LessonDetailsPage";
-import AddAssignmentPage from "./components/teacher/assignments/AddAssignmentPage";
-import Notificationss from "./pages/teacher/notifications/Notifications";
-import AssignmentDetailsPage from "./pages/teacher/assignments/AssignmentDetailsPage";
-import TeacherMessages from "./pages/teacher/messages/Messages";
-import AccountSettingsPage from "./pages/parent/AccountSettings";
-import TeacherAccountSettingsPage from "./pages/teacher/TeacherAccountSettingsPage";
-import EarningsPage from "./pages/teacher/EarningsPage";
 
 // ✅ Guards
 import TeacherGuard from "./guards/TeacherGuard";
 import InstructorGuard from "./guards/InstructorGuard";
 import StudentGuard from "./guards/StudentGuard";
 import AdminGuard from "./guards/AdminGuard";
-import AdminHome from "./pages/admin/AdminHome";
-import AdminSchedulePage from "./pages/admin/SchedulePage";
-import AdminAccountSettingsPage from "./pages/admin/AdminAccountSettingsPage";
-import AdminNotificationss from "./pages/admin/notifications/Notifications";
-import UsersPage from "./pages/admin/users/Userspage";
-import GroupsPages from "./pages/admin/groups/Groupspage";
-import AttendancePage from "./pages/admin/groups/attendance/AttendancePage";
-import CreateGroupPages from "./pages/admin/groups/CreateGroupPage";
-import SupervisorsPage from "./pages/admin/supervisors/SupervisorsPage";
-import TeachersPage from "./pages/admin/teachers/TeachersPage";
-import TeacherSessionsPage from "./pages/admin/teachers/TeacherSessionsPage";
-import RecordingsPages from "./pages/admin/recordings/RecordingsPage";
-import AdminMessages from "./pages/admin/messages/Adminmessages";
-import SubscriptionsPage from "./pages/admin/subscriptions/SubscriptionsPage";
-import SubscriptionRequestsPage from "./pages/admin/subscriptions/SubscriptionRequestsPage";
-import ActivateSubscriptionPage from "./pages/admin/subscriptions/ActivateSubscriptionPage";
-import SubscriptionDetailsPage from "./pages/admin/subscriptions/SubscriptionDetailsPage";
-import SubscriptionOrderReviewPage from "./pages/admin/subscriptions/SubscriptionOrderReviewPage";
-import AdminPaymentsPage from "./pages/admin/payments/AdminPaymentsPage";
-import PaymentDetailsPage from "./pages/admin/payments/PaymentDetailsPage";
-import TeacherSalariesPage from "./pages/admin/teacher-salaries/TeacherSalariesPage";
-import CreateCurriculumPage from "./pages/admin/curriculum/CreateCurriculumPage";
-import StudentAccountSettingsPage from "./pages/student/StudentAccountSettingsPage";
-import StudentNotifications from "./pages/student/Notifications";
-import StudentSubscriptionPage from "./pages/student/StudentSubscriptionPage";
-import RenewalPage from "./pages/subscription/RenewalPage";
-import AddSubjectPage from "./pages/subscription/AddSubjectPage";
-import StudentMessagess from "./pages/student/messages/Messages";
-import StudentAssignmentsPage from "./pages/student/assignments/StudentAssignmentsPage";
-import StudentGroupLessonsPage from "./pages/student/groupLessons/Studentgrouplessonspage";
-import StudentLessonDetailsPage from "./pages/student/groupLessons/Studentlessondetailspage";
-import LessonFilesPage from "./pages/student/groupLessons/Lessonfilespage";
-import CreateSchedulePage from "./components/teacher/groups/lessons/CreateSchedulePage";
-import AttendanceRegistrationPage from "./pages/teacher/groups/AttendanceRegistrationPage";
-import SessionDetailsPage from "./pages/shared/SessionDetailsPage";
-import AddSubscriptionPage from "./pages/admin/subscriptions/Addsubscriptionpage";
-import CreateStudentPage from "./pages/admin/users/CreateStudentPage";
-import RenewSubscriptionPage from "./pages/admin/subscriptions/RenewSubscriptionPage";
 import AllBlogsPage from "./components/landing/AllBlogsPage";
-import BlogsPage from "./pages/admin/BlogsPage.jsx/BlogsPage";
-import BlogFormPage from "./pages/admin/BlogsPage.jsx/BlogFormPage";
 import BlogPostPage from "./components/landing/Blogpostpage";
-import StudentPaymentsPage from "./pages/student/StudentPaymentsPage";
-import StudentCoursesPage from "./features/course-management/pages/student/StudentCoursesPage";
-import MyCourseDetailsPage from "./features/course-management/pages/student/MyCourseDetailsPage";
-import CoursePlayerPage from "./features/course-management/pages/student/CoursePlayerPage";
-import CourseCheckoutPage from "./features/course-management/pages/student/CourseCheckoutPage";
 import CoursesPage from "./pages/CoursesPage";
 import InstructorPage from "./pages/InstructorPage";
 import CourseDetailsPage from "./pages/CourseDetailsPage";
-import ExamPage from "./pages/student/ExamPage";
-import ExamResultPage from "./pages/student/ExamResultPage";
-import CourseCertificatePage from "./pages/CourseCertificatePage";
-import MyCertificatesPage from "./pages/MyCertificatesPage";
 import CertificateVerificationPage from "./pages/CertificateVerificationPage";
-import TeacherCoursesPage from "./features/course-management/pages/TeacherCoursesPage";
-import TeacherCourseFormPage from "./features/course-management/pages/TeacherCourseFormPage";
-import TeacherCourseDetailsPage from "./features/course-management/pages/TeacherCourseDetailsPage";
-import AdminCoursesPage from "./features/course-management/pages/AdminCoursesPage";
-import AdminCourseDetailsPage from "./features/course-management/pages/AdminCourseDetailsPage";
-import AdminQuizReviewPage from "./features/course-management/pages/AdminQuizReviewPage";
-import AdminCourseFormPage from "./features/course-management/pages/AdminCourseFormPage";
-import CourseCategoriesPage from "./pages/admin/CourseCategoriesPage";
-import CategoryCoursesPage from "./pages/admin/CategoryCoursesPage";
-import CourseFinancesPage from "./pages/admin/course-finances/CourseFinancesPage";
-import CommissionSettingsPage from "./pages/admin/course-finances/CommissionSettingsPage";
-import AdminWithdrawalsPage from "./pages/admin/course-finances/AdminWithdrawalsPage";
-import AdminPoliciesPage from "./pages/admin/AdminPoliciesPage";
-import InstructorCommissionRatesPage from "./pages/teacher/InstructorCommissionRatesPage";
-import InstructorOnboardingPage from "./pages/teacher/InstructorOnboardingPage";
-import InstructorProfilePage from "./pages/teacher/InstructorProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
-import MediaSecurityEventsPage from "./pages/admin/MediaSecurityEventsPage";
 import InstructorAgreementPage from "./pages/InstructorAgreementPage";
-import InstructorDashboardPage from "./pages/teacher/InstructorDashboardPage";
+import * as LazyRoutes from "./lazyRoutes";
+
+const {
+  LoginPage, ForgotPassword, RegisterPage, CheckEmailPage, VerifyEmailPage,
+  TeacherDetailsPage, PendingPage, AccountTypePage, Home, AddChildPage,
+  LessonsSchedule, Notifications, SubscriptionPage, ChildrenPage,
+  RegisterSuccessPage, TeacherHome, StudentHome, StudentGroupsPage,
+  StudentSchedulePage, StudentDetailsPages, StudentSubjectsPages,
+  StudentPackagesPage, StudentOrderSummaryPage, SubscriptionOrderStatusPage,
+  GroupsPage, GroupLessonsPage, GroupStudentsPage, StudentDetailsPage,
+  CreateLessonPage, AssignmentsPage, Schedule, Messages, LessonDetailsPage,
+  AddAssignmentPage, Notificationss, AssignmentDetailsPage, TeacherMessages,
+  AccountSettingsPage, TeacherAccountSettingsPage, EarningsPage, AdminHome,
+  AdminSchedulePage, AdminAccountSettingsPage, AdminNotificationss, UsersPage,
+  GroupsPages, AttendancePage, CreateGroupPages, SupervisorsPage, TeachersPage,
+  TeacherSessionsPage, RecordingsPages, AdminMessages, SubscriptionsPage,
+  SubscriptionRequestsPage, ActivateSubscriptionPage, SubscriptionDetailsPage,
+  SubscriptionOrderReviewPage, AdminPaymentsPage, PaymentDetailsPage,
+  TeacherSalariesPage, CreateCurriculumPage, StudentAccountSettingsPage,
+  StudentNotifications, StudentSubscriptionPage, RenewalPage, AddSubjectPage,
+  StudentMessagess, StudentAssignmentsPage, StudentGroupLessonsPage,
+  StudentLessonDetailsPage, LessonFilesPage, CreateSchedulePage,
+  AttendanceRegistrationPage, SessionDetailsPage, AddSubscriptionPage,
+  CreateStudentPage, RenewSubscriptionPage, BlogsPage, BlogFormPage,
+  StudentPaymentsPage, StudentCoursesPage, MyCourseDetailsPage,
+  CoursePlayerPage, CourseCheckoutPage, ExamPage, ExamResultPage,
+  CourseCertificatePage, MyCertificatesPage, TeacherCoursesPage,
+  TeacherCourseFormPage, TeacherCourseDetailsPage, AdminCoursesPage,
+  AdminCourseDetailsPage, AdminQuizReviewPage, AdminCourseFormPage,
+  CourseCategoriesPage, CategoryCoursesPage, CourseFinancesPage,
+  CommissionSettingsPage, AdminWithdrawalsPage, AdminPoliciesPage,
+  InstructorCommissionRatesPage, InstructorOnboardingPage,
+  InstructorProfilePage, MediaSecurityEventsPage, InstructorDashboardPage,
+} = LazyRoutes;
+
+const RouteLoading = () => (
+  <div className="flex min-h-[45vh] items-center justify-center bg-[#F5F7FB]" role="status" aria-label="جاري تحميل الصفحة" dir="rtl">
+    <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#123C91] border-t-transparent" />
+  </div>
+);
+
+class LazyRouteBoundary extends Component {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <main className="grid min-h-[60vh] place-items-center bg-[#F5F7FB] px-4 text-center" dir="rtl">
+          <div>
+            <h1 className="text-xl font-bold text-[#123C91]">تعذر تحميل الصفحة</h1>
+            <p className="mt-2 text-sm text-[#667085]">قد يكون هناك إصدار جديد من المنصة. أعد تحميل الصفحة للمتابعة.</p>
+            <button type="button" onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white">
+              إعادة تحميل الصفحة
+            </button>
+          </div>
+        </main>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function App() {
   const { user, checkingAccountState } = useContext(AuthContext);
@@ -181,6 +137,8 @@ function App() {
         )}
       </Toaster>
 
+      <LazyRouteBoundary>
+      <Suspense fallback={<RouteLoading />}>
       <Routes>
         {/* Landing */}
         <Route element={<HomeLayout />}>
@@ -1024,6 +982,8 @@ function App() {
         {/* Fallback */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </Suspense>
+      </LazyRouteBoundary>
     </>
   );
 }

@@ -14,12 +14,15 @@ import PolicyAcceptanceDialog from "../components/course/PolicyAcceptanceDialog"
 import { getMyPolicyStatus } from "../services/APIService";
 import BrandMediaPlayer from "../components/media/BrandMediaPlayer";
 import { formatCourseDuration } from "../utils/courseDuration";
+import Seo from "../components/seo/Seo";
+import { cleanDescription, SITE_URL } from "../components/seo/seoCore";
 
 export default function CourseDetailsPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [course, setCourse] = useState(null);
+  const [loadedSlug, setLoadedSlug] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openSection, setOpenSection] = useState(0);
@@ -47,6 +50,8 @@ export default function CourseDetailsPage() {
       .then(async (item) => {
         if (!active) return;
         setCourse(item);
+        setLoadedSlug(slug);
+        setError(null);
         if (user && item.id) {
           try {
             const access = await fetchCourseAccess(item.id);
@@ -57,7 +62,11 @@ export default function CourseDetailsPage() {
           } catch { /* The public detail remains usable when access lookup is unavailable. */ }
         }
       })
-      .catch((err) => active && setError({ status: err?.response?.status, message: err?.response?.data?.message }))
+      .catch((err) => {
+        if (!active) return;
+        setLoadedSlug(slug);
+        setError({ status: err?.response?.status, message: err?.response?.data?.message });
+      })
       .finally(() => active && setLoading(false));
     return () => { active = false; window.clearTimeout(loadingTimer); };
   }, [slug, user]);
@@ -66,8 +75,8 @@ export default function CourseDetailsPage() {
     if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current);
   }, []);
 
-  if (loading) return <PageState><LoaderCircle className="animate-spin" />جاري تحميل تفاصيل الدورة...</PageState>;
-  if (error || !course?.id) return <CourseUnavailable notFound={!course?.id && (!error || error.status === 404)} onBack={() => navigate(-1)} />;
+  if (loadedSlug === slug && (error || !course?.id)) return <><Seo title="الدورة غير متاحة" path={`/courses/${slug}`} noindex /><CourseUnavailable notFound={!course?.id && (!error || error.status === 404)} onBack={() => navigate(-1)} /></>;
+  if (loading || loadedSlug !== slug) return <PageState><LoaderCircle className="animate-spin" />جاري تحميل تفاصيل الدورة...</PageState>;
 
   const sections = (course.curriculum || []).filter(
     (section) => Array.isArray(section.lessons) && section.lessons.length > 0,
@@ -80,6 +89,17 @@ export default function CourseDetailsPage() {
     ...(course.targetAudience?.length ? [{ id: "audience", label: "لمن هذه الدورة؟", icon: Target }] : []),
     { id: "reviews", label: "التقييمات", icon: MessageSquareText },
   ];
+  const rawCourseDescription = course.shortDescription || course.description;
+  const seoDescription = cleanDescription(rawCourseDescription || course.title);
+  const courseSchema = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: course.title,
+    url: `${SITE_URL}/courses/${encodeURIComponent(course.slug)}`,
+    ...(rawCourseDescription ? { description: seoDescription } : {}),
+    ...(course.coverImage ? { image: course.coverImage } : {}),
+    ...(course.instructor && (course.instructorId || course.instructorSlug) ? { provider: { "@type": "Person", name: course.instructor } } : {}),
+  };
   const openLessonPreview = async (lesson) => {
     if (!lesson.preview) return;
     setPreviewLesson(lesson);
@@ -176,7 +196,7 @@ export default function CourseDetailsPage() {
     }
   };
 
-  return <div dir="rtl" className="min-h-screen bg-[#F6F8FB] pb-10 text-[#202936] sm:pb-14">
+  return <><Seo title={course.title} description={seoDescription} path={`/courses/${course.slug}`} image={course.coverImage} structuredData={courseSchema} /><div dir="rtl" className="min-h-screen bg-[#F6F8FB] pb-10 text-[#202936] sm:pb-14">
     <PolicyAcceptanceDialog open={termsOpen} requiredTypes={["learner_course_terms"]} onClose={() => setTermsOpen(false)} onSatisfied={() => { setTermsOpen(false); const mode = pendingAcquisition; setPendingAcquisition(""); performAcquisition(mode); }} />
     <div className="mx-auto max-w-7xl px-3 pt-5 sm:px-5 sm:pt-7">
       <nav className="mb-4 flex min-w-0 items-center gap-1.5 overflow-hidden text-xs text-[#8B94A0] sm:text-sm">
@@ -287,7 +307,7 @@ export default function CourseDetailsPage() {
       </div>
     </div>}
     {showPromoVideo && <PromoVideoViewer title={course.title} url={resolveMediaUrl(course.promoVideoUrl)} onClose={() => setShowPromoVideo(false)} />}
-  </div>;
+  </div></>;
 }
 
 function PageState({ children }) { return <div dir="rtl" className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-[#F6F8FB] text-[#667085]">{children}</div>; }

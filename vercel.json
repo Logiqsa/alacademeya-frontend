@@ -1,8 +1,24 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap?type=index"
+    },
+    {
+      "source": "/sitemaps/pages.xml",
+      "destination": "/api/sitemap?type=pages"
+    },
+    {
+      "source": "/sitemaps/courses.xml",
+      "destination": "/api/sitemap?type=courses"
+    },
+    {
+      "source": "/sitemaps/blogs.xml",
+      "destination": "/api/sitemap?type=blogs"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/api/spa-shell?path=:path*"
     }
   ]
 }

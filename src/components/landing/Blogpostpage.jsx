@@ -9,7 +9,6 @@ import {
     Eye,
     Share2,
     Link2,
-    GraduationCap,
     Check,
 } from "lucide-react";
 import {
@@ -17,6 +16,8 @@ import {
     getPublicBlogPostsByCategory,
     getAssetUrl,
 } from "../../services/APIService"; // ⚠️ عدّل المسار حسب مكان الملف عندك
+import Seo from "../seo/Seo";
+import { cleanDescription, SITE_URL } from "../seo/seoCore";
 
 const formatDate = (isoDate) => {
     if (!isoDate) return "";
@@ -178,6 +179,7 @@ const BlogPostPage = () => {
     const { slug } = useParams();
 
     const [post, setPost] = useState(null);
+    const [loadedSlug, setLoadedSlug] = useState("");
     const [relatedPosts, setRelatedPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
@@ -194,7 +196,10 @@ const BlogPostPage = () => {
                 const res = await getPublicBlogPostBySlug(slug);
                 const data = res?.data?.data?.blogPost;
                 if (!data) throw new Error("not found");
-                if (isMounted) setPost(data);
+                if (isMounted) {
+                    setPost(data);
+                    setLoadedSlug(slug);
+                }
 
                 if (data.category?.slug) {
                     try {
@@ -208,7 +213,10 @@ const BlogPostPage = () => {
                     }
                 }
             } catch {
-                if (isMounted) setNotFound(true);
+                if (isMounted) {
+                    setLoadedSlug(slug);
+                    setNotFound(true);
+                }
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -221,7 +229,7 @@ const BlogPostPage = () => {
         };
     }, [slug]);
 
-    if (loading) {
+    if (loading || loadedSlug !== slug) {
         return (
             <div className="py-12 bg-gray-50 font-sans min-h-[60vh]" dir="rtl">
                 <div className="max-w-6xl mx-auto px-4 animate-pulse">
@@ -236,16 +244,35 @@ const BlogPostPage = () => {
 
     if (notFound || !post) {
         return (
+            <>
+            <Seo title="المقال غير موجود" path={`/blog/${slug}`} noindex />
             <div className="py-24 bg-gray-50 font-sans text-center" dir="rtl">
                 <p className="text-[#1F2937] text-[20px] font-bold mb-4">المقال غير موجود</p>
                 <Link to="/blogs" className="text-[#123C91] font-bold flex items-center gap-1 justify-center">
                     <ArrowRight size={16} /> ارجع لكل المقالات
                 </Link>
             </div>
+            </>
         );
     }
 
+    const rawArticleDescription = post.seoDescription || post.description || post.content;
+    const description = cleanDescription(rawArticleDescription || post.title);
+    const coverImage = getAssetUrl(post.coverImage);
+    const articleSchema = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: post.title,
+        url: `${SITE_URL}/blog/${encodeURIComponent(post.slug)}`,
+        ...(rawArticleDescription ? { description } : {}),
+        ...(coverImage ? { image: coverImage } : {}),
+        ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
+        ...(post.updatedAt ? { dateModified: post.updatedAt } : {}),
+    };
+
     return (
+        <>
+        <Seo title={post.seoTitle || post.title} description={description} path={`/blog/${post.slug}`} image={coverImage} type="article" structuredData={articleSchema} />
         <article className="py-12 bg-gray-50 font-sans" dir="rtl">
             <div className="max-w-6xl mx-auto px-4">
                 {/* Breadcrumb المتوافق مع التصميم */}
@@ -313,6 +340,7 @@ const BlogPostPage = () => {
                 </div>
             )}
         </article>
+        </>
     );
 };
 

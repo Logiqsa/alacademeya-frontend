@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import logo from "../assets/icons/logo.svg";
 import { getDashboardPathByRole } from "../utils/roles";
+import Seo from "../components/seo/Seo";
 
 export default function NotFoundPage() {
   const { user } = useContext(AuthContext);
@@ -11,6 +12,8 @@ export default function NotFoundPage() {
   const destination = user ? getDashboardPathByRole(user) : "/";
 
   return (
+    <>
+    <Seo title="الصفحة غير موجودة" path={window.location.pathname} noindex />
     <main
       dir="rtl"
       className="relative grid min-h-screen overflow-hidden bg-[#F4F7FC] px-4 py-8 sm:px-6"
@@ -84,5 +87,6 @@ export default function NotFoundPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }
