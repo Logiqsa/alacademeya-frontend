@@ -17,6 +17,10 @@
       "destination": "/api/sitemap?type=blogs"
     },
     {
+      "source": "/sitemaps/instructors.xml",
+      "destination": "/api/sitemap?type=instructors"
+    },
+    {
       "source": "/:path*",
       "destination": "/api/spa-shell?path=:path*"
     }

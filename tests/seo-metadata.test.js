@@ -92,6 +92,7 @@ test("canonical generation uses the production origin and normalizes tracking va
     "/courses/example-course?fbclid=123": `${SITE_URL}/courses/example-course`,
     "/courses/example-course?page=2&utm_medium=social#reviews": `${SITE_URL}/courses/example-course?page=2`,
     "/blog/example": `${SITE_URL}/blog/example`,
+    "/instructors/example-instructor": `${SITE_URL}/instructors/example-instructor`,
     "/login": `${SITE_URL}/login`,
     "/unknown-page": `${SITE_URL}/unknown-page`,
     "http://localhost:5173/courses/example": `${SITE_URL}/courses/example`,

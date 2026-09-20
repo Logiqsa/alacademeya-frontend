@@ -8,8 +8,13 @@ export const MAX_FEED_ITERATIONS = 100;
 export const REQUEST_TIMEOUT_MS = 8_000;
 
 const FEEDS = Object.freeze({
-  courses: { endpoint: "/seo/sitemap-data/courses", publicPath: "/courses" },
-  blogs: { endpoint: "/seo/sitemap-data/blogs", publicPath: "/blog" },
+  courses: { endpoint: "/seo/sitemap-data/courses", publicPath: "/courses", slugField: "slug" },
+  blogs: { endpoint: "/seo/sitemap-data/blogs", publicPath: "/blog", slugField: "slug" },
+  instructors: {
+    endpoint: "/seo/sitemap-data/instructors",
+    publicPath: "/instructors",
+    slugField: "profileSlug",
+  },
 });
 
 export const escapeXml = (value) => String(value)
@@ -37,7 +42,12 @@ const urlsetXml = (urls) => {
 };
 
 export const sitemapIndexXml = () => {
-  const paths = ["/sitemaps/pages.xml", "/sitemaps/courses.xml", "/sitemaps/blogs.xml"];
+  const paths = [
+    "/sitemaps/pages.xml",
+    "/sitemaps/courses.xml",
+    "/sitemaps/blogs.xml",
+    "/sitemaps/instructors.xml",
+  ];
   const entries = paths.map((path) => `  <sitemap>\n    <loc>${escapeXml(`${SITE_ORIGIN}${path}`)}</loc>\n  </sitemap>`).join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</sitemapindex>\n`;
 };
@@ -107,8 +117,8 @@ export const collectFeedUrls = async (feedName, {
     const page = validatePage(await fetchJson(requestUrl, { fetchImpl, timeoutMs }));
 
     for (const entry of page.entries) {
-      if (!entry || typeof entry.slug !== "string") continue;
-      const slug = entry.slug.trim();
+      if (!entry || typeof entry[feed.slugField] !== "string") continue;
+      const slug = entry[feed.slugField].trim();
       if (!slug || slug === "." || slug === ".." || /[\\/]/.test(slug)) continue;
       urls.add(`${SITE_ORIGIN}${feed.publicPath}/${encodePathSegment(slug)}`);
       if (urls.size > urlLimit) throw new Error(`SITEMAP_URL_LIMIT_EXCEEDED:${urls.size}`);

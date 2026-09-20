@@ -9,7 +9,7 @@ export default async function handler(request, response) {
       ? sitemapIndexXml()
       : type === "pages"
         ? pagesSitemapXml()
-        : type === "courses" || type === "blogs"
+        : type === "courses" || type === "blogs" || type === "instructors"
           ? await dynamicSitemapXml(type)
           : null;
     if (!xml) {
