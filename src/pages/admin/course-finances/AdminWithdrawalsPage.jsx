@@ -59,10 +59,9 @@ export default function AdminWithdrawalsPage() {
     const id = item?.id || item?._id;
     if (!id || working) return;
     if (kind === "reject" && !detail.trim()) return toast.error("أدخل سبب الرفض");
-    if (kind === "paid" && !detail.trim()) return toast.error("أدخل مرجع عملية التحويل");
     if (kind === "paid" && !receipt) return toast.error("ارفع إيصال التحويل");
     let payload = kind === "approve" ? (detail ? { estimatedTransferHours: Number(detail) } : {}) : { rejectionReason: detail.trim() };
-    if (kind === "paid") { payload = new FormData(); payload.append("confirm", "true"); payload.append("externalReference", detail.trim()); payload.append("receipt", receipt); }
+    if (kind === "paid") { payload = new FormData(); payload.append("confirm", "true"); payload.append("receipt", receipt); }
     setWorking(id);
     try {
       if (kind === "approve") await approveAdminInstructorWithdrawal(id, payload);
@@ -132,7 +131,6 @@ const ActionPanel = ({ action, detail, setDetail, receipt, setReceipt, working, 
     {action.kind === "paid" ? <div className="mt-4 grid gap-4 sm:grid-cols-2">
       <div className="rounded-xl bg-white p-3 text-sm"><span className="block text-xs text-[#667085]">طريقة الاستلام التي حددها المحاضر</span><b>{paymentMethodLabels[action.item.paymentMethod] || action.item.paymentMethod || "—"}</b></div>
       <div className="rounded-xl bg-white p-3 text-sm"><span className="block text-xs text-[#667085]">بيانات التحويل</span><b dir="ltr" className="block text-right">{action.item.paymentDestination || "—"}</b></div>
-      <label className="text-xs font-bold text-[#475467] sm:col-span-2"><span className="mb-1.5 block">مرجع عملية التحويل <b className="text-red-500">*</b></span><input type="text" dir="ltr" value={detail} onChange={(event) => setDetail(event.target.value)} placeholder="رقم العملية أو رقم الإيصال" className="h-11 w-full rounded-xl border border-[#D7DEE8] bg-white px-3 text-right text-sm outline-none focus:border-[#123C91]" /></label>
       <label className="text-xs font-bold text-[#475467] sm:col-span-2"><span className="mb-1.5 block">إيصال التحويل <b className="text-red-500">*</b></span><input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={(event) => setReceipt(event.target.files?.[0] || null)} className="block w-full rounded-xl border border-dashed border-[#B9CAE5] bg-white p-3 text-sm" />{receipt && <small className="mt-1 block text-emerald-700">{receipt.name}</small>}</label>
     </div> : <label className="mt-4 block text-xs font-bold text-[#475467]"><span className="mb-1.5 block">{config.label}</span><input type={config.type} value={detail} onChange={(event) => setDetail(event.target.value)} placeholder={config.placeholder} className="h-11 w-full rounded-xl border border-[#D7DEE8] bg-white px-3 text-sm outline-none focus:border-[#123C91]" /></label>}
     <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row"><button type="button" onClick={onCancel} className="h-10 rounded-xl border bg-white px-5 font-bold text-[#475467]">إلغاء</button><button type="button" onClick={onConfirm} disabled={Boolean(working)} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#123C91] px-5 font-bold text-white disabled:opacity-50">{working && <LoaderCircle size={16} className="animate-spin" />}تأكيد الإجراء</button></div>
