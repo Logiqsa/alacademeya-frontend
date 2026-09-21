@@ -12,6 +12,8 @@ const hero = readFileSync(new URL("../src/components/landing/Hero.jsx", import.m
 const document = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
 const pricing = readFileSync(new URL("../src/components/landing/Pricing.jsx", import.meta.url), "utf8");
+const featuredCourses = readFileSync(new URL("../src/components/landing/FeaturedCourses.jsx", import.meta.url), "utf8");
+const courseCard = readFileSync(new URL("../src/components/courses/CourseCard.jsx", import.meta.url), "utf8");
 
 test("landing sections use public backend visibility settings", () => {
   assert.match(landing, /useLandingPageSettings\(\)/);
@@ -40,6 +42,13 @@ test("first viewport avoids the decorative bitmap and late font stylesheet disco
   assert.doesNotMatch(document, /media="print" onload="this\.media='all'"/);
   assert.match(pricing, /aria-label="الأسعار السنوية"/);
   assert.match(pricing, /aria-pressed=\{isAnnual\}/);
+});
+
+test("only mobile landing cards defer below-fold cover requests", () => {
+  assert.match(featuredCourses, /matchMedia\("\(max-width: 767px\)"\)/);
+  assert.match(featuredCourses, /deferCover=\{deferCovers\}/);
+  assert.match(courseCard, /deferCover = false/);
+  assert.match(courseCard, /coverReady && <img src=\{src\}/);
 });
 
 test("navbar hides links for landing sections disabled by the admin", () => {

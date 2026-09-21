@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { Award, Clock } from "lucide-react";
 import pythonCover from "../../assets/courses/python-course.png";
 import mathCover from "../../assets/courses/math-course.png";
@@ -15,17 +16,43 @@ const courseCovers = {
   algebra: skillsCover,
 };
 
-export default function CourseCard({ course, compact = false, enrollment = null }) {
+function DeferredCourseImage({ src, alt, className }) {
+  const coverRef = useRef(null);
+  const [coverReady, setCoverReady] = useState(false);
+
+  useEffect(() => {
+    if (coverReady) return undefined;
+    const cover = coverRef.current;
+    if (!cover || !("IntersectionObserver" in window)) {
+      const frame = window.requestAnimationFrame(() => setCoverReady(true));
+      return () => window.cancelAnimationFrame(frame);
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setCoverReady(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: "200px 0px" });
+    observer.observe(cover);
+    return () => observer.disconnect();
+  }, [coverReady]);
+
+  return <div ref={coverRef} className="absolute inset-0">
+    {coverReady && <img src={src} alt={alt} loading="lazy" decoding="async" className={className} />}
+  </div>;
+}
+
+export default function CourseCard({ course, compact = false, enrollment = null, deferCover = false }) {
   const completed = Boolean(enrollment?.progressData?.isCompleted);
+  const coverSrc = course.coverImage || courseCovers[course.cover] || pythonCover;
+
   return (
     <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#DDE4EC] bg-white text-right transition-all duration-300 hover:-translate-y-1 hover:border-[#C8D5E8] hover:shadow-lg">
       <Link to={`/courses/${course.slug}`} className="block">
         <div className={`relative overflow-hidden bg-[#EEF1F4] ${compact ? "aspect-video" : "aspect-1.5/1"}`}>
-          <img
-            src={course.coverImage || courseCovers[course.cover] || pythonCover}
-            alt={course.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-          />
+          {deferCover
+            ? <DeferredCourseImage src={coverSrc} alt={course.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+            : <img src={coverSrc} alt={course.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />}
           {enrollment && <span className="absolute right-3 top-3 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[#123C91]">مشترك</span>}
           {completed && <span className="absolute right-3 top-11 rounded-full bg-[#E5F7E9] px-2.5 py-1 text-[11px] font-bold text-[#18753C]">مكتملة</span>}
           {completed && <span className="absolute left-3 top-0 flex h-9 w-7 items-center justify-center rounded-b-md bg-[#F6C64A] text-white"><Award size={15} /></span>}

@@ -7,6 +7,7 @@ import { fetchPublicCourses } from "../../features/course-management/api/courses
 export default function FeaturedCourses() {
   const [courses, setCourses] = useState([]);
   const [reference, setReference] = useState("");
+  const deferCovers = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function FeaturedCourses() {
 
         <div className="grid grid-cols-1 justify-center gap-5 sm:grid-cols-[repeat(auto-fit,minmax(260px,320px))]">
           {courses.map((course) => (
-            <CourseCard key={course.id} course={course} compact />
+            <CourseCard key={course.id} course={course} compact deferCover={deferCovers} />
           ))}
         </div>
 
