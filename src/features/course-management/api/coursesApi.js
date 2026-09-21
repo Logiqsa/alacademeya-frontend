@@ -20,6 +20,7 @@ import {
   approveMarketplaceCourse,
   rejectMarketplaceCourse,
   archiveCourse,
+  reactivateCourse,
   deleteMarketplaceCourse,
   getCourseCategories,
   getAdminCourseCategories,
@@ -50,6 +51,7 @@ import {
   uploadAdminCoursePromoVideo,
   deleteAdminCourse,
   archiveAdminCourse,
+  reactivateAdminCourse,
   createCourseQuiz,
   updateCourseQuiz,
   addCourseQuizQuestion,
@@ -804,9 +806,11 @@ export const fetchAdminCourses = async (params) => {
 
 export const removeAdminCourse = (courseId) => deleteAdminCourse(courseId);
 export const deactivateAdminCourse = (courseId) => archiveAdminCourse(courseId);
+export const activateAdminCourse = (courseId) => reactivateAdminCourse(courseId);
 
 // The API lifecycle archives courses and does not expose DELETE /courses/:id.
 export const removeTeacherCourse = (courseId) => archiveCourse(courseId);
+export const activateTeacherCourse = (courseId) => reactivateCourse(courseId);
 export const deleteTeacherCourse = (courseId) => deleteMarketplaceCourse(courseId);
 
 export const approveCourse = async (courseId, notes = "") =>

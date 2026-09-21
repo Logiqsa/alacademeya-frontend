@@ -457,11 +457,13 @@ export const uploadAdminCoursePromoVideo = (id, file, onUploadProgress) => {
 };
 export const deleteAdminCourse = (id) => API.delete(`/courses/admin/${id}`);
 export const archiveAdminCourse = (id) => API.post(`/courses/admin/${id}/archive`);
+export const reactivateAdminCourse = (id) => API.post(`/courses/admin/${id}/reactivate`);
 export const approveMarketplaceCourse = (id, payload = {}) =>
   API.post(`/courses/admin/${id}/approve`, payload);
 export const rejectMarketplaceCourse = (id, payload) =>
   API.post(`/courses/admin/${id}/reject`, payload);
 export const archiveCourse = (id) => API.post(`/courses/${id}/archive`);
+export const reactivateCourse = (id) => API.post(`/courses/${id}/reactivate`);
 export const deleteMarketplaceCourse = (id) => API.delete(`/courses/${id}`);
 
 // ─── Contact Settings ────────────────────────────────────────────────────────

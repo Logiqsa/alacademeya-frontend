@@ -5,6 +5,7 @@ import {
   ClipboardCheck,
   Clock3,
   CirclePause,
+  CirclePlay,
   FileText,
   LoaderCircle,
   Mail,
@@ -21,6 +22,7 @@ import {
   fetchAdminCourses,
   fetchPublicInstructor,
   deactivateAdminCourse,
+  activateAdminCourse,
 } from "../api/coursesApi";
 import { getApiErrorMessage } from "../../../services/apiError";
 import { confirmToast } from "../../../utils/confirmToast";
@@ -647,6 +649,22 @@ export default function AdminCoursesPage() {
     } catch (error) { toast.error(getApiErrorMessage(error, "تعذر إيقاف الدورة")); }
     finally { setDeactivatingCourseId(null); }
   };
+  const handleActivate = async (course) => {
+    if (deactivatingCourseId) return;
+    const confirmed = await confirmToast({
+      title: "تفعيل الدورة؟",
+      message: `ستعود دورة «${course.title}» للظهور في الرئيسية ويمكن للمتعلمين الجدد الاشتراك بها.`,
+      confirmLabel: "تفعيل الدورة",
+    });
+    if (!confirmed) return;
+    setDeactivatingCourseId(course.id);
+    try {
+      await activateAdminCourse(course.id);
+      setCourses((items) => items.map((item) => String(item.id) === String(course.id) ? { ...item, rawStatus: "published", status: "منشور", archivedAt: null } : item));
+      toast.success("تم تفعيل الدورة وإعادتها للعرض");
+    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر تفعيل الدورة")); }
+    finally { setDeactivatingCourseId(null); }
+  };
 
   useEffect(() => {
     let active = true;
@@ -904,6 +922,7 @@ export default function AdminCoursesPage() {
                       </span>
                       <div className="flex items-center gap-2">
                         {course.rawStatus === "published" && <button type="button" onClick={() => handleDeactivate(course)} disabled={Boolean(deactivatingCourseId)} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-bold text-amber-700 disabled:opacity-50"><CirclePause size={15} />{deactivatingCourseId === course.id ? "جارٍ الإيقاف..." : "إيقاف"}</button>}
+                        {course.rawStatus === "archived" && <button type="button" onClick={() => handleActivate(course)} disabled={Boolean(deactivatingCourseId)} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-700 disabled:opacity-50"><CirclePlay size={15} />{deactivatingCourseId === course.id ? "جارٍ التفعيل..." : "تفعيل"}</button>}
                       </div>
                     </div>
                   </article>
@@ -990,6 +1009,7 @@ export default function AdminCoursesPage() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             {course.rawStatus === "published" && <button type="button" onClick={() => handleDeactivate(course)} disabled={Boolean(deactivatingCourseId)} className="inline-flex items-center gap-2 rounded-xl border border-amber-300 px-4 py-2.5 font-bold text-amber-700 disabled:opacity-50"><CirclePause size={17} />{deactivatingCourseId === course.id ? "جارٍ الإيقاف..." : "إيقاف"}</button>}
+                            {course.rawStatus === "archived" && <button type="button" onClick={() => handleActivate(course)} disabled={Boolean(deactivatingCourseId)} className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 px-4 py-2.5 font-bold text-emerald-700 disabled:opacity-50"><CirclePlay size={17} />{deactivatingCourseId === course.id ? "جارٍ التفعيل..." : "تفعيل"}</button>}
                           </div>
                         </td>
                       </tr>

@@ -16,6 +16,7 @@ import { getApiErrorMessage } from "../../../services/apiError";
 import { formatMoney } from "../../../utils/currencyDisplay";
 import { confirmToast } from "../../../utils/confirmToast";
 import { downloadMyInstructorWithdrawalReceipt } from "../../../services/APIService";
+import ReceiptPreviewViewer from "./ReceiptPreviewViewer";
 import Paginationn from "../groups/students/Paginationn";
 
 const statusLabels = {
@@ -57,6 +58,8 @@ const InstructorPayoutDashboard = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [receiptPreview, setReceiptPreview] = useState(null);
+  const [receiptLoading, setReceiptLoading] = useState("");
   const [form, setForm] = useState({ currency: "", amount: "", paymentMethod: "instapay", paymentDestination: "" });
   const pageSize = 10;
 
@@ -92,6 +95,7 @@ const InstructorPayoutDashboard = () => {
       .finally(() => { if (active) setHistoryLoading(false); });
     return () => { active = false; };
   }, [page]);
+  useEffect(() => () => { if (receiptPreview?.url) URL.revokeObjectURL(receiptPreview.url); }, [receiptPreview]);
 
   const availableCurrencies = useMemo(() => withdrawableBalances(balances), [balances]);
   const withdrawalEnabled = canRequestWithdrawal({ balances, suspended, loading: balanceLoading });
@@ -135,15 +139,17 @@ const InstructorPayoutDashboard = () => {
     } catch (error) { toast.error(getApiErrorMessage(error, "تعذر إلغاء طلب السحب.")); }
   };
   const openReceipt = async (item) => {
+    if (receiptLoading) return;
+    setReceiptLoading(item.id);
     try {
       const response = await downloadMyInstructorWithdrawalReceipt(item.id);
-      const url = URL.createObjectURL(response.data);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `withdrawal-${item.id}-receipt`;
-      anchor.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر تحميل الإيصال")); }
+      const blob = response.data;
+      const extension = item.paymentReceipt?.split(".").pop()?.toLowerCase();
+      const inferredMimeType = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" }[extension];
+      const mimeType = blob.type === "application/pdf" || blob.type.startsWith("image/") ? blob.type : inferredMimeType || blob.type || "application/octet-stream";
+      setReceiptPreview({ url: URL.createObjectURL(blob), mimeType, fileName: `withdrawal-${item.id}-receipt.${extension || "pdf"}` });
+    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر عرض الإيصال")); }
+    finally { setReceiptLoading(""); }
   };
 
   return <section id="withdrawals" aria-labelledby="payout-title" className="scroll-mt-5 space-y-4">
@@ -158,13 +164,14 @@ const InstructorPayoutDashboard = () => {
     <div className="overflow-hidden rounded-2xl border border-[#E3E8EF] bg-white shadow-sm">
       <div className="flex items-center gap-3 border-b border-[#EAECF0] px-4 py-4 sm:px-5"><Clock3 size={19} className="text-[#123C91]" /><div><h3 className="font-bold text-[#1F2937]">سجل طلبات السحب</h3><p className="mt-0.5 text-xs text-[#667085]">تابع حالة كل طلب سحب</p></div></div>
       {historyLoading ? <Loading label="جاري تحميل طلبات السحب..." plain /> : historyError ? <ErrorState message={historyError} retry={loadHistory} plain /> : history.items.length ? <>
-        <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-180 text-right text-sm"><thead className="bg-[#F8FAFC] text-[#667085]"><tr>{["التاريخ", "المبلغ", "العملة", "طريقة الاستلام", "الحالة", "الإجراءات"].map((label) => <th key={label} className="px-5 py-3 font-semibold">{label}</th>)}</tr></thead><tbody className="divide-y divide-[#EAECF0]">{history.items.map((item) => <tr key={item.id}><td dir="ltr" className="px-5 py-4 text-right">{item.date ? new Date(item.date).toLocaleDateString("ar-EG") : "—"}</td><td dir="ltr" className="px-5 py-4 text-right font-semibold">{formatMoney(item.amount, item.currency)}</td><td dir="ltr" className="px-5 py-4 text-right font-bold">{item.currency}</td><td className="px-5 py-4"><span className="block">{paymentMethods.find((method) => method.value === item.paymentMethod)?.label || item.paymentMethod || "—"}</span><span dir="ltr" className="text-xs text-[#667085]">{item.paymentDestination}</span></td><td className="px-5 py-4"><Status status={item.status} /></td><td className="px-5 py-4">{item.canCancel && <button type="button" disabled={suspended} onClick={() => cancelItem(item)} className="font-semibold text-red-600 disabled:cursor-not-allowed disabled:text-[#98A2B3]">إلغاء الطلب</button>}{item.paymentReceipt && <button type="button" onClick={() => openReceipt(item)} className="block font-semibold text-[#123C91] underline">تحميل الإيصال</button>}</td></tr>)}</tbody></table></div>
-        <div className="grid gap-3 p-3 md:hidden">{history.items.map((item) => <article key={item.id} className="rounded-xl border border-[#E3E8EF] p-4"><div className="flex items-start justify-between gap-3"><strong dir="ltr" className="text-[#1F2937]">{formatMoney(item.amount, item.currency)}</strong><Status status={item.status} /></div><p className="mt-2 text-xs text-[#667085]">{paymentMethods.find((method) => method.value === item.paymentMethod)?.label || item.paymentMethod || "—"} · <span dir="ltr">{item.paymentDestination}</span></p><div className="mt-3 flex items-center justify-between text-xs text-[#667085]"><span dir="ltr">{item.date ? new Date(item.date).toLocaleDateString("ar-EG") : "—"}</span>{item.canCancel && <button type="button" disabled={suspended} onClick={() => cancelItem(item)} className="font-bold text-red-600 disabled:text-[#98A2B3]">إلغاء الطلب</button>}{item.paymentReceipt && <button type="button" onClick={() => openReceipt(item)} className="font-bold text-[#123C91] underline">تحميل الإيصال</button>}</div></article>)}</div>
+        <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-180 text-right text-sm"><thead className="bg-[#F8FAFC] text-[#667085]"><tr>{["التاريخ", "المبلغ", "العملة", "طريقة الاستلام", "الحالة", "الإجراءات"].map((label) => <th key={label} className="px-5 py-3 font-semibold">{label}</th>)}</tr></thead><tbody className="divide-y divide-[#EAECF0]">{history.items.map((item) => <tr key={item.id}><td dir="ltr" className="px-5 py-4 text-right">{item.date ? new Date(item.date).toLocaleDateString("ar-EG") : "—"}</td><td dir="ltr" className="px-5 py-4 text-right font-semibold">{formatMoney(item.amount, item.currency)}</td><td dir="ltr" className="px-5 py-4 text-right font-bold">{item.currency}</td><td className="px-5 py-4"><span className="block">{paymentMethods.find((method) => method.value === item.paymentMethod)?.label || item.paymentMethod || "—"}</span><span dir="ltr" className="text-xs text-[#667085]">{item.paymentDestination}</span></td><td className="px-5 py-4"><Status status={item.status} /></td><td className="px-5 py-4">{item.canCancel && <button type="button" disabled={suspended} onClick={() => cancelItem(item)} className="font-semibold text-red-600 disabled:cursor-not-allowed disabled:text-[#98A2B3]">إلغاء الطلب</button>}{item.paymentReceipt && <button type="button" disabled={Boolean(receiptLoading)} onClick={() => openReceipt(item)} className="block font-semibold text-[#123C91] underline disabled:opacity-50">{receiptLoading === item.id ? "جاري العرض..." : "عرض الإيصال"}</button>}</td></tr>)}</tbody></table></div>
+        <div className="grid gap-3 p-3 md:hidden">{history.items.map((item) => <article key={item.id} className="rounded-xl border border-[#E3E8EF] p-4"><div className="flex items-start justify-between gap-3"><strong dir="ltr" className="text-[#1F2937]">{formatMoney(item.amount, item.currency)}</strong><Status status={item.status} /></div><p className="mt-2 text-xs text-[#667085]">{paymentMethods.find((method) => method.value === item.paymentMethod)?.label || item.paymentMethod || "—"} · <span dir="ltr">{item.paymentDestination}</span></p><div className="mt-3 flex items-center justify-between text-xs text-[#667085]"><span dir="ltr">{item.date ? new Date(item.date).toLocaleDateString("ar-EG") : "—"}</span>{item.canCancel && <button type="button" disabled={suspended} onClick={() => cancelItem(item)} className="font-bold text-red-600 disabled:text-[#98A2B3]">إلغاء الطلب</button>}{item.paymentReceipt && <button type="button" disabled={Boolean(receiptLoading)} onClick={() => openReceipt(item)} className="font-bold text-[#123C91] underline disabled:opacity-50">{receiptLoading === item.id ? "جاري العرض..." : "عرض الإيصال"}</button>}</div></article>)}</div>
       </> : <Empty text="لم ترسل أي طلبات سحب بعد." plain />}
     </div>
     {!historyLoading && !historyError && history.pagination.totalPages > 1 && <Paginationn page={history.pagination.page || page} totalPages={history.pagination.totalPages} onChange={(value) => { setHistoryLoading(true); setHistoryError(""); setPage(value); }} totalItems={history.pagination.total} displayedCount={history.items.length} unitLabel="طلب" />}
 
     {modalOpen && <div className="fixed inset-0 z-[120] grid place-items-center bg-black/55 p-3" onMouseDown={() => !submitting && setModalOpen(false)}><form onSubmit={submitWithdrawal} onMouseDown={(event) => event.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white shadow-2xl"><div className="flex items-center justify-between border-b border-[#EAECF0] px-5 py-4"><h3 className="font-bold text-[#1F2937]">طلب سحب جديد</h3><button type="button" disabled={submitting} onClick={() => setModalOpen(false)} aria-label="إغلاق" className="rounded-lg p-2 text-[#667085] hover:bg-[#F2F4F7]"><X size={18} /></button></div><div className="space-y-4 p-5"><label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#344054]">العملة</span><select value={form.currency} onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))} className="h-11 w-full rounded-xl border border-[#D0D5DD] px-3 outline-none focus:border-[#123C91]">{availableCurrencies.map((item) => <option key={item.currency} value={item.currency}>{item.currency} — المتاح {formatMoney(item.available, item.currency)}</option>)}</select></label><label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#344054]">المبلغ</span><input dir="ltr" type="number" min="1" step="1" inputMode="numeric" value={form.amount} onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))} className="h-11 w-full rounded-xl border border-[#D0D5DD] px-3 text-right outline-none focus:border-[#123C91]" placeholder="0" /></label><label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#344054]">طريقة استلام المبلغ</span><select value={form.paymentMethod} onChange={(event) => setForm((current) => ({ ...current, paymentMethod: event.target.value, paymentDestination: "" }))} className="h-11 w-full rounded-xl border border-[#D0D5DD] px-3 outline-none focus:border-[#123C91]">{paymentMethods.map((method) => <option key={method.value} value={method.value}>{method.label}</option>)}</select></label><label className="block"><span className="mb-1.5 block text-sm font-semibold text-[#344054]">بيانات التحويل</span><input dir="ltr" value={form.paymentDestination} onChange={(event) => setForm((current) => ({ ...current, paymentDestination: event.target.value }))} className="h-11 w-full rounded-xl border border-[#D0D5DD] px-3 text-right outline-none focus:border-[#123C91]" placeholder={paymentMethods.find((method) => method.value === form.paymentMethod)?.placeholder} /></label>{formError && <div role="alert" className="flex gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700"><AlertCircle size={17} className="shrink-0" />{formError}</div>}</div><div className="flex gap-2 border-t border-[#EAECF0] px-5 py-4"><button type="submit" disabled={submitting} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#123C91] px-4 py-2.5 font-bold text-white disabled:opacity-60">{submitting && <LoaderCircle size={17} className="animate-spin" />}إرسال الطلب</button><button type="button" disabled={submitting} onClick={() => setModalOpen(false)} className="rounded-xl border border-[#D0D5DD] px-5 py-2.5 font-semibold text-[#344054]">إلغاء</button></div></form></div>}
+    {receiptPreview && <ReceiptPreviewViewer receipt={receiptPreview} onClose={() => setReceiptPreview(null)} />}
   </section>;
 };
 
