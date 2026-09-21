@@ -931,6 +931,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
       setSaveFeedback({ type: 'success', message: 'تم حفظ الدورة والملفات بنجاح.' });
       if (existingCourse && status !== "قيد المراجعة") {
         setExistingCourse((current) => ({ ...(current || course), id: savedCourseId }));
+        setSaveFeedback({ type: 'success', message: 'تم حفظ الدورة والملفات بنجاح.', detailsPath: savedCourseId ? `${isAdminFlow ? '/admin' : '/teacher'}/courses/${savedCourseId}` : null });
         setUploadStatus({ label: 'تم حفظ الدورة والملفات بنجاح', percent: 100 });
         setShowUploadProgress(false);
         return;
@@ -1260,7 +1261,13 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         </div>
 
         <div className="mb-4 overflow-x-auto">
-          <CourseStepsNavigation currentStep={visibleStep + 1} steps={visibleSteps} />
+          <CourseStepsNavigation currentStep={visibleStep + 1} steps={visibleSteps} onStepChange={(stepId) => {
+            const target = visibleStepIndexes[stepId - 1];
+            if (target == null || target === step) return;
+            if (!existingCourse && target > step && !validateStep()) return;
+            setStep(target);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }} />
         </div>
 
         <section id="course-editor-top" className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-[0px_0px_3px_0px_rgba(0,0,0,0.08)] sm:p-6 lg:p-8 xl:p-10">
@@ -1745,7 +1752,6 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#F1F4F8] text-[11px] text-[#667085]">
                             {lessonIndex + 1}
                           </span>
-                          {lesson._sectionUnlinked && <span className="rounded bg-amber-100 px-1.5 py-1 text-[10px] font-bold text-amber-800">غير مرتبط بقسم — انقله ثم احفظ</span>}
                           <input
                             className="h-9 min-w-[160px] flex-1 basis-full rounded-md border border-transparent px-2 text-sm text-[#344054] outline-none placeholder:text-[#98A2B3] focus:border-[#D0D5DD] sm:basis-auto xl:min-w-0 xl:basis-auto"
                             value={lesson.title}
@@ -1852,6 +1858,11 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                             <X size={15} />
                           </button>
                         </div>
+                        {lesson._sectionUnlinked && lesson.type === "اختبار" && (
+                          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                            مكان هذا الاختبار غير محدد في البيانات القديمة. اختر قسمه من «نقل إلى قسم» بالأسفل ثم احفظ الدورة.
+                          </p>
+                        )}
                         <div className="mt-2 flex flex-wrap gap-2">
                           <button
                             type="button"
@@ -2176,7 +2187,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
               )}
             </div>
           </div>
-          {saveFeedback && <p role="status" className={`mt-4 rounded-lg border px-4 py-3 text-sm font-semibold ${saveFeedback.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : saveFeedback.type === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-blue-200 bg-blue-50 text-[#123C91]'}`}>{saveFeedback.message}</p>}
+          {saveFeedback && <div role="status" className={`mt-4 flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold ${saveFeedback.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : saveFeedback.type === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-blue-200 bg-blue-50 text-[#123C91]'}`}><span>{saveFeedback.message}</span>{saveFeedback.detailsPath && <button type="button" onClick={() => navigate(saveFeedback.detailsPath)} className="rounded-md border border-current px-3 py-1.5 text-xs font-bold">{isAdminFlow ? 'عرض تفاصيل الدورة' : 'عرض التفاصيل والإرسال للمراجعة'}</button>}</div>}
           {showUploadProgress && <CourseUploadProgress course={course} statuses={uploadTaskStatuses} retryRequest={retryRequest} uploadStatus={uploadStatus} saving={saving} submitRequested={submitRequested} showCurriculum={!isAdminFlow || !courseId} onRetry={() => { const request = retryRequestRef.current; retryRequestRef.current = null; setRetryRequest(null); request?.retry(); }} onCancel={cancelRetryForFileChange} onGoTo={goToUploadProblem} />}
         </section>
 

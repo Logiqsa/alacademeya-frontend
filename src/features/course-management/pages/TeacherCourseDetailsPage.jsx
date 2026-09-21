@@ -27,6 +27,8 @@ import {
   X,
 } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
+import PolicyAcceptanceDialog from "../../../components/course/PolicyAcceptanceDialog";
+import { confirmToast } from "../../../utils/confirmToast";
 import { fetchTeacherCourse, fetchTeacherCourseEnrollments } from "../api/coursesApi";
 import ReviewsPanel from "../components/reviews/ReviewsPanel";
 import ModerationHistoryPanel from "../components/ModerationHistoryPanel";
@@ -34,8 +36,10 @@ import { resolveMediaUrl } from "../../../services/apiUrl";
 import {
   requestLessonAttachmentAccess,
   requestLessonMediaAccess,
+  getMyPolicyStatus,
+  submitMarketplaceCourse,
 } from "../../../services/APIService";
-import { getApiErrorMessage } from "../../../services/apiError";
+import { getApiErrorMessage, normalizeApiError } from "../../../services/apiError";
 import { getEarningsCourses, getEarningsHistory } from "../../instructor-earnings/api/earningsApi";
 import BrandMediaPlayer from "../../../components/media/BrandMediaPlayer";
 import { formatCourseDuration } from "../../../utils/courseDuration";
@@ -609,6 +613,9 @@ const TeacherCourseDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [policyOpen, setPolicyOpen] = useState(false);
+  const submissionRef = useRef(false);
   const [, setLiveStudentCount] = useState(null);
   const [headerStats, setHeaderStats] = useState({ students: null, earnings: [] });
 
@@ -676,6 +683,49 @@ const TeacherCourseDetailsPage = () => {
     setCourse(refreshed);
     return refreshed;
   };
+  const submitForReview = async (confirmed = false) => {
+    if (submissionRef.current) return;
+    submissionRef.current = true;
+    if (!confirmed) {
+      const approved = await confirmToast({
+        title: "إرسال الدورة للمراجعة؟",
+        message: "تأكد من حفظ كل تعديلات الدورة وملفاتها أولًا. بعد الإرسال لن تتمكن من تعديلها حتى تراجعها الإدارة.",
+        confirmLabel: "إرسال للمراجعة",
+      });
+      if (!approved) {
+        submissionRef.current = false;
+        return;
+      }
+    }
+    setSubmitting(true);
+    try {
+      const requiredTypes = ["instructor_agreement", "course_publishing_policy", "revenue_share_agreement"];
+      const response = await getMyPolicyStatus();
+      const policyStatus = response?.data?.data ?? response?.data;
+      if (requiredTypes.some((type) => policyStatus?.[type]?.required && !policyStatus[type]?.accepted)) {
+        setPolicyOpen(true);
+        return;
+      }
+      await submitMarketplaceCourse(course.id);
+      try {
+        await refreshCourse();
+      } catch {
+        setCourse((current) => ({ ...current, rawStatus: "pending_review", status: "قيد المراجعة" }));
+      }
+      toast.success("تم إرسال الدورة للمراجعة بنجاح");
+    } catch (error) {
+      const apiError = normalizeApiError(error);
+      if (apiError.code === "POLICY_ACCEPTANCE_REQUIRED") {
+        setPolicyOpen(true);
+      } else {
+        const details = apiError.errors ? Object.values(apiError.errors).flat().filter(Boolean).join("، ") : "";
+        toast.error(details || getApiErrorMessage(error, "تعذر إرسال الدورة للمراجعة"));
+      }
+    } finally {
+      setSubmitting(false);
+      submissionRef.current = false;
+    }
+  };
 
   return (
     <TeacherLayout breadcrumbLabels={{ courseId: course.title }} currentPageLabel={course.title}>
@@ -699,7 +749,10 @@ const TeacherCourseDetailsPage = () => {
               </div>
             )}
           </div>
-          {canEditCourse && <button type="button" onClick={() => navigate(`/teacher/courses/${course.id}/edit`)} className="rounded-md bg-[#123C91] px-5 py-2.5 text-sm font-semibold text-white">{course.rawStatus === "rejected" ? "تعديل وإعادة الإرسال" : "تعديل الدورة"}</button>}
+          {canEditCourse && <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => navigate(`/teacher/courses/${course.id}/edit`)} className="rounded-md border border-[#123C91] bg-white px-5 py-2.5 text-sm font-semibold text-[#123C91]">تعديل الدورة</button>
+            <button type="button" disabled={submitting} aria-busy={submitting} onClick={() => submitForReview()} className="rounded-md bg-[#123C91] px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60">{submitting ? "جاري الإرسال..." : course.rawStatus === "rejected" ? "إعادة الإرسال للمراجعة" : "إرسال للمراجعة"}</button>
+          </div>}
         </div>
 
         <div className="mb-4 grid gap-3 md:grid-cols-3">
@@ -722,6 +775,7 @@ const TeacherCourseDetailsPage = () => {
         {activeTab === "reviews" && <ReviewsTab course={course} onCourseRefresh={refreshCourse} />}
         {activeTab === "earnings" && <EarningsTab course={course} />}
       </div>
+      <PolicyAcceptanceDialog open={policyOpen} requiredTypes={["instructor_agreement", "course_publishing_policy", "revenue_share_agreement"]} onClose={() => setPolicyOpen(false)} onSatisfied={() => { setPolicyOpen(false); submitForReview(true); }} />
     </TeacherLayout>
   );
 };

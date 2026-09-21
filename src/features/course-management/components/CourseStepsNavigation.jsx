@@ -7,7 +7,7 @@ const defaultSteps = [
   { id: 4, name: "المراجعة والإرسال" },
 ];
 
-const CourseStepsNavigation = ({ currentStep = 1, steps = defaultSteps }) => (
+const CourseStepsNavigation = ({ currentStep = 1, steps = defaultSteps, onStepChange }) => (
   <div
     dir="rtl"
     className="w-full rounded-2xl border border-[#E5E5E5] bg-white px-4 pt-3 pb-2 shadow-[0px_0px_2px_-1px_rgba(0,0,0,0.1),0px_0px_3px_0px_rgba(0,0,0,0.1)] sm:px-8"
@@ -19,7 +19,7 @@ const CourseStepsNavigation = ({ currentStep = 1, steps = defaultSteps }) => (
 
         return (
           <React.Fragment key={step.id}>
-            <div className="flex shrink-0 items-center gap-1">
+            <button type="button" onClick={() => onStepChange?.(step.id)} disabled={!onStepChange} aria-current={isActive ? "step" : undefined} className="flex shrink-0 items-center gap-1 rounded-lg text-right focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#123C91] disabled:cursor-default">
               <div
                 className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium transition-all duration-200 ${
                   isActive
@@ -55,7 +55,7 @@ const CourseStepsNavigation = ({ currentStep = 1, steps = defaultSteps }) => (
               >
                 {step.name}
               </span>
-            </div>
+            </button>
             {index !== steps.length - 1 && (
               <div
                 className={`mx-2 h-1 min-w-8 flex-1 rounded-full transition-colors ${
@@ -69,20 +69,20 @@ const CourseStepsNavigation = ({ currentStep = 1, steps = defaultSteps }) => (
     </div>
 
     <div className="flex flex-col gap-3 py-2 sm:hidden">
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" aria-label="خطوات الدورة">
         {steps.map((step, index) => {
           const isCompleted = currentStep > step.id;
           const isActive = currentStep === step.id;
           return (
             <div key={step.id} className="flex flex-1 items-center">
-              <div
+              <button type="button" onClick={() => onStepChange?.(step.id)} disabled={!onStepChange} aria-label={`الخطوة ${step.id}: ${step.name}`} aria-current={isActive ? "step" : undefined}
                 className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
                   isCompleted
                     ? "bg-[#1E4FAE]"
                     : isActive
                       ? "bg-[#123C91CC]"
                       : "bg-[#E5E5E5]"
-                }`}
+                } focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#123C91] disabled:cursor-default`}
               />
               {index !== steps.length - 1 && <div className="w-1" />}
             </div>

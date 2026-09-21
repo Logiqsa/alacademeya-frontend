@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
+import { Buffer } from "node:buffer";
 import { placeCourseQuizzes } from "../src/features/course-management/utils/placeCourseQuizzes.js";
 import { courseStatusStyles } from "../src/features/course-management/utils/courseStatusStyles.js";
+import { readableFileName } from "../src/features/course-management/utils/readableFileName.js";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const form = read("../src/features/course-management/pages/TeacherCourseFormPage.jsx");
@@ -24,8 +26,22 @@ test("quizzes follow the lesson linked to their section", () => {
 test("older unlinked quizzes are clearly flagged instead of silently presented as linked", () => {
   const placed = placeCourseQuizzes([{ id: "first", lessons: [] }], [{ id: "old-quiz" }]);
   assert.equal(placed[0].lessons[0]._sectionUnlinked, true);
-  assert.match(form, /غير مرتبط بقسم/);
+  assert.match(form, /مكان هذا الاختبار غير محدد/);
   assert.match(details, /اختبار غير مرتبط بقسم/);
+});
+
+test("legacy Arabic filenames display correctly without changing valid names", () => {
+  const arabicName = "اختبار القسم الثاني.mp3";
+  assert.equal(readableFileName(Buffer.from(arabicName, "utf8").toString("latin1")), arabicName);
+  assert.equal(readableFileName(arabicName), arabicName);
+  assert.equal(readableFileName("course-video.mp4"), "course-video.mp4");
+});
+
+test("course steps are clickable and old quiz warning stays outside the lesson grid", () => {
+  const navigation = read("../src/features/course-management/components/CourseStepsNavigation.jsx");
+  assert.match(navigation, /onStepChange\?\.\(step\.id\)/);
+  assert.match(form, /onStepChange=\{\(stepId\)/);
+  assert.match(form, /<\/div>\s*\{lesson\._sectionUnlinked && lesson\.type === "اختبار"/);
 });
 
 test("save anchors quizzes after regular lessons and edit screen only saves drafts", () => {
@@ -39,4 +55,12 @@ test("teacher course list and details share the same status badge palette", () =
   assert.equal(courseStatusStyles["مسودة"], "bg-[#E5E7EB] text-[#667085]");
   assert.match(details, /courseStatusStyles\[course\.status\]/);
   assert.match(read("../src/features/course-management/pages/TeacherCoursesPage.jsx"), /courseStatusStyles\[course\.status\]/);
+});
+
+test("draft submission lives on course details, separate from editing", () => {
+  assert.match(details, /إرسال للمراجعة/);
+  assert.match(details, /submitMarketplaceCourse\(course\.id\)/);
+  assert.match(details, /PolicyAcceptanceDialog/);
+  assert.match(details, /confirmToast/);
+  assert.match(details, /disabled=\{submitting\}/);
 });

@@ -68,6 +68,7 @@ import {
 import { normalizeApiError } from "../../../services/apiError";
 import { countCompletedLessons } from "./lessonProgress";
 import { retryCourseSaveStep } from "./retryCourseSaveStep";
+import { readableFileName } from "../utils/readableFileName";
 
 const valueOf = (value, fallback = "") => {
   if (value == null) return fallback;
@@ -426,12 +427,12 @@ export const normalizeCourse = (source = {}) => {
           lesson.primaryContent
             ? {
                 ...lesson.primaryContent,
-                name:
+                name: readableFileName(
                   lesson.primaryContent?.originalName ||
                   lesson.media?.name ||
                   lesson.fileName ||
-                  "محتوى الدرس",
-                originalName: lesson.primaryContent?.originalName,
+                  "محتوى الدرس"),
+                originalName: readableFileName(lesson.primaryContent?.originalName),
                 url:
                   getAssetUrl(
                     lesson.media?.url ||
@@ -461,7 +462,8 @@ export const normalizeCourse = (source = {}) => {
             : null,
         attachments: (lesson.attachments || []).map((file) => ({
           ...file,
-          name: file.name || file.fileName || "مرفق",
+          name: readableFileName(file.name || file.originalName || file.fileName || "مرفق"),
+          originalName: readableFileName(file.originalName),
           accessMode: file.accessMode || "downloadable",
           url: getAssetUrl(file.url || file.path),
         })),
