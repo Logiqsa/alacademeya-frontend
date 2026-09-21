@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import generatedShell from "../server/generated/spa-shell.js";
+import generatedShell, { heroPreloadHref } from "../server/generated/spa-shell.js";
 import { CACHE, resolveSpaDocument } from "../server/spa-shell.js";
 
 const response = (status, payload, { malformed = false } = {}) => ({
@@ -37,6 +37,13 @@ test("static and deterministic unknown routes return the same SPA shell", async 
   assert.equal(unknown.headers["Cache-Control"], CACHE.UNKNOWN);
   assert.equal(known.body, generatedShell);
   assert.equal(unknown.body, generatedShell);
+});
+
+test("only the landing document preloads its LCP image", async () => {
+  const home = await resolve("/", () => { throw new Error("must not fetch"); }, { heroPreloadHref });
+  const login = await resolve("/login", () => { throw new Error("must not fetch"); }, { heroPreloadHref });
+  assert.match(home.body, new RegExp(`<link rel="preload" as="image" href="${heroPreloadHref}" fetchpriority="high"`));
+  assert.doesNotMatch(login.body, /rel="preload" as="image"/);
 });
 
 for (const [label, pathname, foundPayload, expectedEndpoint] of [
@@ -103,4 +110,3 @@ test("excluded resources and unsupported methods are not owned by resolver logic
   assert.equal((await resolve("/assets/app.js", async () => response(200))).owned, false);
   assert.equal((await resolve("/login", async () => response(200), { method: "POST" })).owned, false);
 });
-

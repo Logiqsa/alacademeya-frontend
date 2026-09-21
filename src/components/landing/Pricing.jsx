@@ -235,7 +235,10 @@ const Pricing = () => {
           </span>
 
           <button
+            type="button"
             onClick={() => setIsAnnual(!isAnnual)}
+            aria-label="الأسعار السنوية"
+            aria-pressed={isAnnual}
             className={`relative w-14 h-7 rounded-full p-1 flex items-center transition-colors duration-300 ${
               isAnnual
                 ? "bg-[#123C91] text-white [&_svg]:text-white"

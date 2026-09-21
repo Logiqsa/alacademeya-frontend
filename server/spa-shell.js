@@ -68,6 +68,7 @@ export const resolveSpaDocument = async ({
   pathname,
   method = "GET",
   shell,
+  heroPreloadHref,
   fetchImpl = fetch,
   apiOrigin = API_ORIGIN,
   timeoutMs = ENTITY_TIMEOUT_MS,
@@ -77,15 +78,18 @@ export const resolveSpaDocument = async ({
     return { owned: false, reason: "method" };
   }
   const route = classifySpaPath(pathname);
+  const documentShell = pathname === "/" && heroPreloadHref
+    ? shell.replace("</head>", `<link rel="preload" as="image" href="${heroPreloadHref}" fetchpriority="high" /></head>`)
+    : shell;
   if (route.kind === SPA_ROUTE_KIND.EXCLUDED) return { owned: false, reason: "excluded", route };
   if (route.kind === SPA_ROUTE_KIND.UNKNOWN) {
-    return documentResult(shell, normalizedMethod, 404, CACHE.UNKNOWN);
+    return documentResult(documentShell, normalizedMethod, 404, CACHE.UNKNOWN);
   }
   if (route.kind === SPA_ROUTE_KIND.DYNAMIC_INSTRUCTOR || route.kind === SPA_ROUTE_KIND.STATIC_APP_ROUTE) {
-    return documentResult(shell, normalizedMethod, 200, CACHE.DYNAMIC_FOUND);
+    return documentResult(documentShell, normalizedMethod, 200, CACHE.DYNAMIC_FOUND);
   }
   const validation = await validateEntity(route, { fetchImpl, apiOrigin, timeoutMs });
-  if (validation === "missing") return documentResult(shell, normalizedMethod, 404, CACHE.DYNAMIC_MISSING);
-  if (validation === "indeterminate") return documentResult(shell, normalizedMethod, 200, CACHE.NO_STORE);
-  return documentResult(shell, normalizedMethod, 200, CACHE.DYNAMIC_FOUND);
+  if (validation === "missing") return documentResult(documentShell, normalizedMethod, 404, CACHE.DYNAMIC_MISSING);
+  if (validation === "indeterminate") return documentResult(documentShell, normalizedMethod, 200, CACHE.NO_STORE);
+  return documentResult(documentShell, normalizedMethod, 200, CACHE.DYNAMIC_FOUND);
 };

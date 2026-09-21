@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Component, Suspense, useContext } from "react";
+import { Component, Suspense, lazy, useContext } from "react";
 import toast, { Toaster, ToastBar } from "react-hot-toast";
 
 import HomeLayout from "./components/layout/HomeLayout";
@@ -14,15 +14,16 @@ import TeacherGuard from "./guards/TeacherGuard";
 import InstructorGuard from "./guards/InstructorGuard";
 import StudentGuard from "./guards/StudentGuard";
 import AdminGuard from "./guards/AdminGuard";
-import AllBlogsPage from "./components/landing/AllBlogsPage";
-import BlogPostPage from "./components/landing/Blogpostpage";
-import CoursesPage from "./pages/CoursesPage";
-import InstructorPage from "./pages/InstructorPage";
-import CourseDetailsPage from "./pages/CourseDetailsPage";
-import CertificateVerificationPage from "./pages/CertificateVerificationPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import InstructorAgreementPage from "./pages/InstructorAgreementPage";
 import * as LazyRoutes from "./lazyRoutes";
+
+const AllBlogsPage = lazy(() => import("./components/landing/AllBlogsPage"));
+const BlogPostPage = lazy(() => import("./components/landing/Blogpostpage"));
+const CoursesPage = lazy(() => import("./pages/CoursesPage"));
+const InstructorPage = lazy(() => import("./pages/InstructorPage"));
+const CourseDetailsPage = lazy(() => import("./pages/CourseDetailsPage"));
+const CertificateVerificationPage = lazy(() => import("./pages/CertificateVerificationPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const InstructorAgreementPage = lazy(() => import("./pages/InstructorAgreementPage"));
 
 const {
   LoginPage, ForgotPassword, RegisterPage, CheckEmailPage, VerifyEmailPage,

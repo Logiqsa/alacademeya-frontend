@@ -11,6 +11,7 @@ const homeLayout = readFileSync(new URL("../src/components/layout/HomeLayout.jsx
 const hero = readFileSync(new URL("../src/components/landing/Hero.jsx", import.meta.url), "utf8");
 const document = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+const pricing = readFileSync(new URL("../src/components/landing/Pricing.jsx", import.meta.url), "utf8");
 
 test("landing sections use public backend visibility settings", () => {
   assert.match(landing, /useLandingPageSettings\(\)/);
@@ -36,6 +37,9 @@ test("first viewport avoids the decorative bitmap and late font stylesheet disco
   assert.match(hero, /width="502"/);
   assert.match(document, /rel="preconnect" href="https:\/\/fonts\.gstatic\.com"/);
   assert.doesNotMatch(styles, /@import url\("https:\/\/fonts\.googleapis\.com/);
+  assert.match(document, /media="print" onload="this\.media='all'"/);
+  assert.match(pricing, /aria-label="الأسعار السنوية"/);
+  assert.match(pricing, /aria-pressed=\{isAnnual\}/);
 });
 
 test("navbar hides links for landing sections disabled by the admin", () => {
