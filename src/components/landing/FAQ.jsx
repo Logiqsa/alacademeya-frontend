@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
 
 const faqs = [
@@ -51,7 +50,9 @@ const FAQItem = ({ item }) => {
       "
     >
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
         className="w-full flex items-center justify-between gap-3 text-right"
       >
         <span
@@ -72,13 +73,8 @@ const FAQItem = ({ item }) => {
         </div>
       </button>
 
-      <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
+          <div
             className="
               font-['IBM_Plex_Sans_Arabic']
               font-normal
@@ -91,9 +87,8 @@ const FAQItem = ({ item }) => {
             "
           >
             {item.a}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 };

@@ -23,8 +23,10 @@ const resolve = (pathname, fetchImpl, options = {}) => resolveSpaDocument({
   ...options,
 });
 
-test("embedded shell is byte-for-byte the current Vite production shell", async () => {
-  assert.equal(generatedShell, await readFile(new URL("../dist/index.html", import.meta.url), "utf8"));
+test("static landing shell preloads the hero, while other routes keep the plain SPA shell", async () => {
+  const staticLandingShell = await readFile(new URL("../dist/index.html", import.meta.url), "utf8");
+  assert.match(staticLandingShell, new RegExp(`<link rel="preload" as="image" href="${heroPreloadHref}" fetchpriority="high"`));
+  assert.doesNotMatch(generatedShell, /rel="preload" as="image"/);
   assert.match(generatedShell, /<div id="root"><\/div>/);
   assert.match(generatedShell, /\/assets\/index-[^"']+\.js/);
 });

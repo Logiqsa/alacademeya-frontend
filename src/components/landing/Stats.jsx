@@ -1,33 +1,46 @@
 import { useEffect, useRef } from "react";
-import { useInView } from "framer-motion";
 
 const Counter = ({ value, label, duration = 2 }) => {
   const nodeRef = useRef(null);
-  const isInView = useInView(nodeRef, { once: true, margin: "-50px" });
 
   useEffect(() => {
-    if (!isInView || !nodeRef.current) return undefined;
+    const node = nodeRef.current;
+    if (!node) return undefined;
 
     const numericValue = parseInt(value.replace(/[^0-9]/g, ""));
     const increment = numericValue / (duration * 60);
     let current = 0;
-    nodeRef.current.textContent = "0";
-
-    const timer = window.setInterval(() => {
-      current += increment;
-
-      if (current >= numericValue) {
-        if (nodeRef.current) nodeRef.current.textContent = value;
-        window.clearInterval(timer);
-      } else if (nodeRef.current) {
-        nodeRef.current.textContent =
-          Math.floor(current).toLocaleString() +
-          (value.includes("%") ? "%" : "");
-      }
-    }, 1000 / 60);
-
-    return () => window.clearInterval(timer);
-  }, [isInView, value, duration]);
+    let timer;
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      node.textContent = "0";
+      timer = window.setInterval(() => {
+        current += increment;
+        if (current >= numericValue) {
+          node.textContent = value;
+          window.clearInterval(timer);
+        } else {
+          node.textContent = Math.floor(current).toLocaleString() + (value.includes("%") ? "%" : "");
+        }
+      }, 1000 / 60);
+    };
+    const observer = "IntersectionObserver" in window
+      ? new IntersectionObserver(([entry]) => {
+          if (entry.isIntersecting) {
+            start();
+            observer.disconnect();
+          }
+        }, { rootMargin: "-50px" })
+      : null;
+    if (observer) observer.observe(node);
+    else start();
+    return () => {
+      observer?.disconnect();
+      window.clearInterval(timer);
+    };
+  }, [value, duration]);
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 text-center">

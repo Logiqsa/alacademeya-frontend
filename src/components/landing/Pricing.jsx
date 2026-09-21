@@ -1,7 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { Crown, Loader2, AlertCircle, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 // ⚠️ عدّل المسار ده حسب مكان ملف الـ api عندك في المشروع
 import {
   getAllPackages,
@@ -178,7 +177,7 @@ const Pricing = () => {
               const curriculumId = entityId(curriculum);
               const active = String(selectedCurriculum) === String(curriculumId);
               return (
-                <motion.button
+                <button
                   key={curriculumId}
                   type="button"
                   onClick={() => {
@@ -188,13 +187,10 @@ const Pricing = () => {
                     setGrades([]);
                     setStructureLoading(true);
                   }}
-                  animate={{ scale: active ? 1.04 : 1 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ duration: 0.2 }}
-                  className={`shrink-0 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors ${active ? "border-[#123C91] bg-[#123C91] text-white" : "border-[#DCE3EE] bg-white text-[#575F69] hover:border-[#123C91]"}`}
+                  className={`shrink-0 rounded-full border px-5 py-2.5 text-sm font-semibold transition-transform duration-200 active:scale-95 ${active ? "scale-[1.04] border-[#123C91] bg-[#123C91] text-white" : "border-[#DCE3EE] bg-white text-[#575F69] hover:border-[#123C91]"}`}
                 >
                   {entityName(curriculum)}
-                </motion.button>
+                </button>
               );
             })}
           </div>
@@ -283,27 +279,17 @@ const Pricing = () => {
 
         {!loading && !structureLoading && (
           <>
-          <AnimatePresence mode="wait" initial={false}>
-          <motion.div
+          <div
             key={selectedCurriculum ? `${selectedCurriculum}-${selectedStage}` : "packages"}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.28, ease: "easeOut" }}
           >
           {selectedCurriculum && visiblePackages.length === 0 && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 text-sm text-[#667085]">لا توجد باقات متاحة لهذه المرحلة حالياً.</motion.p>
+            <p className="mb-6 text-sm text-[#667085]">لا توجد باقات متاحة لهذه المرحلة حالياً.</p>
           )}
           <div className="flex flex-wrap items-stretch justify-center gap-6">
             {plans.map((plan) => (
-              <motion.div
+              <div
                 key={plan.id}
-                layout
-                initial={{ opacity: 0, y: 16, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.3 }}
-                whileHover={{ y: -6 }}
-                className={`relative flex w-full max-w-sm flex-col rounded-2xl border p-6 transition-shadow md:basis-[calc(33.333%-1rem)] ${plan.isPopular ? "border-[#123C91] shadow-2xl" : "border-[#1F293733] bg-[#FFFFFF]"}`}
+                className={`relative flex w-full max-w-sm flex-col rounded-2xl border p-6 transition-transform duration-300 hover:-translate-y-1.5 md:basis-[calc(33.333%-1rem)] ${plan.isPopular ? "border-[#123C91] shadow-2xl" : "border-[#1F293733] bg-[#FFFFFF]"}`}
               >
                 {plan.isPopular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#EAF4FF] text-[#123C91] text-xs font-bold px-4 py-1 rounded-full border border-[#123C91] flex items-center gap-1">
@@ -333,11 +319,10 @@ const Pricing = () => {
                     ابدأ الآن
                   </button>
                 )}
-              </motion.div>
+              </div>
             ))}
           </div>
-          </motion.div>
-          </AnimatePresence>
+          </div>
           </>
         )}
       </div>
