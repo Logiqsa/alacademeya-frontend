@@ -10,7 +10,6 @@ import {
   Mail,
   MessageSquare,
   Search,
-  Trash2,
   UserRound,
   X,
 } from "lucide-react";
@@ -22,12 +21,9 @@ import {
   fetchAdminCourses,
   fetchPublicInstructor,
   deactivateAdminCourse,
-  removeAdminCourse,
 } from "../api/coursesApi";
-import {
-  getApiErrorCode,
-  getApiErrorMessage,
-} from "../../../services/apiError";
+import { getApiErrorMessage } from "../../../services/apiError";
+import { confirmToast } from "../../../utils/confirmToast";
 import { getTeacher, getTeachers, getUser } from "../../../services/APIService";
 
 const dateOf = (value) =>
@@ -612,8 +608,7 @@ export default function AdminCoursesPage() {
       : "published";
   });
   const [loading, setLoading] = useState(true);
-  const [deletingCourseId, setDeletingCourseId] = useState(null);
-  const [coursePendingDelete, setCoursePendingDelete] = useState(null);
+  const [deactivatingCourseId, setDeactivatingCourseId] = useState(null);
   const [selectedInstructorCourse, setSelectedInstructorCourse] =
     useState(null);
   const selectedCategory = searchParams.get("category") || "";
@@ -636,39 +631,21 @@ export default function AdminCoursesPage() {
     });
   };
 
-  const handleDelete = async (course) => {
-    if (deletingCourseId) return;
-    setDeletingCourseId(course.id);
-    try {
-      await removeAdminCourse(course.id);
-      setCourses((items) =>
-        items.filter((item) => String(item.id) !== String(course.id)),
-      );
-      setCoursePendingDelete(null);
-      toast.success("تم حذف الدورة نهائيًا");
-    } catch (error) {
-      const code = getApiErrorCode(error);
-      const message =
-        code === "COURSE_HAS_DEPENDENCIES"
-          ? "لا يمكن حذف الدورة لوجود تسجيلات أو مشتريات مرتبطة بها. يمكنك إبقاؤها غير نشطة."
-          : code === "COURSE_CANNOT_BE_DELETED"
-            ? "لا يمكن حذف دورة منشورة أو قيد المراجعة. أوقف الدورة المنشورة أولًا."
-            : getApiErrorMessage(error, "تعذر حذف الدورة");
-      toast.error(message);
-    } finally {
-      setDeletingCourseId(null);
-    }
-  };
   const handleDeactivate = async (course) => {
-    if (deletingCourseId) return;
-    if (!window.confirm(`إيقاف دورة «${course.title}»؟ ستختفي من الرئيسية وتظل متاحة للمشتركين الحاليين.`)) return;
-    setDeletingCourseId(course.id);
+    if (deactivatingCourseId) return;
+    const confirmed = await confirmToast({
+      title: "إيقاف الدورة؟",
+      message: `ستختفي دورة «${course.title}» من الرئيسية، لكنها ستظل متاحة للمشتركين الحاليين.`,
+      confirmLabel: "إيقاف الدورة",
+    });
+    if (!confirmed) return;
+    setDeactivatingCourseId(course.id);
     try {
       await deactivateAdminCourse(course.id);
       setCourses((items) => items.map((item) => String(item.id) === String(course.id) ? { ...item, rawStatus: "archived", status: "غير نشطة" } : item));
       toast.success("تم إيقاف الدورة مع الحفاظ على وصول المشتركين");
     } catch (error) { toast.error(getApiErrorMessage(error, "تعذر إيقاف الدورة")); }
-    finally { setDeletingCourseId(null); }
+    finally { setDeactivatingCourseId(null); }
   };
 
   useEffect(() => {
@@ -926,28 +903,7 @@ export default function AdminCoursesPage() {
                         {course.status}
                       </span>
                       <div className="flex items-center gap-2">
-                        {course.rawStatus === "published" && <button type="button" onClick={() => handleDeactivate(course)} disabled={Boolean(deletingCourseId)} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-bold text-amber-700 disabled:opacity-50"><CirclePause size={15} />إيقاف</button>}
-                        <button
-                          type="button"
-                          onClick={() => setCoursePendingDelete(course)}
-                          disabled={
-                            Boolean(deletingCourseId) ||
-                            !["draft", "rejected", "archived"].includes(
-                              course.rawStatus,
-                            )
-                          }
-                          title={
-                            ["draft", "rejected", "archived"].includes(
-                              course.rawStatus,
-                            )
-                              ? "حذف الدورة"
-                              : "يجب إيقاف الدورة قبل حذفها"
-                          }
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-bold text-red-700 transition hover:border-red-400 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Trash2 size={15} />
-                          حذف
-                        </button>
+                        {course.rawStatus === "published" && <button type="button" onClick={() => handleDeactivate(course)} disabled={Boolean(deactivatingCourseId)} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-bold text-amber-700 disabled:opacity-50"><CirclePause size={15} />{deactivatingCourseId === course.id ? "جارٍ الإيقاف..." : "إيقاف"}</button>}
                       </div>
                     </div>
                   </article>
@@ -1033,35 +989,7 @@ export default function AdminCoursesPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
-                            {course.rawStatus === "published" && <button type="button" onClick={() => handleDeactivate(course)} disabled={Boolean(deletingCourseId)} className="inline-flex items-center gap-2 rounded-xl border border-amber-300 px-4 py-2.5 font-bold text-amber-700 disabled:opacity-50"><CirclePause size={17} />إيقاف</button>}
-                            <button
-                              type="button"
-                              onClick={() => setCoursePendingDelete(course)}
-                              disabled={
-                                Boolean(deletingCourseId) ||
-                                !["draft", "rejected", "archived"].includes(
-                                  course.rawStatus,
-                                )
-                              }
-                              title={
-                                ["draft", "rejected", "archived"].includes(
-                                  course.rawStatus,
-                                )
-                                  ? "حذف الدورة"
-                                  : "يجب إيقاف الدورة قبل حذفها"
-                              }
-                              className="delete-action inline-flex items-center gap-2 rounded-xl px-4 py-2.5"
-                            >
-                              {deletingCourseId === course.id ? (
-                                <LoaderCircle
-                                  size={17}
-                                  className="animate-spin"
-                                />
-                              ) : (
-                                <Trash2 size={17} />
-                              )}
-                              حذف
-                            </button>
+                            {course.rawStatus === "published" && <button type="button" onClick={() => handleDeactivate(course)} disabled={Boolean(deactivatingCourseId)} className="inline-flex items-center gap-2 rounded-xl border border-amber-300 px-4 py-2.5 font-bold text-amber-700 disabled:opacity-50"><CirclePause size={17} />{deactivatingCourseId === course.id ? "جارٍ الإيقاف..." : "إيقاف"}</button>}
                           </div>
                         </td>
                       </tr>
@@ -1100,57 +1028,6 @@ export default function AdminCoursesPage() {
           onClose={() => setSelectedInstructorCourse(null)}
           onMessage={openInstructorMessages}
         />
-        {coursePendingDelete && (
-          <div
-            className="fixed inset-0 z-[120] grid place-items-center bg-black/60 p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-course-title"
-            onMouseDown={() =>
-              !deletingCourseId && setCoursePendingDelete(null)
-            }
-          >
-            <div
-              className="w-full max-w-md rounded-2xl bg-white p-6 text-right shadow-2xl"
-              onMouseDown={(event) => event.stopPropagation()}
-            >
-              <span className="grid h-12 w-12 place-items-center rounded-xl bg-red-50 text-red-700">
-                <Trash2 size={23} />
-              </span>
-              <h2
-                id="delete-course-title"
-                className="mt-4 text-xl font-extrabold text-[#17213A]"
-              >
-                حذف الدورة نهائيًا؟
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-[#667085]">
-                سيتم حذف دورة «{coursePendingDelete.title}» ومحتواها نهائيًا،
-                ولا يمكن التراجع عن هذا الإجراء.
-              </p>
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setCoursePendingDelete(null)}
-                  disabled={Boolean(deletingCourseId)}
-                  className="rounded-xl border border-[#D0D5DD] px-5 py-2.5 font-bold text-[#344054] disabled:opacity-50"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(coursePendingDelete)}
-                  disabled={Boolean(deletingCourseId)}
-                  className="delete-action inline-flex items-center gap-2 rounded-xl px-5 py-2.5"
-                >
-                  {deletingCourseId && (
-                    <LoaderCircle size={17} className="animate-spin" />
-                  )}
-                  تأكيد الحذف
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </AdminLayout>
   );
