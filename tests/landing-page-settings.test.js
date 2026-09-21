@@ -37,7 +37,7 @@ test("first viewport avoids the decorative bitmap and late font stylesheet disco
   assert.match(hero, /width="502"/);
   assert.match(document, /rel="preconnect" href="https:\/\/fonts\.gstatic\.com"/);
   assert.doesNotMatch(styles, /@import url\("https:\/\/fonts\.googleapis\.com/);
-  assert.match(document, /media="print" onload="this\.media='all'"/);
+  assert.doesNotMatch(document, /media="print" onload="this\.media='all'"/);
   assert.match(pricing, /aria-label="الأسعار السنوية"/);
   assert.match(pricing, /aria-pressed=\{isAnnual\}/);
 });
