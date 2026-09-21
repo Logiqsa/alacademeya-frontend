@@ -309,6 +309,9 @@ export const normalizeCourse = (source = {}) => {
     academicStage: textOf(academicStage),
     academicGrade: textOf(academicGrade),
     subject: textOf(academicSubject),
+    universityFaculty: textOf(course.universityFaculty),
+    universityMajor: textOf(course.universityMajor),
+    universityYear: course.universityYear || "",
     shortDescription: textOf(course.shortDescription),
     requirements: arrayOfText(course.requirements),
     targetAudience: arrayOfText(course.targetAudience),
@@ -890,6 +893,13 @@ const coursePayload = (course) => {
     // after the admin selects a different category.
     category: course.category || course.categoryId,
     audienceType: course.audienceType || "general",
+    ...(course.audienceType === "university"
+      ? {
+          universityFaculty: course.universityFaculty?.trim(),
+          universityMajor: course.universityMajor?.trim(),
+          universityYear: course.universityYear,
+        }
+      : {}),
     ...(isAcademic ? academicIds : {}),
     level: levelValues[course.level] || course.level || "beginner",
     language:

@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import { universityYearLabel } from "../../../utils/courseAudience";
 import CourseCard from "../../../components/courses/CourseCard";
 import {
   approveCourse,
@@ -196,6 +197,7 @@ const OverviewTab = ({ course, coverSrc, totalLessons, totalQuizzes }) => {
   const instructorProfitPerStudent = commissionRate == null ? null : pricePerStudent - platformProfitPerStudent;
   const isAcademicCourse =
     course.courseType === "academic" || Boolean(course.academicCurriculumId);
+  const isUniversityCourse = course.audienceType === "university";
   const overviewDetails = [
     ["الحالة", course.status],
     [
@@ -219,6 +221,13 @@ const OverviewTab = ({ course, coverSrc, totalLessons, totalQuizzes }) => {
           ["الصف الدراسي", course.academicGrade || course.grade || "غير محدد"],
           ["المنهج", course.academicCurriculumName || "غير محدد"],
           ["المادة", course.subject || "غير محددة"],
+        ]
+      : []),
+    ...(isUniversityCourse
+      ? [
+          ["الكلية", course.universityFaculty || "غير محددة"],
+          ["التخصص / الشعبة", course.universityMajor || "غير محدد"],
+          ["السنة الدراسية", universityYearLabel(course.universityYear) || "غير محددة"],
         ]
       : []),
   ];

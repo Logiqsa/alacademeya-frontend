@@ -3,6 +3,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Filter, Minus, Search, SlidersH
 import CourseCard from "../components/courses/CourseCard";
 import { fetchPublicCourses, fetchStudentCourses } from "../features/course-management/api/coursesApi";
 import { AuthContext } from "../context/AuthContext";
+import { universityYearLabel } from "../utils/courseAudience";
 
 const prices = [
   { value: "free", label: "مجاني" },
@@ -52,6 +53,9 @@ export default function CoursesPage() {
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [selectedPrices, setSelectedPrices] = useState([]);
   const [selectedAudiences, setSelectedAudiences] = useState([]);
+  const [selectedFaculties, setSelectedFaculties] = useState([]);
+  const [selectedMajors, setSelectedMajors] = useState([]);
+  const [selectedUniversityYears, setSelectedUniversityYears] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const classifications = useMemo(() => optionsFromCourses(courses, "category"), [courses]);
   const languages = useMemo(() => optionsFromCourses(courses, "language"), [courses]);
@@ -62,6 +66,12 @@ export default function CoursesPage() {
   const grades = useMemo(() => optionsFromCourses(gradeCourses, "academicGrade"), [gradeCourses]);
   const subjectCourses = useMemo(() => gradeCourses.filter((item) => selectedGrades.includes(item.academicGrade)), [gradeCourses, selectedGrades]);
   const subjects = useMemo(() => optionsFromCourses(subjectCourses, "subject"), [subjectCourses]);
+  const universityCourses = useMemo(() => courses.filter((item) => item.audienceType === "university"), [courses]);
+  const faculties = useMemo(() => optionsFromCourses(universityCourses, "universityFaculty"), [universityCourses]);
+  const facultyCourses = useMemo(() => universityCourses.filter((item) => selectedFaculties.includes(item.universityFaculty)), [universityCourses, selectedFaculties]);
+  const majors = useMemo(() => optionsFromCourses(facultyCourses, "universityMajor"), [facultyCourses]);
+  const majorCourses = useMemo(() => facultyCourses.filter((item) => selectedMajors.includes(item.universityMajor)), [facultyCourses, selectedMajors]);
+  const universityYears = useMemo(() => optionsFromCourses(majorCourses, "universityYear").map((value) => ({ value, label: universityYearLabel(value) })), [majorCourses]);
 
   useEffect(() => {
     let active = true;
@@ -106,6 +116,9 @@ export default function CoursesPage() {
     setSelectedLevels([]);
     setSelectedPrices([]);
     setSelectedAudiences([]);
+    setSelectedFaculties([]);
+    setSelectedMajors([]);
+    setSelectedUniversityYears([]);
   };
 
   const activeFilterCount =
@@ -116,7 +129,10 @@ export default function CoursesPage() {
     selectedLanguages.length +
     selectedLevels.length +
     selectedPrices.length +
-    selectedAudiences.length;
+    selectedAudiences.length +
+    selectedFaculties.length +
+    selectedMajors.length +
+    selectedUniversityYears.length;
 
   const filteredCourses = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -139,6 +155,9 @@ export default function CoursesPage() {
         (selectedPrices.includes("free") && course.price === 0) ||
         (selectedPrices.includes("paid") && course.price > 0);
       const matchesAudience = !selectedAudiences.length || selectedAudiences.includes(course.audienceType);
+      const matchesFaculty = !selectedFaculties.length || selectedFaculties.includes(course.universityFaculty);
+      const matchesMajor = !selectedMajors.length || selectedMajors.includes(course.universityMajor);
+      const matchesUniversityYear = !selectedUniversityYears.length || selectedUniversityYears.includes(course.universityYear);
       return (
         matchesQuery &&
         matchesClassification &&
@@ -147,7 +166,7 @@ export default function CoursesPage() {
         matchesGrade &&
         matchesLanguage &&
         matchesLevel &&
-        matchesPrice && matchesAudience
+        matchesPrice && matchesAudience && matchesFaculty && matchesMajor && matchesUniversityYear
       );
     });
 
@@ -168,6 +187,9 @@ export default function CoursesPage() {
     selectedLevels,
     selectedPrices,
     selectedAudiences,
+    selectedFaculties,
+    selectedMajors,
+    selectedUniversityYears,
     sortBy,
   ]);
 
@@ -244,7 +266,11 @@ export default function CoursesPage() {
               </div>
 
               <div className="space-y-5">
-                <CheckboxGroup title="الجمهور" items={audiences} selected={selectedAudiences} onToggle={(value) => { toggleValue(setSelectedAudiences)(value); if (value === "school" && selectedAudiences.includes("school")) { setSelectedStages([]); setSelectedGrades([]); setSelectedSubjects([]); } }} />
+                <CheckboxGroup title="الجمهور" items={audiences} selected={selectedAudiences} onToggle={(value) => {
+                  toggleValue(setSelectedAudiences)(value);
+                  if (value === "school" && selectedAudiences.includes("school")) { setSelectedStages([]); setSelectedGrades([]); setSelectedSubjects([]); }
+                  if (value === "university" && selectedAudiences.includes("university")) { setSelectedFaculties([]); setSelectedMajors([]); setSelectedUniversityYears([]); }
+                }} />
                 <CheckboxGroup
                   title="التصنيف"
                   items={classifications}
@@ -268,6 +294,24 @@ export default function CoursesPage() {
                   items={subjects}
                   selected={selectedSubjects}
                   onToggle={toggleValue(setSelectedSubjects)}
+                />}
+                {selectedAudiences.includes("university") && <CheckboxGroup
+                  title="الكلية"
+                  items={faculties}
+                  selected={selectedFaculties}
+                  onToggle={(value) => { toggleValue(setSelectedFaculties)(value); setSelectedMajors([]); setSelectedUniversityYears([]); }}
+                />}
+                {selectedAudiences.includes("university") && selectedFaculties.length > 0 && <CheckboxGroup
+                  title="التخصص / الشعبة"
+                  items={majors}
+                  selected={selectedMajors}
+                  onToggle={(value) => { toggleValue(setSelectedMajors)(value); setSelectedUniversityYears([]); }}
+                />}
+                {selectedAudiences.includes("university") && selectedMajors.length > 0 && <CheckboxGroup
+                  title="السنة الدراسية"
+                  items={universityYears}
+                  selected={selectedUniversityYears}
+                  onToggle={toggleValue(setSelectedUniversityYears)}
                 />}
                 <CheckboxGroup
                   title="اللغة"

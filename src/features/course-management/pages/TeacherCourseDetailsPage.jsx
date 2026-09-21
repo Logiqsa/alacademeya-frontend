@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
+import { universityYearLabel } from "../../../utils/courseAudience";
 import PolicyAcceptanceDialog from "../../../components/course/PolicyAcceptanceDialog";
 import { confirmToast } from "../../../utils/confirmToast";
 import { fetchTeacherCourse, fetchTeacherCourseEnrollments } from "../api/coursesApi";
@@ -96,6 +97,7 @@ const OverviewTab = ({ course, coverSrc, totalLessons, totalQuizzes }) => {
   const platformProfitPerStudent = commissionRate == null ? null : pricePerStudent * (commissionRate / 100);
   const teacherProfitPerStudent = commissionRate == null ? null : pricePerStudent - platformProfitPerStudent;
   const isAcademicCourse = course.courseType === "academic" || Boolean(course.academicCurriculumId);
+  const isUniversityCourse = course.audienceType === "university";
   const overviewDetails = [
     ["الحالة", course.status],
     ["تاريخ الإنشاء", course.createdAt ? new Date(course.createdAt).toLocaleDateString("ar-EG") : "غير محدد"],
@@ -108,6 +110,11 @@ const OverviewTab = ({ course, coverSrc, totalLessons, totalQuizzes }) => {
       ["الصف الدراسي", course.academicGrade || course.grade || "غير محدد"],
       ["المنهج", course.academicCurriculumName || "غير محدد"],
       ["المادة", course.subject || "غير محددة"],
+    ] : []),
+    ...(isUniversityCourse ? [
+      ["الكلية", course.universityFaculty || "غير محددة"],
+      ["التخصص / الشعبة", course.universityMajor || "غير محدد"],
+      ["السنة الدراسية", universityYearLabel(course.universityYear) || "غير محددة"],
     ] : []),
   ];
   const audience = Array.isArray(course.targetAudience) ? course.targetAudience : course.targetAudience ? [course.targetAudience] : [];

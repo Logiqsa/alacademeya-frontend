@@ -16,6 +16,7 @@ import BrandMediaPlayer from "../components/media/BrandMediaPlayer";
 import { formatCourseDuration } from "../utils/courseDuration";
 import Seo from "../components/seo/Seo";
 import { cleanDescription, SITE_URL } from "../components/seo/seoCore";
+import { universityYearLabel } from "../utils/courseAudience";
 
 export default function CourseDetailsPage() {
   const { slug } = useParams();
@@ -278,6 +279,12 @@ export default function CourseDetailsPage() {
 
           <div className="p-5">
             {course.instructorSlug ? <Link to={`/instructors/${course.instructorSlug}`} className="flex items-center gap-3 rounded-xl bg-[#F8FAFC] p-3 transition hover:bg-[#EEF4FF]"><InstructorAvatar course={course} /><span><small className="block text-[#98A2B3]">المحاضر</small><strong className="text-sm text-[#123C91]">{course.instructor}</strong></span></Link> : <div className="flex items-center gap-3 rounded-xl bg-[#F8FAFC] p-3"><InstructorAvatar course={course} /><span><small className="block text-[#98A2B3]">المحاضر</small><strong className="text-sm text-[#344054]">{course.instructor}</strong></span></div>}
+
+            {course.audienceType === "university" && <dl className="mt-3 grid grid-cols-1 gap-2 rounded-xl border border-[#E1E9F4] bg-[#F8FAFD] p-3 text-xs sm:grid-cols-3">
+              <div><dt className="text-[#98A2B3]">الكلية</dt><dd className="mt-1 font-bold text-[#344054]">{course.universityFaculty}</dd></div>
+              <div><dt className="text-[#98A2B3]">التخصص</dt><dd className="mt-1 font-bold text-[#344054]">{course.universityMajor}</dd></div>
+              <div><dt className="text-[#98A2B3]">السنة</dt><dd className="mt-1 font-bold text-[#344054]">{universityYearLabel(course.universityYear)}</dd></div>
+            </dl>}
 
             <div className="my-4 flex items-end justify-between border-y border-[#EDF1F5] py-4">
               <div><small className="block text-[#8B95A1]">سعر الدورة</small><strong className="mt-1 block text-2xl text-[#123C91]">{course.pricingType === "free" || !course.price ? "مجاني" : `${Number(course.effectivePrice ?? course.price).toLocaleString("ar-EG")} ج.م`}</strong>{course.price > (course.effectivePrice ?? course.price) && <span className="text-xs text-[#98A2B3] line-through">{Number(course.price).toLocaleString("ar-EG")} ج.م</span>}</div>

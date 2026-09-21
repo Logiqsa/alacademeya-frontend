@@ -48,6 +48,7 @@ import {
   getApiErrorMessage,
   normalizeApiError,
 } from "../../../services/apiError";
+import { UNIVERSITY_YEAR_OPTIONS } from "../../../utils/courseAudience";
 
 const EMPTY_COURSE = {
   title: "",
@@ -66,6 +67,9 @@ const EMPTY_COURSE = {
   academicStage: "",
   academicGrade: "",
   subject: "",
+  universityFaculty: "",
+  universityMajor: "",
+  universityYear: "",
   tags: [],
   cover: "",
   promoVideo: "",
@@ -576,6 +580,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           academicStage: item.academicStageId || "",
           academicGrade: item.academicGradeId || "",
           subject: item.subjectId || "",
+          universityFaculty: item.universityFaculty || "",
+          universityMajor: item.universityMajor || "",
+          universityYear: item.universityYear || "",
           titleEn: item.titleEn || "",
           requirements: Array.isArray(item.requirements)
             ? item.requirements
@@ -634,6 +641,14 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
       (!course.title.trim() || !course.category || !course.level)
     ) {
       toast.error("أكمل عنوان الدورة بالعربية والتصنيف والمستوى");
+      return false;
+    }
+    if (
+      step === 0 &&
+      course.audienceType === "university" &&
+      (!course.universityFaculty.trim() || !course.universityMajor.trim() || !course.universityYear)
+    ) {
+      toast.error("أكمل الكلية والتخصص والسنة الدراسية");
       return false;
     }
     if (step === 0 && isAdminFlow && !course.instructorId) {
@@ -732,6 +747,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
       if (course.academicCurriculum && !course.academicGrade)
         missing.push("الصف");
       if (course.academicCurriculum && !course.subject) missing.push("المادة");
+      if (course.audienceType === "university" && !course.universityFaculty.trim()) missing.push("الكلية");
+      if (course.audienceType === "university" && !course.universityMajor.trim()) missing.push("التخصص / الشعبة");
+      if (course.audienceType === "university" && !course.universityYear) missing.push("السنة الدراسية");
       if (!course.curriculum.length) missing.push("قسم واحد على الأقل");
       course.curriculum.forEach((section, sectionIndex) => {
         if (!section.title?.trim())
@@ -772,6 +790,14 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
       (!course.academicStage || !course.academicGrade || !course.subject)
     ) {
       toast.error("أكمل المنهج والمرحلة والصف والمادة قبل الحفظ");
+      setStep(0);
+      return;
+    }
+    if (
+      course.audienceType === "university" &&
+      (!course.universityFaculty.trim() || !course.universityMajor.trim() || !course.universityYear)
+    ) {
+      toast.error("أكمل الكلية والتخصص والسنة الدراسية قبل الحفظ");
       setStep(0);
       return;
     }
@@ -1523,6 +1549,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                               subject: "",
                             }
                           : {}),
+                        ...(e.target.value !== "university"
+                          ? { universityFaculty: "", universityMajor: "", universityYear: "" }
+                          : {}),
                       }))
                     }
                   >
@@ -1617,6 +1646,25 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                           {optionName(item)}
                         </option>
                       ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+              {course.audienceType === "university" && (
+                <div className="grid gap-5 rounded-xl border border-[#DCE6F5] bg-[#F8FAFD] p-4 sm:grid-cols-3">
+                  <label className="space-y-2 text-right text-sm font-medium text-[#1F2937]">
+                    الكلية *
+                    <input className={inputClass} value={course.universityFaculty} onChange={(e) => update("universityFaculty", e.target.value)} placeholder="مثال: كلية الهندسة" maxLength={200} />
+                  </label>
+                  <label className="space-y-2 text-right text-sm font-medium text-[#1F2937]">
+                    التخصص / الشعبة *
+                    <input className={inputClass} value={course.universityMajor} onChange={(e) => update("universityMajor", e.target.value)} placeholder="مثال: هندسة مدنية" maxLength={200} />
+                  </label>
+                  <label className="space-y-2 text-right text-sm font-medium text-[#1F2937]">
+                    السنة الدراسية *
+                    <select className={inputClass} value={course.universityYear} onChange={(e) => update("universityYear", e.target.value)}>
+                      <option value="">اختر السنة الدراسية</option>
+                      {UNIVERSITY_YEAR_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
                   </label>
                 </div>
