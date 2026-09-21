@@ -26,7 +26,7 @@ const STATIC_APP_PATHS = new Set([
   "/teacher/tasks", "/teacher/schedule", "/assignments/new",
   "/teacher/notifications", "/teacher/messages", "/teacher/settings",
   "/teacher/earnings", "/teacher/earnings/commission-rates",
-  "/teacher/my-courses", "/teacher/courses", "/teacher/courses/new",
+  "/teacher/my-courses", "/teacher/learning", "/teacher/courses", "/teacher/courses/new",
   "/teacher/instructor-profile", "/admin/courses", "/admin/courses/new",
   "/admin/course-categories", "/admin/course-finances",
   "/admin/course-finances/commission-settings",
@@ -123,4 +123,3 @@ export const classifySpaPath = (pathname) => {
   }
   return { kind: SPA_ROUTE_KIND.UNKNOWN, path };
 };
-

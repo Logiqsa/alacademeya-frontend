@@ -23,6 +23,7 @@ export default function CourseUploadProgress({ course, statuses, retryRequest, u
       <div className='min-w-0 flex-1'>
         <p className='truncate text-sm font-semibold text-[#344054]'>{title}</p>
         {item.status === 'running' && item.label && <p className='text-xs text-[#667085]'>{item.label}</p>}
+        {item.status === 'running' && Number.isFinite(item.percent) && <div className='mt-1.5 flex items-center gap-2'><div className='h-1.5 min-w-16 flex-1 overflow-hidden rounded-full bg-[#E5E7EB]'><div className='h-full rounded-full bg-[#12AFA0] transition-all' style={{ width: `${item.percent}%` }} /></div><b className='shrink-0 text-[11px] text-[#123C91]' dir='ltr'>{item.percent}%</b></div>}
         {item.status === 'failed' && <p className='text-xs text-[#B42318]'>{item.error?.uploadFileName && <strong dir='auto' className='ml-1'>{item.error.uploadFileName}:</strong>}{uploadErrorMessage(item.error)}</p>}
       </div>
       {item.status === 'failed' && <div className='mr-10 flex w-full flex-wrap items-center gap-2 sm:mr-0 sm:w-auto sm:shrink-0'>

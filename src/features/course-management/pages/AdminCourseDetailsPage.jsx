@@ -49,6 +49,7 @@ import { getCourseEarningsByCourse } from "../../admin-finances/api/courseEarnin
 import BrandMediaPlayer from "../../../components/media/BrandMediaPlayer";
 import { formatCourseDuration } from "../../../utils/courseDuration";
 import { placeCourseQuizzes } from "../utils/placeCourseQuizzes";
+import { downloadProtectedFile } from "../utils/downloadProtectedFile";
 import {
   getAdminCourseEnrollments,
   getAdminCoursePurchases,
@@ -546,6 +547,11 @@ const CurriculumTab = ({ course }) => {
       if (!fileResponse.ok) throw new Error("FILE_PREVIEW_FAILED");
       const blob = await fileResponse.blob();
       const name = attachment.name || attachment.originalName || "مرفق الدرس";
+      if (data.inlineViewable === false) {
+        downloadProtectedFile(blob, name);
+        toast.success("هذه الصيغة لا تُعرض داخل المتصفح؛ بدأ تنزيل المرفق.");
+        return;
+      }
       setMediaPreview({
         url: URL.createObjectURL(blob),
         objectUrl: true,

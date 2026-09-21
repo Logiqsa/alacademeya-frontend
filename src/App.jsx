@@ -638,6 +638,14 @@ function App() {
           }
         />
         <Route
+          path="/teacher/learning"
+          element={
+            <InstructorGuard>
+              <StudentCoursesPage dashboard="teacher" />
+            </InstructorGuard>
+          }
+        />
+        <Route
           path="/teacher/courses"
           element={
             <InstructorGuard requireProfile={false}>

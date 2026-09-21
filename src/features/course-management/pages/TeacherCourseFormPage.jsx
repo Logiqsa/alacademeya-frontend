@@ -24,6 +24,7 @@ import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import PolicyAcceptanceDialog from "../../../components/course/PolicyAcceptanceDialog";
 import CourseStepsNavigation from "../components/CourseStepsNavigation";
+import { isInlineViewableAttachment } from "../utils/inlineViewableAttachment";
 import CourseUploadProgress from "../components/CourseUploadProgress";
 import { uploadErrorMessage } from "../utils/uploadErrorMessage";
 import { placeCourseQuizzes } from "../utils/placeCourseQuizzes";
@@ -939,7 +940,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
       const destination =
         isAdminFlow && savedCourseId
           ? `/admin/courses/${savedCourseId}`
-          : returnPath;
+          : savedCourseId ? `/teacher/courses/${savedCourseId}` : returnPath;
       navigate(destination, {
         replace: true,
         state: { savedId: savedCourseId, refresh: true },
@@ -2120,7 +2121,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                 </div>
               </div>
               <div className="rounded-lg bg-[#EAF4FF] p-3 text-sm text-[#123C91]">
-                {existingCourse ? "سيتم حفظ التعديلات دون إرسال الدورة للمراجعة." : "بعد الإرسال ستصبح الدورة قيد المراجعة قبل النشر."}
+                {isAdminFlow ? "سيتم حفظ التعديلات دون تغيير حالة الدورة." : "بعد اكتمال حفظ الدورة والملفات ستُرسل تلقائيًا للمراجعة، ثم تعود إلى صفحة الدورة."}
               </div>
             </div>
           )}
@@ -2142,10 +2143,10 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   type="button"
                   disabled={saving}
                   aria-busy={saving}
-                  onClick={() => save(course.status)}
+                  onClick={() => save(isAdminFlow ? course.status : "قيد المراجعة")}
                   className="w-full rounded-lg border border-[#123C91] bg-[#EAF2FF] px-4 py-2.5 text-sm font-semibold text-[#123C91] transition hover:bg-[#DCE9FF] sm:w-auto sm:px-5"
                 >
-                  {saving ? `${uploadStatus.label || "جاري حفظ الدورة والملفات"}...` : "حفظ الدورة والملفات"}
+                  {saving ? `${uploadStatus.label || "جاري حفظ الدورة والملفات"}...` : isAdminFlow ? "حفظ الدورة والملفات" : "حفظ وإرسال للمراجعة"}
                 </button>
               ) : !existingCourse && isAdminFlow ? (
                 <button
@@ -2174,15 +2175,13 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   disabled={saving}
                   aria-busy={saving}
                   onClick={() =>
-                    save(isAdminFlow || existingCourse ? course.status : "قيد المراجعة")
+                    save(isAdminFlow ? course.status : "قيد المراجعة")
                   }
                   className="w-full rounded-lg bg-[#123C91] px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70 sm:w-auto sm:px-7"
                 >
                   {saving
                     ? `${uploadStatus.label}${uploadStatus.percent ? ` (${uploadStatus.percent}%)` : "..."}`
-                    : existingCourse || isAdminFlow
-                      ? "حفظ الدورة والملفات"
-                      : "إرسال للمراجعة"}
+                    : isAdminFlow ? "حفظ الدورة والملفات" : "حفظ وإرسال للمراجعة"}
                 </button>
               )}
             </div>
@@ -2421,7 +2420,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                           }}
                           className="min-w-0 flex-1 rounded-md border border-[#D0D5DD] bg-white px-2 py-1 text-xs"
                         >
-                          <option value="view_only">عرض فقط / View only</option>
+                          <option value="view_only" disabled={!isInlineViewableAttachment(attachment)}>عرض فقط</option>
                           <option value="downloadable">قابل للتنزيل / Downloadable</option>
                         </select>
                           <button
@@ -2449,6 +2448,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                             <Trash2 size={15} />
                           </button>
                         </div>
+                        {!isInlineViewableAttachment(attachment) && <p className="mt-2 text-[11px] text-amber-800">هذه الصيغة لا تُعرض داخل المتصفح. اختر «قابل للتنزيل» ليتمكن الطلاب من فتحها.</p>}
                       </div>
                     );},
                   )}

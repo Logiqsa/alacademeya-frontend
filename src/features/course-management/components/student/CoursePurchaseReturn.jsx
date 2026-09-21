@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { CheckCircle, Clock, LoaderCircle, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getCourseAccess, getCoursePurchase, getMyCoursePurchases } from "../../../../services/APIService";
+import { AuthContext } from "../../../../context/AuthContext";
+import { isInstructor } from "../../../../utils/roles";
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 const entityId = (value) => value?._id || value?.id || (typeof value === "string" ? value : "");
 
 export default function CoursePurchaseReturn({ purchaseId }) {
+  const { user } = useContext(AuthContext);
+  const coursesPath = isInstructor(user) ? "/teacher/learning" : user?.role === "user" ? "/learner-dashboard" : "/student-dashboard/courses";
   const [state, setState] = useState({ kind: "loading", purchase: null, courseId: "" });
   const [pollingExpired, setPollingExpired] = useState(false);
 
@@ -82,7 +86,7 @@ export default function CoursePurchaseReturn({ purchaseId }) {
       {granted && <Link to={`/learn/${state.courseId}`} className="mt-6 inline-flex h-11 items-center rounded-lg bg-[#123C91] px-6 font-bold !text-white">فتح الدورة</Link>}
       {!granted && <button type="button" onClick={refresh} className="mt-6 h-11 rounded-lg border border-[#123C91] px-6 font-bold text-[#123C91]">تحديث الحالة</button>}
       {pollingExpired && !granted && <p className="mt-3 text-xs text-gray-500">توقف التحديث التلقائي. يمكنك تحديث الحالة يدوياً.</p>}
-      <Link to="/student-dashboard/courses" className="mt-4 block text-sm font-semibold text-gray-600">العودة إلى دوراتي</Link>
+      <Link to={coursesPath} className="mt-4 block text-sm font-semibold text-gray-600">العودة إلى دوراتي</Link>
     </div>
   </div>;
 }

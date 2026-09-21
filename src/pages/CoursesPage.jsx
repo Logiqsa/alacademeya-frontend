@@ -4,18 +4,13 @@ import CourseCard from "../components/courses/CourseCard";
 import { fetchPublicCourses, fetchStudentCourses } from "../features/course-management/api/coursesApi";
 import { AuthContext } from "../context/AuthContext";
 
-const classifications = ["تقنية", "تأسيس أطفال", "تربية"];
-const subjects = ["لغة عربية", "رياضيات", "فيزياء", "كيمياء"];
-const stages = ["ابتدائي", "إعدادي", "ثانوي", "جامعي", "غير ذلك"];
-const grades = ["الصف الأول الثانوي", "الصف الثاني", "الصف الثالث"];
-const languages = ["عربي", "إنجليزي"];
-const levels = ["مبتدئ", "متوسط", "متقدم"];
 const prices = [
   { value: "free", label: "مجاني" },
   { value: "paid", label: "مدفوع" },
 ];
 const audiences = [{value:"general",label:"عامة"},{value:"school",label:"مدرسية"},{value:"university",label:"جامعية"},{value:"graduate",label:"خريجون"}];
-const COURSES_PER_PAGE = 3;
+const COURSES_PER_PAGE = 50;
+const optionsFromCourses = (items, field) => [...new Set(items.map((item) => item[field]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ar"));
 
 const CheckboxGroup = ({ title, items, selected, onToggle }) => (
   <fieldset className="border-b border-[#EDF0F4] pb-5">
@@ -58,6 +53,15 @@ export default function CoursesPage() {
   const [selectedPrices, setSelectedPrices] = useState([]);
   const [selectedAudiences, setSelectedAudiences] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const classifications = useMemo(() => optionsFromCourses(courses, "category"), [courses]);
+  const languages = useMemo(() => optionsFromCourses(courses, "language"), [courses]);
+  const levels = useMemo(() => optionsFromCourses(courses, "level"), [courses]);
+  const schoolCourses = useMemo(() => courses.filter((item) => item.audienceType === "school"), [courses]);
+  const stages = useMemo(() => optionsFromCourses(schoolCourses, "academicStage"), [schoolCourses]);
+  const gradeCourses = useMemo(() => schoolCourses.filter((item) => selectedStages.includes(item.academicStage)), [schoolCourses, selectedStages]);
+  const grades = useMemo(() => optionsFromCourses(gradeCourses, "academicGrade"), [gradeCourses]);
+  const subjectCourses = useMemo(() => gradeCourses.filter((item) => selectedGrades.includes(item.academicGrade)), [gradeCourses, selectedGrades]);
+  const subjects = useMemo(() => optionsFromCourses(subjectCourses, "subject"), [subjectCourses]);
 
   useEffect(() => {
     let active = true;
@@ -122,13 +126,12 @@ export default function CoursesPage() {
         course.title.toLowerCase().includes(normalizedQuery) ||
         course.instructor.toLowerCase().includes(normalizedQuery);
       const matchesClassification =
-        !selectedClassifications.length || selectedClassifications.includes(course.classification);
+        !selectedClassifications.length || selectedClassifications.includes(course.category);
       const matchesSubject =
         !selectedSubjects.length ||
-        selectedSubjects.includes(course.category) ||
-        (selectedSubjects.includes("لغة عربية") && course.category === "لغات");
-      const matchesStage = !selectedStages.length || selectedStages.includes(course.stage);
-      const matchesGrade = !selectedGrades.length || selectedGrades.includes(course.grade);
+        selectedSubjects.includes(course.subject);
+      const matchesStage = !selectedStages.length || selectedStages.includes(course.academicStage);
+      const matchesGrade = !selectedGrades.length || selectedGrades.includes(course.academicGrade);
       const matchesLanguage = !selectedLanguages.length || selectedLanguages.includes(course.language);
       const matchesLevel = !selectedLevels.length || selectedLevels.includes(course.level);
       const matchesPrice =
@@ -241,30 +244,30 @@ export default function CoursesPage() {
               </div>
 
               <div className="space-y-5">
-                <CheckboxGroup title="الجمهور" items={audiences} selected={selectedAudiences} onToggle={toggleValue(setSelectedAudiences)} />
+                <CheckboxGroup title="الجمهور" items={audiences} selected={selectedAudiences} onToggle={(value) => { toggleValue(setSelectedAudiences)(value); if (value === "school" && selectedAudiences.includes("school")) { setSelectedStages([]); setSelectedGrades([]); setSelectedSubjects([]); } }} />
                 <CheckboxGroup
                   title="التصنيف"
                   items={classifications}
                   selected={selectedClassifications}
                   onToggle={toggleValue(setSelectedClassifications)}
                 />
-                {(!selectedAudiences.length || selectedAudiences.includes("school")) && <CheckboxGroup
+                {selectedAudiences.includes("school") && <CheckboxGroup
+                  title="المرحلة"
+                  items={stages}
+                  selected={selectedStages}
+                  onToggle={(value) => { toggleValue(setSelectedStages)(value); setSelectedGrades([]); setSelectedSubjects([]); }}
+                />}
+                {selectedAudiences.includes("school") && selectedStages.length > 0 && <CheckboxGroup
+                  title="الصف"
+                  items={grades}
+                  selected={selectedGrades}
+                  onToggle={(value) => { toggleValue(setSelectedGrades)(value); setSelectedSubjects([]); }}
+                />}
+                {selectedAudiences.includes("school") && selectedGrades.length > 0 && <CheckboxGroup
                   title="المادة"
                   items={subjects}
                   selected={selectedSubjects}
                   onToggle={toggleValue(setSelectedSubjects)}
-                />}
-                {(!selectedAudiences.length || selectedAudiences.includes("school")) && <CheckboxGroup
-                  title="المرحلة"
-                  items={stages}
-                  selected={selectedStages}
-                  onToggle={toggleValue(setSelectedStages)}
-                />}
-                {(!selectedAudiences.length || selectedAudiences.includes("school")) && <CheckboxGroup
-                  title="الصف"
-                  items={grades}
-                  selected={selectedGrades}
-                  onToggle={toggleValue(setSelectedGrades)}
                 />}
                 <CheckboxGroup
                   title="اللغة"
@@ -323,7 +326,7 @@ export default function CoursesPage() {
             ) : loadError ? (
               <div className="rounded-lg border border-red-200 bg-red-50 py-20 text-center text-red-700">{loadError}</div>
             ) : filteredCourses.length ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),280px))] justify-center gap-4 sm:justify-start">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {paginatedCourses.map((course) => (
                   <CourseCard key={course.id} course={course} enrollment={enrollmentByCourseId.get(String(course.id))} compact />
                 ))}

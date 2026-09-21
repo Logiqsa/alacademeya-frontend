@@ -969,17 +969,18 @@ export const saveCourseToApi = async ({
   if (!id) throw new Error("لم يُرجع الخادم معرّف الدورة");
   onTaskStatus({ key: 'course', label: 'حفظ بيانات الدورة', status: 'done' });
 
-  const progressHandler = (label) => (event) => {
+  const progressHandler = (label, key) => (event) => {
     const percent = event.total
       ? Math.round((event.loaded * 100) / event.total)
       : 0;
     onProgress({ label, percent });
+    if (key) onTaskStatus({ key, label, status: 'running', percent });
   };
   if (course.cover?.file) {
     await runStep('cover', 'رفع صورة الغلاف', () => (admin ? uploadAdminCourseCover : uploadCourseCover)(
       id,
       course.cover.file,
-      progressHandler("جاري رفع صورة الغلاف"),
+      progressHandler("جاري رفع صورة الغلاف", 'cover'),
     ));
     onFileSaved({ type: 'cover', file: course.cover.file });
   }
@@ -987,7 +988,7 @@ export const saveCourseToApi = async ({
     await runStep('promo', 'رفع الفيديو الترويجي', () => (admin ? uploadAdminCoursePromoVideo : uploadCoursePromoVideo)(
       id,
       course.promoVideo.file,
-      progressHandler("جاري رفع الفيديو الترويجي"),
+      progressHandler("جاري رفع الفيديو الترويجي", 'promo'),
     ));
     onFileSaved({ type: 'promo', file: course.promoVideo.file });
   }
@@ -1321,7 +1322,7 @@ export const saveCourseToApi = async ({
               lessonId,
               lesson.media.file,
               contentType,
-              progressHandler(`جاري رفع محتوى الدرس: ${lesson.title}`),
+              progressHandler(`جاري رفع محتوى الدرس: ${lesson.title}`, lessonKey),
             );
           } catch (error) {
             error.uploadFileName = lesson.media.file.name;
@@ -1376,7 +1377,7 @@ export const saveCourseToApi = async ({
             try {
               return await uploadCourseLessonAttachments(
                 id, lessonId, [attachmentFile], accessMode,
-                progressHandler(`جاري رفع ${attachmentFile.name}`),
+                progressHandler(`جاري رفع ${attachmentFile.name}`, attachmentKey),
               );
             } catch (error) {
               error.uploadFileName = attachmentFile.name;

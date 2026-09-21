@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
@@ -39,6 +39,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
   const canAccessInstructorArea = instructor;
   const canBecomeInstructor = canHaveInstructorProfile(user) && !instructor;
   const dashboardPath = getDashboardPathByRole(user, "/instructor-dashboard");
+  const location = useLocation();
 
   useEffect(() => {
     const userKey = user?.id || user?._id || user?.userId || user?.email || user?.username || user?.role;
@@ -106,6 +107,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
             ]
           : []),
         ...(isTeacher ? [{ title: "الدورات المسجل بها", icon: Library, path: "/teacher/my-courses" }] : []),
+        ...(canAccessInstructorArea && !isTeacher ? [{ title: "دوراتي كمتعلم", icon: Library, path: "/teacher/learning" }] : []),
         ...(canAccessInstructorArea
           ? [
               {
@@ -133,14 +135,14 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
     },
     {
       label: "التواصل",
-      items: isTeacher ? [
+      items: isTeacher || canAccessInstructorArea ? [
         { title: "الرسائل", icon: MessageSquare, path: "/teacher/messages" },
         {
           title: "الإشعارات",
           icon: Bell,
           path: "/teacher/notifications",
         },
-        { title: "الإعدادات", icon: Settings, path: "/teacher/settings" },
+        ...(isTeacher ? [{ title: "الإعدادات", icon: Settings, path: "/teacher/settings" }] : []),
       ] : [],
     },
   ];
@@ -228,6 +230,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
             {!isOpen && <div className="mx-2 mb-2 border-t border-white/10" />}
             {section.items.map((item) => {
               const Icon = item.icon;
+              const isCourseListWhileCreating = item.path === "/teacher/courses" && location.pathname.startsWith("/teacher/courses/new");
               return (
               <NavLink
                 key={item.path}
@@ -245,7 +248,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
               font-medium
               text-[16px]
               ${
-                isActive
+                isActive && !isCourseListWhileCreating
                   ? "bg-[#FFFFFF] text-primary border-r-4 border-[#12C6B0] shadow-sm"
                   : "text-white hover:bg-white/10"
               }
@@ -257,7 +260,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
                       <Icon
                         size={20}
                         aria-hidden="true"
-                        className={isActive ? "text-[#123C91]" : "text-white"}
+                        className={isActive && !isCourseListWhileCreating ? "text-[#123C91]" : "text-white"}
                       />
                       {((item.path === "/teacher/messages" &&
                         unread.messages) ||

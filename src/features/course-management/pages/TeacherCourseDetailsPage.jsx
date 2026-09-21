@@ -45,6 +45,7 @@ import BrandMediaPlayer from "../../../components/media/BrandMediaPlayer";
 import { formatCourseDuration } from "../../../utils/courseDuration";
 import { courseStatusStyles } from "../utils/courseStatusStyles";
 import { placeCourseQuizzes } from "../utils/placeCourseQuizzes";
+import { downloadProtectedFile } from "../utils/downloadProtectedFile";
 
 const tabs = [
   { id: "overview", label: "نظرة عامة", icon: LayoutGrid },
@@ -303,6 +304,11 @@ const CurriculumTab = ({ course }) => {
         const fileResponse = await fetch(url, { credentials: "include" });
         if (!fileResponse.ok) throw new Error("FILE_PREVIEW_FAILED");
         const blob = await fileResponse.blob();
+        if (attachmentId && data.inlineViewable === false) {
+          downloadProtectedFile(blob, attachment?.name || attachment?.originalName || "مرفق الدرس");
+          toast.success("هذه الصيغة لا تُعرض داخل المتصفح؛ بدأ تنزيل المرفق.");
+          return;
+        }
         setMediaPreview({
           url: URL.createObjectURL(blob),
           objectUrl: true,

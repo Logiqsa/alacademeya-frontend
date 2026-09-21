@@ -39,6 +39,7 @@ import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import {
   getNotificationPresentation,
   getNotificationTypeLabel,
+  notificationTypeOf,
   NOTIFICATION_TYPES,
 } from "../../../utils/notificationTypes";
 
@@ -348,6 +349,8 @@ const tabs = [
   { key: "joined", label: "انضمام للمنصة", icon: UserPlus },
   { key: "teachers", label: "المعلمين", icon: GraduationCap },
   { key: "messages", label: "الرسائل", icon: MessageSquare },
+  { key: "courses", label: "الدورات", icon: GraduationCap },
+  { key: "purchases", label: "شراء دورة", icon: Bell },
 ];
 
 /**
@@ -383,6 +386,8 @@ const NotificationsSection = ({
     }
     if (activeTab === "teachers") return isTeacherNotification(n);
     if (activeTab === "messages") return isMessageNotification(n);
+    if (activeTab === "courses") return notificationTypeOf(n).startsWith("COURSE_") && !["COURSE_PURCHASE_SUCCESS", "COURSE_PURCHASE_SUCCEEDED"].includes(notificationTypeOf(n));
+    if (activeTab === "purchases") return ["COURSE_PURCHASE_SUCCESS", "COURSE_PURCHASE_SUCCEEDED", "NEW_COURSE_SALE", "COURSE_ACCESS_GRANT_FAILED"].includes(notificationTypeOf(n));
     return true;
   });
   const visibleNotifications = compact

@@ -52,11 +52,11 @@ test('attachment access modes drive distinct learner actions and instructor sele
   const inlineQuiz = fs.readFileSync(new URL('../src/components/course/InlineCourseQuiz.jsx', import.meta.url), 'utf8');
   assert.match(inlineQuiz, /result\.attemptsRemaining === null \|\| result\.attemptsRemaining > 0/);
   assert.match(inlineQuiz, /submittedResult\.attemptsRemaining/);
-  assert.match(player, /lesson\.quizzes\?\.map\(renderQuizButton\)/);
+  assert.match(player, /section\.lessons\?\.flatMap\(\(lesson\) => lesson\.quizzes \|\| \[\]\)\.map\(renderQuizButton\)/);
   assert.match(player, /view\.quizzes\?\.map\(renderQuizButton\)/);
   assert.doesNotMatch(player, /الاختبارات المطلوبة/);
   assert.doesNotMatch(player, /to=\{'\/exam\/'/);
-  assert.match(player, /imageAttachment \? 'عرض' : 'تنزيل'/);
+  assert.match(player, /imageAttachment \? <Eye size=\{15\}/);
   assert.match(player, /عرض فقط \/ View only/);
   assert.match(player, /قابل للتنزيل \/ Downloadable/);
   assert.match(player, /attachmentViewer.*ProtectedContentWatermark/s);

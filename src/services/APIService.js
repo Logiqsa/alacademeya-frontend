@@ -11,6 +11,7 @@ const ROOT_API = axios.create({
 });
 
 const attachToken = (config) => {
+  config.headers.lang ??= "ar";
   const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

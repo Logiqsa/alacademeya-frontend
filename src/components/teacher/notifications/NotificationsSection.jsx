@@ -162,11 +162,15 @@ const NotificationsSection = ({ onStatsUpdate }) => {
     { id: "unread", label: "غير مقروءة" },
     { id: "academic", label: "أكاديمية" },
     { id: "system", label: "عامة" },
+    { id: "courses", label: "الدورات" },
+    { id: "purchases", label: "شراء دورة" },
   ];
 
   const filtered = notifications.filter((n) => {
     if (filter === "all") return true;
     if (filter === "unread") return !n.isRead;
+    if (filter === "courses") return n.kind === "course" || n.kind === "review" || n.kind === "quiz";
+    if (filter === "purchases") return n.kind === "sale" || n.raw?.key === "COURSE_PURCHASE_SUCCESS";
     return n.type === filter;
   });
 

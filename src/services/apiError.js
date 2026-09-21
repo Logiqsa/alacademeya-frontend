@@ -31,6 +31,10 @@ export const hasApiErrorCode = (error, ...codes) =>
   codes.includes(getApiErrorCode(error));
 
 export const getApiErrorMessage = (error, fallback = fallbackMessage) => {
-  const message = normalizeApiError(error).message;
+  const normalized = normalizeApiError(error);
+  if (normalized.code === "ATTACHMENT_VIEW_ONLY_FORMAT_UNSUPPORTED") {
+    return "لا يمكن عرض صيغة هذا المرفق داخل المتصفح. غيّر إعداد المرفق إلى «قابل للتنزيل» أو استخدم PDF أو صورة للعرض فقط.";
+  }
+  const message = normalized.message;
   return message === fallbackMessage ? fallback : message;
 };
