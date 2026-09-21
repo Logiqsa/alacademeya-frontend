@@ -9,6 +9,7 @@ import { readableFileName } from "../src/features/course-management/utils/readab
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const form = read("../src/features/course-management/pages/TeacherCourseFormPage.jsx");
 const details = read("../src/features/course-management/pages/TeacherCourseDetailsPage.jsx");
+const adminDetails = read("../src/features/course-management/pages/AdminCourseDetailsPage.jsx");
 const api = read("../src/features/course-management/api/coursesApi.js");
 
 test("quizzes follow the lesson linked to their section", () => {
@@ -28,6 +29,13 @@ test("older unlinked quizzes are clearly flagged instead of silently presented a
   assert.equal(placed[0].lessons[0]._sectionUnlinked, true);
   assert.match(form, /مكان هذا الاختبار غير محدد/);
   assert.match(details, /اختبار غير مرتبط بقسم/);
+  assert.match(adminDetails, /اختبار غير مرتبط بقسم/);
+});
+
+test("admin and instructor use the same quiz section placement", () => {
+  assert.match(details, /placeCourseQuizzes\(course\.curriculum, course\.quizzes/);
+  assert.match(adminDetails, /placeCourseQuizzes\(reviewCurriculum, course\.quizzes/);
+  assert.doesNotMatch(adminDetails, /curriculumWithQuizzes\[0\]\.lessons\.push/);
 });
 
 test("legacy Arabic filenames display correctly without changing valid names", () => {
@@ -63,4 +71,11 @@ test("draft submission lives on course details, separate from editing", () => {
   assert.match(details, /PolicyAcceptanceDialog/);
   assert.match(details, /confirmToast/);
   assert.match(details, /disabled=\{submitting\}/);
+});
+
+test("admin and instructor can open lesson attachments from course details", () => {
+  assert.match(adminDetails, /requestLessonAttachmentAccess\(course\.id, lessonId, attachmentId\)/);
+  assert.match(adminDetails, /onClick=\{\(\) => openAttachment\(lesson, attachment\)\}/);
+  assert.match(details, /requestLessonAttachmentAccess\(course\.id, lessonId, attachmentId\)/);
+  assert.match(details, /onClick=\{\(\) => openProtectedResource\(\{ lesson, attachment \}\)\}/);
 });

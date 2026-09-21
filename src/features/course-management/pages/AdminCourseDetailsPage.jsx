@@ -48,6 +48,7 @@ import ModerationHistoryPanel from "../components/ModerationHistoryPanel";
 import { getCourseEarningsByCourse } from "../../admin-finances/api/courseEarningsApi";
 import BrandMediaPlayer from "../../../components/media/BrandMediaPlayer";
 import { formatCourseDuration } from "../../../utils/courseDuration";
+import { placeCourseQuizzes } from "../utils/placeCourseQuizzes";
 import {
   getAdminCourseEnrollments,
   getAdminCoursePurchases,
@@ -414,11 +415,12 @@ const PromoVideoViewer = ({ title, url, onClose }) => {
   </div>;
 };
 
-import { requestLessonMediaAccess } from "../../../services/APIService";
+import { requestLessonAttachmentAccess, requestLessonMediaAccess } from "../../../services/APIService";
 
 const CurriculumTab = ({ course }) => {
   const navigate = useNavigate();
   const [previewingLessonId, setPreviewingLessonId] = useState(null);
+  const [openingAttachmentId, setOpeningAttachmentId] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
   const [mediaFullscreen, setMediaFullscreen] = useState(false);
   const mediaPreviewRef = useRef(null);
@@ -454,7 +456,7 @@ const CurriculumTab = ({ course }) => {
     (section) => Array.isArray(section.lessons) && section.lessons.length > 0,
   );
   const [openSections, setOpenSections] = useState(
-    () => new Set(sections.map((section) => section.id)),
+    () => new Set(sections[0]?.id ? [sections[0].id] : []),
   );
   const totalLessons = sections.reduce(
     (sum, section) => sum + section.lessons.filter((lesson) => lesson.type !== "اختبار").length,
@@ -528,13 +530,45 @@ const CurriculumTab = ({ course }) => {
     }
   };
 
+  const openAttachment = async (lesson, attachment) => {
+    const lessonId = lesson.id || lesson._id;
+    const attachmentId = attachment.id || attachment._id;
+    if (!course.id || !lessonId || !attachmentId || openingAttachmentId) {
+      if (!attachmentId) toast.error("تعذر تحديد هذا المرفق. حدّث الصفحة وحاول مرة أخرى.");
+      return;
+    }
+    setOpeningAttachmentId(attachmentId);
+    try {
+      const response = await requestLessonAttachmentAccess(course.id, lessonId, attachmentId);
+      const data = response?.data?.data ?? response?.data ?? response;
+      if (!data?.playbackUrl) throw new Error("PREVIEW_URL_MISSING");
+      const fileResponse = await fetch(resolveMediaUrl(data.playbackUrl), { credentials: "include" });
+      if (!fileResponse.ok) throw new Error("FILE_PREVIEW_FAILED");
+      const blob = await fileResponse.blob();
+      const name = attachment.name || attachment.originalName || "مرفق الدرس";
+      setMediaPreview({
+        url: URL.createObjectURL(blob),
+        objectUrl: true,
+        mimeType: blob.type || data.mimeType || "application/octet-stream",
+        title: name,
+        fileName: name,
+        isFile: true,
+        downloadable: (attachment.accessMode || "downloadable") !== "view_only",
+      });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "تعذر فتح المرفق"));
+    } finally {
+      setOpeningAttachmentId(null);
+    }
+  };
+
   return (
     <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#EAECF0] px-4 py-5 sm:px-6">
         <div>
           <h3 className="font-bold text-[#1F2937]">محتوى المنهج الدراسي</h3>
           <p className="mt-1 text-[13px] text-[#667085] sm:text-[14px]">
-            يمكن للأدمن التحكم في المعاينة أو حذف الدرس فقط، بدون تغيير ملف المحتوى.
+            عرض تسلسل الموضوعات والدروس داخل كل قسم.
           </p>
         </div>
         <div className="flex flex-wrap gap-3 text-xs text-[#667085] sm:gap-4">
@@ -577,6 +611,7 @@ const CurriculumTab = ({ course }) => {
                 <strong className="min-w-0 flex-1 truncate text-[15px] text-[#344054] sm:text-[16px]">
                   {section.title}
                 </strong>
+                <span className="text-xs text-[#667085]">{section.lessons?.length || 0} دروس</span>
                 <ChevronDown
                   size={17}
                   className={`shrink-0 text-[#123C91] transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -600,8 +635,12 @@ const CurriculumTab = ({ course }) => {
                         </span>
                         <div className="min-w-0 flex-1 text-[#344054]">
                           <span className="block truncate">{lesson.title || "درس بدون عنوان"}</span>
-                          {!!lesson.attachments?.length && <div className="mt-1.5 flex flex-wrap gap-1">{lesson.attachments.map((attachment) => <span key={attachment.id || attachment._id || attachment.name} className="rounded-full bg-[#F2F4F7] px-2 py-0.5 text-[10px] text-[#667085]">{attachment.name || attachment.originalName || "مرفق"} · {(attachment.accessMode || "downloadable") === "view_only" ? "عرض فقط" : "قابل للتنزيل"}</span>)}</div>}
+                          {!!lesson.attachments?.length && <div className="mt-1.5 flex flex-wrap gap-1">{lesson.attachments.map((attachment) => {
+                            const attachmentId = attachment.id || attachment._id;
+                            return <button key={attachmentId || attachment.name} type="button" onClick={() => openAttachment(lesson, attachment)} disabled={Boolean(openingAttachmentId)} title={`فتح ${attachment.name || attachment.originalName || "المرفق"}`} className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-[#D0D5DD] bg-white px-2.5 py-1 text-[11px] text-[#344054] transition hover:border-[#123C91] hover:text-[#123C91] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#123C91] disabled:cursor-wait disabled:opacity-60">{openingAttachmentId === attachmentId ? <LoaderCircle size={12} className="shrink-0 animate-spin" /> : <FileText size={12} className="shrink-0" />}<span className="max-w-48 truncate">{attachment.name || attachment.originalName || "مرفق"}</span><span className="shrink-0 text-[#667085]">· {(attachment.accessMode || "downloadable") === "view_only" ? "عرض فقط" : "قابل للتنزيل"}</span></button>;
+                          })}</div>}
                         </div>
+                        {lesson._sectionUnlinked && <span className="rounded bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-800">اختبار غير مرتبط بقسم</span>}
                         {lesson.preview && (
                           <span className="shrink-0 rounded-full bg-[#DDF7E8] px-2.5 py-1 text-[10px] font-bold text-[#17864B]">
                             متاح للمعاينة
@@ -707,7 +746,7 @@ const CurriculumTab = ({ course }) => {
                   )}
                   {mediaFullscreen ? "إنهاء ملء الشاشة" : "ملء الشاشة"}
                 </button>
-                {mediaPreview.isFile && (
+                {mediaPreview.isFile && mediaPreview.downloadable !== false && (
                   <a
                     href={mediaPreview.url}
                     download={mediaPreview.fileName}
@@ -1569,19 +1608,11 @@ const AdminCourseDetailsPage = () => {
     isPendingReview && course.submittedCurriculum?.length
       ? course.submittedCurriculum
       : course.curriculum || [];
-  const curriculumWithQuizzes = reviewCurriculum.map((section) => ({
-    ...section,
-    lessons: [...(section.lessons || [])],
+  const curriculumWithQuizzes = placeCourseQuizzes(reviewCurriculum, course.quizzes, (quiz) => ({
+    ...quiz,
+    id: quiz._id || quiz.id,
+    type: "اختبار",
   }));
-  if (course.quizzes?.length && curriculumWithQuizzes.length) {
-    curriculumWithQuizzes[0].lessons.push(
-      ...course.quizzes.map((quiz) => ({
-        ...quiz,
-        id: quiz._id || quiz.id,
-        type: "اختبار",
-      })),
-    );
-  }
   const reviewCourse = { ...course, curriculum: curriculumWithQuizzes };
   const countedLessons = curriculumWithQuizzes.reduce(
     (sum, section) => sum + (section.lessons || []).filter((lesson) => lesson.type !== "اختبار").length,
