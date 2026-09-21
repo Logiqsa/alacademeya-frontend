@@ -66,7 +66,7 @@ const InstructorGuard = ({ children, requireProfile = true, allowSuspended = fal
   if (continuation) {
     return <Navigate to={continuation.path} state={continuation.state} replace />;
   }
-  if (!isActivated(user) || isAwaitingApproval(user)) {
+  if (isAwaitingApproval(user)) {
     return <Navigate to="/pending" replace />;
   }
   if (!requireProfile) return children;

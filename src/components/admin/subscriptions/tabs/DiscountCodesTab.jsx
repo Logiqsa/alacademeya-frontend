@@ -193,8 +193,8 @@ const ConfirmDialog = ({
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`flex-1 py-2.5 rounded-xl text-white font-medium text-[13px] transition-colors flex items-center justify-center gap-2 disabled:opacity-70
-              ${danger ? "bg-[#E0394C] hover:bg-[#c62e3f]" : "bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f3280]"}`}
+            className={`flex-1 py-2.5 rounded-xl font-medium text-[13px] transition-colors flex items-center justify-center gap-2 disabled:opacity-70
+              ${danger ? "delete-action" : "bg-[#123C91] text-white [&_svg]:text-white hover:bg-[#0f3280]"}`}
           >
             {loading && <Loader2 size={14} className="animate-spin" />}
             {confirmLabel}

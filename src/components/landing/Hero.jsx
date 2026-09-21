@@ -1,7 +1,6 @@
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "../../assets/small dashbord.svg";
-import heroBg from "../../assets/hero.png";
 import { AuthContext } from "../../context/AuthContext";
 
 export default function Hero() {
@@ -16,11 +15,12 @@ export default function Hero() {
 
   return (
     <section className="relative w-full overflow-hidden" id="home">
-      <img
-        src={heroBg}
-        alt="Hero Background"
-        className="absolute top-0 left-0 w-full h-full object-cover pointer-events-none"
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(ellipse at 9% 74%, #e2fbff 0%, transparent 30%), radial-gradient(ellipse at 85% 23%, #e5efff 0%, transparent 34%), linear-gradient(180deg, #f3f8ff 0%, #fff 100%)" }}
       />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-[90px] left-[-10%] h-40 w-[120%] rounded-[50%] bg-white" />
 
       <div className="container-custom mx-auto relative z-10 pt-16 pb-4 lg:pb-8 flex flex-col lg:flex-row items-center justify-center min-h-[60vh]">
 
@@ -58,7 +58,12 @@ export default function Hero() {
         <div className="flex-1 flex justify-center items-center overflow-hidden mt-10 lg:mt-0 px-4 -translate-y-8 lg:translate-y-0">
           <img
             src={heroImage}
-            alt="Hero Dashboard"
+            alt="معاينة لوحة التحكم في الأكاديمية"
+            width="502"
+            height="570"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="
 
               max-w-[320px]

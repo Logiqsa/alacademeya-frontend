@@ -715,7 +715,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleting}
-                className="flex-1 py-2.5 bg-red-500 text-white rounded-xl font-medium text-[14px] hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                className="delete-action flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-[14px]"
               >
                 {deleting && <Loader2 size={14} className="animate-spin" />}
                 حذف

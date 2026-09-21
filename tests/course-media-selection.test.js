@@ -14,6 +14,7 @@ test("course files show their name and upload state with broad media selection",
   assert.match(form, /audio\/webm/);
   assert.match(form, /image\/webp/);
   assert.match(form, /تم حفظ الدورة وإرسالها للمراجعة/);
+  assert.match(form, /setCourse\(\(current\) => \(\{[\s\S]*?lessons: section\.lessons\.map/);
 });
 
 test("failed course uploads link back to the affected field or lesson", () => {
@@ -22,6 +23,12 @@ test("failed course uploads link back to the affected field or lesson", () => {
   assert.match(form, /goToUploadProblem/);
   assert.match(form, /setContentModal\(\{ sectionId: section\.id, lessonId: lesson\.id \}\)/);
   assert.match(form, /scrollIntoView\(\{ behavior: "smooth", block: "center" \}\)/);
+});
+
+test("course editor uses bounded responsive padding without negative step offsets", () => {
+  assert.match(form, /max-w-\[1440px\]/);
+  assert.match(form, /sm:p-6 lg:p-8 xl:p-10/);
+  assert.doesNotMatch(form, /sm:-mt-8|lg:-mt-12/);
 });
 
 test("instructor notifications use the instructor label", () => {

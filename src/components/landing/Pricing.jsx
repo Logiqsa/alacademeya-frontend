@@ -202,7 +202,7 @@ const Pricing = () => {
           {(structureLoading || stages.length > 0) && <div className="my-4 h-px bg-[#EDF0F5]" />}
 
           {structureLoading && stages.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-3 text-sm text-[#8C9198]">
+            <div className="flex items-center justify-center gap-2 py-3 text-sm text-[#667085]">
               <Loader2 size={16} className="animate-spin" /> جاري تحميل المراحل...
             </div>
           ) : stages.length > 0 && (
@@ -265,7 +265,7 @@ const Pricing = () => {
         </div>
 
         {loading && (
-          <div className="flex items-center justify-center py-16 text-[#8C9198]">
+            <div className="flex items-center justify-center py-16 text-[#667085]">
             <Loader2 size={20} className="animate-spin ml-2" />
             <span className="text-[14px]">جاري تحميل الباقات...</span>
           </div>

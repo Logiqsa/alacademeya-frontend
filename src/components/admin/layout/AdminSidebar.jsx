@@ -20,6 +20,8 @@ import {
   Newspaper,
   Settings,
   LogOut,
+  Scale,
+  ReceiptText,
 } from "lucide-react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
@@ -61,7 +63,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       items: [
         { title: "الدورات", icon: BookOpen, path: "/admin/courses" },
         { title: "التصنيفات", icon: Tags, path: "/admin/course-categories" },
-        { title: "السياسات القانونية", icon: ShieldCheck, path: "/admin/course-policies" },
+        { title: "السياسات القانونية", icon: Scale, path: "/admin/course-policies" },
         {
           title: "مالية الدورات",
           icon: PiggyBank,
@@ -75,7 +77,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       label: "المالية",
       items: [
         { title: "الاشتراكات", icon: CreditCard, path: "/admin/subscription" },
-        { title: "المدفوعات", icon: WalletCards, path: "/admin/payments" },
+        { title: "المدفوعات", icon: ReceiptText, path: "/admin/payments" },
         {
           title: "رواتب المعلمين",
           icon: Banknote,

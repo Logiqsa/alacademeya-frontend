@@ -7,6 +7,10 @@ const admin = readFileSync(new URL("../src/components/admin/dashboard/LandingSta
 const hook = readFileSync(new URL("../src/hooks/useLandingPageSettings.js", import.meta.url), "utf8");
 const api = readFileSync(new URL("../src/services/APIService.js", import.meta.url), "utf8");
 const navbar = readFileSync(new URL("../src/components/layout/Navbar.jsx", import.meta.url), "utf8");
+const homeLayout = readFileSync(new URL("../src/components/layout/HomeLayout.jsx", import.meta.url), "utf8");
+const hero = readFileSync(new URL("../src/components/landing/Hero.jsx", import.meta.url), "utf8");
+const document = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const styles = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
 
 test("landing sections use public backend visibility settings", () => {
   assert.match(landing, /useLandingPageSettings\(\)/);
@@ -15,6 +19,23 @@ test("landing sections use public backend visibility settings", () => {
   }
   assert.match(hook, /getLandingPageSettings\(\)/);
   assert.doesNotMatch(hook, /localStorage/);
+});
+
+test("mobile navigation stays above the scroll button and scrolls on short screens", () => {
+  assert.match(navbar, /z-\[80\]/);
+  assert.match(navbar, /h-dvh/);
+  assert.match(navbar, /min-h-0 flex-1 flex-col[^"]*overflow-y-auto/);
+  assert.match(homeLayout, /z-30/);
+  assert.match(navbar, /aria-label="فتح القائمة"/);
+  assert.match(navbar, /aria-expanded=\{menuOpen\}/);
+});
+
+test("first viewport avoids the decorative bitmap and late font stylesheet discovery", () => {
+  assert.doesNotMatch(hero, /hero\.png/);
+  assert.match(hero, /fetchPriority="high"/);
+  assert.match(hero, /width="502"/);
+  assert.match(document, /rel="preconnect" href="https:\/\/fonts\.gstatic\.com"/);
+  assert.doesNotMatch(styles, /@import url\("https:\/\/fonts\.googleapis\.com/);
 });
 
 test("navbar hides links for landing sections disabled by the admin", () => {

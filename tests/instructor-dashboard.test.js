@@ -20,6 +20,15 @@ test("Teacher dashboard remains authoritative with or without Instructor capabil
   assert.equal(getDashboardPathByRole({ ...active, role: "teacher", status: "approved", instructorId: "instructor-1", instructorStatus: "active" }), "/teacher-dashboard");
 });
 
+test("a slow account-state request cannot classify an authenticated account as pending", () => {
+  assert.equal(getDashboardPathByRole({ role: "user" }), "/learner-dashboard");
+  assert.equal(getDashboardPathByRole({ role: "teacher" }), "/teacher-dashboard");
+  assert.equal(
+    getDashboardPathByRole({ role: "teacher", registrationStatus: "pending" }),
+    "/pending",
+  );
+});
+
 test("suspended Instructor cannot default to or enter the active dashboard flow", () => {
   const suspended = { ...active, role: "user", instructorId: "instructor-1", instructorStatus: "suspended" };
   assert.equal(getDashboardPathByRole(suspended), "/account-state");
@@ -40,7 +49,8 @@ test("Instructor dashboard and navigation use existing marketplace APIs without 
   assert.match(dashboard, /لا توجد دورات بعد/);
   assert.match(sidebar, /const isTeacher = user\?\.role === "teacher"/);
   assert.match(sidebar, /path: "\/teacher\/courses\/new"/);
-  assert.match(sidebar, /path: "\/teacher\/earnings#withdrawals"/);
+  assert.match(sidebar, /title: "الأرباح والسحوبات"[\s\S]*?path: "\/teacher\/earnings"/);
+  assert.doesNotMatch(sidebar, /path: "\/teacher\/earnings#withdrawals"/);
   assert.doesNotMatch(dashboard, /مجموعات|حضور|واجبات|جدول الحصص/);
   assert.doesNotMatch(dashboard, /role\s*===?\s*["']instructor["']/);
 });

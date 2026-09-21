@@ -116,7 +116,7 @@ const Navbar = () => {
 
           {/* LOGO */}
           <Link to="/" className="flex items-center shrink-0">
-            <img src={logo} alt="logo" className="w-35 md:w-44 h-8 object-contain" />
+            <img src={logo} alt="الأكاديمية" width="176" height="32" className="w-35 md:w-44 h-8 object-contain" />
           </Link>
 
           {/* DESKTOP LINKS */}
@@ -184,7 +184,7 @@ const Navbar = () => {
           </div>
 
           {/* MOBILE MENU BUTTON */}
-          <button onClick={() => setMenuOpen(true)} className="lg:hidden text-primary">
+          <button type="button" onClick={() => setMenuOpen(true)} className="grid h-11 w-11 place-items-center rounded-lg text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:hidden" aria-label="فتح القائمة" aria-controls="mobile-navigation" aria-expanded={menuOpen}>
             <Menu size={28} />
           </button>
         </div>
@@ -193,28 +193,29 @@ const Navbar = () => {
       {/* OVERLAY */}
       <div
         onClick={() => setMenuOpen(false)}
-        className={`fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${menuOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}
+        className={`fixed inset-0 z-[70] bg-black/40 transition-opacity duration-300 ${menuOpen ? "visible opacity-100" : "invisible opacity-0"}`}
       />
 
       {/* SIDEBAR */}
       <aside
+        id="mobile-navigation"
         className={`
-          fixed top-0 right-0 h-full w-70 sm:w-[320px]
-          bg-white z-50 shadow-2xl flex flex-col
+          fixed top-0 right-0 z-[80] flex h-dvh w-[min(88vw,340px)] flex-col overflow-hidden
+          bg-white shadow-2xl
           transform transition-transform duration-300
           ${menuOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
         {/* HEADER */}
-        <div className="flex items-center justify-between p-5 border-b border-(--border-light)">
-          <img src={logo} alt="logo" className="h-9.5" />
-          <button onClick={() => setMenuOpen(false)}>
+        <div className="flex shrink-0 items-center justify-between border-b border-(--border-light) p-4 sm:p-5">
+          <img src={logo} alt="الأكاديمية" width="176" height="32" className="h-9 max-w-[75%] object-contain" />
+          <button onClick={() => setMenuOpen(false)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[#123C91] transition hover:bg-[#EEF4FF]" aria-label="إغلاق القائمة">
             <X size={26} className="text-[#123C91]" />
           </button>
         </div>
 
         {/* LINKS */}
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-5 sm:gap-5 sm:p-6">
           {links.map((item, index) => (
             <button
               key={index}
@@ -237,12 +238,12 @@ const Navbar = () => {
         </div>
 
         {/* BUTTONS */}
-        <div className="mt-auto p-6 border-t border-(--border-light) flex flex-col gap-3">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-(--border-light) p-4 sm:p-5">
           {user ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5">
               <button type="button" onClick={() => setMobileAccountOpen((open) => !open)} className="flex items-center justify-between rounded-xl border border-[#D8E1EF] bg-[#F8FBFF] px-4 py-3 text-[#123C91]">
                 <span className="min-w-0 max-w-[210px] text-right"><span className="block text-xs text-[#7B8490]">مرحبًا،</span><strong className="block overflow-hidden text-ellipsis whitespace-nowrap text-start text-sm" dir="auto" title={user.fullName || user.name || "عزيزي المستخدم"}>{user.fullName || user.name || "عزيزي المستخدم"}</strong></span>
-                <ChevronDown size={18} className={`transition-transform ${mobileAccountOpen ? "rotate-180" : ""}`} />
+                <ChevronDown size={18} className={`shrink-0 transition-transform ${mobileAccountOpen ? "rotate-180" : ""}`} />
               </button>
               {mobileAccountOpen && <>
               <button

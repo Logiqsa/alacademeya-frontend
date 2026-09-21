@@ -10,7 +10,7 @@ const getInitialSidebarState = () => {
   return window.innerWidth >= MOBILE_BREAKPOINT;
 };
 
-const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, marketplaceOnly = false }) => {
+const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, marketplaceOnly = false, showBreadcrumbs = true }) => {
 
   const [isOpen, setIsOpen] = useState(getInitialSidebarState);
 
@@ -41,11 +41,11 @@ const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, mar
       </div>
 
       <main data-route-scroll className="flex-1 h-full overflow-y-auto p-3 md:p-6">
-         <Breadcrumbs
+         {showBreadcrumbs && <Breadcrumbs
            homeTo={marketplaceOnly ? "/learner-dashboard" : "/student-dashboard"}
            dynamicLabels={breadcrumbLabels}
            currentPageLabel={breadcrumbCurrentLabel}
-         />
+         />}
         <AccountStatusNotice />
         {children}
       </main>

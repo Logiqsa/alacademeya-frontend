@@ -4,7 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import {
   getDashboardPathByRole,
   getRegistrationContinuation,
-  isActivated,
+  isAwaitingApproval,
 } from "../utils/roles";
 
 const LEARNER_ROLES = new Set(["user", "student", "teacher", "parent"]);
@@ -33,7 +33,7 @@ const StudentGuard = ({ children }) => {
     );
   }
 
-  if (!isActivated(user)) {
+  if (user.role !== "student" && isAwaitingApproval(user)) {
     return <Navigate to="/pending" replace />;
   }
 

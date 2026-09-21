@@ -424,7 +424,7 @@ const ChildrenTable = ({
               <button
                 onClick={handleConfirmDelete}
                 disabled={deletingId !== null}
-                className="flex-1 h-12 rounded-lg bg-[#D32F2F] text-white font-medium text-[14px] disabled:opacity-70 transition-opacity"
+                className="delete-action h-12 flex-1 rounded-lg text-[14px]"
               >
                 {deletingId !== null ? "جاري الحذف..." : "حذف"}
               </button>

@@ -22,7 +22,27 @@ export default function CourseCertificatePage() {
   const { courseId } = useParams();
   const [state, setState] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [templateReady, setTemplateReady] = useState(false);
+  const [templateError, setTemplateError] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const preload = (src) => new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = resolve;
+      image.onerror = reject;
+      image.src = src;
+    });
+    Promise.all([preload(certificateTemplate), preload(blankCertificateValues)])
+      .then(() => {
+        if (active) setTemplateReady(true);
+      })
+      .catch(() => {
+        if (active) setTemplateError(true);
+      });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -45,8 +65,12 @@ export default function CourseCertificatePage() {
     return () => { active = false; };
   }, [courseId]);
 
-  if (loading) return (
-    <CertificateOwnerLayout><div className='grid min-h-[65vh] place-items-center'><LoaderCircle className='animate-spin text-[#123C91]' size={38} /></div></CertificateOwnerLayout>
+  if (loading || (!templateReady && !templateError)) return (
+    <CertificateOwnerLayout><div className='grid min-h-[65vh] place-items-center' role='status' aria-label='جاري تحميل قالب الشهادة'><div className='text-center'><LoaderCircle className='mx-auto animate-spin text-[#123C91]' size={38} /><p className='mt-3 text-sm font-semibold text-[#667085]'>جاري تجهيز قالب الشهادة...</p></div></div></CertificateOwnerLayout>
+  );
+
+  if (templateError) return (
+    <CertificateOwnerLayout><main dir='rtl' className='grid min-h-[65vh] place-items-center bg-[#F7F9FC] px-4'><div className='max-w-lg rounded-2xl bg-white p-10 text-center shadow-sm'><Award className='mx-auto text-[#AAB4C5]' size={58} /><h1 className='mt-5 text-xl font-extrabold text-[#17213A]'>تعذر تحميل قالب الشهادة</h1><p className='mt-3 text-sm leading-7 text-[#667085]'>تحقق من اتصال الإنترنت ثم أعد المحاولة. لن نعرض بيانات الشهادة بدون القالب الصحيح.</p><button type='button' onClick={() => window.location.reload()} className='mt-6 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white'>إعادة المحاولة</button></div></main></CertificateOwnerLayout>
   );
 
   const certificate = state?.certificate;

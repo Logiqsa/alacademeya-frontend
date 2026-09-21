@@ -1,4 +1,3 @@
-import React from "react";
 import visionIcon from "../../assets/icons/vision-icon.png";
 import missionIcon from "../../assets/icons/mission-icon.png";
 
@@ -24,7 +23,7 @@ export default function Features() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-4">
             <div className="w-12 h-0.5 bg-(--secondary)"></div>
-            <p className="text-(--secondary) font-['Tajawal'] font-medium text-[16px]">
+            <p className="text-[#087F71] font-['Tajawal'] font-medium text-[16px]">
               من نحن
             </p>
             <div className="w-12 h-0.5 bg-(--secondary)"></div>
@@ -65,6 +64,10 @@ export default function Features() {
                 <img
                   src={item.icon}
                   alt={item.title}
+                  width="48"
+                  height="48"
+                  loading="lazy"
+                  decoding="async"
                   className="w-12 h-12 object-contain"
                 />
                 <h3 className="text-2xl font-bold text-(--primary)">

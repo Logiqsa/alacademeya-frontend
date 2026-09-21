@@ -189,7 +189,7 @@ const UploadBox = ({
               <button
                 type="button"
                 onClick={onRemove}
-                className="rounded-md border border-[#FECACA] bg-white px-3 py-2 text-xs font-semibold text-[#D92D20] transition hover:bg-[#FFF5F5]"
+                className="delete-action rounded-md px-3 py-2 text-xs"
               >
                 حذف
               </button>
@@ -972,12 +972,12 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
     ]);
 
   const updateSection = (sectionId, patch) =>
-    update(
-      "curriculum",
-      course.curriculum.map((section) =>
+    setCourse((current) => ({
+      ...current,
+      curriculum: current.curriculum.map((section) =>
         section.id === sectionId ? { ...section, ...patch } : section,
       ),
-    );
+    }));
 
   const removeSection = (sectionId) =>
     update(
@@ -1013,13 +1013,19 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
     });
 
   const updateLesson = (sectionId, lessonId, patch) => {
-    const section = course.curriculum.find((item) => item.id === sectionId);
-    if (!section) return;
-    updateSection(sectionId, {
-      lessons: section.lessons.map((lesson) =>
-        lesson.id === lessonId ? { ...lesson, ...patch } : lesson,
+    setCourse((current) => ({
+      ...current,
+      curriculum: current.curriculum.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              lessons: section.lessons.map((lesson) =>
+                lesson.id === lessonId ? { ...lesson, ...patch } : lesson,
+              ),
+            }
+          : section,
       ),
-    });
+    }));
   };
 
   const moveLesson = (
@@ -1178,9 +1184,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   const formContent = (
     <div
       dir="rtl"
-      className="min-h-screen px-3 pt-1 pb-5 text-right sm:px-5 md:px-8"
+      className="min-h-screen px-3 pb-5 pt-2 text-right sm:px-5 sm:pt-3 lg:px-8 xl:px-10"
     >
-      <div className="mx-auto w-full ">
+      <div className="mx-auto w-full max-w-[1440px]">
         <div className="mb-4">
           <h1 className="text-[15px] font-bold text-[#123C91] sm:text-[16px]">
             {existingCourse ? "تعديل الدورة" : "إنشاء دورة جديدة"}
@@ -1194,9 +1200,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           <CourseStepsNavigation currentStep={visibleStep + 1} steps={visibleSteps} />
         </div>
 
-        <section id="course-editor-top" className="rounded-2xl border border-[#E5E5E5] bg-white px-4 py-6 shadow-[0px_0px_3px_0px_rgba(0,0,0,0.08)] sm:px-8 sm:py-7 md:px-12 md:py-8 lg:px-16">
+        <section id="course-editor-top" className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-[0px_0px_3px_0px_rgba(0,0,0,0.08)] sm:p-6 lg:p-8 xl:p-10">
           {step === 0 && (
-            <div className="mx-2 space-y-6 sm:mx-4 sm:space-y-7 sm:-mt-8 md:mx-6 lg:mx-8 lg:-mt-12">
+            <div className="w-full space-y-6 sm:space-y-7">
               <div>
                 <h2 className="text-right font-['IBM_Plex_Sans_Arabic'] text-[17px] font-medium text-[#1F2937] sm:text-[18px] md:text-[20px]">
                   المعلومات الأساسية
@@ -1561,7 +1567,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           )}
 
           {step === 1 && !isAdminFlow && (
-            <div className="mx-2 space-y-5 sm:mx-4 sm:-mt-8 md:mx-6 lg:mx-8 lg:-mt-12">
+            <div className="w-full space-y-5">
               <div>
                 <h2 className="text-[16px] font-semibold text-[#1F2937] sm:text-[17px]">
                   بناء المنهج الدراسي
@@ -1854,7 +1860,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           )}
 
           {step === 2 && (
-            <div className="mx-2 space-y-5 sm:mx-4 sm:-mt-8 md:mx-6 lg:mx-8 lg:-mt-12">
+            <div className="mx-auto w-full max-w-5xl space-y-5">
               <div>
                 <h2 className="font-bold text-[#1F2937]">تسعير الدورة</h2>
                 <p className="mt-1 text-[14px] text-[#667085]">
@@ -1968,7 +1974,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
           )}
 
           {step === 3 && (
-            <div id="course-review-step" className="mx-2 space-y-5 sm:mx-4 sm:-mt-8 md:mx-6 lg:mx-8 lg:-mt-12">
+            <div id="course-review-step" className="mx-auto w-full max-w-5xl space-y-5">
               <div>
                 <h2 className="font-bold text-[#1F2937]">مراجعة الدورة</h2>
                 <p className="mt-1 text-[14px] text-[#667085]">
@@ -2029,7 +2035,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
             </div>
           )}
 
-          <div className="mx-2 mt-8 flex flex-col items-stretch justify-between gap-3 border-t border-[#EAECF0] pt-5 sm:mx-4 sm:flex-row sm:items-center md:mx-6 lg:mx-8">
+          <div className="mt-8 flex flex-col items-stretch justify-between gap-3 border-t border-[#EAECF0] pt-5 sm:flex-row sm:items-center">
             <button
               onClick={() =>
                 step === 0
@@ -2152,7 +2158,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                       toast.error(
                         isDocument
                           ? "حجم ملف الدرس يجب ألا يتجاوز 20MB"
-                          : "حجم فيديو الدرس يجب ألا يتجاوز 500MB",
+                          : lessonType === "صوت"
+                            ? "حجم ملف الصوت يجب ألا يتجاوز 100MB"
+                            : "حجم فيديو الدرس يجب ألا يتجاوز 500MB",
                       );
                       event.target.value = "";
                       return;

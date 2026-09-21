@@ -3,9 +3,7 @@ import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import {
   getRegistrationContinuation,
-  isActivated,
   isAwaitingApproval,
-  isRegistrationIncomplete,
 } from "../utils/roles";
 
 const TeacherGuard = ({ children }) => {
@@ -29,14 +27,6 @@ const TeacherGuard = ({ children }) => {
   }
 
   if (isAwaitingApproval(user)) {
-    return <Navigate to="/pending" replace />;
-  }
-
-  if (
-    !isActivated(user) &&
-    !isRegistrationIncomplete(user) &&
-    !isAwaitingApproval(user)
-  ) {
     return <Navigate to="/pending" replace />;
   }
 

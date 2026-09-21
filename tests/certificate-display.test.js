@@ -5,6 +5,7 @@ import { shortInstructorName } from '../src/utils/certificateDisplay.js';
 
 const page = readFileSync(new URL('../src/pages/CourseCertificatePage.jsx', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
+const document = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
 test('certificate artwork and verification link use the public certificateNumber', () => {
   const sheet = page.match(/<section[^>]*className='certificate-sheet[\s\S]*?<\/section>/)?.[0];
@@ -29,6 +30,13 @@ test('certificate artwork and verification link use the public certificateNumber
   assert.match(page, /\.certificate-sheet, \.certificate-sheet \* \{ visibility: visible; \}/);
 });
 
+test('certificate waits for both template layers before rendering personal data', () => {
+  assert.match(page, /Promise\.all\(\[preload\(certificateTemplate\), preload\(blankCertificateValues\)\]\)/);
+  assert.match(page, /loading \|\| \(!templateReady && !templateError\)/);
+  assert.match(page, /جاري تجهيز قالب الشهادة/);
+  assert.match(page, /لن نعرض بيانات الشهادة بدون القالب الصحيح/);
+});
+
 test('certificate keeps the instructor signature on one line with two names', () => {
   assert.equal(shortInstructorName('  Mahmoud   Said   Mahmoud  '), 'Mahmoud Said');
   assert.equal(shortInstructorName('محمود سعيد محمد'), 'محمود سعيد');
@@ -37,7 +45,7 @@ test('certificate keeps the instructor signature on one line with two names', ()
 });
 
 test('certificate headings and body use the requested font families', () => {
-  assert.match(styles, /family=IBM\+Plex\+Sans:/);
+  assert.match(document, /family=IBM\+Plex\+Sans:/);
   assert.match(styles, /\.certificate-page\s*\{\s*font-family: "IBM Plex Sans"/);
   assert.match(styles, /\.certificate-learner\s*\{[\s\S]*?font-family: Georgia/);
   assert.match(styles, /\.certificate-course\s*\{[\s\S]*?"IBM Plex Sans Arabic"/);

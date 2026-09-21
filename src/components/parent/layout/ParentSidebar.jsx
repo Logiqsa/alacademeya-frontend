@@ -2,6 +2,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
+import { Award } from "lucide-react";
 
 import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
@@ -18,7 +19,7 @@ import logoutIcon from "../../../assets/icons/logout.png";
 const ParentSidebar = ({ isOpen, setIsOpen }) => {
   const unread = useSidebarUnread();
   const menu = [
-    { title: "شهاداتي", icon: dashboardIcon, path: "/my-certificates" },
+    { title: "شهاداتي", icon: Award, isLucide: true, path: "/my-certificates" },
     {
       title: "لوحة التحكم",
       icon: dashboardIcon,
@@ -150,23 +151,16 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
             {({ isActive }) => (
               <>
                 <span className="relative shrink-0">
-                  <img
-                    src={item.icon}
-                    alt={item.title}
-                    className={`block w-5 h-5 transition-all duration-200 ${
-                      isActive
-                        ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
-                        : ""
-                    }`}
-                    style={
-                      isActive
-                        ? {
-                            filter:
-                              "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
-                          }
-                        : {}
-                    }
-                  />
+                  {item.isLucide ? (
+                    <item.icon className="block h-5 w-5" style={{ color: isActive ? "#123C91" : "#FFFFFF" }} />
+                  ) : (
+                    <img
+                      src={item.icon}
+                      alt={item.title}
+                      className={`block w-5 h-5 transition-all duration-200 ${isActive ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200" : ""}`}
+                      style={isActive ? { filter: "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)" } : {}}
+                    />
+                  )}
                   {((item.path === "/parent/messages" && unread.messages) ||
                     (item.path === "/parent/notifications" &&
                       unread.notifications)) && (

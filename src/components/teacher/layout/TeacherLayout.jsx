@@ -12,7 +12,7 @@ const getInitialSidebarState = () => {
   return window.innerWidth >= MOBILE_BREAKPOINT;
 };
 
-const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel }) => {
+const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, showBreadcrumbs = true }) => {
   const { user } = useContext(AuthContext);
 
   const [isOpen, setIsOpen] = useState(getInitialSidebarState);
@@ -43,11 +43,11 @@ const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel }) =
         />
       </div>
       <main data-route-scroll className="flex-1 h-full overflow-y-auto p-3 md:p-6">
-         <Breadcrumbs
+         {showBreadcrumbs && <Breadcrumbs
            homeTo={getDashboardPathByRole(user, "/teacher-dashboard")}
            dynamicLabels={breadcrumbLabels}
            currentPageLabel={breadcrumbCurrentLabel}
-         />
+         />}
 
         <AccountStatusNotice />
 

@@ -114,7 +114,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const [groupSubject, setGroupSubject] = useState(
     location.state?.groupSubjectName || "—",
   );
-  const [groupPlace, setGroupPlace] = useState("");
   const [groupTeacher, setGroupTeacher] = useState(routedGroupTeacher || "—");
   const [groupStudents, setGroupStudents] = useState([]);
   const [groupDetails, setGroupDetails] = useState(null);
@@ -205,12 +204,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       if (resolvedSubject && resolvedSubject !== "--") {
         setGroupSubject(resolvedSubject);
       }
-      setGroupPlace(
-        classroomData.meetingLink ||
-          classroomData.location ||
-          classroomData.address ||
-          "",
-      );
 
       const candidates = [
         classroomData.name,
@@ -559,13 +552,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   // ⚠️ افتراض: راوت عرض الحصة الواحدة مش متعرّف في الملف ده أصلاً — بنيت المسار
   // على نفس نمط باقي الروابط هنا (/teacher/groups/:id/lessons/... و/admin/groups/:id/lessons/...)
   // لازم تتأكد إن الراوت ده معرّف فعلاً في الـ router بتاعك.
-  // ⚠️ مفيش endpoint لحذف/تعديل حصة منفردة في api.js الحالي (مفيش deleteSession/updateSession)
-  // فالأزرار دي مؤقتًا بتعمل log بس لحد ما الـ endpoints دي تتضاف
-  const handleEdit = (id) =>
-    console.log("TODO: updateSession endpoint not available yet —", id);
-  const handleDelete = (id) =>
-    console.log("TODO: deleteSession endpoint not available yet —", id);
-
   // بيتفتح لما المعلم يدوس زرار "إنهاء الحصة" في الجدول (LessonsTable لازم يستدعي onEndSession(lesson))
   const handleEndRequest = (lesson) => {
     setEndError(null);
@@ -910,8 +896,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
                 classroomType:
                   groupDetails?.classroomType || routedClassroomType,
               }}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
               onEndSession={handleEndRequest}
             />
           )}

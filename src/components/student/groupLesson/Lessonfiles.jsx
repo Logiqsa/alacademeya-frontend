@@ -1,7 +1,6 @@
-import React from "react";
 import { HiOutlineDocumentText, HiOutlineDownload } from "react-icons/hi";
 
-const FileCard = ({ name, size, onDownload }) => (
+const FileCard = ({ name, size, href }) => (
   <div className="flex items-center justify-between gap-2 p-4 rounded-2xl border border-[#E5E5E5] bg-white transition-all cursor-pointer hover:border-gray-300">
     <div className="flex items-center gap-3 min-w-0">
       <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
@@ -22,25 +21,22 @@ const FileCard = ({ name, size, onDownload }) => (
         </p>
       </div>
     </div>
-    <button
-      onClick={onDownload}
-      className="p-2 rounded-lg text-[#1F2937] hover:bg-gray-100 transition-all shrink-0"
+    <a
+      href={href || undefined}
+      target="_blank"
+      rel="noreferrer"
+      aria-disabled={!href}
+      tabIndex={href ? 0 : -1}
+      className={`shrink-0 rounded-lg p-2 text-[#1F2937] transition-all ${href ? "hover:bg-gray-100" : "pointer-events-none opacity-40"}`}
       aria-label="تحميل الملف"
     >
       <HiOutlineDownload size={20} />
-    </button>
+    </a>
   </div>
 );
 
 const LessonFiles = ({ files = [] }) => {
-  const defaultFiles = [
-    { id: 1, name: "شرح المصفوفات", size: "PDF • 24MB" },
-    { id: 2, name: "حل واجب المعادلات", size: "PDF • 24MB" },
-    { id: 3, name: "شرح المصفوفات", size: "PDF • 24MB" },
-    { id: 4, name: "حل واجب المعادلات", size: "PDF • 24MB" },
-  ];
-
-  const displayFiles = files.length > 0 ? files : defaultFiles;
+  const displayFiles = files;
 
   return (
     <div dir="rtl" className="bg-white rounded-2xl border border-[#E5E5E5] p-4">
@@ -62,7 +58,7 @@ const LessonFiles = ({ files = [] }) => {
               key={file.id}
               name={file.name}
               size={file.size}
-              onDownload={() => console.log("Download", file.name)}
+              href={file.url || file.fileUrl || file.downloadUrl || ""}
             />
           ))}
         </div>

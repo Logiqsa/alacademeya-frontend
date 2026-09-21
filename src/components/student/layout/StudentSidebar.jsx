@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
-import { Award, Compass, GraduationCap, Library, Wallet } from "lucide-react";
+import { Award, Compass, GraduationCap, Library, UsersRound, Wallet } from "lucide-react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
 
@@ -31,7 +31,8 @@ const StudentSidebar = ({ isOpen, setIsOpen, marketplaceOnly = false }) => {
     },
     {
       title: "مجموعاتي",
-      icon: assignmentsIcon,
+      icon: UsersRound,
+      isLucide: true,
       path: "/student/groups",
     },
     { title: "مكتبتي", icon: Library, isLucide: true, path: "/student-dashboard/courses" },

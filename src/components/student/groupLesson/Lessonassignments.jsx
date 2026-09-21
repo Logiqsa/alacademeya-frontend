@@ -1,4 +1,3 @@
-import React from "react";
 import { HiOutlineClipboardList, HiOutlineUpload } from "react-icons/hi";
 
 const StatusPill = ({ status }) => {
@@ -17,7 +16,7 @@ const StatusPill = ({ status }) => {
 const AssignmentRow = ({ title, dueDate, status, onOpen }) => (
   <div
     onClick={onOpen}
-    className="flex items-center justify-between gap-3 p-3 rounded-xl border border-[#E5E5E5] hover:border-gray-300 cursor-pointer transition-all"
+    className={`flex items-center justify-between gap-3 rounded-xl border border-[#E5E5E5] p-3 transition-all ${onOpen ? "cursor-pointer hover:border-gray-300" : ""}`}
   >
     <div className="flex items-center gap-3 min-w-0">
       <div className="w-9 h-9 rounded-lg bg-[#EAF4FF] flex items-center justify-center shrink-0">
@@ -36,13 +35,8 @@ const AssignmentRow = ({ title, dueDate, status, onOpen }) => (
   </div>
 );
 
-const LessonAssignments = ({ assignments = [] }) => {
-  const defaultAssignments = [
-    { id: 1, title: "واجب التفاضل والتكامل", dueDate: "خلال يومين", status: "لم يتم التسليم" },
-    { id: 2, title: "واجب المصفوفات", dueDate: "خلال 5 أيام", status: "تم التسليم" },
-  ];
-
-  const displayAssignments = assignments.length > 0 ? assignments : defaultAssignments;
+const LessonAssignments = ({ assignments = [], onOpen }) => {
+  const displayAssignments = assignments;
 
   return (
     <div dir="rtl" className="bg-white rounded-2xl border border-[#E5E5E5] p-4">
@@ -57,7 +51,7 @@ const LessonAssignments = ({ assignments = [] }) => {
           <p className="text-[13px] text-[#9CA3AF] text-center py-6">لا توجد واجبات لهذه الحصة</p>
         ) : (
           displayAssignments.map((a) => (
-            <AssignmentRow key={a.id} {...a} onOpen={() => console.log("open assignment", a.id)} />
+            <AssignmentRow key={a.id} {...a} onOpen={onOpen ? () => onOpen(a) : undefined} />
           ))
         )}
       </div>

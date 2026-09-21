@@ -24,7 +24,7 @@ export default function FeaturedCourses() {
     <section id="courses" className="w-full bg-[#FBFCFE] py-12 sm:py-16" dir="rtl">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <div className="mb-8 text-center sm:mb-10">
-          <div className="mb-3 flex items-center justify-center gap-3 text-sm font-semibold text-[#12AFA0]">
+          <div className="mb-3 flex items-center justify-center gap-3 text-sm font-semibold text-[#087F71]">
             <span className="h-px w-12 bg-[#12C6B0]" />
             دوراتنا التعليمية
             <span className="h-px w-12 bg-[#12C6B0]" />

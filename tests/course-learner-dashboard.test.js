@@ -54,7 +54,21 @@ test("course Player preserves learner-only marketplace navigation", () => {
   );
   assert.match(player, /learnerOnly = user\?\.role === 'user'/);
   assert.match(player, /marketplaceOnly: learnerOnly/);
+  assert.match(player, /showBreadcrumbs: false/);
   assert.match(player, /learnerOnly[\s\S]*'\/learner-dashboard'/);
+});
+
+test("course player keeps one working breadcrumb and responsive action layouts", () => {
+  const player = read(
+    "src/features/course-management/pages/student/CoursePlayerPage.jsx",
+  );
+  const studentLayout = read("src/components/student/layout/StudentLayout.jsx");
+  const teacherLayout = read("src/components/teacher/layout/TeacherLayout.jsx");
+  assert.match(player, /<Link to=\{libraryPath\}[^>]*>دوراتي<\/Link>/);
+  assert.match(studentLayout, /showBreadcrumbs && <Breadcrumbs/);
+  assert.match(teacherLayout, /showBreadcrumbs && <Breadcrumbs/);
+  assert.match(player, /min-\[430px\]:grid-cols-2/);
+  assert.match(player, /sm:flex-row sm:items-center sm:justify-between/);
 });
 
 test("existing academic and Instructor dashboard resolution stays intact", () => {

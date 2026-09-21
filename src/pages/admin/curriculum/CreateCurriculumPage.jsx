@@ -219,13 +219,6 @@ const CreateCurriculumPage = () => {
       payload,
     );
     const gradeId = await resolveCreatedGradeId({ response, stageId, grade });
-    console.info("Curriculum save success:", {
-      step: "create grade",
-      stageId,
-      gradeId,
-      grade: grade.name,
-      payload,
-    });
 
     for (const subject of grade.subjects) {
       assertSubjectRelations({ savedCurriculumId, stageId, gradeId, subject });
@@ -240,18 +233,11 @@ const CreateCurriculumPage = () => {
         () => createSubject(subjectData),
         subjectData,
       );
-      const subjectId = requireSavedId(
+      requireSavedId(
         entityId(responseEntity(subjectResponse)),
         `قراءة رقم المادة "${subject.name.ar}"`,
         subjectResponse,
       );
-      console.info("Curriculum save success:", {
-        step: "create subject",
-        gradeId,
-        subjectId,
-        subject: subject.name,
-        payload: subjectData,
-      });
     }
   };
   const createStageWithChildren = async ({ savedCurriculumId, stage }) => {
@@ -266,12 +252,6 @@ const CreateCurriculumPage = () => {
       savedCurriculumId,
       stage,
     });
-    console.info("Curriculum save success:", {
-      step: "create stage",
-      stageId,
-      stage: stage.name,
-      payload,
-    });
 
     for (const grade of stage.grades) {
       await createGradeWithSubjects({ savedCurriculumId, stageId, grade });
@@ -285,11 +265,6 @@ const CreateCurriculumPage = () => {
       () => deleteSubject(subjectId),
       { subjectId },
     );
-    console.info("Curriculum save success:", {
-      step: "delete subject",
-      subjectId,
-      subject: subject.name,
-    });
   };
   const deleteGradeWithSubjects = async (grade) => {
     const gradeId = entityId(grade);
@@ -304,11 +279,6 @@ const CreateCurriculumPage = () => {
       () => deleteGrade(gradeId),
       { gradeId },
     );
-    console.info("Curriculum save success:", {
-      step: "delete grade",
-      gradeId,
-      grade: grade.name,
-    });
   };
   const deleteStageWithChildren = async (stage) => {
     const stageId = entityId(stage);
@@ -323,11 +293,6 @@ const CreateCurriculumPage = () => {
       () => deleteStage(stageId),
       { stageId },
     );
-    console.info("Curriculum save success:", {
-      step: "delete stage",
-      stageId,
-      stage: stage.name,
-    });
   };
   const saveSubject = async ({
     savedCurriculumId,
@@ -348,12 +313,6 @@ const CreateCurriculumPage = () => {
         () => updateSubject(entityId(subject), { name: subject.name }),
         { name: subject.name },
       );
-      console.info("Curriculum save success:", {
-        step: "update subject",
-        subject: subject.name,
-        subjectId: entityId(subject),
-        gradeId: savedGradeId,
-      });
       return;
     }
 
@@ -374,18 +333,11 @@ const CreateCurriculumPage = () => {
       () => createSubject(payload),
       payload,
     );
-    const subjectId = requireSavedId(
+    requireSavedId(
       entityId(responseEntity(subjectResponse)),
       `قراءة رقم المادة "${subject.name.ar}"`,
       subjectResponse,
     );
-    console.info("Curriculum save success:", {
-      step: "create subject",
-      subject: subject.name,
-      subjectId,
-      gradeId: savedGradeId,
-      payload,
-    });
   };
   const saveGradeTree = async ({
     savedCurriculumId,
@@ -401,12 +353,6 @@ const CreateCurriculumPage = () => {
         () => updateGrade(gradeId, { name: grade.name }),
         { name: grade.name },
       );
-      console.info("Curriculum save success:", {
-        step: "update grade",
-        grade: grade.name,
-        gradeId,
-        stageId,
-      });
     } else {
       await createGradeWithSubjects({ savedCurriculumId, stageId, grade });
       return;
@@ -441,11 +387,6 @@ const CreateCurriculumPage = () => {
         () => updateStageRequest(stageId, { name: stage.name }),
         { name: stage.name },
       );
-      console.info("Curriculum save success:", {
-        step: "update stage",
-        stage: stage.name,
-        stageId,
-      });
     } else {
       await createStageWithChildren({ savedCurriculumId, stage });
       return;

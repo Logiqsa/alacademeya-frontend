@@ -61,8 +61,11 @@ const CoverImage = ({ post, fallbackVariant }) => {
                 key={`${post._id}-${url}`}
                 src={url}
                 alt={post.title}
+                width="640"
+                height="360"
                 className="w-full h-full object-cover"
                 loading="lazy"
+                decoding="async"
                 onError={(e) => {
                     e.currentTarget.style.display = "none";
                 }}
@@ -131,7 +134,7 @@ const BlogSection = () => {
             <div className="max-w-6xl mx-auto px-4">
                 <div className="text-center mb-4 flex items-center justify-center gap-3">
                     <span className="w-8 h-0.5 bg-[#12C6B0]"></span>
-                    <span className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#12C6B0] font-semibold">
+                    <span className="font-['IBM_Plex_Sans_Arabic'] text-[14px] text-[#087F71] font-semibold">
                         المدونة التعليمية
                     </span>
                     <span className="w-8 h-0.5 bg-[#12C6B0]"></span>

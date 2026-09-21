@@ -38,9 +38,9 @@ const Footer = () => {
       <div className="flex flex-wrap lg:flex-nowrap justify-between items-start gap-6">
         
         <div className="max-w-75">
-          <div className="flex items-center gap-3 w-44 h-8 cursor-pointer" onClick={() => handleScroll("top")}>
-            <img src={logo} alt="Logo" className="h-full w-auto object-contain" />
-          </div>
+          <button type="button" className="flex h-8 w-44 items-center gap-3" onClick={() => handleScroll("top")} aria-label="العودة إلى أعلى الصفحة">
+            <img src={logo} alt="الأكاديمية" width="176" height="32" className="h-full w-auto object-contain" />
+          </button>
           <p className="font-normal text-[15px] leading-6 text-right text-[#1F2937] mt-4">
             منصة متكاملة تدير الاشتراكات، الحصص، الامتحانات، حضور وغياب الطلاب، وتضمن تواصلاً آمناً بين الجميع.
           </p>

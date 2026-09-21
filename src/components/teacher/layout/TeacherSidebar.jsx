@@ -4,16 +4,28 @@ import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
 import { getDashboardPathByRole, isInstructor, canHaveInstructorProfile } from "../../../utils/roles";
 import { getMyInstructorProfile } from "../../../services/APIService";
+import {
+  Award,
+  BadgeDollarSign,
+  Bell,
+  BookOpenCheck,
+  CalendarDays,
+  ClipboardList,
+  FilePlus2,
+  GraduationCap,
+  LayoutDashboard,
+  Library,
+  MessageSquare,
+  ScrollText,
+  Settings,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
 
 import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
 
-import dashboardIcon from "../../../assets/icons/dashboard.png";
-import childrenIcon from "../../../assets/icons/children.png";
-import scheduleIcon from "../../../assets/icons/schedule.png";
 import messagesIcon from "../../../assets/icons/messages.png";
-import notificationsIcon from "../../../assets/icons/notifications.png";
-import settingsIcon from "../../../assets/icons/settings.png";
 import logoutIcon from "../../../assets/icons/logout.png";
 
 const TeacherSidebar = ({ isOpen, setIsOpen }) => {
@@ -58,11 +70,11 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
       label: "رئيسي",
       items: [
         ...(canBecomeInstructor
-          ? [{ title: "كن محاضرًا", icon: childrenIcon, path: "/instructor/onboarding" }]
+          ? [{ title: "كن محاضرًا", icon: GraduationCap, path: "/instructor/onboarding" }]
           : []),
         {
           title: "لوحة التحكم",
-          icon: dashboardIcon,
+          icon: LayoutDashboard,
           path: dashboardPath,
         },
       ],
@@ -70,35 +82,35 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
     {
       label: "التدريس",
       items: isTeacher ? [
-        { title: "المجموعات", icon: childrenIcon, path: "/teacher/groups" },
-        { title: "الجدول", icon: scheduleIcon, path: "/teacher/schedule" },
-        { title: "الواجبات", icon: messagesIcon, path: "/teacher/tasks" },
+        { title: "المجموعات", icon: UsersRound, path: "/teacher/groups" },
+        { title: "الجدول", icon: CalendarDays, path: "/teacher/schedule" },
+        { title: "الواجبات", icon: ClipboardList, path: "/teacher/tasks" },
       ] : [],
     },
     {
       label: "المحتوى والأرباح",
       items: [
-        { title: "شهاداتي", icon: dashboardIcon, path: "/my-certificates" },
+        { title: "شهاداتي", icon: Award, path: "/my-certificates" },
         ...(canAccessInstructorArea
           ? [
               {
                 title: "إنشاء دورة",
-                icon: dashboardIcon,
+                icon: FilePlus2,
                 path: "/teacher/courses/new",
               },
               {
                 title: "ملفي الشخصي",
-                icon: childrenIcon,
+                icon: UserRound,
                 path: "/teacher/instructor-profile",
               },
             ]
           : []),
-        ...(isTeacher ? [{ title: "الدورات المسجل بها", icon: dashboardIcon, path: "/teacher/my-courses" }] : []),
+        ...(isTeacher ? [{ title: "الدورات المسجل بها", icon: Library, path: "/teacher/my-courses" }] : []),
         ...(canAccessInstructorArea
           ? [
               {
                 title: "دوراتي كمحاضر",
-                icon: dashboardIcon,
+                icon: BookOpenCheck,
                 path: "/teacher/courses",
               },
             ]
@@ -106,18 +118,13 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
         ...(canAccessInstructorArea
           ? [
               {
-                title: "الأرباح",
-                icon: dashboardIcon,
+                title: "الأرباح والسحوبات",
+                icon: BadgeDollarSign,
                 path: "/teacher/earnings",
               },
               {
-                title: "السحوبات",
-                icon: dashboardIcon,
-                path: "/teacher/earnings#withdrawals",
-              },
-              {
                 title: "الاتفاقيات",
-                icon: dashboardIcon,
+                icon: ScrollText,
                 path: "/policies/instructor-agreement",
               },
             ]
@@ -127,13 +134,13 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
     {
       label: "التواصل",
       items: isTeacher ? [
-        { title: "الرسائل", icon: messagesIcon, path: "/teacher/messages" },
+        { title: "الرسائل", icon: MessageSquare, path: "/teacher/messages" },
         {
           title: "الإشعارات",
-          icon: notificationsIcon,
+          icon: Bell,
           path: "/teacher/notifications",
         },
-        { title: "الإعدادات", icon: settingsIcon, path: "/teacher/settings" },
+        { title: "الإعدادات", icon: Settings, path: "/teacher/settings" },
       ] : [],
     },
   ];
@@ -219,7 +226,9 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
               </p>
             )}
             {!isOpen && <div className="mx-2 mb-2 border-t border-white/10" />}
-            {section.items.map((item) => (
+            {section.items.map((item) => {
+              const Icon = item.icon;
+              return (
               <NavLink
                 key={item.path}
                 to={item.path}
@@ -245,22 +254,10 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
                 {({ isActive }) => (
                   <>
                     <span className="relative shrink-0">
-                      <img
-                        src={item.icon}
-                        alt={item.title}
-                        className={`block w-5 h-5 transition-all duration-200 ${
-                          isActive
-                            ? "brightness-0 invert-20 sepia-90 saturate-5000 hue-rotate-200"
-                            : ""
-                        }`}
-                        style={
-                          isActive
-                            ? {
-                                filter:
-                                  "brightness(0) saturate(100%) invert(14%) sepia(87%) saturate(2768%) hue-rotate(218deg) brightness(93%) contrast(97%)",
-                              }
-                            : {}
-                        }
+                      <Icon
+                        size={20}
+                        aria-hidden="true"
+                        className={isActive ? "text-[#123C91]" : "text-white"}
                       />
                       {((item.path === "/teacher/messages" &&
                         unread.messages) ||
@@ -274,7 +271,8 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
                   </>
                 )}
               </NavLink>
-            ))}
+              );
+            })}
           </div>
         ))}
       </div>

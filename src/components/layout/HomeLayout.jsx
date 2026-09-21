@@ -17,7 +17,7 @@ const HomeLayout = () => {
 
       <button
         onClick={scrollToTop}
-        className="fixed bottom-6 right-6 p-3 bg-[#123C91] text-white [&_svg]:text-white rounded-full shadow-lg hover:bg-[#0F3278] transition-all duration-300 z-50 hover:scale-110"
+        className="fixed bottom-4 right-4 z-30 rounded-full bg-[#123C91] p-3 text-white shadow-lg transition-all duration-300 hover:scale-110 hover:bg-[#0F3278] [&_svg]:text-white sm:bottom-6 sm:right-6"
         aria-label="العودة للأعلى"
       >
         <ArrowUp size={24} />

@@ -393,7 +393,7 @@ const EditButton = ({ onClick }) => (
   </button>
 );
 const DeleteButton = ({ onClick, disabled }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"><Trash2 size={15} /> حذف</button>
+  <button type="button" onClick={onClick} disabled={disabled} className="delete-action inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm"><Trash2 size={15} /> حذف</button>
 );
 const CategoryCard = ({ category, updatingId, onToggle, onEdit, onDelete }) => (
   <article className="rounded-xl border border-[#E5EAF1] p-4">
