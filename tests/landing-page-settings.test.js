@@ -14,6 +14,8 @@ const styles = readFileSync(new URL("../src/index.css", import.meta.url), "utf8"
 const pricing = readFileSync(new URL("../src/components/landing/Pricing.jsx", import.meta.url), "utf8");
 const featuredCourses = readFileSync(new URL("../src/components/landing/FeaturedCourses.jsx", import.meta.url), "utf8");
 const courseCard = readFileSync(new URL("../src/components/courses/CourseCard.jsx", import.meta.url), "utf8");
+const blogSection = readFileSync(new URL("../src/components/landing/BlogSection.jsx", import.meta.url), "utf8");
+const mobileSectionLoading = readFileSync(new URL("../src/hooks/useLoadWhenNearOnMobile.js", import.meta.url), "utf8");
 
 test("landing sections use public backend visibility settings", () => {
   assert.match(landing, /useLandingPageSettings\(\)/);
@@ -51,9 +53,15 @@ test("only mobile landing cards defer below-fold cover requests", () => {
   assert.match(courseCard, /coverReady && <img src=\{src\}/);
 });
 
-test("off-screen landing sections skip rendering only on mobile", () => {
-  assert.match(styles, /@media \(max-width: 767px\) \{\s*\.landing-page > section:not\(#home\) \{\s*content-visibility: auto;/);
-  assert.match(styles, /contain-intrinsic-size: auto 900px;/);
+test("mobile defers below-fold data requests without hiding sections", () => {
+  assert.doesNotMatch(styles, /content-visibility: auto/);
+  assert.match(mobileSectionLoading, /max-width: 767px/);
+  assert.match(mobileSectionLoading, /IntersectionObserver/);
+  assert.match(mobileSectionLoading, /rootMargin: "600px 0px"/);
+  assert.match(pricing, /if \(!shouldLoad\) return;/);
+  assert.match(blogSection, /if \(!shouldLoad\) return;/);
+  assert.match(pricing, /<section ref=\{sectionRef\}/);
+  assert.match(blogSection, /<section ref=\{sectionRef\}/);
 });
 
 test("navbar hides links for landing sections disabled by the admin", () => {

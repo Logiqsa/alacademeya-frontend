@@ -36,15 +36,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Skip layout and paint for landing sections well below the mobile viewport.
-   Keep an estimated height so anchor navigation and scroll position stay stable. */
-@media (max-width: 767px) {
-  .landing-page > section:not(#home) {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 900px;
-  }
-}
-
 /* A single visual language for destructive actions across tables, cards and dialogs. */
 button.delete-action,
 button[aria-label*="حذف"],

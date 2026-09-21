@@ -9,6 +9,7 @@ import {
   getStageGrades,
 } from "../../services/APIService";
 import { AuthContext } from "../../context/AuthContext";
+import useLoadWhenNearOnMobile from "../../hooks/useLoadWhenNearOnMobile";
 
 const ANNUAL_DISCOUNT = 0.2;
 const entityId = (value) =>
@@ -43,6 +44,7 @@ const mapApiPackage = (pkg, isAnnual, isPopular) => {
 };
 
 const Pricing = () => {
+  const [sectionRef, shouldLoad] = useLoadWhenNearOnMobile();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext) || {};
   const isLoggedIn = Boolean(user || localStorage.getItem("token"));
@@ -58,6 +60,7 @@ const Pricing = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!shouldLoad) return;
     const fetchPackages = async () => {
       setLoading(true);
       setError("");
@@ -96,7 +99,7 @@ const Pricing = () => {
       }
     };
     fetchPackages();
-  }, []);
+  }, [shouldLoad]);
 
   useEffect(() => {
     if (!selectedCurriculum) return;
@@ -161,7 +164,7 @@ const Pricing = () => {
   }, [visiblePackages, isAnnual]);
 
   return (
-    <section className="py-20 font-sans" dir="rtl" id="pricing">
+    <section ref={sectionRef} className="py-20 font-sans" dir="rtl" id="pricing">
       <div className="max-w-6xl mx-auto px-4 text-center">
         <h2 className="font-['Tajawal'] font-bold text-[48px] leading-14 text-[#1F2937] p-4 rounded-lg text-center">
           الباقات و الأسعار

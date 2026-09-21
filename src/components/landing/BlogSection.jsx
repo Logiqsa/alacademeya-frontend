@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Megaphone, Sigma } from "lucide-react";
 import { getPublicBlogPosts, getAssetUrl } from "../../services/APIService"; // ⚠️ عدّل المسار حسب مكان الملف عندك
+import useLoadWhenNearOnMobile from "../../hooks/useLoadWhenNearOnMobile";
 
 const FALLBACK_VARIANTS = ["announcement", "math"];
 
@@ -100,11 +101,13 @@ const getPostExcerpt = (post, maxLength = 150) => {
 };
 
 const BlogSection = () => {
+    const [sectionRef, shouldLoad] = useLoadWhenNearOnMobile();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        if (!shouldLoad) return;
         let isMounted = true;
 
         const loadPosts = async () => {
@@ -127,10 +130,10 @@ const BlogSection = () => {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [shouldLoad]);
 
     return (
-        <section className="py-20 font-sans bg-gray-50" dir="rtl" id="blog">
+        <section ref={sectionRef} className="py-20 font-sans bg-gray-50" dir="rtl" id="blog">
             <div className="max-w-6xl mx-auto px-4">
                 <div className="text-center mb-4 flex items-center justify-center gap-3">
                     <span className="w-8 h-0.5 bg-[#12C6B0]"></span>
