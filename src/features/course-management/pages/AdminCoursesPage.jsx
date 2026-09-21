@@ -36,6 +36,15 @@ const dateOf = (value) =>
       }).format(new Date(value))
     : "غير متاح";
 
+const courseDateValue = (course, status) => {
+  const value =
+    status === "archived"
+      ? course.archivedAt || course.updatedAt || course.submittedAt || course.createdAt
+      : course.submittedAt || course.updatedAt || course.createdAt;
+  const timestamp = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
 const statusClass = (status) =>
   status === "منشور"
     ? "bg-emerald-50 text-emerald-700"
@@ -720,19 +729,25 @@ export default function AdminCoursesPage() {
 
   const visible = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("ar");
-    return courses.filter((course) => {
-      const matchesTab = course.rawStatus === activeTab;
-      const matchesSearch =
-        !query ||
-        `${course.title} ${course.instructor} ${course.category}`
-          .toLocaleLowerCase("ar")
-          .includes(query);
-      const matchesCategory =
-        !selectedCategory ||
-        String(course.categoryId || course.category) === selectedCategory;
-      const matchesAudience = !selectedAudience || course.audienceType === selectedAudience;
-      return matchesTab && matchesSearch && matchesCategory && matchesAudience;
-    });
+    return courses
+      .filter((course) => {
+        const matchesTab = course.rawStatus === activeTab;
+        const matchesSearch =
+          !query ||
+          `${course.title} ${course.instructor} ${course.category}`
+            .toLocaleLowerCase("ar")
+            .includes(query);
+        const matchesCategory =
+          !selectedCategory ||
+          String(course.categoryId || course.category) === selectedCategory;
+        const matchesAudience = !selectedAudience || course.audienceType === selectedAudience;
+        return matchesTab && matchesSearch && matchesCategory && matchesAudience;
+      })
+      .sort(
+        (firstCourse, secondCourse) =>
+          courseDateValue(secondCourse, activeTab) -
+          courseDateValue(firstCourse, activeTab),
+      );
   }, [activeTab, courses, search, selectedCategory, selectedAudience]);
   const categories = useMemo(() => {
     const values = new Map();
