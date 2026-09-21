@@ -51,6 +51,11 @@ test("only mobile landing cards defer below-fold cover requests", () => {
   assert.match(courseCard, /coverReady && <img src=\{src\}/);
 });
 
+test("off-screen landing sections skip rendering only on mobile", () => {
+  assert.match(styles, /@media \(max-width: 767px\) \{\s*\.landing-page > section:not\(#home\) \{\s*content-visibility: auto;/);
+  assert.match(styles, /contain-intrinsic-size: auto 900px;/);
+});
+
 test("navbar hides links for landing sections disabled by the admin", () => {
   assert.match(navbar, /const \{ sections \} = useLandingPageSettings\(\)/);
   for (const key of ["featuredCourses", "pricing", "features", "blog", "services", "faq"]) {
