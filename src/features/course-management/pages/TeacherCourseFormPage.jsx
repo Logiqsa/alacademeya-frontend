@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   BadgeCheck,
   ChevronLeft,
+  ChevronDown,
   ChevronRight,
   FileText,
   Film,
@@ -24,6 +25,8 @@ import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import PolicyAcceptanceDialog from "../../../components/course/PolicyAcceptanceDialog";
 import CourseStepsNavigation from "../components/CourseStepsNavigation";
 import CourseUploadProgress from "../components/CourseUploadProgress";
+import { uploadErrorMessage } from "../utils/uploadErrorMessage";
+import { placeCourseQuizzes } from "../utils/placeCourseQuizzes";
 import {
   addCourseCategory,
   fetchAdminCourse,
@@ -104,6 +107,10 @@ const normalizeSelectedFile = (file) => {
   const inferredType = FILE_MIME_BY_EXTENSION[extension];
   return inferredType ? new File([file], file.name, { type: inferredType, lastModified: file.lastModified }) : file;
 };
+
+const isMediaAttachment = (file) =>
+  /^(video|audio)\//i.test(file.type || "") ||
+  /\.(mp4|webm|mov|mkv|avi|mp3|m4a|wav|ogg)$/i.test(file.name || "");
 
 const UploadBox = ({
   label,
@@ -406,9 +413,11 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   const [uploadStatus, setUploadStatus] = useState({ label: "", percent: 0 });
   const [uploadTaskStatuses, setUploadTaskStatuses] = useState({});
   const [retryRequest, setRetryRequest] = useState(null);
+  const [saveFeedback, setSaveFeedback] = useState(null);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
   const [submitRequested, setSubmitRequested] = useState(false);
   const [step, setStep] = useState(0);
+  const [collapsedSectionIds, setCollapsedSectionIds] = useState(() => new Set());
   const [contentModal, setContentModal] = useState(null);
   const [quizModal, setQuizModal] = useState(null);
   const [course, setCourse] = useState(EMPTY_COURSE);
@@ -416,17 +425,39 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
   const [policyOpen, setPolicyOpen] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(false);
   const savingRef = useRef(false);
+  const retryRequestRef = useRef(null);
+  const cancelledForEditRef = useRef(false);
+
+  const cancelRetryForFileChange = () => {
+    if (!retryRequestRef.current) return;
+    cancelledForEditRef.current = true;
+    retryRequestRef.current.cancel();
+    retryRequestRef.current = null;
+    setRetryRequest(null);
+  };
 
   const goToUploadProblem = (key, task) => {
     let targetId = "course-editor-top";
     if (key === "cover" || key === "promo") {
       setStep(0);
       targetId = key === "cover" ? "course-cover-upload" : "course-promo-upload";
-    } else if (key.startsWith("section:") || key.startsWith("lesson:")) {
+    } else if (key.startsWith("section:") || key.startsWith("lesson:") || key.startsWith("attachment:")) {
       setStep(1);
-      targetId = `course-${key.replace(":", "-")}`;
-      if (key.startsWith("lesson:") && task?.label?.includes("رفع")) {
-        const lessonId = key.slice("lesson:".length);
+      const lessonId = key.startsWith("attachment:") ? key.split(":")[1] : key.slice("lesson:".length);
+      targetId = key.startsWith("attachment:") ? `course-lesson-${lessonId}` : `course-${key.replace(":", "-")}`;
+      const sectionId = key.startsWith("section:")
+        ? course.curriculum.find((item) => String(item.id) === key.slice("section:".length))?.id
+        : course.curriculum.find((item) =>
+            item.lessons?.some((lesson) => String(lesson.id) === lessonId),
+          )?.id;
+      if (sectionId) {
+        setCollapsedSectionIds((current) => {
+          const next = new Set(current);
+          next.delete(sectionId);
+          return next;
+        });
+      }
+      if ((key.startsWith("lesson:") || key.startsWith("attachment:")) && task?.label?.includes("رفع")) {
         const section = course.curriculum.find((item) =>
           item.lessons?.some((lesson) => String(lesson.id) === lessonId),
         );
@@ -530,17 +561,8 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
             points: question.points || 0,
           })),
         }));
-        const loadedCurriculum = (item.curriculum || []).map((section) => ({
-          ...section,
-          lessons: [...(section.lessons || [])],
-        }));
-        const editableQuizIds = [];
-        if (quizLessons.length && loadedCurriculum.length) {
-          loadedCurriculum[0].lessons.push(...quizLessons);
-          editableQuizIds.push(
-            ...quizLessons.map((quiz) => String(quiz.quizId)),
-          );
-        }
+        const loadedCurriculum = placeCourseQuizzes(item.curriculum, quizLessons);
+        const editableQuizIds = quizLessons.map((quiz) => String(quiz.quizId));
         setExistingCourse(item);
         setCourse({
           ...EMPTY_COURSE,
@@ -581,8 +603,10 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
       );
   }, [courseId, isAdminFlow, navigate]);
 
-  const update = (field, value) =>
+  const update = (field, value) => {
+    setSaveFeedback(null);
     setCourse((current) => ({ ...current, [field]: value }));
+  };
 
   const createCategory = async () => {
     if (!newCategory.trim()) return;
@@ -834,6 +858,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
     setSubmitRequested(status === "قيد المراجعة");
     setUploadTaskStatuses({});
     setRetryRequest(null);
+    retryRequestRef.current = null;
+    cancelledForEditRef.current = false;
+    setSaveFeedback(null);
     setUploadStatus({ label: "جاري تجهيز الدورة", percent: 0 });
     const savingToast = toast.loading(
       status === "قيد المراجعة"
@@ -848,11 +875,14 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         submit: status === "قيد المراجعة",
         onProgress: setUploadStatus,
         onTaskStatus: (task) => setUploadTaskStatuses((current) => ({ ...current, [task.key]: task })),
-        onRetryRequired: (request) => setRetryRequest(request),
+        onRetryRequired: (request) => {
+          retryRequestRef.current = request;
+          setRetryRequest(request);
+        },
         onCourseCreated: (createdId) => {
           setExistingCourse((current) => current || { ...course, id: createdId });
         },
-        onEntityCreated: ({ type, sectionId, lessonId, localId, serverId }) => setCourse((current) => ({
+        onEntityCreated: ({ type, sectionId, lessonId, localId, serverId, linkedLessonId }) => setCourse((current) => ({
           ...current,
           curriculum: current.curriculum.map((section) => {
             if (type === 'section' && section.id === localId) return { ...section, _id: serverId, _isNew: false };
@@ -861,7 +891,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
               ...section,
               lessons: section.lessons.map((lesson) => {
                 if (type === 'lesson' && lesson.id === localId) return { ...lesson, _id: serverId, _isNew: false };
-                if (type === 'quiz' && lesson.id === localId) return { ...lesson, quizId: serverId };
+                if (type === 'quiz' && lesson.id === localId) return { ...lesson, quizId: serverId, lessonId: linkedLessonId, _sectionUnlinked: !linkedLessonId };
                 if (type === 'question' && lesson.id === lessonId) return {
                   ...lesson,
                   quiz: (lesson.quiz || []).map((question) => question.id === localId ? { ...question, _id: serverId, _isNew: false } : question),
@@ -883,7 +913,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
               lessons: section.lessons.map((lesson) => {
                 if (lesson.id !== lessonId) return lesson;
                 if (type === 'media' && lesson.media?.file === file) return { ...lesson, media: { ...lesson.media, file: null, url: lesson.media.url || lesson.media.previewUrl || 'uploaded' } };
-                if (type === 'attachment' && saved) return { ...lesson, attachments: (lesson.attachments || []).map((attachment) => attachment.file === file ? { ...attachment, ...saved, file: null } : attachment) };
+                if (type === 'attachment') return { ...lesson, attachments: (lesson.attachments || []).map((attachment) => attachment.file === file ? { ...attachment, ...(saved || {}), file: null } : attachment) };
                 return lesson;
               }),
             } : section),
@@ -898,6 +928,13 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         { id: savingToast },
       );
       const savedCourseId = saved?.id || existingCourse?.id || courseId;
+      setSaveFeedback({ type: 'success', message: 'تم حفظ الدورة والملفات بنجاح.' });
+      if (existingCourse && status !== "قيد المراجعة") {
+        setExistingCourse((current) => ({ ...(current || course), id: savedCourseId }));
+        setUploadStatus({ label: 'تم حفظ الدورة والملفات بنجاح', percent: 100 });
+        setShowUploadProgress(false);
+        return;
+      }
       const destination =
         isAdminFlow && savedCourseId
           ? `/admin/courses/${savedCourseId}`
@@ -907,6 +944,15 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
         state: { savedId: savedCourseId, refresh: true },
       });
     } catch (error) {
+      if (cancelledForEditRef.current) {
+        cancelledForEditRef.current = false;
+        setUploadStatus({ label: 'تم تغيير الملفات؛ اضغط حفظ الدورة والملفات لإعادة المحاولة', percent: 0 });
+        setUploadTaskStatuses({});
+        setSaveFeedback({ type: 'info', message: 'تم إيقاف محاولة الرفع القديمة. احفظ الدورة والملفات مرة أخرى.' });
+        toast.dismiss(savingToast);
+        return;
+      }
+      setSaveFeedback({ type: 'error', message: `لم يكتمل الحفظ${error.uploadFileName ? ` بسبب الملف «${error.uploadFileName}»` : ''}. راجع التفاصيل بالأسفل.` });
       if (error?.response?.data?.code === "POLICY_ACCEPTANCE_REQUIRED") {
         setPendingSubmission(true);
         setPolicyOpen(true);
@@ -951,12 +997,15 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
             : "راجع بيانات الدورة المطلوبة."),
       }[apiError.code];
       toast.error(
-        lifecycleMessage || getApiErrorMessage(error, "تعذر حفظ الدورة"),
+        error.uploadFileName
+          ? `تعذر رفع «${error.uploadFileName}»: ${lifecycleMessage || uploadErrorMessage(error)}`
+          : lifecycleMessage || getApiErrorMessage(error, "تعذر حفظ الدورة"),
         { id: savingToast },
       );
     } finally {
       savingRef.current = false;
       setSaving(false);
+      retryRequestRef.current = null;
     }
   };
 
@@ -971,19 +1020,32 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
       },
     ]);
 
-  const updateSection = (sectionId, patch) =>
+  const toggleSection = (sectionId) => {
+    setCollapsedSectionIds((current) => {
+      const next = new Set(current);
+      if (next.has(sectionId)) next.delete(sectionId);
+      else next.add(sectionId);
+      return next;
+    });
+  };
+
+  const updateSection = (sectionId, patch) => {
+    setSaveFeedback(null);
     setCourse((current) => ({
       ...current,
       curriculum: current.curriculum.map((section) =>
         section.id === sectionId ? { ...section, ...patch } : section,
       ),
     }));
+  };
 
-  const removeSection = (sectionId) =>
+  const removeSection = (sectionId) => {
+    cancelRetryForFileChange();
     update(
       "curriculum",
       course.curriculum.filter((section) => section.id !== sectionId),
     );
+  };
 
   const moveSection = (sectionIndex, offset) => {
     const target = sectionIndex + offset;
@@ -1013,6 +1075,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
     });
 
   const updateLesson = (sectionId, lessonId, patch) => {
+    setSaveFeedback(null);
     setCourse((current) => ({
       ...current,
       curriculum: current.curriculum.map((section) =>
@@ -1605,13 +1668,15 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   <Plus className="mb-2" /> ابدأ بإضافة قسم للمحتوى
                 </button>
               )}
-              {course.curriculum.map((section, sectionIndex) => (
+              {course.curriculum.map((section, sectionIndex) => {
+                const isCollapsed = collapsedSectionIds.has(section.id);
+                return (
                 <div
                   key={section.id}
                   id={`course-section-${section.id}`}
                   className="overflow-hidden rounded-xl border border-[#DDE2E8] bg-white"
                 >
-                  <div className="flex items-center gap-2 border-b border-[#E7EBF0] bg-[#EEF6FF] px-3 py-3 sm:px-4">
+                  <div className={`flex items-center gap-2 bg-[#EEF6FF] px-3 py-3 sm:px-4 ${isCollapsed ? "" : "border-b border-[#E7EBF0]"}`}>
                     <GripVertical
                       size={16}
                       className="shrink-0 text-[#98A2B3]"
@@ -1627,6 +1692,17 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                         updateSection(section.id, { title: e.target.value })
                       }
                     />
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(section.id)}
+                      aria-label={`${isCollapsed ? "فتح" : "طي"} القسم ${section.title || sectionIndex + 1}`}
+                      aria-expanded={!isCollapsed}
+                      aria-controls={`course-section-content-${section.id}`}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1.5 text-xs font-semibold text-[#123C91] hover:bg-white"
+                    >
+                      <ChevronDown size={16} className={`transition-transform ${isCollapsed ? "" : "rotate-180"}`} />
+                      <span className="hidden sm:inline">{isCollapsed ? "فتح" : "طي"}</span>
+                    </button>
                     <button
                       type="button"
                       disabled={sectionIndex === 0}
@@ -1654,7 +1730,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                       <X size={15} />
                     </button>
                   </div>
-                  <div>
+                  <div id={`course-section-content-${section.id}`} hidden={isCollapsed}>
                     {section.lessons.map((lesson, lessonIndex) => (
                       <div
                         key={lesson.id}
@@ -1669,6 +1745,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#F1F4F8] text-[11px] text-[#667085]">
                             {lessonIndex + 1}
                           </span>
+                          {lesson._sectionUnlinked && <span className="rounded bg-amber-100 px-1.5 py-1 text-[10px] font-bold text-amber-800">غير مرتبط بقسم — انقله ثم احفظ</span>}
                           <input
                             className="h-9 min-w-[160px] flex-1 basis-full rounded-md border border-transparent px-2 text-sm text-[#344054] outline-none placeholder:text-[#98A2B3] focus:border-[#D0D5DD] sm:basis-auto xl:min-w-0 xl:basis-auto"
                             value={lesson.title}
@@ -1682,12 +1759,13 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                           <select
                             className="h-9 shrink-0 rounded-md border border-[#D0D5DD] bg-white px-2 text-xs text-[#475467] outline-none"
                             value={lesson.type}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              cancelRetryForFileChange();
                               updateLesson(section.id, lesson.id, {
                                 type: e.target.value,
                                 media: null,
-                              })
-                            }
+                              });
+                            }}
                           >
                             <option>فيديو</option>
                             <option>صوت</option>
@@ -1761,13 +1839,14 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                           <button
                             type="button"
                             aria-label="حذف الدرس"
-                            onClick={() =>
+                            onClick={() => {
+                              cancelRetryForFileChange();
                               updateSection(section.id, {
                                 lessons: section.lessons.filter(
                                   (item) => item.id !== lesson.id,
                                 ),
-                              })
-                            }
+                              });
+                            }}
                             className="shrink-0 p-2 text-[#98A2B3] hover:text-red-600"
                           >
                             <X size={15} />
@@ -1855,7 +1934,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                     </button>
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           )}
 
@@ -1978,7 +2057,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
               <div>
                 <h2 className="font-bold text-[#1F2937]">مراجعة الدورة</h2>
                 <p className="mt-1 text-[14px] text-[#667085]">
-                  تأكد من البيانات قبل الإرسال.
+                  {existingCourse ? "تأكد من البيانات قبل حفظ التعديلات." : "تأكد من البيانات قبل الإرسال."}
                 </p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -2030,7 +2109,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                 </div>
               </div>
               <div className="rounded-lg bg-[#EAF4FF] p-3 text-sm text-[#123C91]">
-                بعد الإرسال ستصبح الدورة قيد المراجعة قبل النشر.
+                {existingCourse ? "سيتم حفظ التعديلات دون إرسال الدورة للمراجعة." : "بعد الإرسال ستصبح الدورة قيد المراجعة قبل النشر."}
               </div>
             </div>
           )}
@@ -2051,10 +2130,11 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                 <button
                   type="button"
                   disabled={saving}
+                  aria-busy={saving}
                   onClick={() => save(course.status)}
                   className="w-full rounded-lg border border-[#123C91] bg-[#EAF2FF] px-4 py-2.5 text-sm font-semibold text-[#123C91] transition hover:bg-[#DCE9FF] sm:w-auto sm:px-5"
                 >
-                  حفظ التعديلات
+                  {saving ? `${uploadStatus.label || "جاري حفظ الدورة والملفات"}...` : "حفظ الدورة والملفات"}
                 </button>
               ) : !existingCourse && isAdminFlow ? (
                 <button
@@ -2083,22 +2163,21 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   disabled={saving}
                   aria-busy={saving}
                   onClick={() =>
-                    save(isAdminFlow ? course.status : "قيد المراجعة")
+                    save(isAdminFlow || existingCourse ? course.status : "قيد المراجعة")
                   }
                   className="w-full rounded-lg bg-[#123C91] px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70 sm:w-auto sm:px-7"
                 >
                   {saving
                     ? `${uploadStatus.label}${uploadStatus.percent ? ` (${uploadStatus.percent}%)` : "..."}`
-                    : isAdminFlow
-                      ? "حفظ التعديلات"
-                      : existingCourse
-                      ? "حفظ وإرسال للمراجعة"
+                    : existingCourse || isAdminFlow
+                      ? "حفظ الدورة والملفات"
                       : "إرسال للمراجعة"}
                 </button>
               )}
             </div>
           </div>
-          {showUploadProgress && <CourseUploadProgress course={course} statuses={uploadTaskStatuses} retryRequest={retryRequest} uploadStatus={uploadStatus} saving={saving} submitRequested={submitRequested} showCurriculum={!isAdminFlow || !courseId} onRetry={() => { const request = retryRequest; setRetryRequest(null); request?.retry(); }} onCancel={() => { const request = retryRequest; setRetryRequest(null); request?.cancel(); }} onGoTo={goToUploadProblem} />}
+          {saveFeedback && <p role="status" className={`mt-4 rounded-lg border px-4 py-3 text-sm font-semibold ${saveFeedback.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : saveFeedback.type === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-blue-200 bg-blue-50 text-[#123C91]'}`}>{saveFeedback.message}</p>}
+          {showUploadProgress && <CourseUploadProgress course={course} statuses={uploadTaskStatuses} retryRequest={retryRequest} uploadStatus={uploadStatus} saving={saving} submitRequested={submitRequested} showCurriculum={!isAdminFlow || !courseId} onRetry={() => { const request = retryRequestRef.current; retryRequestRef.current = null; setRetryRequest(null); request?.retry(); }} onCancel={cancelRetryForFileChange} onGoTo={goToUploadProblem} />}
         </section>
 
         {contentModal && (
@@ -2165,6 +2244,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                       event.target.value = "";
                       return;
                     }
+                    cancelRetryForFileChange();
                     const targetSectionId = contentModal.sectionId;
                     const targetLessonId = contentModal.lessonId;
                     const previewUrl = URL.createObjectURL(file);
@@ -2244,28 +2324,38 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                 <UploadCloud className="mb-2 text-[#123C91]" size={24} />
                 إضافة مرفقات للدرس
                 <span className="mt-1 text-xs text-[#98A2B3]">
-                  يمكن اختيار أكثر من ملف
+                  ملفات مساندة مثل PDF والصور. للفيديو أو الصوت استخدم محتوى الدرس بالأعلى.
                 </span>
                 <input
                   type="file"
                   multiple
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,image/jpeg,image/png,image/webp"
                   className="sr-only"
                   onChange={(event) => {
                     const selected = Array.from(event.target.files || []);
+                    const mediaFiles = selected.filter(isMediaAttachment);
+                    if (mediaFiles.length) {
+                      toast.error(`لا يمكن إرفاق فيديو أو صوت هنا: ${mediaFiles.map((file) => file.name).join('، ')}. اختره كمحتوى أساسي للدرس.`);
+                    }
+                    const supported = selected.filter((file) => !isMediaAttachment(file));
                     const currentAttachments =
                       activeModalLesson(contentModal)?.attachments || [];
-                    if (currentAttachments.length + selected.length > 10) {
+                    if (currentAttachments.length + supported.length > 10) {
                       toast.error("الحد الأقصى لمرفقات الدرس هو 10 ملفات");
                       event.target.value = "";
                       return;
                     }
-                    const files = selected.map((file) => ({
+                    const files = supported.map((file) => ({
                       id: crypto.randomUUID(),
                       file,
                       name: file.name,
                       accessMode: "downloadable",
                     }));
-                    if (!files.length) return;
+                    if (!files.length) {
+                      event.target.value = "";
+                      return;
+                    }
+                    cancelRetryForFileChange();
                     const lesson = activeModalLesson(contentModal);
                     updateLesson(
                       contentModal.sectionId,
@@ -2278,13 +2368,16 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   }}
                 />
               </label>
+              <p className="mt-2 text-xs text-[#667085]">إضافة الملف هنا لا ترفعه بعد. بعد الانتهاء اضغط «حفظ الدورة والملفات» لإرسال التغييرات.</p>
               {!!activeModalLesson(contentModal)?.attachments?.length && (
                 <div className="mt-3 space-y-2">
                   {activeModalLesson(contentModal).attachments.map(
-                    (attachment) => (
+                    (attachment) => {
+                      const attachmentStatus = uploadTaskStatuses[`attachment:${contentModal.lessonId}:${attachment.id || attachment._id}`];
+                      return (
                       <div
                         key={attachment.id || attachment._id}
-                        className="rounded-lg border border-[#EAECF0] bg-[#F8FAFC] px-3 py-2.5 text-xs"
+                        className={`rounded-lg border px-3 py-2.5 text-xs ${attachmentStatus?.status === 'failed' ? 'border-red-300 bg-red-50' : 'border-[#EAECF0] bg-[#F8FAFC]'}`}
                       >
                         <div className="flex items-start gap-2 text-[#344054]">
                           <FileText size={15} className="mt-0.5 shrink-0 text-[#123C91]" />
@@ -2295,12 +2388,17 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                           >
                             {attachment.name || attachment.originalName || "مرفق"}
                           </span>
+                          <span className={`mr-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${attachmentStatus?.status === 'failed' ? 'bg-red-100 text-red-700' : attachment.file ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                            {attachmentStatus?.status === 'failed' ? 'فشل الرفع' : attachment.file ? 'ينتظر الحفظ' : 'مرفوع'}
+                          </span>
                         </div>
+                        {attachmentStatus?.status === 'failed' && <p role="alert" className="mt-2 font-semibold text-red-700">فشل رفع هذا الملف: {uploadErrorMessage(attachmentStatus.error)}</p>}
                         <div className="mt-2 flex items-center justify-between gap-2 border-t border-[#EAECF0] pt-2">
                           <select
                           aria-label="وضع الوصول للمرفق"
                           value={attachment.accessMode || "downloadable"}
                           onChange={(event) => {
+                            cancelRetryForFileChange();
                             const lesson = activeModalLesson(contentModal);
                             updateLesson(contentModal.sectionId, contentModal.lessonId, {
                               attachments: lesson.attachments.map((item) =>
@@ -2317,7 +2415,8 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                         </select>
                           <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            cancelRetryForFileChange();
                             updateLesson(
                               contentModal.sectionId,
                               contentModal.lessonId,
@@ -2330,8 +2429,9 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                                     (attachment.id || attachment._id),
                                 ),
                               },
-                            )
-                          }
+                            );
+                            setSaveFeedback({ type: 'info', message: 'أزلنا المرفق من التعديلات. اضغط «حفظ الدورة والملفات» لتأكيد الحذف على الخادم.' });
+                          }}
                             className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-red-200 bg-white text-red-600 hover:bg-red-50"
                             aria-label={`حذف ${attachment.name || attachment.originalName || "المرفق"}`}
                           >
@@ -2339,7 +2439,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                           </button>
                         </div>
                       </div>
-                    ),
+                    );},
                   )}
                 </div>
               )}
@@ -2348,13 +2448,13 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   onClick={() => setContentModal(null)}
                   className="min-w-[100px] flex-1 rounded-lg border border-[#D0D5DD] py-2.5 text-sm"
                 >
-                  إلغاء
+                  إغلاق
                 </button>
                 <button
                   onClick={() => setContentModal(null)}
                   className="min-w-[100px] flex-1 rounded-lg bg-[#123C91] py-2.5 text-sm font-semibold text-white"
                 >
-                  تأكيد
+                  تم اختيار الملفات
                 </button>
               </div>
             </div>

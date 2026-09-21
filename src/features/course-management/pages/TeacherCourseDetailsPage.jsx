@@ -39,6 +39,8 @@ import { getApiErrorMessage } from "../../../services/apiError";
 import { getEarningsCourses, getEarningsHistory } from "../../instructor-earnings/api/earningsApi";
 import BrandMediaPlayer from "../../../components/media/BrandMediaPlayer";
 import { formatCourseDuration } from "../../../utils/courseDuration";
+import { courseStatusStyles } from "../utils/courseStatusStyles";
+import { placeCourseQuizzes } from "../utils/placeCourseQuizzes";
 
 const tabs = [
   { id: "overview", label: "نظرة عامة", icon: LayoutGrid },
@@ -337,6 +339,7 @@ const CurriculumTab = ({ course }) => {
           {isOpen && <div>{section.lessons?.length ? section.lessons.map((lesson, lessonIndex) => <div key={lesson.id} className="flex flex-wrap items-center gap-3 border-t border-[#EAECF0] px-4 py-3 text-[13px] sm:flex-nowrap sm:text-[14px]">
             <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#F2F4F7] text-[11px] text-[#667085]">{lessonIndex + 1}</span>
             <span className="min-w-0 flex-1 text-[#344054]">{lesson.title || "درس بدون عنوان"}</span>
+            {lesson._sectionUnlinked && <span className="rounded bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-800">اختبار غير مرتبط بقسم</span>}
             {lesson.preview && <span className="shrink-0 rounded-full bg-[#DDF7E8] px-2.5 py-1 text-[10px] font-bold text-[#17864B]">متاح للمعاينة</span>}
             {lesson.type && <span className="inline-flex shrink-0 items-center gap-1.5 text-xs text-[#667085]">{lesson.type === "ملف" ? <FileText size={14} /> : <Video size={14} />}{lesson.type}</span>}
             {lesson.type === "اختبار" ? <button type="button" onClick={() => navigate(`/teacher/courses/${course.id}/quizzes/${lesson.id || lesson._id}`)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#123C91] bg-[#F4F7FF] px-3 py-1.5 text-xs font-semibold text-[#123C91] transition hover:bg-[#E8EEFF]"><CircleHelp size={14} />عرض الاختبار</button> : <button type="button" disabled={Boolean(openingResource)} onClick={() => openProtectedResource({ lesson })} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#123C91] bg-white px-3 py-1.5 text-xs font-semibold text-[#123C91] transition hover:bg-[#EEF6FF] disabled:cursor-wait disabled:opacity-60">{openingResource === (lesson.id || lesson._id) ? <LoaderCircle size={14} className="animate-spin" /> : <Play size={14} />}فتح المحتوى</button>}
@@ -655,17 +658,11 @@ const TeacherCourseDetailsPage = () => {
     return <TeacherLayout breadcrumbLabels={{ courseId: "تفاصيل الدورة" }}><div dir="rtl" className="rounded-xl bg-white p-10 text-center"><BookOpen className="mx-auto mb-3 text-[#98A2B3]" /><p className="text-[#667085]">لم يتم العثور على الدورة.</p><Link to="/teacher/courses" className="mt-4 inline-block font-semibold text-[#123C91]">العودة إلى الدورات</Link></div></TeacherLayout>;
   }
 
-  const curriculumWithQuizzes = (course.curriculum || []).map((section) => ({
-    ...section,
-    lessons: [...(section.lessons || [])],
-  }));
-  if (course.quizzes?.length && curriculumWithQuizzes.length) {
-    curriculumWithQuizzes[0].lessons.push(...course.quizzes.map((quiz) => ({
+  const curriculumWithQuizzes = placeCourseQuizzes(course.curriculum, course.quizzes, (quiz) => ({
       ...quiz,
       id: quiz._id || quiz.id,
       type: "اختبار",
-    })));
-  }
+  }));
   const displayCourse = { ...course, curriculum: curriculumWithQuizzes };
   const countedLessons = curriculumWithQuizzes.reduce((sum, section) => sum + section.lessons.filter((lesson) => lesson.type !== "اختبار").length, 0);
   const totalLessons = countedLessons || course.lessons || 0;
@@ -689,7 +686,7 @@ const TeacherCourseDetailsPage = () => {
         <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="mb-3 flex items-center gap-2 text-xs text-[#667085]"><Link to="/teacher/courses" className="font-semibold text-[#123C91]">الدورات</Link><ChevronLeft size={13} /><span>تفاصيل الدورة</span></div>
-            <div className="flex items-center gap-2"><h1 className="text-xl font-bold text-[#123C91]">{course.title}</h1><span className="rounded-full bg-[#DDF7E8] px-2.5 py-1 text-[10px] font-semibold text-[#17864B]">{course.status}</span></div>
+            <div className="flex items-center gap-2"><h1 className="text-xl font-bold text-[#123C91]">{course.title}</h1><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${courseStatusStyles[course.status] || courseStatusStyles['مسودة']}`}>{course.status}</span></div>
             <p className="mt-2 text-xs text-[#667085]">{course.shortDescription || course.description}</p>
             {course.status === "قيد المراجعة" && (
               <div className="mt-3 rounded-md bg-[#FFF8E6] px-4 py-3 text-sm text-[#A76B00]">هذه الدورة قيد المراجعة من قبل الإدارة. سيظهر إشعار عند اعتماد أو رفض الدورة.</div>

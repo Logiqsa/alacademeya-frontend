@@ -1080,11 +1080,12 @@ export const saveCourseToApi = async ({
     const storedLessons = savedSection.lessons || [];
     const retainedLessonIds = new Set();
     const orderedLessonIds = [];
-    for (
-      let lessonIndex = 0;
-      lessonIndex < section.lessons.length;
-      lessonIndex += 1
-    ) {
+    // Quizzes are stored separately by the API. Save regular lessons first so
+    // every quiz can be linked to a persisted lesson in its selected section.
+    const lessonIndexes = section.lessons.map((_, index) => index);
+    lessonIndexes.sort((left, right) =>
+      Number(section.lessons[left].type === 'اختبار') - Number(section.lessons[right].type === 'اختبار'));
+    for (const lessonIndex of lessonIndexes) {
       const lesson = section.lessons[lessonIndex];
       const lessonKey = `lesson:${lesson.id}`;
       onTaskStatus({ key: lessonKey, label: lesson.title, status: 'running' });
@@ -1105,7 +1106,7 @@ export const saveCourseToApi = async ({
           passingPercentage: Number(lesson.passingPercentage || 60),
           maxAttempts: lesson.maxAttempts ? Number(lesson.maxAttempts) : null,
           isRequired: lesson.isRequired !== false,
-          lesson: lesson.lessonId || null,
+          lesson: orderedLessonIds[0] || null,
         };
         if (savedQuiz) {
           await runStep(lessonKey, 'حفظ الاختبار', () => updateCourseQuiz(
@@ -1137,7 +1138,7 @@ export const saveCourseToApi = async ({
           onTaskStatus({ key: lessonKey, label: lesson.title, status: 'failed', error });
           throw error;
         }
-        onEntityCreated({ type: 'quiz', sectionId: section.id, localId: lesson.id, serverId: quizId });
+        onEntityCreated({ type: 'quiz', sectionId: section.id, localId: lesson.id, serverId: quizId, linkedLessonId: orderedLessonIds[0] || null });
         retainedQuizIds.add(String(quizId));
         orderedQuizIds.push(String(quizId));
         const storedQuestions = savedQuiz.questions || [];
@@ -1286,7 +1287,7 @@ export const saveCourseToApi = async ({
               const detail = responseCourse(await (admin ? getAdminCourse(id) : getMyTeacherCourse(id)));
               const sections = detail?.sections || detail?.curriculum_sections || detail?.curriculum || [];
               const currentSection = sections.find((item) => String(item._id || item.id) === String(sectionId));
-              const candidate = currentSection?.lessons?.[lessonIndex];
+              const candidate = currentSection?.lessons?.[orderedLessonIds.length];
               const candidateId = candidate?._id || candidate?.id;
               if (candidateId && candidate.title === lesson.title && !storedLessons.some((item) => String(item._id || item.id) === String(candidateId)) && !retainedLessonIds.has(String(candidateId))) return candidate;
             } catch { /* Keep the original create error for retry. */ }
@@ -1311,13 +1312,20 @@ export const saveCourseToApi = async ({
           : lesson.media.file.type?.startsWith("audio/")
             ? "audio"
             : "document";
-        await runStep(lessonKey, 'رفع ملف الدرس', () => uploadCourseLessonMedia(
-          id,
-          lessonId,
-          lesson.media.file,
-          contentType,
-          progressHandler(`جاري رفع محتوى الدرس: ${lesson.title}`),
-        ));
+        await runStep(lessonKey, `رفع ملف الدرس: ${lesson.media.file.name}`, async () => {
+          try {
+            return await uploadCourseLessonMedia(
+              id,
+              lessonId,
+              lesson.media.file,
+              contentType,
+              progressHandler(`جاري رفع محتوى الدرس: ${lesson.title}`),
+            );
+          } catch (error) {
+            error.uploadFileName = lesson.media.file.name;
+            throw error;
+          }
+        });
         await runStep(lessonKey, 'حفظ مدة الدرس', () => updateCourseLesson(id, lessonId, {
           durationSeconds: Math.max(
             0,
@@ -1328,6 +1336,7 @@ export const saveCourseToApi = async ({
       }
       if (lessonId) {
         const storedAttachments = savedLesson.attachments || [];
+        const knownAttachmentIds = new Set(storedAttachments.map((item) => String(item._id || item.id)));
         const retainedAttachmentIds = new Set(
           (lesson.attachments || [])
             .map((item) => String(item._id || item.id || ""))
@@ -1357,38 +1366,39 @@ export const saveCourseToApi = async ({
           }
         }
         const newAttachments = (lesson.attachments || []).filter((item) => item.file);
-        for (const accessMode of ["view_only", "downloadable"]) {
-          const attachmentFiles = newAttachments
-            .filter((item) => (item.accessMode || "downloadable") === accessMode)
-            .map((item) => item.file);
-          if (!attachmentFiles.length) continue;
-          const uploadResponse = await runStep(lessonKey, 'رفع مرفقات الدرس', async () => {
+        for (const attachment of newAttachments) {
+          const attachmentKey = `attachment:${lesson.id}:${attachment.id || attachment._id}`;
+          const attachmentFile = attachment.file;
+          const accessMode = attachment.accessMode || "downloadable";
+          const uploadResponse = await runStep(attachmentKey, `رفع المرفق: ${attachmentFile.name}`, async () => {
             try {
               return await uploadCourseLessonAttachments(
-                id, lessonId, attachmentFiles, accessMode,
-                progressHandler(`جاري رفع مرفقات الدرس: ${lesson.title}`),
+                id, lessonId, [attachmentFile], accessMode,
+                progressHandler(`جاري رفع ${attachmentFile.name}`),
               );
             } catch (error) {
+              error.uploadFileName = attachmentFile.name;
               // A lost response can follow a successful upload. Reuse those
-              // attachments before offering another upload of the same files.
+              // attachments before offering another upload of the same file.
               try {
                 const detail = responseCourse(await (admin ? getAdminCourse(id) : getMyTeacherCourse(id)));
                 const sections = detail?.sections || detail?.curriculum_sections || detail?.curriculum || [];
                 const currentSection = sections.find((item) => String(item._id || item.id) === String(sectionId));
                 const currentLesson = currentSection?.lessons?.find((item) => String(item._id || item.id) === String(lessonId));
-                const oldIds = new Set(storedAttachments.map((item) => String(item._id || item.id)));
-                const available = (currentLesson?.attachments || []).filter((item) => !oldIds.has(String(item._id || item.id)) && (item.accessMode || 'downloadable') === accessMode);
-                const recovered = attachmentFiles.map((file) => {
-                  const index = available.findIndex((item) => item.originalName === file.name && item.size === file.size);
-                  return index < 0 ? null : available.splice(index, 1)[0];
-                });
-                if (recovered.every(Boolean)) return { data: recovered };
+                const available = (currentLesson?.attachments || []).filter((item) => !knownAttachmentIds.has(String(item._id || item.id)) && (item.accessMode || 'downloadable') === accessMode);
+                const recovered = available.find((item) => item.originalName === attachmentFile.name && item.size === attachmentFile.size);
+                if (recovered) return { data: [recovered] };
               } catch { /* Keep the original upload error for retry. */ }
               throw error;
             }
           });
           const savedAttachments = responseData(uploadResponse);
-          attachmentFiles.forEach((file, index) => onFileSaved({ type: 'attachment', sectionId: section.id, lessonId: lesson.id, file, saved: Array.isArray(savedAttachments) ? savedAttachments[index] : null }));
+          const savedAttachment = Array.isArray(savedAttachments)
+            ? savedAttachments[0]
+            : savedAttachments?.attachments?.[0] || savedAttachments?.files?.[0] || savedAttachments?.attachment || savedAttachments;
+          if (savedAttachment?._id || savedAttachment?.id) knownAttachmentIds.add(String(savedAttachment._id || savedAttachment.id));
+          onFileSaved({ type: 'attachment', sectionId: section.id, lessonId: lesson.id, file: attachmentFile, saved: savedAttachment });
+          onTaskStatus({ key: attachmentKey, label: `رفع المرفق: ${attachmentFile.name}`, status: 'done' });
         }
       }
       onTaskStatus({ key: lessonKey, label: lesson.title, status: 'done' });

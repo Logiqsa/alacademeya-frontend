@@ -1,4 +1,5 @@
 import { Check, CircleAlert, LoaderCircle, LocateFixed, RotateCcw } from 'lucide-react';
+import { uploadErrorMessage } from '../utils/uploadErrorMessage';
 
 const statusStyles = {
   done: 'bg-[#E6F7EE] text-[#178044]',
@@ -22,7 +23,7 @@ export default function CourseUploadProgress({ course, statuses, retryRequest, u
       <div className='min-w-0 flex-1'>
         <p className='truncate text-sm font-semibold text-[#344054]'>{title}</p>
         {item.status === 'running' && item.label && <p className='text-xs text-[#667085]'>{item.label}</p>}
-        {item.status === 'failed' && <p className='text-xs text-[#B42318]'>{item.error?.response?.data?.message || item.error?.message || 'تعذر إكمال الرفع'}</p>}
+        {item.status === 'failed' && <p className='text-xs text-[#B42318]'>{item.error?.uploadFileName && <strong dir='auto' className='ml-1'>{item.error.uploadFileName}:</strong>}{uploadErrorMessage(item.error)}</p>}
       </div>
       {item.status === 'failed' && <div className='mr-10 flex w-full flex-wrap items-center gap-2 sm:mr-0 sm:w-auto sm:shrink-0'>
         {onGoTo && <button type='button' onClick={() => onGoTo(key, item)} className='inline-flex items-center gap-1 rounded-lg border border-[#D0D5DD] px-2.5 py-1.5 text-xs font-bold text-[#344054] hover:border-[#123C91] hover:bg-[#F5F8FF] hover:text-[#123C91]'><LocateFixed size={14} />اذهب للمشكلة</button>}
@@ -37,7 +38,12 @@ export default function CourseUploadProgress({ course, statuses, retryRequest, u
     <ul>{row('course', 'بيانات الدورة')}{course.cover?.file && row('cover', 'صورة الغلاف')}{course.promoVideo?.file && row('promo', 'الفيديو الترويجي')}
       {showCurriculum && course.curriculum.map((section, index) => <li key={section.id}>
         <ul>{row(`section:${section.id}`, `القسم ${index + 1}: ${section.title || 'بدون عنوان'}`)}
-          {section.lessons.map((lesson, lessonIndex) => row(`lesson:${lesson.id}`, `الدرس ${lessonIndex + 1}: ${lesson.title || 'بدون عنوان'}`, true))}
+          {section.lessons.map((lesson, lessonIndex) => <li key={lesson.id}>
+            <ul>{row(`lesson:${lesson.id}`, `الدرس ${lessonIndex + 1}: ${lesson.title || 'بدون عنوان'}`, true)}
+              {(lesson.attachments || []).filter((attachment) => attachment.file || statuses[`attachment:${lesson.id}:${attachment.id || attachment._id}`]).map((attachment) =>
+                row(`attachment:${lesson.id}:${attachment.id || attachment._id}`, `المرفق: ${attachment.name || attachment.file.name}`, true))}
+            </ul>
+          </li>)}
         </ul>
       </li>)}
       {submitRequested && row('submit', 'إرسال الدورة للمراجعة')}
