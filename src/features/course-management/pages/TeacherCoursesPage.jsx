@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   BookOpen,
+  CirclePause,
   CirclePlay,
   ChevronDown,
   ChevronLeft,
@@ -618,8 +619,9 @@ const TeacherCoursesPage = () => {
                     <td className="px-4 py-4 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button type="button" onClick={() => handleAction("details", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-[#DCE3EC] text-[#123C91] transition hover:border-[#123C91] hover:bg-[#EEF4FF]" aria-label={`عرض تفاصيل ${course.title}`} title="عرض التفاصيل"><Eye size={17} /></button>
-                        {course.rawStatus === "archived" && <button type="button" onClick={() => handleAction("activate", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-emerald-200 text-emerald-700 transition hover:bg-emerald-50" aria-label={`تفعيل ${course.title}`} title="تفعيل الدورة"><CirclePlay size={17} /></button>}
-                        {["draft", "pending_review", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600 transition hover:bg-red-50" aria-label={`${course.rawStatus === "published" ? "إيقاف" : "حذف"} ${course.title}`} title={course.rawStatus === "published" ? "إيقاف الدورة" : "حذف الدورة نهائيًا"}><Trash2 size={17} /></button>}
+                        {course.rawStatus === "published" && <button type="button" onClick={() => handleAction("delete", course)} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 text-xs font-bold text-amber-700 transition hover:bg-amber-100" aria-label={`إيقاف ${course.title}`} title="إيقاف الدورة"><CirclePause size={17} /><span>إيقاف</span></button>}
+                        {course.rawStatus === "archived" && <button type="button" onClick={() => handleAction("activate", course)} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100" aria-label={`تفعيل ${course.title}`} title="تفعيل الدورة"><CirclePlay size={17} /><span>تفعيل</span></button>}
+                        {["draft", "pending_review", "rejected", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600 transition hover:bg-red-50" aria-label={`حذف ${course.title}`} title="حذف الدورة نهائيًا"><Trash2 size={17} /></button>}
                         {["draft", "rejected", "published"].includes(course.rawStatus) && <button type="button" aria-label={`إجراءات إضافية ${course.title}`} aria-expanded={actionsMenu?.courseId === course.id} onClick={(event) => toggleActionsMenu(event, course.id)} className="grid h-9 w-9 place-items-center rounded-lg text-[#475467] hover:bg-[#EEF2F6]" title="إجراءات إضافية"><EllipsisVertical size={17} /></button>}
                       </div>
                     </td>
@@ -659,8 +661,9 @@ const TeacherCoursesPage = () => {
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <button type="button" onClick={() => handleAction("details", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-[#DCE3EC] text-[#123C91]" aria-label={`عرض تفاصيل ${course.title}`}><Eye size={17} /></button>
-                  {course.rawStatus === "archived" && <button type="button" onClick={() => handleAction("activate", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-emerald-200 text-emerald-700" aria-label={`تفعيل ${course.title}`} title="تفعيل الدورة"><CirclePlay size={17} /></button>}
-                  {["draft", "pending_review", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600" aria-label={`${course.rawStatus === "published" ? "إيقاف" : "حذف"} ${course.title}`} title={course.rawStatus === "published" ? "إيقاف الدورة" : "حذف الدورة نهائيًا"}><Trash2 size={17} /></button>}
+                  {course.rawStatus === "published" && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-amber-300 bg-amber-50 text-amber-700" aria-label={`إيقاف ${course.title}`} title="إيقاف الدورة"><CirclePause size={17} /></button>}
+                  {course.rawStatus === "archived" && <button type="button" onClick={() => handleAction("activate", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700" aria-label={`تفعيل ${course.title}`} title="تفعيل الدورة"><CirclePlay size={17} /></button>}
+                  {["draft", "pending_review", "rejected", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600" aria-label={`حذف ${course.title}`} title="حذف الدورة نهائيًا"><Trash2 size={17} /></button>}
                 </div>
               </div>
 
