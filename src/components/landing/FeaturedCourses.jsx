@@ -12,8 +12,8 @@ export default function FeaturedCourses() {
 
   useEffect(() => {
     // Public courses are already restricted by the API to approved/published items.
-    fetchPublicCourses({ sort: "bestselling", limit: 6 })
-      .then((items) => setCourses(items.slice(0, 6)))
+    fetchPublicCourses({ sort: "bestselling", limit: 5 })
+      .then((items) => setCourses(items.slice(0, 5)))
       .catch(() => setCourses([]));
   }, []);
   const verifyCertificate = (event) => {
@@ -36,7 +36,7 @@ export default function FeaturedCourses() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 justify-center gap-5 sm:grid-cols-[repeat(auto-fit,minmax(260px,320px))]">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 [&>article]:min-w-0">
           {courses.map((course) => (
             <CourseCard key={course.id} course={course} compact deferCover={deferCovers} />
           ))}

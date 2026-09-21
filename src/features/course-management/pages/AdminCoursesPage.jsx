@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ClipboardCheck,
   Clock3,
+  CirclePause,
   FileText,
   LoaderCircle,
   Mail,
@@ -20,6 +21,7 @@ import {
   fetchAdminCourse,
   fetchAdminCourses,
   fetchPublicInstructor,
+  deactivateAdminCourse,
   removeAdminCourse,
 } from "../api/coursesApi";
 import {
@@ -39,7 +41,7 @@ const dateOf = (value) =>
 const statusClass = (status) =>
   status === "منشور"
     ? "bg-emerald-50 text-emerald-700"
-    : status === "مؤرشف"
+    : status === "غير نشطة"
       ? "bg-slate-100 text-slate-700"
       : "bg-amber-50 text-amber-700";
 
@@ -648,14 +650,25 @@ export default function AdminCoursesPage() {
       const code = getApiErrorCode(error);
       const message =
         code === "COURSE_HAS_DEPENDENCIES"
-          ? "لا يمكن حذف الدورة لوجود تسجيلات أو مشتريات مرتبطة بها. يمكنك إبقاؤها مؤرشفة."
+          ? "لا يمكن حذف الدورة لوجود تسجيلات أو مشتريات مرتبطة بها. يمكنك إبقاؤها غير نشطة."
           : code === "COURSE_CANNOT_BE_DELETED"
-            ? "لا يمكن حذف دورة منشورة أو قيد المراجعة. قم بأرشفتها أولًا."
+            ? "لا يمكن حذف دورة منشورة أو قيد المراجعة. أوقف الدورة المنشورة أولًا."
             : getApiErrorMessage(error, "تعذر حذف الدورة");
       toast.error(message);
     } finally {
       setDeletingCourseId(null);
     }
+  };
+  const handleDeactivate = async (course) => {
+    if (deletingCourseId) return;
+    if (!window.confirm(`إيقاف دورة «${course.title}»؟ ستختفي من الرئيسية وتظل متاحة للمشتركين الحاليين.`)) return;
+    setDeletingCourseId(course.id);
+    try {
+      await deactivateAdminCourse(course.id);
+      setCourses((items) => items.map((item) => String(item.id) === String(course.id) ? { ...item, rawStatus: "archived", status: "غير نشطة" } : item));
+      toast.success("تم إيقاف الدورة مع الحفاظ على وصول المشتركين");
+    } catch (error) { toast.error(getApiErrorMessage(error, "تعذر إيقاف الدورة")); }
+    finally { setDeletingCourseId(null); }
   };
 
   useEffect(() => {
@@ -795,7 +808,7 @@ export default function AdminCoursesPage() {
             <div>
               <h2 className="font-extrabold text-[#17213A]">قائمة الدورات</h2>
               <p className="mt-1 text-xs text-[#98A2B3]">
-                المنشورة وقيد المراجعة والمؤرشفة
+                المنشورة وقيد المراجعة وغير النشطة
               </p>
             </div>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -830,7 +843,7 @@ export default function AdminCoursesPage() {
                 ))}
               </select>
               <select value={selectedAudience} onChange={(event) => { const next=new URLSearchParams(searchParams); if(event.target.value) next.set("audienceType",event.target.value); else next.delete("audienceType"); setSearchParams(next); }} className="h-11 rounded-xl border border-[#DCE3EC] bg-[#FAFBFC] px-3 text-sm">
-                <option value="">كل الجماهير</option><option value="general">عامة</option><option value="school">مدرسية</option><option value="university">جامعية</option><option value="graduate">خريجون</option>
+                <option value="">كل الجماهير</option><option value="general">عامة</option><option value="school">مدرسية</option><option value="university">جامعية</option>
               </select>
             </div>
           </div>
@@ -860,7 +873,7 @@ export default function AdminCoursesPage() {
               onClick={() => setActiveTab("archived")}
               className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-bold transition ${activeTab === "archived" ? "border-[#123C91] text-[#123C91]" : "border-transparent text-[#667085] hover:text-[#344054]"}`}
             >
-              الدورات المؤرشفة{" "}
+              الدورات غير النشطة{" "}
               <span className="mr-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs">
                 {archivedCount}
               </span>
@@ -913,6 +926,7 @@ export default function AdminCoursesPage() {
                         {course.status}
                       </span>
                       <div className="flex items-center gap-2">
+                        {course.rawStatus === "published" && <button type="button" onClick={() => handleDeactivate(course)} disabled={Boolean(deletingCourseId)} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-bold text-amber-700 disabled:opacity-50"><CirclePause size={15} />إيقاف</button>}
                         <button
                           type="button"
                           onClick={() => setCoursePendingDelete(course)}
@@ -927,7 +941,7 @@ export default function AdminCoursesPage() {
                               course.rawStatus,
                             )
                               ? "حذف الدورة"
-                              : "يجب أرشفة الدورة قبل حذفها"
+                              : "يجب إيقاف الدورة قبل حذفها"
                           }
                           className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-bold text-red-700 transition hover:border-red-400 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -946,7 +960,7 @@ export default function AdminCoursesPage() {
                       <th className="px-5 py-4">الدورة</th>
                       <th className="px-5 py-4">المحاضر</th>
                       <th className="px-5 py-4">التصنيف</th>
-                      <th className="px-5 py-4">{activeTab === "archived" ? "تاريخ الأرشفة" : "تاريخ الإرسال"}</th>
+                      <th className="px-5 py-4">{activeTab === "archived" ? "تاريخ الإيقاف" : "تاريخ الإرسال"}</th>
                       <th className="px-5 py-4">الحالة</th>
                       <th className="px-5 py-4" />
                     </tr>
@@ -1019,6 +1033,7 @@ export default function AdminCoursesPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
+                            {course.rawStatus === "published" && <button type="button" onClick={() => handleDeactivate(course)} disabled={Boolean(deletingCourseId)} className="inline-flex items-center gap-2 rounded-xl border border-amber-300 px-4 py-2.5 font-bold text-amber-700 disabled:opacity-50"><CirclePause size={17} />إيقاف</button>}
                             <button
                               type="button"
                               onClick={() => setCoursePendingDelete(course)}
@@ -1033,7 +1048,7 @@ export default function AdminCoursesPage() {
                                   course.rawStatus,
                                 )
                                   ? "حذف الدورة"
-                                  : "يجب أرشفة الدورة قبل حذفها"
+                                  : "يجب إيقاف الدورة قبل حذفها"
                               }
                               className="delete-action inline-flex items-center gap-2 rounded-xl px-4 py-2.5"
                             >
@@ -1064,7 +1079,7 @@ export default function AdminCoursesPage() {
                 {activeTab === "published"
                   ? "لا توجد دورات منشورة"
                   : activeTab === "archived"
-                    ? "لا توجد دورات مؤرشفة"
+                    ? "لا توجد دورات غير نشطة"
                     : "لا توجد دورات قيد المراجعة"}
               </h2>
               <p className="mt-1.5 text-sm text-[#667085]">

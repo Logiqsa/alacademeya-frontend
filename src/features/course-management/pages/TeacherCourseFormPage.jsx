@@ -1558,7 +1558,6 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                     <option value="general">عامة / General</option>
                     <option value="school">مدرسية / School</option>
                     <option value="university">جامعية / University</option>
-                    <option value="graduate">خريجون / Graduates</option>
                   </select>
                 </label>
               </div>
@@ -2178,7 +2177,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                 </div>
               </div>
               <div className="rounded-lg bg-[#EAF4FF] p-3 text-sm text-[#123C91]">
-                {isAdminFlow ? "سيتم حفظ التعديلات دون تغيير حالة الدورة." : "بعد اكتمال حفظ الدورة والملفات ستُرسل تلقائيًا للمراجعة، ثم تعود إلى صفحة الدورة."}
+                {isAdminFlow ? "سيتم حفظ التعديلات دون تغيير حالة الدورة." : "ستُحفظ الدورة كمسودة. يمكنك مراجعتها ثم إرسالها للمراجعة من صفحة تفاصيل الدورة عندما تصبح جاهزة."}
               </div>
             </div>
           )}
@@ -2200,10 +2199,10 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   type="button"
                   disabled={saving}
                   aria-busy={saving}
-                  onClick={() => save(isAdminFlow ? course.status : "قيد المراجعة")}
+                  onClick={() => save(isAdminFlow ? course.status : "مسودة")}
                   className="w-full rounded-lg border border-[#123C91] bg-[#EAF2FF] px-4 py-2.5 text-sm font-semibold text-[#123C91] transition hover:bg-[#DCE9FF] sm:w-auto sm:px-5"
                 >
-                  {saving ? `${uploadStatus.label || "جاري حفظ الدورة والملفات"}...` : isAdminFlow ? "حفظ الدورة والملفات" : "حفظ وإرسال للمراجعة"}
+                  {saving ? `${uploadStatus.label || "جاري حفظ الدورة والملفات"}...` : "حفظ الدورة والملفات"}
                 </button>
               ) : !existingCourse && isAdminFlow ? (
                 <button
@@ -2232,13 +2231,13 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                   disabled={saving}
                   aria-busy={saving}
                   onClick={() =>
-                    save(isAdminFlow ? course.status : "قيد المراجعة")
+                    save(isAdminFlow ? course.status : "مسودة")
                   }
                   className="w-full rounded-lg bg-[#123C91] px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70 sm:w-auto sm:px-7"
                 >
                   {saving
                     ? `${uploadStatus.label}${uploadStatus.percent ? ` (${uploadStatus.percent}%)` : "..."}`
-                    : isAdminFlow ? "حفظ الدورة والملفات" : "حفظ وإرسال للمراجعة"}
+                    : "حفظ الدورة والملفات"}
                 </button>
               )}
             </div>

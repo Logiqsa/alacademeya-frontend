@@ -9,7 +9,7 @@ const prices = [
   { value: "free", label: "مجاني" },
   { value: "paid", label: "مدفوع" },
 ];
-const audiences = [{value:"general",label:"عامة"},{value:"school",label:"مدرسية"},{value:"university",label:"جامعية"},{value:"graduate",label:"خريجون"}];
+const audiences = [{value:"general",label:"عامة"},{value:"school",label:"مدرسية"},{value:"university",label:"جامعية"}];
 const COURSES_PER_PAGE = 50;
 const optionsFromCourses = (items, field) => [...new Set(items.map((item) => item[field]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ar"));
 

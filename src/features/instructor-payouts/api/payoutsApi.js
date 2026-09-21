@@ -71,6 +71,9 @@ const normalizeWithdrawal = (item = {}) => {
     updatedAt: item.updatedAt,
     rejectionReason: item.rejectionReason || item.reason || "",
     expectedTransferAt: item.expectedTransferAt || null,
+    paymentMethod: item.paymentMethod || null,
+    paymentDestination: item.paymentDestination || null,
+    paymentReceipt: item.paymentReceipt || null,
     canCancel: Boolean(item.canCancel ?? item.cancellable ?? status === "requested"),
   };
 };
@@ -99,7 +102,7 @@ export const getInstructorBalance = () =>
   request(getMyInstructorBalance()).then(normalizeInstructorBalance);
 
 export const createWithdrawal = (payload) =>
-  request(createMyInstructorWithdrawal({ currency: payload.currency, requestedAmountMinor: String(Math.round(Number(payload.amount) * 100)) })).then((response) => {
+  request(createMyInstructorWithdrawal({ currency: payload.currency, requestedAmountMinor: String(Math.round(Number(payload.amount) * 100)), paymentMethod: payload.paymentMethod, paymentDestination: payload.paymentDestination })).then((response) => {
     const data = unwrap(response);
     return normalizeWithdrawal(data.withdrawal || data.request || data);
   });

@@ -300,31 +300,31 @@ const TeacherCoursesPage = () => {
       if (!archivableStatuses.includes(selectedCourse.rawStatus)) {
         toast.error(
           selectedCourse.rawStatus === "pending_review"
-            ? "لا يمكن أرشفة الدورة وهي قيد المراجعة. انتظري قرار الإدارة أولاً."
-            : "لا يمكن أرشفة هذه الدورة في حالتها الحالية.",
+            ? "لا يمكن إيقاف الدورة وهي قيد المراجعة. انتظر قرار الإدارة أولاً."
+            : "لا يمكن إيقاف هذه الدورة في حالتها الحالية.",
         );
         return;
       }
       const confirmed = await confirmToast({
-        title: "أرشفة الدورة",
-        message: `هل تريد أرشفة دورة «${selectedCourse.title}»؟ لا يمكن إلغاء الأرشفة من الواجهة الحالية.`,
-        confirmLabel: "أرشفة الدورة",
+        title: "إيقاف الدورة",
+        message: `هل تريد إيقاف دورة «${selectedCourse.title}»؟ ستختفي من الرئيسية وتظل متاحة للمشتركين الحاليين.`,
+        confirmLabel: "إيقاف الدورة",
         danger: true,
       });
       if (!confirmed) return;
-      const deletingToast = toast.loading("جاري أرشفة الدورة...");
+      const deletingToast = toast.loading("جاري إيقاف الدورة...");
       try {
         await removeTeacherCourse(selectedCourse.id);
         setTeacherCourses((items) =>
           items.map((course) =>
             String(course.id) === String(selectedCourse.id)
-              ? { ...course, rawStatus: "archived", status: "مؤرشف" }
+              ? { ...course, rawStatus: "archived", status: "غير نشطة" }
               : course,
           ),
         );
-        toast.success("تمت أرشفة الدورة بنجاح", { id: deletingToast });
+        toast.success("تم إيقاف الدورة مع الحفاظ على وصول المشتركين", { id: deletingToast });
       } catch (error) {
-        toast.error(getApiErrorMessage(error, "تعذر أرشفة الدورة"), {
+        toast.error(getApiErrorMessage(error, "تعذر إيقاف الدورة"), {
           id: deletingToast,
         });
       }
@@ -483,7 +483,7 @@ const TeacherCoursesPage = () => {
               <option value="قيد المراجعة">قيد المراجعة</option>
               <option value="مسودة">مسودة</option>
               <option value="مرفوض">مرفوض</option>
-              <option value="مؤرشف">مؤرشف</option>
+              <option value="غير نشطة">غير نشطة</option>
             </select>
             <ChevronDown
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]"
@@ -588,7 +588,7 @@ const TeacherCoursesPage = () => {
                     <td className="px-4 py-4 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button type="button" onClick={() => handleAction("details", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-[#DCE3EC] text-[#123C91] transition hover:border-[#123C91] hover:bg-[#EEF4FF]" aria-label={`عرض تفاصيل ${course.title}`} title="عرض التفاصيل"><Eye size={17} /></button>
-                        {["draft", "pending_review", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600 transition hover:bg-red-50" aria-label={`${course.rawStatus === "published" ? "أرشفة" : "حذف"} ${course.title}`} title={course.rawStatus === "published" ? "أرشفة الدورة" : "حذف الدورة نهائيًا"}><Trash2 size={17} /></button>}
+                        {["draft", "pending_review", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600 transition hover:bg-red-50" aria-label={`${course.rawStatus === "published" ? "إيقاف" : "حذف"} ${course.title}`} title={course.rawStatus === "published" ? "إيقاف الدورة" : "حذف الدورة نهائيًا"}><Trash2 size={17} /></button>}
                         {["draft", "rejected", "published"].includes(course.rawStatus) && <button type="button" aria-label={`إجراءات إضافية ${course.title}`} aria-expanded={actionsMenu?.courseId === course.id} onClick={(event) => toggleActionsMenu(event, course.id)} className="grid h-9 w-9 place-items-center rounded-lg text-[#475467] hover:bg-[#EEF2F6]" title="إجراءات إضافية"><EllipsisVertical size={17} /></button>}
                       </div>
                     </td>
@@ -628,7 +628,7 @@ const TeacherCoursesPage = () => {
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <button type="button" onClick={() => handleAction("details", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-[#DCE3EC] text-[#123C91]" aria-label={`عرض تفاصيل ${course.title}`}><Eye size={17} /></button>
-                  {["draft", "pending_review", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600" aria-label={`${course.rawStatus === "published" ? "أرشفة" : "حذف"} ${course.title}`} title={course.rawStatus === "published" ? "أرشفة الدورة" : "حذف الدورة نهائيًا"}><Trash2 size={17} /></button>}
+                  {["draft", "pending_review", "rejected", "published", "archived"].includes(course.rawStatus) && <button type="button" onClick={() => handleAction("delete", course)} className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-600" aria-label={`${course.rawStatus === "published" ? "إيقاف" : "حذف"} ${course.title}`} title={course.rawStatus === "published" ? "إيقاف الدورة" : "حذف الدورة نهائيًا"}><Trash2 size={17} /></button>}
                 </div>
               </div>
 

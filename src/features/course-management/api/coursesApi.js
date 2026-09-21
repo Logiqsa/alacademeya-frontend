@@ -49,6 +49,7 @@ import {
   uploadAdminCourseCover,
   uploadAdminCoursePromoVideo,
   deleteAdminCourse,
+  archiveAdminCourse,
   createCourseQuiz,
   updateCourseQuiz,
   addCourseQuizQuestion,
@@ -111,7 +112,7 @@ const statusLabels = {
   under_review: "قيد المراجعة",
   draft: "مسودة",
   rejected: "مرفوض",
-  archived: "مؤرشف",
+  archived: "غير نشطة",
 };
 
 const levelLabels = {
@@ -802,6 +803,7 @@ export const fetchAdminCourses = async (params) => {
 };
 
 export const removeAdminCourse = (courseId) => deleteAdminCourse(courseId);
+export const deactivateAdminCourse = (courseId) => archiveAdminCourse(courseId);
 
 // The API lifecycle archives courses and does not expose DELETE /courses/:id.
 export const removeTeacherCourse = (courseId) => archiveCourse(courseId);

@@ -144,6 +144,8 @@ export const getMyInstructorWithdrawals = (params) =>
   API.get("/instructors/me/withdrawals", { params });
 export const getMyInstructorWithdrawal = (id) =>
   API.get(`/instructors/me/withdrawals/${encodeURIComponent(id)}`);
+export const downloadMyInstructorWithdrawalReceipt = (id) =>
+  API.get(`/instructors/me/withdrawals/${encodeURIComponent(id)}/receipt`, { responseType: "blob" });
 export const cancelMyInstructorWithdrawal = (id) =>
   API.post(`/instructors/me/withdrawals/${encodeURIComponent(id)}/cancel`, null, { headers: { "Idempotency-Key": crypto.randomUUID() } });
 export const getPublicInstructor = (slug) =>
@@ -362,11 +364,14 @@ export const getAdminCoursePurchase = (id) =>
   API.get(`/admin/course-purchases/${id}`);
 export const getAdminInstructorWithdrawals = (params) => API.get("/admin/instructor-withdrawals", { params });
 export const getAdminInstructorWithdrawal = (id) => API.get(`/admin/instructor-withdrawals/${encodeURIComponent(id)}`);
+export const downloadAdminInstructorWithdrawalReceipt = (id) => API.get(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/receipt`, { responseType: "blob" });
 export const getAdminMediaSecurityEvents = (params) =>
   API.get("/admin/media-security-events", { params });
+export const suspendMediaSecurityActor = (eventId) =>
+  API.post(`/admin/media-security-events/${encodeURIComponent(eventId)}/suspend-actor`);
 export const approveAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/approve`, payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
 export const rejectAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/reject`, payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
-export const confirmPaidAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/confirm-paid`, payload, { headers: { "Idempotency-Key": crypto.randomUUID() } });
+export const confirmPaidAdminInstructorWithdrawal = (id, payload) => API.post(`/admin/instructor-withdrawals/${encodeURIComponent(id)}/confirm-paid`, payload, { headers: { "Idempotency-Key": crypto.randomUUID(), "Content-Type": "multipart/form-data" } });
 export const getMyCourseModeration = (id) => API.get(`/courses/me/${encodeURIComponent(id)}/moderation`);
 export const getAdminCourseModeration = (id) => API.get(`/courses/admin/${encodeURIComponent(id)}/moderation`);
 export const getAdminCourseEnrollments = (courseId) =>
@@ -451,6 +456,7 @@ export const uploadAdminCoursePromoVideo = (id, file, onUploadProgress) => {
   });
 };
 export const deleteAdminCourse = (id) => API.delete(`/courses/admin/${id}`);
+export const archiveAdminCourse = (id) => API.post(`/courses/admin/${id}/archive`);
 export const approveMarketplaceCourse = (id, payload = {}) =>
   API.post(`/courses/admin/${id}/approve`, payload);
 export const rejectMarketplaceCourse = (id, payload) =>
