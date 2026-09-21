@@ -1270,6 +1270,11 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
             window.scrollTo({ top: 0, behavior: "smooth" });
           }} />
         </div>
+        {existingCourse?.revisionOf && (
+          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-[#123C91]">
+            أنت تعدّل نسخة منفصلة من دورة منشورة؛ لن تظهر التغييرات للمتعلمين إلا بعد موافقة الإدارة. يمكن تعديل وترتيب الدروس الحالية وإضافة محتوى، لكن لا يمكن حذف درس أو قسم أو اختبار موجود حفاظًا على تقدّم المتعلمين.
+          </div>
+        )}
 
         <section id="course-editor-top" className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-[0px_0px_3px_0px_rgba(0,0,0,0.08)] sm:p-6 lg:p-8 xl:p-10">
           {step === 0 && (
@@ -1732,8 +1737,10 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                     <button
                       type="button"
                       aria-label="حذف القسم"
+                      disabled={Boolean(existingCourse?.revisionOf && (section.originId || section.lessons.some((lesson) => lesson.originId)))}
                       onClick={() => removeSection(section.id)}
-                      className="shrink-0 rounded p-1 text-[#98A2B3] hover:bg-white hover:text-red-600"
+                      title={existingCourse?.revisionOf && section.originId ? "لا يمكن حذف قسم منشور؛ يمكنك تعديل عنوانه ومحتواه" : undefined}
+                      className="shrink-0 rounded p-1 text-[#98A2B3] hover:bg-white hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       <X size={15} />
                     </button>
@@ -1846,6 +1853,8 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                           <button
                             type="button"
                             aria-label="حذف الدرس"
+                            disabled={Boolean(existingCourse?.revisionOf && lesson.originId)}
+                            title={existingCourse?.revisionOf && lesson.originId ? "لا يمكن حذف محتوى منشور حفاظًا على تقدم المتعلمين" : undefined}
                             onClick={() => {
                               cancelRetryForFileChange();
                               updateSection(section.id, {
@@ -1854,7 +1863,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                                 ),
                               });
                             }}
-                            className="shrink-0 p-2 text-[#98A2B3] hover:text-red-600"
+                            className="shrink-0 p-2 text-[#98A2B3] hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
                           >
                             <X size={15} />
                           </button>

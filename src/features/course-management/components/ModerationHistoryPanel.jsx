@@ -31,8 +31,8 @@ export default function ModerationHistoryPanel({ courseId, admin = false }) {
         const data = unwrap(response);
         const rounds = Array.isArray(data) ? data : data?.items || data?.history || data?.rounds || [];
         setItems([...rounds].sort((a, b) =>
-          Number(a.submissionNumber || a.submissionRound || a.round || 0) - Number(b.submissionNumber || b.submissionRound || b.round || 0) ||
-          new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0)));
+          new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0) ||
+          Number(a.submissionNumber || a.submissionRound || a.round || 0) - Number(b.submissionNumber || b.submissionRound || b.round || 0)));
       })
       .catch((requestError) => {
         if (active) setError(requestError?.response?.data?.message || "تعذر تحميل سجل المراجعة");
@@ -60,7 +60,7 @@ const ReviewRound = ({ item, index }) => {
   const StatusIcon = meta.icon;
   return <article className="relative rounded-xl border border-[#E1E7EF] bg-[#FCFDFE] p-4 sm:p-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#EAF2FF] font-extrabold text-[#123C91]">{item.submissionNumber || item.submissionRound || item.round || index + 1}</span><div><h3 className="text-sm font-extrabold text-[#344054]">جولة المراجعة {item.submissionNumber || item.submissionRound || item.round || index + 1}</h3><p className="mt-0.5 text-xs text-[#667085]">تم الإرسال: {formatDate(item.submittedAt)}</p></div></div>
+      <div className="flex items-center gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#EAF2FF] font-extrabold text-[#123C91]">{item.submissionNumber || item.submissionRound || item.round || index + 1}</span><div><h3 className="text-sm font-extrabold text-[#344054]">{item.isRevision ? "تحديث المنهج" : "مراجعة الدورة"} — جولة {item.submissionNumber || item.submissionRound || item.round || index + 1}</h3><p className="mt-0.5 text-xs text-[#667085]">تم الإرسال: {formatDate(item.submittedAt)}</p></div></div>
       <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${meta.classes}`}><StatusIcon size={13} />{meta.label}</span>
     </div>
     {(item.reviewedAt || item.rejectionReason || item.adminNotes || (item.failedCriteria || []).length > 0 || item.policyVersion) && <div className="mt-4 space-y-2 border-t border-[#EEF1F5] pt-4 text-sm text-[#475467]">

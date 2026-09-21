@@ -38,6 +38,8 @@ import {
   requestLessonMediaAccess,
   getMyPolicyStatus,
   submitMarketplaceCourse,
+  createCourseRevision,
+  getCourseRevision,
 } from "../../../services/APIService";
 import { getApiErrorMessage, normalizeApiError } from "../../../services/apiError";
 import { getEarningsCourses, getEarningsHistory } from "../../instructor-earnings/api/earningsApi";
@@ -618,6 +620,8 @@ const TeacherCourseDetailsPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const [course, setCourse] = useState(null);
+  const [activeRevision, setActiveRevision] = useState(null);
+  const [creatingRevision, setCreatingRevision] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [policyOpen, setPolicyOpen] = useState(false);
@@ -647,6 +651,10 @@ const TeacherCourseDetailsPage = () => {
   useEffect(() => {
     let active = true;
     const loadingTimer = window.setTimeout(() => setLoading(true), 0);
+
+    getCourseRevision(courseId).then((response) => {
+      if (active) setActiveRevision(response.data?.data || null);
+    }).catch(() => {});
 
     fetchTeacherCourse(courseId)
       .then((result) => {
@@ -684,6 +692,19 @@ const TeacherCourseDetailsPage = () => {
   const coverSrc = uploadedCover || course.coverImage || "";
   const canEditCourse = ["draft", "rejected"].includes(course.rawStatus) ||
     (!course.rawStatus && ["مسودة", "مرفوض"].includes(course.status));
+  const startRevision = async () => {
+    if (creatingRevision) return;
+    setCreatingRevision(true);
+    try {
+      const response = await createCourseRevision(course.id);
+      const revisionId = response.data?.data?._id;
+      if (!revisionId) throw new Error("لم يتم إنشاء نسخة التعديل");
+      navigate(`/teacher/courses/${revisionId}/edit`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "تعذر بدء تحديث الدورة"));
+      setCreatingRevision(false);
+    }
+  };
   const refreshCourse = async () => {
     const refreshed = await fetchTeacherCourse(courseId);
     setCourse(refreshed);
@@ -759,6 +780,18 @@ const TeacherCourseDetailsPage = () => {
             <button type="button" onClick={() => navigate(`/teacher/courses/${course.id}/edit`)} className="rounded-md border border-[#123C91] bg-white px-5 py-2.5 text-sm font-semibold text-[#123C91]">تعديل الدورة</button>
             <button type="button" disabled={submitting} aria-busy={submitting} onClick={() => submitForReview()} className="rounded-md bg-[#123C91] px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60">{submitting ? "جاري الإرسال..." : course.rawStatus === "rejected" ? "إعادة الإرسال للمراجعة" : "إرسال للمراجعة"}</button>
           </div>}
+          {course.rawStatus === "published" && !course.revisionOf && (
+            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm">
+              <span className="text-[#123C91]">الدورة المنشورة ستبقى متاحة للمتعلمين أثناء مراجعة تحديث المنهج.</span>
+              {activeRevision?.status === "pending_review" ? (
+                <Link to={`/teacher/courses/${activeRevision._id}`} className="font-semibold text-[#123C91] underline">التحديث قيد المراجعة</Link>
+              ) : (
+                <button type="button" disabled={creatingRevision} onClick={activeRevision?._id ? () => navigate(`/teacher/courses/${activeRevision._id}/edit`) : startRevision} className="rounded-md bg-[#123C91] px-4 py-2 font-semibold text-white disabled:opacity-60">
+                  {creatingRevision ? "جاري تجهيز نسخة التعديل..." : activeRevision ? "متابعة تعديل المنهج" : "تحديث الدورة والمنهج"}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mb-4 grid gap-3 md:grid-cols-3">

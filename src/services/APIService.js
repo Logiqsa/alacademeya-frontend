@@ -236,6 +236,8 @@ export const submitMarketplaceCourse = (id) =>
 export const getMyTeacherCourses = (params) =>
   API.get("/courses/me", { params });
 export const getMyTeacherCourse = (id) => API.get(`/courses/me/${id}`);
+export const createCourseRevision = (id) => API.post(`/courses/me/${id}/revision`);
+export const getCourseRevision = (id) => API.get(`/courses/me/${id}/revision`);
 export const getMyTeacherCourseEnrollments = (id) =>
   API.get(`/courses/me/${encodeURIComponent(id)}/enrollments`);
 export const getMyCourseEnrollments = (params) =>

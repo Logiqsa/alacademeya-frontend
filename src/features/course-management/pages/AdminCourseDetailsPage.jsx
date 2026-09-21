@@ -1686,6 +1686,12 @@ const AdminCourseDetailsPage = () => {
             <p className="mt-2 text-xs text-[#667085]">
               {course.shortDescription || course.description}
             </p>
+            {course.revisionOf && (
+              <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-[#123C91]">
+                هذه نسخة تحديث لمنهج دورة منشورة. المتعلمون يشاهدون النسخة الحالية حتى اعتماد التحديث.
+                <Link className="mr-2 font-bold underline" to={`/admin/courses/${course.revisionOf}`}>عرض الدورة المنشورة للمقارنة</Link>
+              </div>
+            )}
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             {isPendingReview ? (
@@ -1694,7 +1700,7 @@ const AdminCourseDetailsPage = () => {
                   onClick={() => setShowApproveModal(true)}
                   className="w-full rounded-md bg-[#17864B] px-4 py-2 text-sm font-semibold text-white sm:w-auto"
                 >
-                  اعتماد ونشر
+                  {course.revisionOf ? "اعتماد التحديث" : "اعتماد ونشر"}
                 </button>
                 <button
                   onClick={() => setShowRejectModal(true)}
@@ -1831,10 +1837,10 @@ const AdminCourseDetailsPage = () => {
                       setCourse(
                         updated?.id ? updated : { ...course, status: "منشور" },
                       );
-                      toast.success("تم اعتماد الدورة ونشرها");
+                      toast.success(course.revisionOf ? "تم اعتماد تحديث المنهج ونشره للمتعلمين" : "تم اعتماد الدورة ونشرها");
                       setShowApproveModal(false);
                       setApproveNotes("");
-                      navigate("/admin/courses");
+                      navigate(course.revisionOf ? `/admin/courses/${course.revisionOf}` : "/admin/courses");
                     } catch (error) {
                       toast.error(
                         reviewErrorMessage(error, "تعذر اعتماد الدورة"),
