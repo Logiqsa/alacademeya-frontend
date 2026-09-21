@@ -40,6 +40,8 @@ const getCurrentMonth = () => {
 
 const USER_TYPE_OPTIONS = [
   "جميع المستخدمين",
+  "متعلم",
+  "محاضر",
   "معلم",
   "طالب",
   "ولي أمر",
@@ -176,6 +178,8 @@ const statusBadge = (status) => {
 };
 
 const roleBadge = (role) => {
+  if (role === "محاضر") return <Badge label={role} type="green" />;
+  if (role === "متعلم") return <Badge label={role} type="blue" />;
   if (role === "معلم") return <Badge label={role} type="green" />;
   if (role === "طالب") return <Badge label={role} type="blue" />;
   if (role === "ولي أمر") return <Badge label={role} type="orange" />;
@@ -932,6 +936,7 @@ const UsersTable = ({
   onSort,
   typeFilter = "جميع المستخدمين",
   onTypeFilter,
+  hideTypeFilter = false,
 }) => {
   const [detailsUser, setDetailsUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
@@ -1260,7 +1265,7 @@ const UsersTable = ({
                             : undefined
                         }
                       >
-                        {isTypeFilter ? (
+                        {isTypeFilter && !hideTypeFilter ? (
                           <label className="relative inline-flex items-center">
                             <select
                               value={typeFilter}

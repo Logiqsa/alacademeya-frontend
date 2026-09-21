@@ -143,6 +143,21 @@ test("uses the event key when the backend type is only a category", () => {
   assert.equal(presentation.title, "Withdrawal approved");
 });
 
+test("builds useful notification summaries from structured backend data", () => {
+  const sale = getNotificationPresentation({
+    key: "NEW_COURSE_SALE",
+    data: { courseTitle: { ar: "أساسيات البرمجة" }, amount: 500, currency: "EGP" },
+  }, "ar");
+  assert.match(sale.description, /أساسيات البرمجة/);
+  assert.match(sale.description, /500|٥٠٠/);
+
+  const quiz = getNotificationPresentation({
+    key: "QUIZ_PASSED",
+    data: { quizTitle: "اختبار القسم الأول" },
+  }, "ar");
+  assert.match(quiz.description, /اختبار القسم الأول/);
+});
+
 test("renders unknown notifications with a safe localized fallback", () => {
   assert.equal(getNotificationTypeLabel("UNKNOWN_EVENT", "ar"), "إشعار جديد");
   assert.equal(getNotificationTypeLabel("UNKNOWN_EVENT", "en"), "New notification");

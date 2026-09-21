@@ -70,6 +70,47 @@ const humanizeNotificationDates = (text, locale = "ar") => {
   });
 };
 
+const notificationValue = (value, locale = "ar") => {
+  if (value == null || value === "") return "";
+  if (typeof value === "object") return localizedNotificationText(value, locale);
+  return String(value);
+};
+
+const describeNotificationData = (type, data = {}, locale = "ar") => {
+  const course = notificationValue(data.courseTitle, locale);
+  const quiz = notificationValue(data.quizTitle, locale);
+  const currency = notificationValue(data.currency, locale);
+  const amount = data.amount == null ? "" : `${Number(data.amount).toLocaleString(locale === "ar" ? "ar-EG" : "en")} ${currency}`.trim();
+  const reason = notificationValue(data.rejectionReason || data.failureReason, locale);
+  const ar = locale === "ar";
+  if (!ar) {
+    const details = [course && `Course: ${course}`, quiz && `Quiz: ${quiz}`, amount && `Amount: ${amount}`, reason && `Reason: ${reason}`].filter(Boolean);
+    return details.length ? `${details.join(". ")}.` : "Open the notification to view its details.";
+  }
+
+  const descriptions = {
+    COURSE_PURCHASE_SUCCESS: course ? `أصبح بإمكانك الآن بدء دورة «${course}».` : "تم تأكيد الدفع وإتاحة الدورة في مكتبتك.",
+    COURSE_PURCHASE_SUCCEEDED: course ? `تم شراء دورة «${course}»${amount ? ` بقيمة ${amount}` : ""}.` : amount ? `تم تسجيل شراء جديد بقيمة ${amount}.` : "تم تسجيل عملية شراء دورة جديدة.",
+    NEW_COURSE_SALE: course ? `تم بيع دورة «${course}»${amount ? ` بقيمة ${amount}` : ""}.` : "تم تسجيل عملية بيع جديدة لإحدى دوراتك.",
+    COURSE_ACCESS_GRANT_FAILED: reason ? `لم يكتمل منح الوصول إلى الدورة: ${reason}` : "تم الدفع، لكن تعذر منح المتعلم صلاحية دخول الدورة.",
+    WITHDRAWAL_REQUEST_CREATED: currency ? `تم استلام طلب سحب رصيدك بعملة ${currency} وهو قيد المراجعة.` : "تم استلام طلب السحب وهو قيد المراجعة.",
+    NEW_WITHDRAWAL_REQUEST: currency ? `يوجد طلب سحب جديد بعملة ${currency} يحتاج إلى المراجعة.` : "يوجد طلب سحب جديد يحتاج إلى المراجعة.",
+    WITHDRAWAL_APPROVED: data.expectedTransferAt ? `تم قبول الطلب، والتحويل المتوقع في ${notificationValue(data.expectedTransferAt, locale)}.` : "تم قبول طلب السحب وسيتم تحويل الرصيد.",
+    WITHDRAWAL_REJECTED: reason ? `سبب الرفض: ${reason}` : "تم رفض طلب السحب. افتح الإشعار لمراجعة التفاصيل.",
+    WITHDRAWAL_PAID: currency ? `تم تحويل رصيد طلب السحب بعملة ${currency}.` : "تم تحويل قيمة طلب السحب بنجاح.",
+    CERTIFICATE_ISSUED: course ? `شهادتك في دورة «${course}» أصبحت جاهزة.` : "شهادة إتمام الدورة أصبحت جاهزة للعرض والتنزيل.",
+    QUIZ_PASSED: quiz ? `نجحت في اختبار «${quiz}».` : "تم تسجيل اجتيازك للاختبار بنجاح.",
+    QUIZ_ATTEMPTS_EXHAUSTED: quiz ? `استخدمت كل المحاولات المتاحة لاختبار «${quiz}».` : "استخدمت كل المحاولات المتاحة لهذا الاختبار.",
+    COURSE_COMPLETED: course ? `أكملت جميع متطلبات دورة «${course}».` : "أكملت جميع متطلبات الدورة.",
+    NEW_COURSE_REVIEW: course ? `أضاف متعلم تقييمًا جديدًا لدورة «${course}».` : "أضاف متعلم تقييمًا جديدًا لإحدى دوراتك.",
+    COURSE_APPROVED: course ? `وافقت الإدارة على دورة «${course}» وأصبحت منشورة.` : "وافقت الإدارة على الدورة وأصبحت منشورة.",
+    COURSE_REJECTED: course ? `تحتاج دورة «${course}» إلى تعديلات${reason ? `: ${reason}` : "."}` : reason ? `سبب طلب التعديل: ${reason}` : "تحتاج الدورة إلى تعديلات قبل إعادة إرسالها.",
+    COURSE_SUBMITTED_FOR_REVIEW: course ? `أرسل المحاضر دورة «${course}» للمراجعة${data.submissionNumber ? ` — الجولة ${data.submissionNumber}` : ""}.` : "أرسل محاضر دورة جديدة لمراجعتها.",
+  };
+  if (descriptions[type]) return descriptions[type];
+  return course ? `يتعلق هذا الإشعار بدورة «${course}».` : quiz ? `يتعلق هذا الإشعار باختبار «${quiz}».` : "اضغط على الإشعار لعرض التفاصيل.";
+};
+
 export const getNotificationTypeLabel = (type, locale = "ar") => {
   const normalized = notificationTypeOf({ type });
   const meta = TYPE_META[normalized];
@@ -93,7 +134,7 @@ export const getNotificationPresentation = (notification = {}, locale = "ar") =>
   return {
     type,
     title,
-    description: humanizeNotificationDates(description, locale) || (locale === "en" ? "Open the notification for available details." : "افتح الإشعار لعرض التفاصيل المتاحة."),
+    description: humanizeNotificationDates(description, locale) || humanizeNotificationDates(describeNotificationData(type, notification.data, locale), locale),
     category: meta?.category || "system",
     kind: meta?.kind || "unknown",
   };

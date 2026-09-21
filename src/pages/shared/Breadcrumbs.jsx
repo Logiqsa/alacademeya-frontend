@@ -33,6 +33,9 @@ const SEGMENT_LABELS = {
   attendance: "الحضور",
 
   users: "المستخدمين",
+  learners: "المتعلمين",
+  instructors: "المحاضرين",
+  parents: "أولياء الأمور",
   supervisors: "المشرفين",
   records: "التسجيلات",
   requests: "الطلبات",

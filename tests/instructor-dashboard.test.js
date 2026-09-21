@@ -46,6 +46,8 @@ test("Instructor dashboard and navigation use existing marketplace APIs without 
   assert.match(dashboard, /getEarningsSummary\(\)/);
   assert.match(dashboard, /getInstructorBalance\(\)/);
   assert.match(dashboard, /getWithdrawals\(/);
+  assert.match(dashboard, /<TeacherLayout showBreadcrumbs=\{false\}>/);
+  assert.match(dashboard, /<NotificationsSection \/>/);
   assert.match(dashboard, /لا توجد دورات بعد/);
   assert.match(sidebar, /const isTeacher = user\?\.role === "teacher"/);
   assert.match(sidebar, /path: "\/teacher\/courses\/new"/);
@@ -62,4 +64,16 @@ test("Instructor marketplace routes remain profile-guarded rather than Teacher-r
     assert.notEqual(index, -1);
     assert.match(app.slice(index, index + 240), /<InstructorGuard/);
   }
+});
+
+test("messages and notifications accept both teachers and active marketplace instructors", () => {
+  const app = read("src/App.jsx");
+  const sharedGuard = read("src/guards/TeacherOrInstructorGuard.jsx");
+  for (const route of ["/teacher/messages", "/teacher/notifications"]) {
+    const index = app.indexOf(`path="${route}"`);
+    assert.notEqual(index, -1);
+    assert.match(app.slice(index, index + 220), /<TeacherOrInstructorGuard>/);
+  }
+  assert.match(sharedGuard, /user\?\.role === "teacher"/);
+  assert.match(sharedGuard, /<InstructorGuard requireActiveStatus>/);
 });

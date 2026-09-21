@@ -142,7 +142,9 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
           icon: Bell,
           path: "/teacher/notifications",
         },
-        ...(isTeacher ? [{ title: "الإعدادات", icon: Settings, path: "/teacher/settings" }] : []),
+        ...((isTeacher || canAccessInstructorArea)
+          ? [{ title: "الإعدادات", icon: Settings, path: "/teacher/settings" }]
+          : []),
       ] : [],
     },
   ];
@@ -173,20 +175,20 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
         flex
         flex-col
         h-full
-        justify-between
         bg-[#1F2937]
         border-l
         border-white/8
         shadow-[0px_0px_2px_0px_#00000040]
         text-white
-        pb-6
+        pb-2
+        overflow-hidden
         transition-all
         duration-300
         ${isOpen ? "w-64" : "w-20"}
       `}
     >
       {/* Header */}
-      <div className="relative flex items-center justify-between px-6 border-b border-[#FFFFFF14]">
+      <div className="relative flex shrink-0 items-center justify-between px-5 border-b border-[#FFFFFF14]">
         {isOpen && (
           <Link to="/" aria-label="الذهاب إلى الصفحة الرئيسية">
             <img
@@ -197,11 +199,14 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
           </Link>
         )}
 
-        {isTeacher && <button
-          onClick={() => setIsOpen(!isOpen)}
+        <button
+          type="button"
+          onClick={() => setIsOpen((value) => !value)}
+          aria-label={isOpen ? "طي القائمة الجانبية" : "فتح القائمة الجانبية"}
+          aria-expanded={isOpen}
           className="
-            w-16
-            h-16
+            w-14
+            h-14
             -ml-5
             flex
             items-center
@@ -215,15 +220,15 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
             alt="toggle"
             className="object-contain w-7 h-7"
           />
-        </button>}
+        </button>
       </div>
 
       {/* Menu */}
-      <div className="flex-1 px-3 mt-4 overflow-y-auto">
+      <div className="admin-sidebar-scroll mt-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2">
         {menuSections.filter((section) => section.items.length).map((section) => (
-          <div key={section.label} className="mb-3">
+          <div key={section.label} className="mb-2">
             {isOpen && (
-              <p className="mb-1 px-3 text-[11px] font-semibold text-white/45">
+              <p className="mb-1 px-3 pt-1 text-[10px] font-semibold text-white/45">
                 {section.label}
               </p>
             )}
@@ -240,13 +245,13 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
               flex
               items-center
               ${isOpen ? "gap-2 px-3 justify-start" : "justify-center"}
-              py-2
+              py-1.5
               mb-1
-              rounded-xl
+              rounded-lg
               transition-all
               font-['IBM_Plex_Sans_Arabic']
               font-medium
-              text-[16px]
+              text-[15px]
               ${
                 isActive && !isCourseListWhileCreating
                   ? "bg-[#FFFFFF] text-primary border-r-4 border-[#12C6B0] shadow-sm"
@@ -281,7 +286,7 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
       </div>
 
       {/* Logout */}
-      <div className="p-3 border-t border-[#FFFFFF14]">
+      <div className="shrink-0 border-t border-[#FFFFFF14] px-2 pt-2">
         <button
           type="button"
           onClick={openAdminChat}

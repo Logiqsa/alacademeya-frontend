@@ -66,14 +66,18 @@ const isStudentProfileIncomplete = (user, student) => {
   );
 };
 
-const UsersPage = () => {
+const UsersPage = ({
+  fixedRole = "",
+  title = "إدارة المستخدمين",
+  description = "إدارة جميع حسابات المنصة.",
+}) => {
   const navigate = useNavigate();
   const { user: currentUser } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState("جميع المستخدمين");
+  const [filterRole, setFilterRole] = useState(fixedRole || "جميع المستخدمين");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [filterGrade, setFilterGrade] = useState("جميع الصفوف");
   const [filterSubject, setFilterSubject] = useState("جميع المواد");
@@ -418,18 +422,18 @@ const UsersPage = () => {
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
           <h3 className="text-xl sm:text-[24px] font-semibold leading-8 text-[#123C91] mb-2 sm:mb-3">
-            إدارة المستخدمين
+            {title}
           </h3>
           <p className="text-sm sm:text-[16px] font-normal leading-6 text-[#575F69]">
-            إدارة جميع حسابات المنصة.
+            {description}
           </p>
           </div>
-          {currentUser?.role === "super-admin" && <button onClick={() => navigate("/admin/students/new")} className="shrink-0 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">إنشاء طالب</button>}
+          {fixedRole === "طالب" && currentUser?.role === "super-admin" && <button onClick={() => navigate("/admin/students/new")} className="shrink-0 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">إنشاء طالب</button>}
         </div>
 
-        <div className="mb-6">
+        {!fixedRole && <div className="mb-6">
           <UsersStatsBar {...stats} />
-        </div>
+        </div>}
 
         <div className="bg-white mt-6 border border-[#E5E5E5] shadow-[0px_0px_4px_0px_rgba(0,0,0,0.12)] rounded-2xl p-5 w-full items-center">
           <UsersFilters
@@ -471,6 +475,7 @@ const UsersPage = () => {
               setFilterCurriculum(v);
               setPage(1);
             }}
+            hideRoleFilter={Boolean(fixedRole)}
           />
         </div>
 
@@ -515,6 +520,7 @@ const UsersPage = () => {
                 setFilterCurriculum("جميع المناهج");
                 setPage(1);
               }}
+              hideTypeFilter={Boolean(fixedRole)}
             />
           )}
         </div>

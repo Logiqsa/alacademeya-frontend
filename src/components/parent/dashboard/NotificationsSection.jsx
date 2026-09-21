@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getNotifications } from "../../../services/APIService";
-
-const notificationText = (value) => {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  return value.ar || value.en || "";
-};
+import { getNotificationPresentation } from "../../../utils/notificationTypes";
 
 const NotificationsSection = () => {
   const navigate = useNavigate();
@@ -79,7 +74,9 @@ const NotificationsSection = () => {
             </p>
           </div>
         ) : (
-          notifications.map((notif) => (
+          notifications.map((notif) => {
+            const presentation = getNotificationPresentation(notif, "ar");
+            return (
             <div
               key={notif._id}
               className="w-full min-h-18 flex items-center gap-3 p-3 sm:p-4 border border-[#1F29371A] rounded-lg relative overflow-hidden"
@@ -92,22 +89,17 @@ const NotificationsSection = () => {
 
               <div className="text-right min-w-0 flex-1">
                 <p className="font-['IBM_Plex_Sans_Arabic'] font-normal mb-1.5 sm:mb-2 text-[13px] sm:text-[14px] leading-4 text-[#1F2937]">
-                  {notificationText(notif.title) || "إشعار جديد"}
+                  {presentation.title}
                 </p>
                 <p className="font-['IBM_Plex_Sans_Arabic'] text-[12px] sm:text-[13px] leading-5 text-[#575F69] line-clamp-2">
-                  {notificationText(
-                    notif.body ||
-                      notif.message ||
-                      notif.content ||
-                      notif.description,
-                  ) || "لا توجد تفاصيل إضافية"}
+                  {presentation.description}
                 </p>
                 <p className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[11px] sm:text-[12px] leading-4 text-[#8C9198] mt-1">
                   {formatTime(notif.createdAt)}
                 </p>
               </div>
             </div>
-          ))
+          );})
         )}
       </div>
     </div>

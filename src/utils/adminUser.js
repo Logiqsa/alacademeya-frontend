@@ -1,12 +1,24 @@
-import { getUsers } from "../services/APIService";
+import { getUsers } from "../services/APIService.js";
 
 // ⚠️ "مشرف" = admin (صلاحيات محدودة)، "مشرف عام" = super-admin (صلاحيات كاملة)
 export const ROLE_MAP = {
+  user: "متعلم",
   student: "طالب",
   teacher: "معلم",
   parent: "ولي أمر",
   admin: "مشرف",
   "super-admin": "مشرف عام",
+};
+
+export const adminAccountTypeLabel = (user = {}) => {
+  const hasInstructorProfile = Boolean(
+    user.capabilities?.hasInstructorProfile ||
+      user.instructorId ||
+      user.instructorProfileSlug ||
+      user.accountType === "instructor",
+  );
+  if (hasInstructorProfile) return "محاضر";
+  return ROLE_MAP[user.role] || user.role || "غير محدد";
 };
 
 export const statusOf = (u) => {
@@ -26,8 +38,9 @@ export const mapAdminUser = (u) => ({
   email: u.email,
   phone: u.phone,
   avatarUrl: u.avatarUrl,
-  role: ROLE_MAP[u.role] || u.role,
+  role: adminAccountTypeLabel(u),
   rawRole: u.role,
+  capabilities: u.capabilities,
   country: u.country,
   isVerified: u.isVerified,
   isDeleted: !!u.isDeleted,

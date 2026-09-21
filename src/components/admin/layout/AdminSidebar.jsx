@@ -47,7 +47,10 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       items: [
         { title: "المشرفين", icon: ShieldCheck, path: "/admin/supervisors" },
         { title: "المعلمون", icon: GraduationCap, path: "/admin/teachers" },
-        { title: "المستخدمون", icon: Users, path: "/admin/users" },
+        { title: "المحاضرون", icon: BookOpen, path: "/admin/instructors" },
+        { title: "المتعلمون", icon: Users, path: "/admin/learners" },
+        { title: "الطلاب", icon: GraduationCap, path: "/admin/students", end: true },
+        { title: "أولياء الأمور", icon: UsersRound, path: "/admin/parents" },
       ],
     },
     {

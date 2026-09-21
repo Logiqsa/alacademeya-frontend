@@ -1178,7 +1178,9 @@ const TeacherAccountSettings = () => {
       const userData = extractUser(res.data);
       if (userData) {
         setTeacher(userData);
-        updateUser?.(userData);
+        // بيانات /users/me لا تحمل دائمًا هوية ملف المحاضر؛ نحافظ عليها حتى
+        // لا تختفي روابط المحاضر من القائمة بعد فتح صفحة الإعدادات.
+        updateUser?.((current) => ({ ...current, ...userData }));
       }
     } catch (err) {
       setLoadError(err.response?.data?.message || "تعذر تحميل بيانات الحساب");
@@ -1263,7 +1265,9 @@ const TeacherAccountSettings = () => {
         timezone={teacher.timezone}
         onUpdated={handleTimezoneUpdated}
       />
-      <TeacherProfessionalCard teacher={teacher} onSaved={fetchProfile} />
+      {teacher.role === "teacher" && (
+        <TeacherProfessionalCard teacher={teacher} onSaved={fetchProfile} />
+      )}
       <SecurityCard lastPasswordChange={teacher.passwordChangedAt} />
     </div>
   );

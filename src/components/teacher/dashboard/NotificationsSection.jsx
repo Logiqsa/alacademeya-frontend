@@ -58,6 +58,7 @@ const normalizeNotification = (n) => {
   return {
     id: n.id ?? n._id,
     title: presentation.title,
+    description: presentation.description,
     time: timeAgo(n.createdAt ?? n.date ?? n.timestamp),
     read: n.read ?? n.isRead ?? false,
     raw: n,
@@ -189,6 +190,9 @@ const NotificationsSection = () => {
                   }`}
                 >
                   {notif.title}
+                </p>
+                <p className="line-clamp-2 text-[12px] leading-5 text-[#575F69] sm:text-[13px]">
+                  {notif.description}
                 </p>
                 <p className="font-['IBM_Plex_Sans_Arabic'] font-normal text-[11px] sm:text-[12px] leading-4 text-[#8C9198] mt-1">
                   {notif.time}

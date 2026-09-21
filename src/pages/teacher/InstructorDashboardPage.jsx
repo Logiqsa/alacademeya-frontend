@@ -6,6 +6,7 @@ import { fetchTeacherCourses } from "../../features/course-management/api/course
 import { getEarningsSummary } from "../../features/instructor-earnings/api/earningsApi";
 import { getInstructorBalance, getWithdrawals } from "../../features/instructor-payouts/api/payoutsApi";
 import { formatMoney } from "../../utils/currencyDisplay";
+import NotificationsSection from "../../components/teacher/dashboard/NotificationsSection";
 
 const withdrawalLabels = {
   requested: "قيد المراجعة",
@@ -63,7 +64,7 @@ export default function InstructorDashboardPage() {
   ];
 
   return (
-    <TeacherLayout breadcrumbCurrentLabel="لوحة المحاضر">
+    <TeacherLayout showBreadcrumbs={false}>
       <main dir="rtl" className="mx-auto w-full max-w-400 space-y-6 pb-8 font-['IBM_Plex_Sans_Arabic']">
         <header className="overflow-hidden rounded-2xl bg-linear-to-l from-[#123C91] to-[#176FA5] p-6 text-white shadow-[0_12px_30px_rgba(18,60,145,0.18)] sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -77,6 +78,10 @@ export default function InstructorDashboardPage() {
 
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {cards.map(({ label, value, icon: Icon, tone }) => <Link key={label} to="/teacher/courses" className="flex items-center gap-3 rounded-2xl border border-[#E1E7EF] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><span className={`grid size-11 place-items-center rounded-xl ${tone}`}><Icon size={21} /></span><span><strong className="block text-xl text-[#1F2937]">{value}</strong><span className="text-xs font-semibold text-[#667085]">{label}</span></span></Link>)}
+          </section>
+
+          <section aria-label="الإشعارات الأخيرة" className="w-full">
+            <NotificationsSection />
           </section>
 
           {!state.courses.length ? <section className="rounded-2xl border border-dashed border-[#BFCDE0] bg-white px-5 py-12 text-center"><BookOpen className="mx-auto text-[#123C91]" size={38} /><h2 className="mt-4 text-xl font-extrabold text-[#1F2937]">لا توجد دورات بعد</h2><p className="mt-2 text-sm text-[#667085]">أنشئ دورتك الأولى وابدأ تجهيز محتواها للمراجعة.</p><Link to="/teacher/courses/new" className="mx-auto mt-5 inline-flex h-11 items-center gap-2 rounded-xl bg-[#123C91] px-6 font-bold !text-white"><Plus size={17} />إنشاء أول دورة</Link></section> : <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E1E7EF] bg-white p-5 shadow-sm"><div><h2 className="font-extrabold text-[#1F2937]">إدارة الدورات</h2><p className="mt-1 text-sm text-[#667085]">راجع المحتوى وحالات الإرسال وقرارات فريق المراجعة.</p></div><Link to="/teacher/courses" className="rounded-xl border border-[#123C91] px-5 py-2.5 text-sm font-bold text-[#123C91]">عرض دوراتي</Link></section>}

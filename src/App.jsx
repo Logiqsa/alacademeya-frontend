@@ -12,6 +12,7 @@ import { getDashboardPathByRole } from "./utils/roles";
 // ✅ Guards
 import TeacherGuard from "./guards/TeacherGuard";
 import InstructorGuard from "./guards/InstructorGuard";
+import TeacherOrInstructorGuard from "./guards/TeacherOrInstructorGuard";
 import StudentGuard from "./guards/StudentGuard";
 import AdminGuard from "./guards/AdminGuard";
 import * as LazyRoutes from "./lazyRoutes";
@@ -576,9 +577,9 @@ function App() {
         <Route
           path="/teacher/notifications"
           element={
-            <TeacherGuard>
+            <TeacherOrInstructorGuard>
               <Notificationss />
-            </TeacherGuard>
+            </TeacherOrInstructorGuard>
           }
         />
         <Route
@@ -592,17 +593,17 @@ function App() {
         <Route
           path="/teacher/messages"
           element={
-            <TeacherGuard>
+            <TeacherOrInstructorGuard>
               <TeacherMessages />
-            </TeacherGuard>
+            </TeacherOrInstructorGuard>
           }
         />
         <Route
           path="/teacher/settings"
           element={
-            <TeacherGuard>
+            <TeacherOrInstructorGuard>
               <TeacherAccountSettingsPage />
-            </TeacherGuard>
+            </TeacherOrInstructorGuard>
           }
         />
         <Route
@@ -782,8 +783,12 @@ function App() {
           />
           <Route
             path="/admin/users"
-            element={user ? <UsersPage /> : <Navigate to="/login" replace />}
+            element={<Navigate to="/admin/learners" replace />}
           />
+          <Route path="/admin/learners" element={user ? <UsersPage key="learners" fixedRole="متعلم" title="المتعلمون" description="إدارة حسابات المتعلمين المسجلين في دورات المنصة." /> : <Navigate to="/login" replace />} />
+          <Route path="/admin/instructors" element={user ? <UsersPage key="instructors" fixedRole="محاضر" title="المحاضرون" description="إدارة حسابات المحاضرين وملفاتهم على سوق الدورات." /> : <Navigate to="/login" replace />} />
+          <Route path="/admin/students" element={user ? <UsersPage key="students" fixedRole="طالب" title="الطلاب" description="إدارة حسابات الطلاب وبياناتهم الدراسية." /> : <Navigate to="/login" replace />} />
+          <Route path="/admin/parents" element={user ? <UsersPage key="parents" fixedRole="ولي أمر" title="أولياء الأمور" description="إدارة حسابات أولياء الأمور المرتبطة بالطلاب." /> : <Navigate to="/login" replace />} />
           <Route path="/admin/students/new" element={user ? <CreateStudentPage /> : <Navigate to="/login" replace />} />
           <Route
             path="/admin/groups"

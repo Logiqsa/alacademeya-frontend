@@ -1,6 +1,6 @@
 import { Search, ChevronDown } from "lucide-react";
 
-const ROLE_OPTIONS = ["جميع المستخدمين", "معلم", "طالب", "ولي أمر", "مشرف", "مشرف عام"];
+const ROLE_OPTIONS = ["جميع المستخدمين", "متعلم", "محاضر", "معلم", "طالب", "ولي أمر", "مشرف", "مشرف عام"];
 const STATUS_OPTIONS = [
   "جميع الحالات",
   "نشط",
@@ -25,6 +25,7 @@ const UsersFilters = ({
   filterCurriculum,
   curriculumOptions = [],
   onFilterCurriculumChange,
+  hideRoleFilter = false,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-1" dir="rtl">
@@ -39,7 +40,7 @@ const UsersFilters = ({
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" size={18} />
       </div>
 
-      <div className="relative w-full sm:w-55 lg:w-60" style={{ height: "48px" }}>
+      {!hideRoleFilter && <div className="relative w-full sm:w-55 lg:w-60" style={{ height: "48px" }}>
         <select
           value={filterRole}
           onChange={(e) => onFilterRoleChange?.(e.target.value)}
@@ -52,7 +53,7 @@ const UsersFilters = ({
           ))}
         </select>
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
-      </div>
+      </div>}
 
       <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
         <select
