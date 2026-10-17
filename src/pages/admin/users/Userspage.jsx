@@ -11,6 +11,8 @@ import UsersTable from "../../../components/admin/users/Userstable";
 import {
   deleteUser as deleteUserApi,
   getAllStudents,
+  getCurriculums,
+  getSubjects,
   getUser,
   getTeachers,
   updateUser,
@@ -37,6 +39,33 @@ const profileNames = (values) =>
   (Array.isArray(values) ? values : values ? [values] : [])
     .map(localizedProfileName)
     .filter(Boolean);
+
+const academicId = (value) =>
+  String(typeof value === "object" ? value?.id || value?._id || "" : value || "");
+
+const responseItems = (response, keys = []) => {
+  const body = response?.data?.data ?? response?.data ?? [];
+  if (Array.isArray(body)) return body;
+  return keys.map((key) => body?.[key]).find(Array.isArray) || [];
+};
+
+const academicNameMap = (items) =>
+  new Map(
+    items
+      .map((item) => [academicId(item), localizedProfileName(item)])
+      .filter(([id, name]) => id && name),
+  );
+
+const resolvedProfileNames = (values, namesById) => [
+  ...new Set(
+    (Array.isArray(values) ? values : values ? [values] : [])
+      .map((value) => {
+        if (typeof value === "object") return localizedProfileName(value);
+        return namesById.get(academicId(value)) || "";
+      })
+      .filter(Boolean),
+  ),
+];
 
 const hasValues = (value) =>
   Array.isArray(value) ? value.length > 0 : Boolean(value);
@@ -148,6 +177,32 @@ const UsersPage = ({
           teacher,
         ]),
       );
+      const curriculumResponse = await getCurriculums().catch(() => null);
+      const curriculumNamesById = academicNameMap(
+        responseItems(curriculumResponse, ["curriculums", "items"]),
+      );
+      const subjectQueries = [
+        ...new Map(
+          studentProfiles
+            .map((student) => ({
+              curriculum: academicId(student.curriculum),
+              stage: academicId(student.stage),
+              grade: academicId(student.grade),
+            }))
+            .filter(({ grade }) => grade)
+            .map((params) => [JSON.stringify(params), params]),
+        ).values(),
+      ];
+      const studentSubjectResponses = await Promise.allSettled(
+        subjectQueries.map((params) => getSubjects(params)),
+      );
+      const subjectNamesById = academicNameMap(
+        studentSubjectResponses.flatMap((result) =>
+          result.status === "fulfilled"
+            ? responseItems(result.value, ["subjects", "items"])
+            : [],
+        ),
+      );
       const mappedUsers = completeUsers.map((rawUser) => {
               const mapped = mapAdminUser(rawUser);
               const student = studentsByUserId.get(String(mapped.id));
@@ -214,13 +269,15 @@ const UsersPage = ({
                       student.stage?.name ||
                       student.stageName ||
                       "—",
-                    studentCurriculums: profileNames(
+                    studentCurriculums: resolvedProfileNames(
                       student.curriculums ?? student.curriculum,
+                      curriculumNamesById,
                     ),
-                    studentSubjects: profileNames(
+                    studentSubjects: resolvedProfileNames(
                       student.preferredSubjects ??
                         student.subjects ??
                         student.subject,
+                      subjectNamesById,
                     ),
                   }
                 : mapped;
