@@ -73,6 +73,11 @@ const listLabel = (value) => {
   return [...new Set(names)].join("، ") || "—";
 };
 
+const listNames = (value) => {
+  const list = Array.isArray(value) ? value : value ? [value] : [];
+  return [...new Set(list.map(localizedName).filter(Boolean))];
+};
+
 const DetailItem = ({ label, value }) => (
   <div className="rounded-xl bg-[#F9FAFA] px-4 py-3">
     <p className="text-xs text-[#8C9198]">{label}</p>
@@ -151,6 +156,9 @@ const TeachersPage = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterGrade, setFilterGrade] = useState("جميع الصفوف");
+  const [filterSubject, setFilterSubject] = useState("جميع المواد");
+  const [filterCurriculum, setFilterCurriculum] = useState("جميع المناهج");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
   const [selectedTeacher, setSelectedTeacher] = useState(null);
@@ -202,6 +210,11 @@ const TeachersPage = () => {
             subjects: listLabel(teacher.subjects ?? teacher.subject),
             grades: listLabel(teacher.grades ?? teacher.grade),
             curricula: listLabel(teacher.curriculums ?? teacher.curriculum),
+            subjectNames: listNames(teacher.subjects ?? teacher.subject),
+            gradeNames: listNames(teacher.grades ?? teacher.grade),
+            curriculumNames: listNames(
+              teacher.curriculums ?? teacher.curriculum,
+            ),
             status:
               teacher.status === "approved"
                 ? "مقبول"
@@ -240,12 +253,31 @@ const TeachersPage = () => {
 
   const normalizedSearch = search.trim().toLowerCase();
   const normalizedPhoneSearch = normalizePhoneSearch(search);
-  const filtered = teachers.filter((teacher) =>
-    String(teacher.name || "").toLowerCase().includes(normalizedSearch) ||
-    String(teacher.email || "").toLowerCase().includes(normalizedSearch) ||
-    (normalizedPhoneSearch &&
-      normalizePhoneSearch(teacher.phone).includes(normalizedPhoneSearch)),
-  );
+  const gradeOptions = [
+    ...new Set(teachers.flatMap((teacher) => teacher.gradeNames)),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const subjectOptions = [
+    ...new Set(teachers.flatMap((teacher) => teacher.subjectNames)),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const curriculumOptions = [
+    ...new Set(teachers.flatMap((teacher) => teacher.curriculumNames)),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const filtered = teachers.filter((teacher) => {
+    const matchesSearch =
+      String(teacher.name || "").toLowerCase().includes(normalizedSearch) ||
+      String(teacher.email || "").toLowerCase().includes(normalizedSearch) ||
+      (normalizedPhoneSearch &&
+        normalizePhoneSearch(teacher.phone).includes(normalizedPhoneSearch));
+    return (
+      matchesSearch &&
+      (filterGrade === "جميع الصفوف" ||
+        teacher.gradeNames.includes(filterGrade)) &&
+      (filterSubject === "جميع المواد" ||
+        teacher.subjectNames.includes(filterSubject)) &&
+      (filterCurriculum === "جميع المناهج" ||
+        teacher.curriculumNames.includes(filterCurriculum))
+    );
+  });
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
   const totalMinutes = teachers.reduce(
@@ -436,20 +468,48 @@ const TeachersPage = () => {
         </div>
 
         <div className="mb-4 rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-sm">
-          <div className="relative max-w-md">
-            <Search
-              size={17}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-              placeholder="ابحث باسم المعلم أو البريد الإلكتروني أو رقم الهاتف..."
-              className="h-11 w-full rounded-lg border border-gray-200 bg-gray-50 pr-10 pl-3 text-sm outline-none focus:border-[#123C91]"
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="relative min-w-64 flex-1">
+              <Search
+                size={17}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="ابحث باسم المعلم أو البريد الإلكتروني أو رقم الهاتف..."
+                className="h-11 w-full rounded-lg border border-gray-200 bg-gray-50 pr-10 pl-3 text-sm outline-none focus:border-[#123C91]"
+              />
+            </div>
+            {[
+              [filterCurriculum, setFilterCurriculum, "جميع المناهج", curriculumOptions],
+              [filterGrade, setFilterGrade, "جميع الصفوف", gradeOptions],
+              [filterSubject, setFilterSubject, "جميع المواد", subjectOptions],
+            ].map(([value, setter, defaultLabel, options]) => (
+              <div key={defaultLabel} className="relative w-full sm:w-48">
+                <select
+                  value={value}
+                  onChange={(event) => {
+                    setter(event.target.value);
+                    setPage(1);
+                  }}
+                  aria-label={defaultLabel}
+                  className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 px-3 pl-9 text-sm text-[#575F69] outline-none focus:border-[#123C91]"
+                >
+                  <option value={defaultLabel}>{defaultLabel}</option>
+                  {options.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69]"
+                />
+              </div>
+            ))}
           </div>
         </div>
 

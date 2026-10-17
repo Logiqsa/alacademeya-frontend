@@ -88,7 +88,7 @@ const UsersFilters = ({
         </div>
       )}
 
-      {filterRole === "معلم" && (
+      {["طالب", "معلم"].includes(filterRole) && (
         <>
           <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
             <select

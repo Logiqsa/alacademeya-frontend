@@ -214,6 +214,14 @@ const UsersPage = ({
                       student.stage?.name ||
                       student.stageName ||
                       "—",
+                    studentCurriculums: profileNames(
+                      student.curriculums ?? student.curriculum,
+                    ),
+                    studentSubjects: profileNames(
+                      student.preferredSubjects ??
+                        student.subjects ??
+                        student.subject,
+                    ),
                   }
                 : mapped;
             });
@@ -262,6 +270,20 @@ const UsersPage = ({
         .flatMap((user) => user.teacherCurriculums || []),
     ),
   ].sort((a, b) => a.localeCompare(b, "ar"));
+  const studentSubjectOptions = [
+    ...new Set(
+      visibleUsers
+        .filter((user) => user.role === "طالب")
+        .flatMap((user) => user.studentSubjects || []),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const studentCurriculumOptions = [
+    ...new Set(
+      visibleUsers
+        .filter((user) => user.role === "طالب")
+        .flatMap((user) => user.studentCurriculums || []),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
 
   const normalizedSearch = search.trim().toLowerCase();
   const normalizedPhoneSearch = normalizePhoneSearch(search);
@@ -274,8 +296,11 @@ const UsersPage = ({
       (filterRole === "جميع المستخدمين" || u.role === filterRole) &&
       (filterStatus === "جميع الحالات" || u.status === filterStatus) &&
       (filterRole !== "طالب" ||
-        filterGrade === "جميع الصفوف" ||
-        u.grade === filterGrade) &&
+        ((filterGrade === "جميع الصفوف" || u.grade === filterGrade) &&
+          (filterSubject === "جميع المواد" ||
+            u.studentSubjects?.includes(filterSubject)) &&
+          (filterCurriculum === "جميع المناهج" ||
+            u.studentCurriculums?.includes(filterCurriculum)))) &&
       (filterRole !== "معلم" ||
         ((filterGrade === "جميع الصفوف" ||
           u.teacherGrades?.includes(filterGrade)) &&
@@ -464,13 +489,21 @@ const UsersPage = ({
               setPage(1);
             }}
             filterSubject={filterSubject}
-            subjectOptions={teacherSubjectOptions}
+            subjectOptions={
+              filterRole === "طالب"
+                ? studentSubjectOptions
+                : teacherSubjectOptions
+            }
             onFilterSubjectChange={(v) => {
               setFilterSubject(v);
               setPage(1);
             }}
             filterCurriculum={filterCurriculum}
-            curriculumOptions={teacherCurriculumOptions}
+            curriculumOptions={
+              filterRole === "طالب"
+                ? studentCurriculumOptions
+                : teacherCurriculumOptions
+            }
             onFilterCurriculumChange={(v) => {
               setFilterCurriculum(v);
               setPage(1);
