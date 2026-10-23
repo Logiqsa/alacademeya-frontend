@@ -480,6 +480,10 @@ export const createExchangeRate = (payload) =>
   API.post("/exchange-rates", payload);
 export const updateExchangeRate = (currency, payload) =>
   API.patch(`/exchange-rates/${currency}`, payload);
+export const getExchangeRateSettings = () => API.get("/exchange-rates/settings");
+export const updateExchangeRateSettings = (mode) =>
+  API.patch("/exchange-rates/settings", { mode });
+export const syncExchangeRates = () => API.post("/exchange-rates/sync");
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Curriculums

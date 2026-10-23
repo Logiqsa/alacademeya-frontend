@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Save } from "lucide-react";
+import { Loader2, Plus, RefreshCw, Save } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   createExchangeRate,
   getCountries,
   getExchangeRates,
+  getExchangeRateSettings,
+  syncExchangeRates,
   updateExchangeRate,
+  updateExchangeRateSettings,
 } from "../../../services/APIService";
 
 const CURRENCY_NAMES = {
@@ -14,6 +17,8 @@ const CURRENCY_NAMES = {
   SAR: "الريال السعودي",
   AED: "الدرهم الإماراتي",
   KWD: "الدينار الكويتي",
+  QAR: "الريال القطري",
+  OMR: "الريال العماني",
 };
 const CURRENCY_FLAGS = {
   EGP: "🇪🇬",
@@ -21,6 +26,8 @@ const CURRENCY_FLAGS = {
   SAR: "🇸🇦",
   AED: "🇦🇪",
   KWD: "🇰🇼",
+  QAR: "🇶🇦",
+  OMR: "🇴🇲",
 };
 
 const ExchangeRatesSettings = () => {
@@ -33,14 +40,18 @@ const ExchangeRatesSettings = () => {
   const [newCountry, setNewCountry] = useState("");
   const [countries, setCountries] = useState([]);
   const [adding, setAdding] = useState(false);
+  const [settings, setSettings] = useState({ mode: "manual" });
+  const [changingMode, setChangingMode] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     let active = true;
-    Promise.all([getExchangeRates(), getCountries()])
-      .then(([ratesResponse, countriesResponse]) => {
+    Promise.all([getExchangeRates(), getCountries(), getExchangeRateSettings()])
+      .then(([ratesResponse, countriesResponse, settingsResponse]) => {
         if (!active) return;
         setRates(ratesResponse.data?.data || []);
         setCountries(countriesResponse.data?.data || []);
+        setSettings(settingsResponse.data?.data || { mode: "manual" });
       })
       .catch((error) =>
         toast.error(error.response?.data?.message || "تعذر تحميل أسعار الصرف"),
@@ -50,6 +61,44 @@ const ExchangeRatesSettings = () => {
       active = false;
     };
   }, []);
+
+  const reloadRates = async () => {
+    const response = await getExchangeRates();
+    setRates(response.data?.data || []);
+  };
+
+  const changeMode = async (mode) => {
+    if (mode === settings.mode || changingMode) return;
+    setChangingMode(true);
+    try {
+      const response = await updateExchangeRateSettings(mode);
+      setSettings(response.data?.data || { ...settings, mode });
+      await reloadRates();
+      toast.success(
+        mode === "automatic"
+          ? "تم تفعيل التحديث التلقائي لأسعار العملات"
+          : "تم تفعيل أسعار العملات اليدوية",
+      );
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر تغيير طريقة حساب العملة");
+    } finally {
+      setChangingMode(false);
+    }
+  };
+
+  const syncNow = async () => {
+    setSyncing(true);
+    try {
+      const response = await syncExchangeRates();
+      setSettings(response.data?.data || settings);
+      await reloadRates();
+      toast.success("تم تحديث أسعار العملات من Frankfurter");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر تحديث أسعار العملات");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const changeField = (currency, field, value) => {
     setRates((current) =>
@@ -131,6 +180,53 @@ const ExchangeRatesSettings = () => {
         <h2 className="text-lg font-bold leading-7 text-[#123C91]">إدارة أسعار الصرف</h2>
         <p className="mt-1 text-sm leading-6 text-[#6B7280]">قيمة وحدة واحدة من العملة بالجنيه المصري.</p>
       </div>
+      <div className="mb-5 rounded-xl border border-[#D7E2F3] bg-[#F8FAFD] p-4">
+        <p className="mb-3 text-sm font-semibold text-[#1F2937]">
+          طريقة حساب أسعار العملات
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            ["manual", "يدوي", "استخدام الأسعار التي يحفظها الأدمن"],
+            ["automatic", "تلقائي", "تحديث يومي من Frankfurter"],
+          ].map(([mode, title, description]) => (
+            <button
+              key={mode}
+              type="button"
+              disabled={changingMode}
+              onClick={() => changeMode(mode)}
+              className={`rounded-xl border p-4 text-right transition-colors disabled:opacity-60 ${settings.mode === mode ? "border-[#123C91] bg-blue-50 ring-2 ring-[#123C91]/10" : "border-gray-200 bg-white"}`}
+            >
+              <span className="block text-sm font-bold text-[#1F2937]">{title}</span>
+              <span className="mt-1 block text-xs text-gray-500">{description}</span>
+            </button>
+          ))}
+        </div>
+        {settings.mode === "automatic" && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#D7E2F3] pt-4">
+            <div className="text-xs leading-6 text-gray-600">
+              <p>المصدر: Frankfurter — بنوك مركزية ومصادر رسمية</p>
+              <p>
+                آخر تحديث: {settings.lastSyncAt
+                  ? new Date(settings.lastSyncAt).toLocaleString("ar-EG")
+                  : "لم يتم التحديث بعد"}
+              </p>
+              {settings.lastSyncError && (
+                <p className="text-red-600">آخر خطأ: {settings.lastSyncError}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              disabled={syncing}
+              onClick={syncNow}
+              className="flex h-10 items-center gap-2 rounded-lg bg-[#123C91] px-4 text-sm font-medium !text-white disabled:opacity-60"
+            >
+              <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
+              {syncing ? "جاري التحديث..." : "تحديث الآن"}
+            </button>
+          </div>
+        )}
+      </div>
+      {settings.mode === "manual" && (
       <form
         onSubmit={addCurrency}
         className="grid items-end gap-3 rounded-xl border border-dashed border-[#B8C8E8] bg-[#F8FAFF] p-4 sm:grid-cols-2 xl:grid-cols-4"
@@ -206,6 +302,7 @@ const ExchangeRatesSettings = () => {
           إضافة العملة
         </button>
       </form>
+      )}
       {loading ? (
         <div className="flex justify-center py-10">
           <Loader2 className="animate-spin text-[#123C91]" />
@@ -239,7 +336,7 @@ const ExchangeRatesSettings = () => {
                     </span>
                   )}
                 </div>
-                {!base && (
+                {!base && settings.mode === "manual" && (
                   <div className="mb-3 grid gap-2 sm:grid-cols-2">
                     <input
                       type="text"
@@ -286,7 +383,7 @@ const ExchangeRatesSettings = () => {
                     type="number"
                     min="0.0001"
                     step="0.0001"
-                    disabled={base}
+                    disabled={base || settings.mode === "automatic"}
                     value={rate.egpPerUnit}
                     onChange={(event) =>
                       changeField(
@@ -297,7 +394,7 @@ const ExchangeRatesSettings = () => {
                     }
                     className="h-11 min-w-0 flex-1 rounded-lg border border-gray-200 px-3 outline-none focus:border-[#123C91] disabled:bg-gray-100"
                   />
-                  {!base && (
+                  {!base && settings.mode === "manual" && (
                     <button
                       type="button"
                       disabled={saving === rate.currency}
@@ -318,6 +415,11 @@ const ExchangeRatesSettings = () => {
                     ? `1 ${rate.currency} = ${rate.egpPerUnit} EGP`
                     : "سعر الصرف غير محدد بعد"}
                 </p>
+                {!base && settings.mode === "automatic" && rate.automaticRateDate && (
+                  <p className="mt-1 text-xs text-emerald-700">
+                    سعر تلقائي بتاريخ {new Date(rate.automaticRateDate).toLocaleDateString("ar-EG")}
+                  </p>
+                )}
               </div>
             );
           })}
