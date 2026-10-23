@@ -112,7 +112,7 @@ const StudentSubjectsPages = () => {
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
-          "تعذر استكمال ملف الطالب وتحميل خيارات الاشتراك",
+          "تعذر استكمال ملف الطالب، حاول مرة أخرى",
       );
     } finally {
       setSubmitting(false);
@@ -178,8 +178,12 @@ const StudentSubjectsPages = () => {
         </div>
 
         <label className="block text-[13px] font-medium text-[#1F2937] mb-2">
-          المواد التي ترغب في الالتحاق بها
+          المواد التي ترغب في دراستها
         </label>
+        <p className="mb-4 text-[13px] leading-6 text-[#6B7280]">
+          اختيار المواد هنا لاستكمال ملفك الدراسي فقط، ولن يتم إنشاء أي اشتراك
+          أو مطالبتك بالدفع. يمكنك الاشتراك لاحقًا من لوحة التحكم.
+        </p>
 
         {loadingSubjects ? (
           <div className="flex items-center gap-2 mb-6">
@@ -218,7 +222,7 @@ const StudentSubjectsPages = () => {
           className="w-full h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white font-medium text-[16px] flex items-center justify-center disabled:opacity-70 transition-opacity"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
-          {submitting ? "جاري تجهيز الاشتراك..." : "التالي"}
+          {submitting ? "جاري استكمال الملف الشخصي..." : "إكمال الملف الشخصي"}
         </button>
 
         <div className="flex items-center justify-center gap-1 pt-4">
