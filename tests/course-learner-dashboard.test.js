@@ -3,6 +3,7 @@ import test from "node:test";
 import fs from "node:fs";
 
 import {
+  getAuthenticatedDestination,
   getDashboardPathByRole,
   isInstructor,
 } from "../src/utils/roles.js";
@@ -97,5 +98,32 @@ test("existing academic and Instructor dashboard resolution stays intact", () =>
       instructorStatus: "active",
     }),
     "/instructor-dashboard",
+  );
+});
+
+test("incomplete academic accounts always continue onboarding", () => {
+  assert.deepEqual(
+    getAuthenticatedDestination({
+      role: "student",
+      registrationStatus: "pending-profile",
+      email: "student@example.com",
+    }),
+    {
+      path: "/register/student-details",
+      state: {
+        email: "student@example.com",
+        role: "student",
+        academicLevel: undefined,
+        studentType: undefined,
+        countryId: undefined,
+      },
+    },
+  );
+  assert.equal(
+    getDashboardPathByRole({
+      role: "student",
+      registrationStatus: "pending-profile",
+    }),
+    "/register/student-details",
   );
 });

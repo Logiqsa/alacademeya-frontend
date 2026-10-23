@@ -13,6 +13,25 @@ const invalidLinkError = (error) => {
   return hasApiErrorCode(error, "VERIFICATION_LINK_INVALID_OR_EXPIRED");
 };
 
+const verifiedAccountFromResponse = (response) => {
+  const payload = response?.data?.data;
+  const account = payload?.user || payload;
+  if (!account || typeof account !== "object") return null;
+
+  // The backend normally returns pending-profile after verifying an academic
+  // account. Keep the redirect deterministic if an older deployment omits the
+  // field, so students/teachers can never fall through to the public home page.
+  if (
+    ["student", "teacher"].includes(account.role) &&
+    !account.registrationStatus &&
+    !account.registration_status
+  ) {
+    return { ...account, registrationStatus: "pending-profile" };
+  }
+
+  return account;
+};
+
 const readAndRemoveToken = () => {
   const params = new URLSearchParams(window.location.hash.slice(1));
   const token = params.get("token")?.trim() || "";
@@ -43,7 +62,7 @@ const VerifyEmailPage = () => {
       .then(async (response) => {
         if (!active) return;
         const jwt = response.data?.token;
-        const verifiedUser = response.data?.data;
+        const verifiedUser = verifiedAccountFromResponse(response);
         if (!jwt || !verifiedUser || typeof verifiedUser !== "object") {
           setStatus("server-error");
           return;

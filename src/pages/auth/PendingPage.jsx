@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { CheckCircle, Loader2, Mail, MessageCircle } from "lucide-react";
+import { CheckCircle, Loader2, Mail, MessageCircle, UserRoundPen } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
@@ -60,6 +60,17 @@ const PendingPage = () => {
   const content = MESSAGES[role] || MESSAGES.student;
   const { contactSettings } = useContactSettings();
   const whatsappUrl = whatsappLink(contactSettings?.whatsappNumber);
+  const registrationStatus = String(
+    databaseUser?.registrationStatus || databaseUser?.status || "",
+  )
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", "-");
+  const studentProfileIncomplete =
+    role === "student" &&
+    ["pending-profile", "profile-incomplete", "incomplete"].includes(
+      registrationStatus,
+    );
 
   useEffect(() => {
     let active = true;
@@ -128,6 +139,17 @@ const PendingPage = () => {
         <div className="mb-5 inline-flex rounded-full bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800">
           حالة الحساب: {accountStatusLabel(databaseUser)}
         </div>
+
+        {studentProfileIncomplete && (
+          <button
+            type="button"
+            onClick={() => navigate("/register/student-details")}
+            className="mb-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#123C91] px-4 text-sm font-semibold !text-white"
+          >
+            <UserRoundPen size={18} />
+            استكمال ملف الطالب وإرساله للمراجعة
+          </button>
+        )}
 
         {/* Steps */}
         <div className="w-full bg-[#F9FAFA] rounded-xl border border-[#1F293733] p-5 mb-8">

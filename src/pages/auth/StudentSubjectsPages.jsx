@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
@@ -10,6 +10,8 @@ import {
   getSubjects,
 } from "../../services/APIService";
 import { hasApiErrorCode } from "../../services/apiError";
+import { AuthContext } from "../../context/AuthContext";
+import { getDatabaseUserFromAccountState } from "../../utils/accountState";
 
 const normalizeSubjects = (raw) => {
   const list = Array.isArray(raw) ? raw : raw?.data || [];
@@ -22,6 +24,7 @@ const normalizeSubjects = (raw) => {
 const StudentSubjectsPages = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { updateUser } = useContext(AuthContext) || {};
 
   const {
     curriculumId,
@@ -100,6 +103,8 @@ const StudentSubjectsPages = () => {
       }
 
       const profileResponse = await getMyProfile();
+      const accountUser = getDatabaseUserFromAccountState(profileResponse);
+      updateUser?.((current) => ({ ...current, ...accountUser }));
       const profile =
         profileResponse.data?.data?.student ||
         profileResponse.data?.data;

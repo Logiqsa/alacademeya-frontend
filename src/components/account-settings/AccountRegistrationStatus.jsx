@@ -50,12 +50,20 @@ const statusDetails = (user) => {
   }
 
   if (profilePendingStatuses.has(status) || user?.profileCompleted === false) {
+    const isStudent = user?.role === "student";
     return {
       type: "profile",
       label: "الملف الشخصي غير مكتمل",
-      description: "أكمل بيانات حسابك من إعدادات الحساب لإرسال طلبك للمراجعة.",
-      action: "إكمال بيانات الحساب",
-      to: settingsPathByRole[user?.role] || "/",
+      description: isStudent
+        ? "أكمل المنهج والمرحلة والصف والمواد لإرسال طلبك للمراجعة."
+        : "أكمل بيانات حسابك من إعدادات الحساب لإرسال طلبك للمراجعة.",
+      action: isStudent ? "استكمال ملف الطالب" : "إكمال بيانات الحساب",
+      // إعدادات الطالب العادية تحفظ تعديلات الملف فقط ولا تنقل الحساب من
+      // pending-profile إلى pending-approval. مسار التسجيل هو الذي يستدعي
+      // completeStudentProfile ويرسل الملف فعليًا إلى مراجعة الإدارة.
+      to: isStudent
+        ? "/register/student-details"
+        : settingsPathByRole[user?.role] || "/",
     };
   }
 
