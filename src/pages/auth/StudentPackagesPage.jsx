@@ -29,6 +29,7 @@ const StudentPackagesPage = () => {
   const [subjects, setSubjects] = useState(selectedSubjects);
   const [packagesBySubject, setPackagesBySubject] = useState({});
   const [selections, setSelections] = useState({});
+  const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
   const [expandedSubject, setExpandedSubject] = useState("");
   const [currency, setCurrency] = useState(state?.currency || "");
   const [currencies, setCurrencies] = useState([]);
@@ -98,8 +99,15 @@ const StudentPackagesPage = () => {
           return [subject.id, packages];
         });
         setPackagesBySubject(Object.fromEntries(entries));
-        setExpandedSubject((current) => current || String(visibleSubjects[0]?.id || ""));
         const initialSelections = state?.initialSelections || {};
+        const initialSubjectIds = [
+          ...new Set([
+            ...selectedSubjects.map((subject) => String(subject.id)),
+            ...Object.keys(initialSelections).map(String),
+          ]),
+        ];
+        setSelectedSubjectIds(initialSubjectIds);
+        setExpandedSubject((current) => current || initialSubjectIds[0] || "");
         setSelections(
           Object.fromEntries(
             entries.flatMap(([id, packages]) => {
@@ -136,12 +144,27 @@ const StudentPackagesPage = () => {
     () => Object.keys(selections).length,
     [selections],
   );
-  const removeSubject = (id) =>
+  const removeSubject = (id) => {
+    const subjectId = String(id);
+    setSelectedSubjectIds((current) =>
+      current.filter((currentId) => currentId !== subjectId),
+    );
+    setExpandedSubject((current) => (current === subjectId ? "" : current));
     setSelections((current) => {
       const next = { ...current };
       delete next[id];
       return next;
     });
+  };
+  const toggleSubject = (id) => {
+    const subjectId = String(id);
+    if (selectedSubjectIds.includes(subjectId)) {
+      removeSubject(id);
+      return;
+    }
+    setSelectedSubjectIds((current) => [...current, subjectId]);
+    setExpandedSubject(subjectId);
+  };
 
   const handleNext = () => {
     if (!selectedCount) return toast.error("يجب اختيار مادة واحدة على الأقل");
@@ -186,7 +209,39 @@ const StudentPackagesPage = () => {
             </p>
           ) : (
             <div className="space-y-4">
-              {subjects.map((subject) => {
+              <div>
+                <p className="mb-3 text-sm font-medium text-[#1F2937]">
+                  اختر المواد التي تريد الاشتراك بها
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {subjects.map((subject) => {
+                    const active = selectedSubjectIds.includes(
+                      String(subject.id),
+                    );
+                    return (
+                      <button
+                        key={subject.id}
+                        type="button"
+                        onClick={() => toggleSubject(subject.id)}
+                        aria-pressed={active}
+                        className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${active ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-300 bg-white text-[#1F2937] hover:border-[#123C91]"}`}
+                      >
+                        {subject.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {!selectedSubjectIds.length && (
+                <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                  اختر مادة من القائمة لعرض الباقات المتاحة لها.
+                </p>
+              )}
+
+              {subjects.filter((subject) =>
+                selectedSubjectIds.includes(String(subject.id)),
+              ).map((subject) => {
                 const subjectId = String(subject.id);
                 const isExpanded = expandedSubject === subjectId;
                 const selectedPackageId = selections[subject.id];
@@ -287,7 +342,10 @@ const StudentPackagesPage = () => {
           {!loading && selectedCount > 0 && (
             <div className="mt-5">
               <p className="mb-3 text-sm font-medium text-[#1F2937]">
-                اختر عملة الدفع
+                اختر عملة الدفع للطلب بالكامل
+              </p>
+              <p className="mb-3 text-xs text-gray-500">
+                يتم اختيار العملة مرة واحدة وتطبيقها على جميع المواد المختارة.
               </p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {currencies.map((option) => (
