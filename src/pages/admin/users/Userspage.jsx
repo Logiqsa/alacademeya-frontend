@@ -96,7 +96,15 @@ const isStudentProfileIncomplete = (user, student) => {
 };
 
 const getMissingStudentProfileFields = (user, student) => {
-  if (!student) return ["ملف الطالب"];
+  if (!student) {
+    return [
+      "المنهج الدراسي",
+      "المرحلة الدراسية",
+      "الصف الدراسي",
+      "تاريخ الميلاد",
+      "المواد المفضلة",
+    ];
+  }
 
   const missing = [];
   const studentType = student.studentType || user.studentType || "school";
