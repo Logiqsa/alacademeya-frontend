@@ -274,11 +274,19 @@ const StudentDetailsPages = () => {
           <img src={logo} alt="logo" className="w-44 h-8 mb-5 cursor-pointer" />
         </Link>
         <h2
-          className="text-[24px] font-bold mb-6 text-[#1F2937]"
+          className="text-[24px] font-bold mb-2 text-[#1F2937]"
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
-          مرحباً بك...
+          أكمل ملفك الدراسي للدخول إلى المنصة
         </h2>
+        <p className="mb-5 text-[14px] leading-6 text-[#6B7280]">
+          اختر المنهج والمرحلة والصف، ثم أكمل المواد والبيانات المطلوبة لإرسال
+          ملفك إلى الإدارة للمراجعة.
+        </p>
+        <div className="mb-6 rounded-xl border border-[#BFD2F5] bg-[#F0F5FF] px-4 py-3 text-[13px] font-medium leading-6 text-[#123C91]">
+          لن تتمكن من الدخول إلى لوحة الطالب قبل استكمال الملف الدراسي وإرساله
+          للمراجعة.
+        </div>
 
         <form className="space-y-5" onSubmit={handleSubmit}>
           {/* Curriculum */}
