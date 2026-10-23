@@ -169,12 +169,28 @@ const Badge = ({ label, type }) => {
   );
 };
 
-const statusBadge = (status) => {
-  if (status === "نشط") return <Badge label={status} type="green" />;
-  if (status === "معلق") return <Badge label={status} type="orange" />;
-  if (status === "ملف غير مكتمل") return <Badge label={status} type="blue" />;
-  if (status === "موقوف") return <Badge label={status} type="red" />;
-  return <Badge label={status} type="gray" />;
+const statusBadge = (status, missingProfileFields = []) => {
+  let badge;
+  if (status === "نشط") badge = <Badge label={status} type="green" />;
+  else if (status === "معلق") badge = <Badge label={status} type="orange" />;
+  else if (status === "ملف غير مكتمل") badge = <Badge label={status} type="blue" />;
+  else if (status === "موقوف") badge = <Badge label={status} type="red" />;
+  else badge = <Badge label={status} type="gray" />;
+
+  if (status !== "ملف غير مكتمل" || !missingProfileFields.length) return badge;
+
+  const details = `البيانات الناقصة: ${missingProfileFields.join("، ")}`;
+  return (
+    <span className="group relative inline-flex cursor-help" title={details} tabIndex={0}>
+      {badge}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full right-1/2 z-50 mb-2 hidden w-max max-w-72 translate-x-1/2 rounded-lg bg-[#1F2937] px-3 py-2 text-right text-xs font-medium leading-5 text-white shadow-lg group-hover:block group-focus:block"
+      >
+        {details}
+      </span>
+    </span>
+  );
 };
 
 const roleBadge = (role) => {
@@ -389,7 +405,7 @@ export const UserDetailsModal = ({
           </p>
 
           <div className="flex items-center gap-2 mt-1">
-            {statusBadge(user.status)}
+            {statusBadge(user.status, user.missingProfileFields)}
             {roleBadge(user.role)}
           </div>
         </div>
@@ -903,7 +919,7 @@ const MobileCard = ({
 
     <div className="flex items-center gap-2 mb-3">
       {roleBadge(u.role)}
-      {statusBadge(u.status)}
+      {statusBadge(u.status, u.missingProfileFields)}
     </div>
 
     <div className="divide-y divide-gray-50">
@@ -1333,7 +1349,9 @@ const UsersTable = ({
                       {user.email}
                     </td>
 
-                    <td className="px-5 py-3.5">{statusBadge(user.status)}</td>
+                    <td className="px-5 py-3.5">
+                      {statusBadge(user.status, user.missingProfileFields)}
+                    </td>
 
                     <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
                       {user.joinDate}

@@ -95,6 +95,27 @@ const isStudentProfileIncomplete = (user, student) => {
   );
 };
 
+const getMissingStudentProfileFields = (user, student) => {
+  if (!student) return ["ملف الطالب"];
+
+  const missing = [];
+  const studentType = student.studentType || user.studentType || "school";
+
+  if (studentType === "school") {
+    if (!student.curriculum) missing.push("المنهج الدراسي");
+    if (!student.stage) missing.push("المرحلة الدراسية");
+    if (!student.grade) missing.push("الصف الدراسي");
+    if (!student.birthDate) missing.push("تاريخ الميلاد");
+    if (!hasValues(student.preferredSubjects)) missing.push("المواد المفضلة");
+  }
+
+  if (hasIncompleteRegistration(user) || hasIncompleteRegistration(student)) {
+    if (!missing.length) missing.push("إرسال الملف للمراجعة");
+  }
+
+  return missing;
+};
+
 const UsersPage = ({
   fixedRole = "",
   title = "إدارة المستخدمين",
@@ -245,6 +266,10 @@ const UsersPage = ({
                 return {
                   ...mapped,
                   status: "ملف غير مكتمل",
+                  missingProfileFields: getMissingStudentProfileFields(
+                    rawUser,
+                    student,
+                  ),
                   grade: "—",
                   stage: "—",
                 };
@@ -255,6 +280,10 @@ const UsersPage = ({
                     status: isStudentProfileIncomplete(rawUser, student)
                       ? "ملف غير مكتمل"
                       : mapped.status,
+                    missingProfileFields: getMissingStudentProfileFields(
+                      rawUser,
+                      student,
+                    ),
                     studentId: student.id || student._id,
                     profileStatus: student.status,
                     grade:
