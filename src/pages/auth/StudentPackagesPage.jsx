@@ -144,6 +144,26 @@ const StudentPackagesPage = () => {
     () => Object.keys(selections).length,
     [selections],
   );
+  const finalPrice = useMemo(() => {
+    const selectedCurrency = currencies.find(
+      (option) => option.currency === currency,
+    );
+    const exchangeRate = Number(selectedCurrency?.egpPerUnit || 1);
+    if (!currency || !Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+      return 0;
+    }
+    return Object.entries(selections).reduce((total, [subjectId, packageId]) => {
+      const selectedPackage = (packagesBySubject[subjectId] || []).find(
+        (packageOption) => String(packageOption.id) === String(packageId),
+      );
+      const convertedPrice = Number(selectedPackage?.price || 0) / exchangeRate;
+      return total + Math.round((convertedPrice + Number.EPSILON) * 100) / 100;
+    }, 0);
+  }, [currencies, currency, packagesBySubject, selections]);
+  const formattedFinalPrice = `${finalPrice.toLocaleString("ar-EG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })} ${currency}`;
   const removeSubject = (id) => {
     const subjectId = String(id);
     setSelectedSubjectIds((current) =>
@@ -368,6 +388,22 @@ const StudentPackagesPage = () => {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {!loading && selectedCount > 0 && currency && (
+            <div className="mt-5 flex items-center justify-between rounded-xl border border-[#BFD0EC] bg-[#F4F7FC] px-4 py-4">
+              <div>
+                <p className="text-sm font-semibold text-[#1F2937]">
+                  السعر النهائي
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  إجمالي {selectedCount} {selectedCount === 1 ? "مادة" : "مواد"}
+                </p>
+              </div>
+              <strong className="text-xl font-bold text-[#123C91]" dir="ltr">
+                {formattedFinalPrice}
+              </strong>
             </div>
           )}
 
