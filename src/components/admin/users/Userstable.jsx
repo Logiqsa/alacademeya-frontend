@@ -436,6 +436,22 @@ export const UserDetailsModal = ({
         </a>
 
         <div className="grid gap-3 mb-4 sm:grid-cols-2">
+          {isStudent && user.studentId && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose?.();
+                navigate(
+                  `/admin/subscriptions/add?studentId=${encodeURIComponent(user.studentId)}`,
+                );
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#123C91] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0f3280]"
+            >
+              <CreditCard size={18} />
+              إنشاء اشتراك يدوي
+            </button>
+          )}
+
           {onOpenChat && (
             <button
               type="button"

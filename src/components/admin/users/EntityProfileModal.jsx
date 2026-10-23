@@ -348,6 +348,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
         onClose={onClose}
         user={{
           id: currentUserId,
+          studentId: studentProfileId,
           name,
           email: user.email,
           phone: user.phone,
