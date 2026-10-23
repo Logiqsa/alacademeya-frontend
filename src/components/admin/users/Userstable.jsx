@@ -60,6 +60,14 @@ const localizedName = (value) => {
   return value.ar || value.en || value.name?.ar || value.name?.en || "";
 };
 
+const localizedNames = (value) => [
+  ...new Set(
+    (Array.isArray(value) ? value : value ? [value] : [])
+      .map((item) => localizedName(item?.name ?? item))
+      .filter(Boolean),
+  ),
+];
+
 const listNames = (value) => {
   if (!Array.isArray(value)) return localizedName(value) || "--";
   const names = value
@@ -533,6 +541,32 @@ export const UserDetailsModal = ({
           </div>
         )}
 
+        {isStudent &&
+          !user.groupsLoading &&
+          !user.groups?.length && (
+            <div className="mb-3 rounded-xl border border-[#D7E2F3] bg-[#F8FAFD] p-4">
+              <p className="mb-3 text-sm font-semibold text-[#1F2937]">
+                المواد التي يرغب في الاشتراك بها
+              </p>
+              {user.studentSubjects?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {user.studentSubjects.map((subject) => (
+                    <span
+                      key={subject}
+                      className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#123C91]"
+                    >
+                      {subject}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#8C9198]">
+                  لم يحدد الطالب مواد يرغب في الاشتراك بها بعد.
+                </p>
+              )}
+            </div>
+          )}
+
         {isTeacher && (
           <>
             <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -993,6 +1027,9 @@ const UsersTable = ({
           students.find((student) =>
             studentIds(student).has(String(user.id)),
           ) || students[0];
+        const profileSubjects = localizedNames(
+          studentProfile?.preferredSubjects,
+        );
         const profileId = entityId(studentProfile) || user.studentId || user.id;
         const identities = studentIds(studentProfile);
         identities.add(String(user.id));
@@ -1080,7 +1117,14 @@ const UsersTable = ({
 
         setDetailsUser((current) =>
           current?.id === user.id
-            ? { ...current, groups: uniqueGroups, groupsLoading: false }
+            ? {
+                ...current,
+                groups: uniqueGroups,
+                groupsLoading: false,
+                studentSubjects: current.studentSubjects?.length
+                  ? current.studentSubjects
+                  : profileSubjects,
+              }
             : current,
         );
       } catch {

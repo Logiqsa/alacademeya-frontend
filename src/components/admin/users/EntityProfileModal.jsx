@@ -24,6 +24,13 @@ const text = (value) => {
   if (["string", "number"].includes(typeof value)) return value;
   return value.ar || value.en || value.name?.ar || value.name?.en || "—";
 };
+const names = (value) => [
+  ...new Set(
+    (Array.isArray(value) ? value : value ? [value] : [])
+      .map((item) => text(item?.name ?? item))
+      .filter((name) => name && name !== "—"),
+  ),
+];
 const extractList = (response, keys = []) => {
   const payload = response?.data?.data ?? response?.data ?? [];
   if (Array.isArray(payload)) return payload;
@@ -353,6 +360,9 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           stage: text(entity.stage ?? entity.academicLevel),
           grade: text(entity.grade),
           package: text(entity.package),
+          studentSubjects: names(
+            entity.preferredSubjects ?? entity.subjects ?? entity.subject,
+          ),
           groups: studentGroups,
           groupsLoading,
         }}
