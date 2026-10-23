@@ -3,8 +3,10 @@ import logo from "../../assets/icons/logo.svg";
 import { ChevronDown, GraduationCap, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { canHaveInstructorProfile, getDashboardPathByRole, isInstructor } from "../../utils/roles";
+import { canHaveInstructorProfile, getAuthenticatedDestination, isInstructor } from "../../utils/roles";
 import useLandingPageSettings from "../../hooks/useLandingPageSettings";
+import { getMyProfile } from "../../services/APIService";
+import { getDatabaseUserFromAccountState } from "../../utils/accountState";
 
 // ── الـ role بيحدد الداشبورد ──────────────────────────────────────────────
 // admin / super-admin → /admin-dashboard
@@ -15,12 +17,8 @@ import useLandingPageSettings from "../../hooks/useLandingPageSettings";
 // ملاحظة: زي الـ teacher بالظبط، بنعتمد على القيمة المخزّنة في الـ user
 // (isActive / registrationStatus / status) جوه الـ AuthContext، من غير ما
 // نضرب أي API إضافي (زي /auth/account-state اللي بترجع 404 حالياً).
-const goToDashboard = (user, navigate) => {
-  navigate(getDashboardPathByRole(user));
-};
-
 const Navbar = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, updateUser } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
@@ -86,9 +84,24 @@ const Navbar = () => {
     return () => document.removeEventListener("pointerdown", closeAccountMenu);
   }, []);
 
-  const handleDashboardClick = () => {
+  const handleDashboardClick = async () => {
     setAccountMenuOpen(false);
-    goToDashboard(user, navigate);
+    setMobileAccountOpen(false);
+
+    let currentUser = user;
+    try {
+      const response = await getMyProfile();
+      const databaseUser = getDatabaseUserFromAccountState(response);
+      currentUser = { ...user, ...databaseUser };
+      updateUser?.(currentUser);
+    } catch {
+      // Fall back to the current authenticated state if the refresh fails.
+    }
+
+    const destination = getAuthenticatedDestination(currentUser);
+    navigate(destination.path, {
+      state: destination.state,
+    });
   };
 
   const handleLogout = () => {
