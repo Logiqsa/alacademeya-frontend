@@ -117,9 +117,8 @@ export const getDashboardPathByRole = (user, fallback = "/") => {
   }
 
   if (role === "student") {
-    return isApproved || isPendingReview
-      ? "/student-dashboard"
-      : "/register/success";
+    if (isPendingReview) return "/pending";
+    return isApproved ? "/student-dashboard" : "/register/success";
   }
 
   if (role === "parent") {

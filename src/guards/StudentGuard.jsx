@@ -33,7 +33,7 @@ const StudentGuard = ({ children }) => {
     );
   }
 
-  if (user.role !== "student" && isAwaitingApproval(user)) {
+  if (isAwaitingApproval(user)) {
     return <Navigate to="/pending" replace />;
   }
 

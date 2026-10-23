@@ -127,3 +127,14 @@ test("incomplete academic accounts always continue onboarding", () => {
     "/register/student-details",
   );
 });
+
+test("student awaiting approval stays on the review page", () => {
+  assert.equal(
+    getDashboardPathByRole({
+      role: "student",
+      isActive: true,
+      registrationStatus: "pending-approval",
+    }),
+    "/pending",
+  );
+});

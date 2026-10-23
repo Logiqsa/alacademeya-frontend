@@ -6,12 +6,10 @@ import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import {
   completeStudentProfile,
-  getMyProfile,
   getSubjects,
 } from "../../services/APIService";
 import { hasApiErrorCode } from "../../services/apiError";
 import { AuthContext } from "../../context/AuthContext";
-import { getDatabaseUserFromAccountState } from "../../utils/accountState";
 
 const normalizeSubjects = (raw) => {
   const list = Array.isArray(raw) ? raw : raw?.data || [];
@@ -92,37 +90,25 @@ const StudentSubjectsPages = () => {
         studentType: studentType || "school",
       };
 
+      let completedUser = null;
       try {
         const response = await completeStudentProfile(profilePayload);
         const token = response.data?.token;
         if (token) localStorage.setItem("token", token);
+        completedUser = response.data?.data || null;
       } catch (error) {
         if (!hasApiErrorCode(error, "PROFILE_ALREADY_EXISTS", "PROFILE_ALREADY_COMPLETED")) {
           throw error;
         }
       }
 
-      const profileResponse = await getMyProfile();
-      const accountUser = getDatabaseUserFromAccountState(profileResponse);
-      updateUser?.((current) => ({ ...current, ...accountUser }));
-      const profile =
-        profileResponse.data?.data?.student ||
-        profileResponse.data?.data;
-      const studentId = profile?.id || profile?._id;
-      if (!studentId) throw new Error("STUDENT_PROFILE_ID_MISSING");
-
-      const selectedSubjects = subjects.filter((subject) =>
-        selected.includes(subject.id),
-      );
-
-      navigate("/register/packages", {
-        state: {
-          ...(state || {}),
-          studentId,
-          skipProfileCreation: true,
-          selectedSubjects,
-        },
-      });
+      updateUser?.((current) => ({
+        ...current,
+        ...completedUser,
+        registrationStatus: "pending-approval",
+      }));
+      toast.success("تم إرسال ملفك إلى الإدارة للمراجعة");
+      navigate("/pending", { replace: true });
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
