@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { X } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
 import {
@@ -29,6 +29,7 @@ const StudentPackagesPage = () => {
   const [subjects, setSubjects] = useState(selectedSubjects);
   const [packagesBySubject, setPackagesBySubject] = useState({});
   const [selections, setSelections] = useState({});
+  const [expandedSubject, setExpandedSubject] = useState("");
   const [currency, setCurrency] = useState(state?.currency || "");
   const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,6 +98,7 @@ const StudentPackagesPage = () => {
           return [subject.id, packages];
         });
         setPackagesBySubject(Object.fromEntries(entries));
+        setExpandedSubject((current) => current || String(visibleSubjects[0]?.id || ""));
         const initialSelections = state?.initialSelections || {};
         setSelections(
           Object.fromEntries(
@@ -107,7 +109,10 @@ const StudentPackagesPage = () => {
                 (packageOption) => packageOption.id === requestedPackage,
               )
                 ? requestedPackage
-                : packages[0].id;
+                : selectedSubjects.length
+                  ? packages[0].id
+                  : null;
+              if (!selectedPackage) return [];
               return [[id, selectedPackage]];
             }),
           ),
@@ -181,64 +186,94 @@ const StudentPackagesPage = () => {
             </p>
           ) : (
             <div className="space-y-4">
-              {subjects
-                .filter(({ id }) => selections[id])
-                .map((subject) => (
+              {subjects.map((subject) => {
+                const subjectId = String(subject.id);
+                const isExpanded = expandedSubject === subjectId;
+                const selectedPackageId = selections[subject.id];
+                return (
                   <div
                     key={subject.id}
-                    className="relative border border-gray-200 rounded-xl p-4 shadow-sm"
+                    className={`overflow-hidden rounded-xl border shadow-sm transition-colors ${selectedPackageId ? "border-[#123C91] bg-blue-50/30" : "border-gray-200 bg-white"}`}
                   >
-                    <button
-                      type="button"
-                      aria-label={`إزالة ${subject.name}`}
-                      onClick={() => removeSubject(subject.id)}
-                      className="absolute left-3 top-3 w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center"
-                    >
-                      <X size={15} />
-                    </button>
-                    <div className="font-medium text-sm mb-4">
-                      <span className="text-[#123C91] ml-2">•</span>
-                      {subject.name}
+                    <div className="flex items-center gap-2 px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedSubject(isExpanded ? "" : subjectId)
+                        }
+                        className="flex min-w-0 flex-1 items-center justify-between gap-3 text-right"
+                        aria-expanded={isExpanded}
+                      >
+                        <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-[#1F2937]">
+                          {selectedPackageId && (
+                            <Check size={17} className="shrink-0 text-emerald-600" />
+                          )}
+                          <span className="truncate">{subject.name}</span>
+                        </span>
+                        <ChevronDown
+                          size={18}
+                          className={`shrink-0 text-[#123C91] transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        />
+                      </button>
+                      {selectedPackageId && (
+                        <button
+                          type="button"
+                          aria-label={`إلغاء اختيار ${subject.name}`}
+                          onClick={() => removeSubject(subject.id)}
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-red-100 hover:text-red-600"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {(packagesBySubject[subject.id] || []).map((pkg) => {
-                        const active = selections[subject.id] === pkg.id;
-                        return (
-                          <button
-                            key={pkg.id}
-                            type="button"
-                            onClick={() =>
-                              setSelections((current) => ({
-                                ...current,
-                                [subject.id]: pkg.id,
-                              }))
-                            }
-                            className={`rounded-lg border p-3 text-center ${active ? "border-[#123C91] bg-blue-50" : "border-gray-200 bg-white"}`}
-                          >
-                            <span className="block text-sm text-gray-700">
-                              {pkg.name}
-                            </span>
-                            {pkg.isMostPopular && (
-                              <span className="my-1 inline-flex rounded-full bg-[#EAF4FF] px-2 py-0.5 text-[10px] font-semibold text-[#123C91]">
-                                الأكثر طلبًا
-                              </span>
-                            )}
-                            {pkg.sessions != null && (
-                              <span className="block text-xs text-gray-500">
-                                {pkg.sessions} حصة
-                              </span>
-                            )}
-                            {pkg.price != null && (
-                              <strong className="text-[#123C91]">
-                                {pkg.price} ج.م
-                              </strong>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    {isExpanded && (
+                      <div className="grid grid-cols-1 gap-3 border-t border-gray-200 p-4 sm:grid-cols-3">
+                        {(packagesBySubject[subject.id] || []).length ? (
+                          (packagesBySubject[subject.id] || []).map((pkg) => {
+                            const active = selections[subject.id] === pkg.id;
+                            return (
+                              <button
+                                key={pkg.id}
+                                type="button"
+                                onClick={() =>
+                                  setSelections((current) => ({
+                                    ...current,
+                                    [subject.id]: pkg.id,
+                                  }))
+                                }
+                                className={`rounded-lg border p-3 text-center ${active ? "border-[#123C91] bg-blue-50" : "border-gray-200 bg-white"}`}
+                              >
+                                <span className="block text-sm text-gray-700">
+                                  {pkg.name}
+                                </span>
+                                {pkg.isMostPopular && (
+                                  <span className="my-1 inline-flex rounded-full bg-[#EAF4FF] px-2 py-0.5 text-[10px] font-semibold text-[#123C91]">
+                                    الأكثر طلبًا
+                                  </span>
+                                )}
+                                {pkg.sessions != null && (
+                                  <span className="block text-xs text-gray-500">
+                                    {pkg.sessions} حصة
+                                  </span>
+                                )}
+                                {pkg.price != null && (
+                                  <strong className="text-[#123C91]">
+                                    {pkg.price} ج.م
+                                  </strong>
+                                )}
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <p className="text-sm text-amber-700 sm:col-span-3">
+                            لا توجد باقات متاحة لهذه المادة حاليًا.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                ))}
+                );
+              })}
               {subjects.some(
                 ({ id }) => !(packagesBySubject[id] || []).length,
               ) && (
