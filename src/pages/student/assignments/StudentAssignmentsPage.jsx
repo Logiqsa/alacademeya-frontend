@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import StudentAssignmentStatsBar from "../../../components/student/assignments/StudentAssignmentStatsBar";
@@ -23,11 +23,7 @@ const StudentAssignmentsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    loadAssignments();
-  }, []);
-
-  const loadAssignments = async () => {
+  const loadAssignments = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -86,13 +82,18 @@ const StudentAssignmentsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial API synchronization
+    loadAssignments();
+  }, [loadAssignments]);
 
   const filtered = assignments.filter(
     (a) =>
       a.title.includes(search) &&
       (filterGroup === "جميع المجموعات" ||
-        a.group === filterGroup.replace("مجموعة ", "")) &&
+        a.group === filterGroup) &&
       (filterStatus === "جميع الحالات" || a.status === filterStatus)
   );
 
@@ -113,6 +114,14 @@ const StudentAssignmentsPage = () => {
 
     total: assignments.length,
   };
+
+  const groupOptions = useMemo(
+    () => [
+      "جميع المجموعات",
+      ...new Set(assignments.map((assignment) => assignment.group).filter((name) => name && name !== "--")),
+    ],
+    [assignments],
+  );
 
   return (
     <StudentLayout>
@@ -153,6 +162,8 @@ const StudentAssignmentsPage = () => {
               setFilterStatus(v);
               setPage(1);
             }}
+            groupOptions={groupOptions}
+            statusOptions={["جميع الحالات", "نشط", "تم التسليم", "لم يتم التسليم"]}
           />
         </div>
 

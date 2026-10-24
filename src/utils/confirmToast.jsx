@@ -1,4 +1,5 @@
 import toast from "react-hot-toast";
+import PromptToastContent from "../components/shared/PromptToastContent";
 
 export const confirmToast = ({ title, message, confirmLabel = "تأكيد", danger = false }) =>
   new Promise((resolve) => {
@@ -24,5 +25,35 @@ export const confirmToast = ({ title, message, confirmLabel = "تأكيد", dang
       {
         duration: Infinity,
       },
+    );
+  });
+
+export const promptToast = ({
+  title,
+  message = "",
+  placeholder = "",
+  confirmLabel = "تأكيد",
+}) =>
+  new Promise((resolve) => {
+    let settled = false;
+    const finish = (toastId, value) => {
+      if (settled) return;
+      settled = true;
+      toast.dismiss(toastId);
+      resolve(value);
+    };
+
+    toast.custom(
+      (currentToast) => (
+        <PromptToastContent
+          toastId={currentToast.id}
+          title={title}
+          message={message}
+          placeholder={placeholder}
+          confirmLabel={confirmLabel}
+          finish={finish}
+        />
+      ),
+      { duration: Infinity },
     );
   });

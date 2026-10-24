@@ -9,6 +9,7 @@ import {
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
 import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
+import { confirmToast } from "../../utils/confirmToast";
 
 const PAYMENT_LABELS = {
   created: "جاهز للدفع",
@@ -85,12 +86,13 @@ const SubscriptionOrdersPanel = () => {
   };
 
   const cancelOrder = async (order) => {
-    if (
-      !window.confirm(
-        "هل تريد إلغاء طلب الاشتراك؟ لن تتمكن من دفعه بعد الإلغاء.",
-      )
-    )
-      return;
+    const confirmed = await confirmToast({
+      title: "إلغاء طلب الاشتراك",
+      message: "هل تريد إلغاء طلب الاشتراك؟ لن تتمكن من دفعه بعد الإلغاء.",
+      confirmLabel: "إلغاء الطلب",
+      danger: true,
+    });
+    if (!confirmed) return;
     setCancellingId(order.id);
     try {
       await cancelSubscriptionOrder(order.id);

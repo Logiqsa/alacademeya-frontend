@@ -12,7 +12,6 @@ import {
   getMyClassrooms,
   getAllSubjects,
   getAllGrades,
-  deleteClassroom,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 
 // ⚠️ عدّل القيم دي لو الباك إند بيرجع أسماء status مختلفة
@@ -250,11 +249,13 @@ const GroupsPage = () => {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial API synchronization
     fetchGroups();
   }, [fetchGroups]);
 
   useEffect(() => {
     if (location.state?.showSuccessToast) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- consume navigation feedback once
       setToast(true);
       setTimeout(() => setToast(false), 3000);
       window.history.replaceState({}, document.title);
@@ -278,16 +279,6 @@ const GroupsPage = () => {
     (page - 1) * pageSize,
     page * pageSize,
   );
-
-  const handleDelete = async (id) => {
-    try {
-      await deleteClassroom(id);
-      setGroups((prev) => prev.filter((g) => g.id !== id));
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "تعذر حذف المجموعة");
-    }
-  };
 
   const openAddStudentModal = (group) => {
     setSelectedGroupForAddStudent(group);

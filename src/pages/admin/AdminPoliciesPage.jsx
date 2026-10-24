@@ -7,6 +7,7 @@ import { POLICY_LABELS } from "../../components/course/PolicyAcceptanceDialog";
 import { createAdminPolicyDraft, getAdminPolicyVersions, publishAdminPolicy, retireAdminPolicy, updateAdminPolicyDraft } from "../../services/APIService";
 import { getApiErrorMessage } from "../../services/apiError";
 import { normalizeRichTextHtml } from "../../utils/richTextHtml";
+import { confirmToast } from "../../utils/confirmToast";
 
 const TYPES = Object.keys(POLICY_LABELS);
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
@@ -81,7 +82,14 @@ export default function AdminPoliciesPage() {
     toast.success("يمكنك تعديل المحتوى ثم نشره كإصدار جديد");
   };
   const retireSelected = async () => {
-    if (!selected || !window.confirm("سيتم إلغاء نشر الاتفاقية وإخفاؤها عن المستخدمين. هل تريد المتابعة؟")) return;
+    if (!selected) return;
+    const confirmed = await confirmToast({
+      title: "إلغاء نشر الاتفاقية",
+      message: "سيتم إلغاء نشر الاتفاقية وإخفاؤها عن المستخدمين. هل تريد المتابعة؟",
+      confirmLabel: "إلغاء النشر",
+      danger: true,
+    });
+    if (!confirmed) return;
     setSaving(true);
     try {
       await retireAdminPolicy(selected.id || selected._id);

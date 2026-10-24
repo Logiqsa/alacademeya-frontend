@@ -1,7 +1,7 @@
 import { Search, ChevronDown } from "lucide-react";
 
-const GROUP_OPTIONS = ["جميع المجموعات", "مجموعة الرياضيات A", "مجموعة الرياضيات B", "مجموعة الرياضيات C"];
-const STATUS_OPTIONS = ["جميع الحالات", "نشط", "منتهي"];
+const DEFAULT_GROUP_OPTIONS = ["جميع المجموعات"];
+const DEFAULT_STATUS_OPTIONS = ["جميع الحالات", "نشط", "منتهي"];
 
 const AssignmentFilters = ({
     search,
@@ -10,6 +10,8 @@ const AssignmentFilters = ({
     onFilterGroupChange,
     filterStatus,
     onFilterStatusChange,
+    groupOptions = DEFAULT_GROUP_OPTIONS,
+    statusOptions = DEFAULT_STATUS_OPTIONS,
 }) => {
     return (
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-1" dir="rtl">
@@ -30,7 +32,7 @@ const AssignmentFilters = ({
                     onChange={(e) => onFilterGroupChange?.(e.target.value)}
                     className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
                 >
-                    {GROUP_OPTIONS.map((opt) => (
+                    {groupOptions.map((opt) => (
                         <option key={opt} value={opt}>
                             {opt}
                         </option>
@@ -45,7 +47,7 @@ const AssignmentFilters = ({
                     onChange={(e) => onFilterStatusChange?.(e.target.value)}
                     className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
                 >
-                    {STATUS_OPTIONS.map((opt) => (
+                    {statusOptions.map((opt) => (
                         <option key={opt} value={opt}>
                             {opt}
                         </option>

@@ -22,5 +22,3 @@ export { default as CourseRatingModal } from "./components/reviews/CourseReviewF
 export { default as ReviewsPanel } from "./components/reviews/ReviewsPanel";
 export { default as StarRating } from "./components/reviews/StarRating";
 export { default as CourseCertificateModal } from "./components/student/CertificateModal";
-
-export * from "./utils/teacherCoursesStorage";

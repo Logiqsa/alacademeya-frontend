@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import EntityProfileModal from "../../../components/admin/users/EntityProfileModal";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import { promptToast } from "../../../utils/confirmToast";
 import {
   cancelTeacherSalary,
   getTeacherSalaries,
@@ -227,8 +228,13 @@ export default function TeacherSalariesPage() {
   };
 
   const handleCancel = async () => {
-    const reason = window.prompt("اكتب سبب إلغاء عملية الصرف");
-    if (!reason?.trim()) return;
+    const reason = await promptToast({
+      title: "إلغاء عملية الصرف",
+      message: "اكتب سبب الإلغاء ليتم حفظه مع العملية.",
+      placeholder: "سبب إلغاء عملية الصرف",
+      confirmLabel: "تأكيد الإلغاء",
+    });
+    if (!reason) return;
     try {
       await cancelTeacherSalary(details._id || details.id, reason.trim());
       toast.success("تم إلغاء عملية الصرف");

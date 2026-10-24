@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import WelcomeHeader from "../../components/student/dashboard/WelcomeHeader";
 import StatsOverview from "../../components/student/dashboard/StatsOverview";
 import SubscriptionsCard from "../../components/student/dashboard/SubscriptionsCard";
@@ -8,6 +8,7 @@ import StudentLayout from "../../components/student/layout/StudentLayout";
 import {
   getMyClassrooms,
   getClassroomSessions,
+  getMyAssignments,
 } from "../../services/APIService";
 import { AuthContext } from "../../context/AuthContext"; // عدّل المسار لو مختلف عندك
 
@@ -28,8 +29,12 @@ const StudentHome = () => {
     const loadStats = async () => {
       setLoading(true);
       try {
-        const classroomsRes = await getMyClassrooms();
+        const [classroomsRes, assignmentsRes] = await Promise.all([
+          getMyClassrooms(),
+          getMyAssignments(),
+        ]);
         const classrooms = classroomsRes.data?.data || [];
+        const assignments = assignmentsRes.data?.data || [];
 
         if (cancelled) return;
 
@@ -60,6 +65,9 @@ const StudentHome = () => {
           ...prev,
           activeGroups: classrooms.length,
           upcomingLessons: upcomingCount,
+          activeAssignments: assignments.filter(
+            (assignment) => assignment.status === "active" && !assignment.submission,
+          ).length,
         }));
       } catch (err) {
         console.error("Failed to load dashboard stats:", err);

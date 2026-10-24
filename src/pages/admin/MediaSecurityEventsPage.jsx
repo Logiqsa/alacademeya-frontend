@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import AdminLayout from "../../components/admin/layout/AdminLayout";
 import { getAdminMediaSecurityEvents, suspendMediaSecurityActor } from "../../services/APIService";
 import { getApiErrorMessage } from "../../services/apiError";
+import { confirmToast } from "../../utils/confirmToast";
 
 const initialFilters = { search: "", role: "", minAttempts: "", from: "", to: "" };
 const fieldClass = "h-11 w-full rounded-xl border border-[#D8DEE8] bg-[#FAFBFC] px-3 text-sm text-[#344054] outline-none focus:border-[#3567C8] focus:bg-white focus:ring-2 focus:ring-[#3567C8]/10";
@@ -39,7 +40,14 @@ export default function MediaSecurityEventsPage() {
   const apply = (event) => { event.preventDefault(); setPage(1); setApplied(filters); };
   const clear = () => { setFilters(initialFilters); setApplied(initialFilters); setPage(1); };
   const suspendActor = async (item) => {
-    if (!item.user?.id || suspending || !window.confirm(`إيقاف حساب ${item.user.name || item.user.email}؟`)) return;
+    if (!item.user?.id || suspending) return;
+    const confirmed = await confirmToast({
+      title: "إيقاف الحساب",
+      message: `هل تريد إيقاف حساب ${item.user.name || item.user.email}؟`,
+      confirmLabel: "إيقاف الحساب",
+      danger: true,
+    });
+    if (!confirmed) return;
     setSuspending(item.id);
     try { await suspendMediaSecurityActor(item.id); toast.success("تم إيقاف الحساب"); setReload((value) => value + 1); }
     catch (requestError) { toast.error(getApiErrorMessage(requestError, "تعذر إيقاف الحساب")); }

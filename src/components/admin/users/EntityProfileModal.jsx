@@ -12,6 +12,7 @@ import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { teacherLanguageLabel } from "../../../utils/teacherLanguage";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import { UserDetailsModal } from "./Userstable";
+import { confirmToast } from "../../../utils/confirmToast";
 import {
   getAllSubscriptions,
   getClassroomStudents,
@@ -170,6 +171,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
     const teacherId = entity?.profileId || entity?.id || entity?._id;
     if (!teacherId) return undefined;
     let active = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset loading when the selected entity changes
     setTeacherDetailsLoading(true);
     getTeacher(teacherId)
       .then((response) => {
@@ -316,7 +318,12 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
       ].includes(registrationStatus.replaceAll("_", "-")));
 
   const approveStudent = async () => {
-    if (!window.confirm("هل تريد قبول طلب الطالب وتفعيل حسابه؟")) return;
+    const confirmed = await confirmToast({
+      title: "قبول طلب الطالب",
+      message: "هل تريد قبول طلب الطالب وتفعيل حسابه؟",
+      confirmLabel: "قبول وتفعيل",
+    });
+    if (!confirmed) return;
     const userId = user.id || user._id;
     if (!userId) return toast.error("معرّف المستخدم غير متاح");
     setApproving(true);

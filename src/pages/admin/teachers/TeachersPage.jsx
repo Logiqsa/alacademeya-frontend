@@ -33,6 +33,7 @@ import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeachingSelections";
+import { confirmToast } from "../../../utils/confirmToast";
 import { normalizePhoneSearch } from "../../../utils/phone";
 
 const PAGE_SIZE = 8;
@@ -340,7 +341,13 @@ const TeachersPage = () => {
 
   const handleRejectTeacher = async () => {
     if (!selectedTeacher || selectedTeacher.isApproved) return;
-    if (!window.confirm("هل تريد رفض طلب هذا المعلم؟")) return;
+    const confirmed = await confirmToast({
+      title: "رفض طلب المعلم",
+      message: "هل تريد رفض طلب هذا المعلم؟",
+      confirmLabel: "رفض الطلب",
+      danger: true,
+    });
+    if (!confirmed) return;
     setRejectingTeacher(true);
     try {
       await updateTeacherProfile(selectedTeacher.id, { status: "rejected" });
@@ -371,13 +378,13 @@ const TeachersPage = () => {
 
   const handleDeleteRejectedTeacher = async () => {
     if (!selectedTeacher?.isRejected || !selectedTeacher.userId) return;
-    if (
-      !window.confirm(
-        `هل تريد حذف حساب المعلم "${selectedTeacher.name}" نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.`,
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirmToast({
+      title: "حذف حساب المعلم",
+      message: `هل تريد حذف حساب المعلم "${selectedTeacher.name}" نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.`,
+      confirmLabel: "حذف نهائي",
+      danger: true,
+    });
+    if (!confirmed) return;
 
     setDeletingTeacher(true);
     try {
@@ -396,9 +403,12 @@ const TeachersPage = () => {
 
   const handleRestoreRejectedTeacher = async () => {
     if (!selectedTeacher?.isRejected) return;
-    if (!window.confirm("هل تريد إلغاء الرفض وإعادة الطلب إلى قيد المراجعة؟")) {
-      return;
-    }
+    const confirmed = await confirmToast({
+      title: "إعادة الطلب للمراجعة",
+      message: "هل تريد إلغاء الرفض وإعادة الطلب إلى قيد المراجعة؟",
+      confirmLabel: "إعادة للمراجعة",
+    });
+    if (!confirmed) return;
 
     setRestoringTeacher(true);
     try {
