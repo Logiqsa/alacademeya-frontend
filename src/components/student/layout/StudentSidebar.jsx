@@ -69,6 +69,7 @@ const StudentSidebar = ({ isOpen, setIsOpen, marketplaceOnly = false }) => {
     { title: "لوحة التعلم", icon: dashboardIcon, path: "/learner-dashboard" },
     { title: "استكشاف الدورات", icon: Compass, isLucide: true, path: "/courses" },
     { title: "شهاداتي", icon: Award, isLucide: true, path: "/my-certificates" },
+    { title: "المدفوعات", icon: Wallet, isLucide: true, path: "/learner/payments" },
     { title: "كن محاضرًا", icon: GraduationCap, isLucide: true, path: "/instructor/onboarding" },
   ];
   const menu = marketplaceOnly ? marketplaceMenu : academicMenu;

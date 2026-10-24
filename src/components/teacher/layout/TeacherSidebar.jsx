@@ -20,6 +20,7 @@ import {
   Settings,
   UserRound,
   UsersRound,
+  Wallet,
 } from "lucide-react";
 
 import logo from "../../../assets/icons/loogo.svg";
@@ -131,6 +132,11 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
               },
             ]
           : []),
+        {
+          title: "المدفوعات",
+          icon: Wallet,
+          path: "/teacher/payments",
+        },
       ],
     },
     {

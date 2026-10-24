@@ -2,7 +2,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
-import { Award } from "lucide-react";
+import { Award, Wallet } from "lucide-react";
 
 import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
@@ -49,6 +49,12 @@ const ParentSidebar = ({ isOpen, setIsOpen }) => {
       title: "الإشعارات",
       icon: notificationsIcon,
       path: "/parent/notifications",
+    },
+    {
+      title: "المدفوعات",
+      icon: Wallet,
+      isLucide: true,
+      path: "/parent/payments",
     },
     {
       title: "الإعدادات",

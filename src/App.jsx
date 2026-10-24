@@ -326,6 +326,10 @@ function App() {
             user ? <AccountSettingsPage /> : <Navigate to="/login" replace />
           }
         />
+        <Route
+          path="/parent/payments"
+          element={user ? <StudentPaymentsPage role="parent" /> : <Navigate to="/login" replace />}
+        />
         {/* ✅ Student — محمي بـ StudentGuard */}
         <Route
           path="/learner-dashboard"
@@ -444,6 +448,14 @@ function App() {
           element={
             <StudentGuard>
               <StudentPaymentsPage />
+            </StudentGuard>
+          }
+        />
+        <Route
+          path="/learner/payments"
+          element={
+            <StudentGuard>
+              <StudentPaymentsPage role="learner" />
             </StudentGuard>
           }
         />
@@ -632,6 +644,14 @@ function App() {
             <InstructorGuard allowSuspended>
               <EarningsPage />
             </InstructorGuard>
+          }
+        />
+        <Route
+          path="/teacher/payments"
+          element={
+            <TeacherOrInstructorGuard>
+              <StudentPaymentsPage role="teacher" />
+            </TeacherOrInstructorGuard>
           }
         />
         <Route

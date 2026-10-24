@@ -12,6 +12,8 @@ import {
   WalletCards,
 } from "lucide-react";
 import StudentLayout from "../../components/student/layout/StudentLayout";
+import ParentLayout from "../../components/parent/layout/ParentLayout";
+import TeacherLayout from "../../components/teacher/layout/TeacherLayout";
 import {
   getMyCoursePurchases,
   getMySubscriptionOrders,
@@ -152,7 +154,7 @@ const MobilePaymentCard = ({ payment }) => (
   </article>
 );
 
-const StudentPaymentsPage = () => {
+const StudentPaymentsPage = ({ role = "student" }) => {
   const [payments, setPayments] = useState([]);
   const [referenceTime, setReferenceTime] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -169,10 +171,15 @@ const StudentPaymentsPage = () => {
     const loadPayments = async () => {
       setLoading(true);
       setError("");
-      const results = await Promise.allSettled([
-        getMySubscriptionOrders(),
-        getMyCoursePurchases(),
-      ]);
+      const sources = [
+        ...(role === "student" || role === "parent"
+          ? [{ type: "subscription", request: getMySubscriptionOrders() }]
+          : []),
+        { type: "course", request: getMyCoursePurchases() },
+      ];
+      const results = await Promise.allSettled(
+        sources.map((source) => source.request),
+      );
       if (!active) return;
       setReferenceTime(Date.now());
 
@@ -181,13 +188,17 @@ const StudentPaymentsPage = () => {
         setPayments([]);
         setError("تعذر تحميل سجل المدفوعات، حاول مرة أخرى");
       } else {
+        const subscriptionIndex = sources.findIndex(
+          (source) => source.type === "subscription",
+        );
+        const courseIndex = sources.findIndex((source) => source.type === "course");
         const subscriptionPayments =
-          results[0].status === "fulfilled"
-            ? normalizeSubscriptionOrders(results[0].value)
+          subscriptionIndex >= 0 && results[subscriptionIndex].status === "fulfilled"
+            ? normalizeSubscriptionOrders(results[subscriptionIndex].value)
             : [];
         const coursePayments =
-          results[1].status === "fulfilled"
-            ? normalizeCoursePurchases(results[1].value)
+          courseIndex >= 0 && results[courseIndex].status === "fulfilled"
+            ? normalizeCoursePurchases(results[courseIndex].value)
             : [];
         setPayments([...subscriptionPayments, ...coursePayments]);
         if (successful.length !== results.length) {
@@ -200,7 +211,7 @@ const StudentPaymentsPage = () => {
     return () => {
       active = false;
     };
-  }, [reloadToken]);
+  }, [reloadToken, role]);
 
   const visiblePayments = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("ar");
@@ -257,8 +268,11 @@ const StudentPaymentsPage = () => {
     setCurrentPage(1);
   };
 
+  const Layout = role === "parent" ? ParentLayout : role === "teacher" ? TeacherLayout : StudentLayout;
+  const layoutProps = role === "learner" ? { marketplaceOnly: true } : {};
+
   return (
-    <StudentLayout>
+    <Layout {...layoutProps}>
       <section
         dir="rtl"
         className="w-full pb-8 font-['IBM_Plex_Sans_Arabic'] text-right"
@@ -494,7 +508,7 @@ const StudentPaymentsPage = () => {
           )}
         </div>
       </section>
-    </StudentLayout>
+    </Layout>
   );
 };
 
