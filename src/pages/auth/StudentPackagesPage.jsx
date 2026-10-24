@@ -144,11 +144,21 @@ const StudentPackagesPage = () => {
     () => Object.keys(selections).length,
     [selections],
   );
+  const selectedCurrency = useMemo(
+    () => currencies.find((option) => option.currency === currency),
+    [currencies, currency],
+  );
+  const exchangeRate = Number(selectedCurrency?.egpPerUnit || 1);
+  const formatPackagePrice = (price) => {
+    const convertedPrice = Number(price || 0) / exchangeRate;
+    const roundedPrice =
+      Math.round((convertedPrice + Number.EPSILON) * 100) / 100;
+    return `${roundedPrice.toLocaleString("ar-EG", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })} ${selectedCurrency?.symbol || currency}`;
+  };
   const finalPrice = useMemo(() => {
-    const selectedCurrency = currencies.find(
-      (option) => option.currency === currency,
-    );
-    const exchangeRate = Number(selectedCurrency?.egpPerUnit || 1);
     if (!currency || !Number.isFinite(exchangeRate) || exchangeRate <= 0) {
       return 0;
     }
@@ -159,11 +169,11 @@ const StudentPackagesPage = () => {
       const convertedPrice = Number(selectedPackage?.price || 0) / exchangeRate;
       return total + Math.round((convertedPrice + Number.EPSILON) * 100) / 100;
     }, 0);
-  }, [currencies, currency, packagesBySubject, selections]);
+  }, [currency, exchangeRate, packagesBySubject, selections]);
   const formattedFinalPrice = `${finalPrice.toLocaleString("ar-EG", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  })} ${currency}`;
+  })} ${selectedCurrency?.symbol || currency}`;
   const removeSubject = (id) => {
     const subjectId = String(id);
     setSelectedSubjectIds((current) =>
@@ -229,6 +239,36 @@ const StudentPackagesPage = () => {
             </p>
           ) : (
             <div className="space-y-4">
+              <div>
+                <p className="mb-2 text-sm font-medium text-[#1F2937]">
+                  اختر عملة عرض الأسعار والدفع
+                </p>
+                <p className="mb-3 text-xs text-gray-500">
+                  سيتم عرض جميع أسعار الباقات وإجمالي الطلب بالعملة المختارة.
+                </p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {currencies.map((option) => (
+                    <button
+                      key={option.currency}
+                      type="button"
+                      onClick={() => setCurrency(option.currency)}
+                      aria-pressed={currency === option.currency}
+                      className={`flex min-h-24 flex-col items-center justify-center rounded-xl border p-3 text-center transition-colors ${currency === option.currency ? "border-[#123C91] bg-blue-50 ring-2 ring-[#123C91]/10" : "border-gray-200 bg-white hover:border-[#123C91]/50"}`}
+                    >
+                      <span className="text-2xl" aria-hidden="true">
+                        {option.flag}
+                      </span>
+                      <span className="mt-1 text-sm font-semibold text-[#1F2937]">
+                        {option.currency}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {option.symbol} · {option.name || option.currency}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <p className="mb-3 text-sm font-medium text-[#1F2937]">
                   اختر المواد التي تريد الاشتراك بها
@@ -333,7 +373,7 @@ const StudentPackagesPage = () => {
                                 )}
                                 {pkg.price != null && (
                                   <strong className="text-[#123C91]">
-                                    {pkg.price} ج.م
+                                    {formatPackagePrice(pkg.price)}
                                   </strong>
                                 )}
                               </button>
@@ -356,38 +396,6 @@ const StudentPackagesPage = () => {
                   لا توجد باقات متاحة حالياً لبعض المواد.
                 </p>
               )}
-            </div>
-          )}
-
-          {!loading && selectedCount > 0 && (
-            <div className="mt-5">
-              <p className="mb-3 text-sm font-medium text-[#1F2937]">
-                اختر عملة الدفع للطلب بالكامل
-              </p>
-              <p className="mb-3 text-xs text-gray-500">
-                يتم اختيار العملة مرة واحدة وتطبيقها على جميع المواد المختارة.
-              </p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {currencies.map((option) => (
-                  <button
-                    key={option.currency}
-                    type="button"
-                    onClick={() => setCurrency(option.currency)}
-                    aria-pressed={currency === option.currency}
-                    className={`flex min-h-24 flex-col items-center justify-center rounded-xl border p-3 text-center transition-colors ${currency === option.currency ? "border-[#123C91] bg-blue-50 ring-2 ring-[#123C91]/10" : "border-gray-200 bg-white hover:border-[#123C91]/50"}`}
-                  >
-                    <span className="text-2xl" aria-hidden="true">
-                      {option.flag}
-                    </span>
-                    <span className="mt-1 text-sm font-semibold text-[#1F2937]">
-                      {option.currency}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {option.symbol} · {option.name || option.currency}
-                    </span>
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
