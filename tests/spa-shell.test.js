@@ -36,6 +36,7 @@ test("static and deterministic unknown routes return the same SPA shell", async 
   const unknown = await resolve("/random-invalid-url", () => { throw new Error("must not fetch"); });
   assert.equal(known.status, 200);
   assert.equal(unknown.status, 404);
+  assert.equal(known.headers["Cache-Control"], CACHE.APP_SHELL);
   assert.equal(unknown.headers["Cache-Control"], CACHE.UNKNOWN);
   assert.equal(known.body, generatedShell);
   assert.equal(unknown.body, generatedShell);

@@ -65,11 +65,31 @@ const RouteLoading = () => (
   </div>
 );
 
+const isStaleLazyChunkError = (error) => {
+  const message = [error?.name, error?.message, error?.cause?.message]
+    .filter(Boolean)
+    .join(" ");
+  return /ChunkLoadError|Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|CSS_CHUNK_LOAD_FAILED/i.test(
+    message,
+  );
+};
+
 class LazyRouteBoundary extends Component {
   state = { failed: false };
 
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+
+  componentDidCatch(error) {
+    if (!isStaleLazyChunkError(error)) return;
+
+    const reloadKey = `alacademeya:chunk-reload:${window.location.pathname}`;
+    const lastReload = Number(window.sessionStorage.getItem(reloadKey) || 0);
+    if (Date.now() - lastReload < 15_000) return;
+
+    window.sessionStorage.setItem(reloadKey, String(Date.now()));
+    window.location.reload();
   }
 
   render() {

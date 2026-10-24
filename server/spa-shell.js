@@ -7,6 +7,7 @@ export const CACHE = Object.freeze({
   DYNAMIC_FOUND: "public, s-maxage=300, stale-while-revalidate=900",
   DYNAMIC_MISSING: "public, s-maxage=30",
   UNKNOWN: "public, s-maxage=3600",
+  APP_SHELL: "no-store",
   NO_STORE: "no-store",
 });
 
@@ -85,7 +86,10 @@ export const resolveSpaDocument = async ({
   if (route.kind === SPA_ROUTE_KIND.UNKNOWN) {
     return documentResult(documentShell, normalizedMethod, 404, CACHE.UNKNOWN);
   }
-  if (route.kind === SPA_ROUTE_KIND.DYNAMIC_INSTRUCTOR || route.kind === SPA_ROUTE_KIND.STATIC_APP_ROUTE) {
+  if (route.kind === SPA_ROUTE_KIND.STATIC_APP_ROUTE) {
+    return documentResult(documentShell, normalizedMethod, 200, CACHE.APP_SHELL);
+  }
+  if (route.kind === SPA_ROUTE_KIND.DYNAMIC_INSTRUCTOR) {
     return documentResult(documentShell, normalizedMethod, 200, CACHE.DYNAMIC_FOUND);
   }
   const validation = await validateEntity(route, { fetchImpl, apiOrigin, timeoutMs });
