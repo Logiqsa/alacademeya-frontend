@@ -31,6 +31,26 @@ const extractList = (resData) => {
 const nameOf = (obj) =>
   obj?.name?.ar || obj?.name?.en || obj?.fullName || obj?.user?.fullName || "—";
 
+const packageMatchesStudent = (packageItem, student) => {
+  const studentCurriculum = idOf(student?.curriculum);
+  const packageCurriculum = idOf(packageItem?.curriculum);
+  if (
+    studentCurriculum &&
+    packageCurriculum &&
+    studentCurriculum !== packageCurriculum
+  ) {
+    return false;
+  }
+
+  const packageGrades = Array.isArray(packageItem?.grades)
+    ? packageItem.grades
+    : [];
+  if (!packageGrades.length) return true;
+
+  const studentGrade = idOf(student?.grade);
+  return packageGrades.some((grade) => idOf(grade) === studentGrade);
+};
+
 const computeFinalPrice = (basePrice, discount, increase) => {
   let price = basePrice;
   if (discount) {
@@ -289,6 +309,10 @@ const ActivateSubscriptionPage = () => {
   const [packages, setPackages] = useState([]);
   const [metaLoading, setMetaLoading] = useState(true);
   const [metaError, setMetaError] = useState("");
+  const eligiblePackages = useMemo(
+    () => packages.filter((packageItem) => packageMatchesStudent(packageItem, request)),
+    [packages, request],
+  );
 
   useEffect(() => {
     const fetchMeta = async () => {
@@ -647,7 +671,7 @@ const ActivateSubscriptionPage = () => {
                   isOpen={openSubject === subject.id}
                   onToggle={() => handleToggleSubject(subject.id)}
                   data={subjectData[subject.id] || {}}
-                  packages={packages}
+                  packages={eligiblePackages}
                   discounts={discounts}
                   packagesLoading={metaLoading}
                   onTeacherChange={handleTeacherChange}
