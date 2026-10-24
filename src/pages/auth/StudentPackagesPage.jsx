@@ -20,6 +20,9 @@ const CURRENCY_META = {
   OMR: { flag: "🇴🇲", symbol: "ر.ع" },
 };
 
+const entityId = (value) =>
+  String(typeof value === "object" ? value?.id || value?._id || "" : value || "");
+
 const StudentPackagesPage = () => {
   const navigate = useNavigate();
   const { studentId: routeStudentId } = useParams();
@@ -77,7 +80,10 @@ const StudentPackagesPage = () => {
             availableCurrencies[0]?.currency ||
             "",
         );
-        const optionSubjects = response.data?.data?.subjects || [];
+        const responseData = response.data?.data || {};
+        const studentGrade = entityId(responseData.student?.grade);
+        const studentCurriculum = entityId(responseData.student?.curriculum);
+        const optionSubjects = responseData.subjects || [];
         const optionsBySubject = new Map(
           optionSubjects.map((subject) => [String(subject.id), subject]),
         );
@@ -91,13 +97,30 @@ const StudentPackagesPage = () => {
         setSubjects(visibleSubjects);
         const entries = visibleSubjects.map((subject) => {
           const option = optionsBySubject.get(String(subject.id));
-          const packages = (option?.packages || []).map((pkg) => ({
-            id: pkg.id ?? pkg._id,
-            name: pkg.name?.ar || pkg.name?.en || pkg.name || "باقة",
-            sessions: pkg.sessions ?? pkg.numberOfSessions ?? pkg.sessionsCount,
-            price: pkg.price,
-            isMostPopular: pkg.isMostPopular === true,
-          }));
+          const packages = (option?.packages || [])
+            .filter((pkg) => {
+              const packageCurriculum = entityId(pkg.curriculum);
+              const packageGrades = Array.isArray(pkg.grades)
+                ? pkg.grades.map(entityId)
+                : [];
+              const curriculumMatches =
+                !studentCurriculum ||
+                !packageCurriculum ||
+                packageCurriculum === studentCurriculum;
+              const gradeMatches =
+                !studentGrade ||
+                packageGrades.length === 0 ||
+                packageGrades.includes(studentGrade);
+              return curriculumMatches && gradeMatches;
+            })
+            .map((pkg) => ({
+              id: pkg.id ?? pkg._id,
+              name: pkg.name?.ar || pkg.name?.en || pkg.name || "باقة",
+              sessions:
+                pkg.sessions ?? pkg.numberOfSessions ?? pkg.sessionsCount,
+              price: pkg.price,
+              isMostPopular: pkg.isMostPopular === true,
+            }));
           return [subject.id, packages];
         });
         setPackagesBySubject(Object.fromEntries(entries));
