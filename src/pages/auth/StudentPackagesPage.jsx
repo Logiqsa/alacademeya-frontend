@@ -34,6 +34,7 @@ const StudentPackagesPage = () => {
   const [subjects, setSubjects] = useState(selectedSubjects);
   const [packagesBySubject, setPackagesBySubject] = useState({});
   const [selections, setSelections] = useState({});
+  const [sessionFilters, setSessionFilters] = useState({});
   const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
   const [expandedSubject, setExpandedSubject] = useState("");
   const [currency, setCurrency] = useState(state?.currency || "");
@@ -337,6 +338,24 @@ const StudentPackagesPage = () => {
                 const subjectId = String(subject.id);
                 const isExpanded = expandedSubject === subjectId;
                 const selectedPackageId = selections[subject.id];
+                const subjectPackages = packagesBySubject[subject.id] || [];
+                const sessionOptions = [
+                  ...new Set(
+                    subjectPackages
+                      .map((packageOption) => Number(packageOption.sessions))
+                      .filter(Number.isFinite),
+                  ),
+                ].sort((first, second) => first - second);
+                const selectedSessionFilter =
+                  sessionFilters[subjectId] || "all";
+                const visiblePackages =
+                  selectedSessionFilter === "all"
+                    ? subjectPackages
+                    : subjectPackages.filter(
+                        (packageOption) =>
+                          Number(packageOption.sessions) ===
+                          Number(selectedSessionFilter),
+                      );
                 return (
                   <div
                     key={subject.id}
@@ -374,9 +393,37 @@ const StudentPackagesPage = () => {
                       )}
                     </div>
                     {isExpanded && (
-                      <div className="grid grid-cols-1 gap-3 border-t border-gray-200 p-4 sm:grid-cols-3">
-                        {(packagesBySubject[subject.id] || []).length ? (
-                          (packagesBySubject[subject.id] || []).map((pkg) => {
+                      <div className="border-t border-gray-200 p-4">
+                        {sessionOptions.length > 1 && (
+                          <div className="mb-4 flex flex-wrap items-center gap-2">
+                            <span className="ml-1 text-xs font-medium text-gray-500">
+                              عدد الحصص:
+                            </span>
+                            {["all", ...sessionOptions].map((option) => {
+                              const active =
+                                String(selectedSessionFilter) === String(option);
+                              return (
+                                <button
+                                  key={option}
+                                  type="button"
+                                  onClick={() =>
+                                    setSessionFilters((current) => ({
+                                      ...current,
+                                      [subjectId]: option,
+                                    }))
+                                  }
+                                  aria-pressed={active}
+                                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${active ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-200 bg-white text-gray-600 hover:border-[#8AA7D8]"}`}
+                                >
+                                  {option === "all" ? "الكل" : `${option} حصة`}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {subjectPackages.length ? (
+                          visiblePackages.map((pkg) => {
                             const active = selections[subject.id] === pkg.id;
                             return (
                               <button
@@ -416,6 +463,7 @@ const StudentPackagesPage = () => {
                             لا توجد باقات متاحة لهذه المادة حاليًا.
                           </p>
                         )}
+                        </div>
                       </div>
                     )}
                   </div>
