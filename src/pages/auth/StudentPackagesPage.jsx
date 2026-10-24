@@ -16,6 +16,8 @@ const CURRENCY_META = {
   SAR: { flag: "🇸🇦", symbol: "ر.س" },
   AED: { flag: "🇦🇪", symbol: "د.إ" },
   KWD: { flag: "🇰🇼", symbol: "د.ك" },
+  QAR: { flag: "🇶🇦", symbol: "ر.ق" },
+  OMR: { flag: "🇴🇲", symbol: "ر.ع" },
 };
 
 const StudentPackagesPage = () => {
@@ -246,23 +248,30 @@ const StudentPackagesPage = () => {
                 <p className="mb-3 text-xs text-gray-500">
                   سيتم عرض جميع أسعار الباقات وإجمالي الطلب بالعملة المختارة.
                 </p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                   {currencies.map((option) => (
                     <button
                       key={option.currency}
                       type="button"
                       onClick={() => setCurrency(option.currency)}
                       aria-pressed={currency === option.currency}
-                      className={`flex min-h-24 flex-col items-center justify-center rounded-xl border p-3 text-center transition-colors ${currency === option.currency ? "border-[#123C91] bg-blue-50 ring-2 ring-[#123C91]/10" : "border-gray-200 bg-white hover:border-[#123C91]/50"}`}
+                      className={`relative flex min-h-16 flex-col items-center justify-center rounded-lg border px-2 py-2 text-center transition-all ${currency === option.currency ? "border-[#123C91] bg-[#F1F6FF] shadow-sm ring-1 ring-[#123C91]/15" : "border-gray-200 bg-white hover:border-[#8AA7D8] hover:bg-gray-50"}`}
                     >
-                      <span className="text-2xl" aria-hidden="true">
+                      {currency === option.currency && (
+                        <span className="absolute left-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#123C91] text-white">
+                          <Check size={11} strokeWidth={3} />
+                        </span>
+                      )}
+                      <span className="text-xl leading-none" aria-hidden="true">
                         {option.flag}
                       </span>
-                      <span className="mt-1 text-sm font-semibold text-[#1F2937]">
-                        {option.currency}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {option.symbol} · {option.name || option.currency}
+                      <span className="mt-1 flex items-baseline gap-1">
+                        <span className="text-xs font-bold text-[#1F2937]">
+                          {option.currency}
+                        </span>
+                        <span className="text-[10px] text-gray-500">
+                          {option.symbol}
+                        </span>
                       </span>
                     </button>
                   ))}
