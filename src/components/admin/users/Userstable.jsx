@@ -746,12 +746,51 @@ const ActionsMenu = ({
   const isSuspended = user.status === "موقوف";
   const isPending = user.status === "معلق";
 
-  const items = [
+  const items = [];
+
+  if (isPending) {
+    items.push({
+      key: "approve",
+      label: "قبول الطلب",
+      Icon: CheckCircle2,
+      onClick: () => onApprove?.(user),
+      tone: "text-[#123C91]",
+    });
+  }
+
+  items.push({
+    key: "view",
+    label: "عرض",
+    Icon: Eye,
+    onClick: () => onView?.(user),
+  });
+
+  if (user.role === "طالب" && user.studentId) {
+    items.push(
+      {
+        key: "view-subscriptions",
+        label: "عرض الاشتراكات",
+        Icon: Eye,
+        onClick: () => navigate("/admin/subscription"),
+        tone: "text-[#123C91]",
+      },
+      {
+        key: "create-subscription",
+        label: "إنشاء اشتراك",
+        Icon: CreditCard,
+        onClick: () => navigate(`/admin/subscriptions/add?studentId=${user.studentId}`),
+        tone: "text-[#123C91]",
+      },
+    );
+  }
+
+  items.push(
     {
-      key: "view",
-      label: "عرض",
-      Icon: Eye,
-      onClick: () => onView?.(user),
+      key: "chat",
+      label: "محادثة الموقع",
+      Icon: MessageCircle,
+      onClick: () => onOpenChat?.(user),
+      tone: "text-[#123C91]",
     },
     {
       key: "whatsapp",
@@ -764,43 +803,9 @@ const ActionsMenu = ({
       tone: user.phone ? "text-[#25D366]" : "text-gray-400",
       disabled: !user.phone,
     },
-    {
-      key: "chat",
-      label: "محادثة الموقع",
-      Icon: MessageCircle,
-      onClick: () => onOpenChat?.(user),
-      tone: "text-[#123C91]",
-    },
-  ];
+  );
 
-  if (user.role === "طالب" && user.studentId) {
-    items.splice(1, 0,
-      {
-        key: "create-subscription",
-        label: "إنشاء اشتراك",
-        Icon: CreditCard,
-        onClick: () => navigate(`/admin/subscriptions/add?studentId=${user.studentId}`),
-        tone: "text-[#123C91]",
-      },
-      {
-        key: "view-subscriptions",
-        label: "عرض الاشتراكات",
-        Icon: Eye,
-        onClick: () => navigate("/admin/subscription"),
-        tone: "text-[#123C91]",
-      },
-    );
-  }
-
-  if (isPending) {
-    items.push({
-      key: "approve",
-      label: "قبول الطلب",
-      Icon: CheckCircle2,
-      onClick: () => onApprove?.(user),
-      tone: "text-[#123C91]",
-    });
-  } else if (isSuspended) {
+  if (isSuspended) {
     items.push({
       key: "activate",
       label: "تفعيل",
@@ -808,7 +813,7 @@ const ActionsMenu = ({
       onClick: () => onToggleStatus?.(user),
       tone: "text-green-600",
     });
-  } else {
+  } else if (!isPending) {
     items.push({
       key: "suspend",
       label: "إيقاف",

@@ -243,9 +243,8 @@ const RegisterForm = ({ type }) => {
     // كود الدولة الخاص برقم الهاتف — منفصل عن حقل "الدولة" فوق، المستخدم
     // يقدر يختاره بحرية بغض النظر عن الدولة التانية.
     phoneCountryId: "",
-    academicLevel: "",
-    // نوع الطالب: مدرسي (school) أو جامعي (university) — بتتحدد من
-    // المستخدم صراحةً وبترتبط مباشرة بحقل studentType في الباك إند.
+    // التسجيل الحالي مخصص للطالب المدرسي، وتُجمع بيانات مرحلته وصفه بعد
+    // تأكيد البريد ضمن استكمال الملف الدراسي.
     studentType: "school",
     role: type || "student",
     headline: "",
@@ -340,14 +339,6 @@ const RegisterForm = ({ type }) => {
       toast.error("كلمتا المرور غير متطابقتين");
       return false;
     }
-    if (
-      type === "student" &&
-      formData.studentType === "school" &&
-      !formData.academicLevel
-    ) {
-      toast.error("يرجى اختيار المرحلة الدراسية");
-      return false;
-    }
     if (type === "instructor" && !formData.instructorAgreementAccepted) {
       toast.error("يجب الموافقة على اتفاقية المحاضر للمتابعة");
       return false;
@@ -384,10 +375,6 @@ const RegisterForm = ({ type }) => {
       }
 
       if (type === "student") {
-        payload.academicLevel =
-          formData.studentType === "school"
-            ? formData.academicLevel
-            : "university";
         payload.studentType = formData.studentType;
       }
       await register(payload);
@@ -462,36 +449,6 @@ const RegisterForm = ({ type }) => {
           />
         </div>
         </div>
-
-        {type === "student" && (
-          <div className="relative">
-            <label className="block text-[13px] font-medium text-[#1F2937] mb-1">
-              المرحلة الدراسية
-            </label>
-            <div className="relative w-full">
-              <select
-                name="academicLevel"
-                value={formData.academicLevel}
-                onChange={handleChange}
-                className={`${inputClass} w-full h-12.5 py-0 appearance-none px-4 outline-none ${!formData.academicLevel ? "text-gray-400" : "text-[#1F2937]"}`}
-                required
-              >
-                <option value="" disabled>
-                  اختر المرحلة الدراسية
-                </option>
-                <option value="primary">ابتدائي</option>
-                <option value="middle">إعدادي</option>
-                <option value="high">ثانوي</option>
-                <option value="university">جامعي و غير ذلك</option>
-              </select>
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
-                <ChevronDown size={18} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* المرحلة الدراسية = نوع الطالب نفسه (ابتدائي/إعدادي/ثانوي/جامعي) */}
 
         <CountryDropdown
           value={formData.country}

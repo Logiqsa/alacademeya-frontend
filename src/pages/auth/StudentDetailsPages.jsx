@@ -105,7 +105,6 @@ const StudentDetailsPages = () => {
 
   const email = state?.email || canonicalUser?.email;
   const role = state?.role || canonicalUser?.role || "student";
-  const academicLevel = state?.academicLevel || canonicalUser?.academicLevel;
   const countryId =
     state?.countryId ||
     canonicalUser?.country?.id ||
@@ -133,7 +132,7 @@ const StudentDetailsPages = () => {
   useEffect(() => {
     if (
       profileRefreshStarted.current ||
-      (user?.email && user?.academicLevel && user?.country)
+      (user?.email && user?.country)
     ) {
       return;
     }
@@ -183,28 +182,8 @@ const StudentDetailsPages = () => {
     getCurriculumStages(curriculumId)
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
-        // Filter stages to match the student's academicLevel
-        const levelMap = {
-          primary: "primary",
-          middle: "preparatory",
-          high: "secondary",
-        };
-        const keyword = levelMap[academicLevel] || "";
-        const filtered = keyword
-          ? list.filter(
-              (s) =>
-                (s.name?.en || "").toLowerCase().includes(keyword) ||
-                (s.name?.ar || "").includes(
-                  keyword === "primary"
-                    ? "ابتدائ"
-                    : keyword === "preparatory"
-                      ? "إعداد"
-                      : "ثانو",
-                ),
-            )
-          : list;
         setStages(
-          (filtered.length ? filtered : list).map((s) => ({
+          list.map((s) => ({
             id: s.id,
             label: toLabel(s.name),
           })),
@@ -212,7 +191,7 @@ const StudentDetailsPages = () => {
       })
       .catch(() => toast.error("تعذر تحميل المراحل"))
       .finally(() => setLoadingStages(false));
-  }, [curriculumId, academicLevel]);
+  }, [curriculumId]);
 
   // 3. Load grades when stage changes
   useEffect(() => {
@@ -254,7 +233,6 @@ const StudentDetailsPages = () => {
       state: {
         email,
         role,
-        academicLevel,
         countryId,
         curriculumId,
         stageId,
