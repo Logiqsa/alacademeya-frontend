@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import StudentLayout from "../../components/student/layout/StudentLayout";
 import StatsCardds from "../../components/student/notifications/StatsCards";
 import NotificationsSection from "../../components/student/notifications/NotificationSection";

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Clock, Users } from 'lucide-react';
 
 const LessonCard = ({ groupName, level, time, duration, status, actionLabel, onAction }) => {

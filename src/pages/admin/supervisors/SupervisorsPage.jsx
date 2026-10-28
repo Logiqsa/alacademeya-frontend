@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useContext } from "react";
+import { Navigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import SupervisorsStatsBar from "../../../components/admin/supervisors/SupervisorsStatsBar";
@@ -10,6 +11,7 @@ import { getUsers, updateUser, deleteUser } from "../../../services/APIService";
 import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
+import { AuthContext } from "../../../context/AuthContext";
 
 const PAGE_SIZE = 6;
 const SUPERVISOR_ROLES = ["admin", "super-admin"];
@@ -32,6 +34,7 @@ const extractUsersList = (res) => {
 };
 
 const SupervisorsPage = () => {
+  const { user } = useContext(AuthContext);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [filterRole, setFilterRole] = useState("جميع الصلاحيات");
@@ -55,6 +58,7 @@ const SupervisorsPage = () => {
   const [actionError, setActionError] = useState(null);
 
   const fetchSupervisors = useCallback(async () => {
+    if (user?.role !== "super-admin") return;
     setLoading(true);
     setError(null);
     try {
@@ -78,7 +82,7 @@ const SupervisorsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     const timer = setTimeout(fetchSupervisors, 0);
@@ -146,6 +150,10 @@ const SupervisorsPage = () => {
       setDeleting(false);
     }
   };
+
+  if (user?.role !== "super-admin") {
+    return <Navigate to="/admin-dashboard" replace />;
+  }
 
   return (
     <AdminLayout>
@@ -241,6 +249,7 @@ const SupervisorsPage = () => {
 
         {/* Add Supervisor Modal */}
         <AddSupervisorModal
+          key={`add-supervisor-${modalOpen}`}
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           onSuccess={fetchSupervisors} // يحدّث الجدول بعد الإضافة
@@ -248,6 +257,7 @@ const SupervisorsPage = () => {
 
         {/* Edit Supervisor Modal (same component, edit mode) */}
         <AddSupervisorModal
+          key={`edit-supervisor-${editingSupervisor?.id || "closed"}`}
           open={Boolean(editingSupervisor)}
           supervisor={editingSupervisor}
           onClose={() => setEditingSupervisor(null)}

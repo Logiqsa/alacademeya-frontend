@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Pencil, Loader2, Eye, EyeOff, ChevronDown } from "lucide-react";
 import {
   getCurriculumStages,
@@ -359,7 +359,6 @@ const Dropdown = ({
 export const ParentProfileCard = ({
   parent,
   countries = [],
-  loadingCountries,
   onSave,
 }) => {
   const resolveCountryId = () => {
@@ -392,12 +391,12 @@ export const ParentProfileCard = ({
   const [error, setError] = useState("");
   const [form, setForm] = useState(buildForm);
 
-  useEffect(() => {
-    setForm(buildForm());
-  }, [parent, countries]);
-
   const handleChange = (key) => (e) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleStartEditing = () => {
+    setForm(buildForm());
+    setEditing(true);
+  };
   const handleCancel = () => {
     setForm(buildForm());
     setError("");
@@ -444,7 +443,7 @@ export const ParentProfileCard = ({
         title="البيانات الشخصية"
         subtitle="هذا القسم يحتوي على بياناتك الأساسية التي تُستخدم في جميع الخدمات الرسمية داخل المنصة."
         editing={editing}
-        onEditClick={() => setEditing(true)}
+        onEditClick={handleStartEditing}
       />
 
       {!editing ? (
@@ -554,12 +553,12 @@ export const StudentPersonalCard = ({
   const [error, setError] = useState("");
   const [form, setForm] = useState(buildForm);
 
-  useEffect(() => {
-    setForm(buildForm());
-  }, [student, countries]);
-
   const handleChange = (key) => (e) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleStartEditing = () => {
+    setForm(buildForm());
+    setEditing(true);
+  };
   const handleCancel = () => {
     setForm(buildForm());
     setError("");
@@ -611,7 +610,7 @@ export const StudentPersonalCard = ({
         title="البيانات الشخصية"
         subtitle="هذا القسم يحتوي على بيانات ابنك الأساسية التي تُستخدم في جميع الخدمات الرسمية داخل المنصة."
         editing={editing}
-        onEditClick={() => setEditing(true)}
+        onEditClick={handleStartEditing}
       />
 
       {!editing ? (
@@ -725,12 +724,9 @@ export const StudentAcademicCard = ({
 
   const [form, setForm] = useState(buildForm);
 
-  // student (tab) changed — reset the form and re-resolve the view labels.
+  // The card is keyed by the selected child's academic ids. This only resolves
+  // labels for the saved view; edit-list resets happen in the selection events.
   useEffect(() => {
-    setForm(buildForm());
-    setStages([]);
-    setGrades([]);
-
     const curriculumId = idOf(student?.curriculum);
     const stageId = idOf(student?.stage);
 
@@ -741,8 +737,6 @@ export const StudentAcademicCard = ({
           setViewStages(Array.isArray(raw) ? raw : []);
         })
         .catch(() => setViewStages([]));
-    } else {
-      setViewStages([]);
     }
 
     if (stageId) {
@@ -752,62 +746,30 @@ export const StudentAcademicCard = ({
           setViewGrades(Array.isArray(raw) ? raw : []);
         })
         .catch(() => setViewGrades([]));
-    } else {
-      setViewGrades([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [student]);
 
-  // Edit-mode cascade: curriculum -> stages, stage -> grades.
-  useEffect(() => {
-    if (!editing) return;
-    if (!form.curriculumId) {
-      setStages([]);
-      return;
-    }
-    let active = true;
+  const loadStages = (curriculumId) => {
     setLoadingStages(true);
-    getCurriculumStages(form.curriculumId)
+    return getCurriculumStages(curriculumId)
       .then((res) => {
-        if (!active) return;
         const raw = res?.data?.data ?? res?.data ?? [];
         setStages(Array.isArray(raw) ? raw : []);
       })
-      .catch(() => {
-        if (active) setStages([]);
-      })
-      .finally(() => {
-        if (active) setLoadingStages(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [editing, form.curriculumId]);
+      .catch(() => setStages([]))
+      .finally(() => setLoadingStages(false));
+  };
 
-  useEffect(() => {
-    if (!editing) return;
-    if (!form.stageId) {
-      setGrades([]);
-      return;
-    }
-    let active = true;
+  const loadGrades = (stageId) => {
     setLoadingGrades(true);
-    getStageGrades(form.stageId)
+    return getStageGrades(stageId)
       .then((res) => {
-        if (!active) return;
         const raw = res?.data?.data ?? res?.data ?? [];
         setGrades(Array.isArray(raw) ? raw : []);
       })
-      .catch(() => {
-        if (active) setGrades([]);
-      })
-      .finally(() => {
-        if (active) setLoadingGrades(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [editing, form.stageId]);
+      .catch(() => setGrades([]))
+      .finally(() => setLoadingGrades(false));
+  };
 
   const curriculumOptions = curriculums.map((c) => ({
     id: c.id,
@@ -824,18 +786,36 @@ export const StudentAcademicCard = ({
 
   const handleCancel = () => {
     setForm(buildForm());
+    setStages([]);
+    setGrades([]);
     setError("");
     setEditing(false);
   };
-  const handleCurriculumChange = (id) =>
+  const handleStartEditing = () => {
+    const next = buildForm();
+    setForm(next);
+    setStages([]);
+    setGrades([]);
+    setEditing(true);
+    if (next.curriculumId) loadStages(next.curriculumId);
+    if (next.stageId) loadGrades(next.stageId);
+  };
+  const handleCurriculumChange = (id) => {
     setForm((prev) => ({
       ...prev,
       curriculumId: id,
       stageId: "",
       gradeId: "",
     }));
-  const handleStageChange = (id) =>
+    setStages([]);
+    setGrades([]);
+    if (id) loadStages(id);
+  };
+  const handleStageChange = (id) => {
     setForm((prev) => ({ ...prev, stageId: id, gradeId: "" }));
+    setGrades([]);
+    if (id) loadGrades(id);
+  };
   const handleGradeChange = (id) =>
     setForm((prev) => ({ ...prev, gradeId: id }));
 
@@ -877,7 +857,7 @@ export const StudentAcademicCard = ({
         title="البيانات الأكاديمية"
         subtitle="هذا القسم يحتوي على بيانات ابنك التعليمية الأساسية، والتي تُستخدم لإدارة رحلته التعليمية داخل المنصة."
         editing={editing}
-        onEditClick={() => setEditing(true)}
+        onEditClick={handleStartEditing}
       />
 
       {!editing ? (

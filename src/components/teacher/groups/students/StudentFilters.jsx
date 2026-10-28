@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 
 const STATUS_OPTIONS = ["جميع الحالات", "نشط", "مستبعد", "معلق"];

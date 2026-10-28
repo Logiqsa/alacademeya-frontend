@@ -5,6 +5,7 @@ import ConversationsList from "../../../components/admin/messages/Conversationsl
 import ChatBox from "../../../components/admin/messages/Chatbox";
 import { useChatRooms } from "../../../api/useChatRooms"; // تأكد من المسار الصحيح
 import { AuthContext } from "../../../context/AuthContext";
+import useLayoutSidebarOpen from "../../../hooks/useLayoutSidebarOpen";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
   fetchAllAdminUsers,
@@ -23,6 +24,8 @@ export default function AdminMessages() {
   const location = useLocation();
   const { user } = useContext(AuthContext);
   const currentUserId = user?._id ?? user?.id;
+  const isSuperAdmin = user?.role === "super-admin";
+  const sidebarOpen = useLayoutSidebarOpen();
 
   const {
     conversations,
@@ -47,6 +50,9 @@ export default function AdminMessages() {
   // (displayName)، فبنجيب دليل كل المستخدمين مرة واحدة ونطابق بالاسم عشان
   // نعرف نفلتر بالـ role ونفتح popup بيانات المستخدم الصح.
   useEffect(() => {
+    if (!isSuperAdmin) {
+      return undefined;
+    }
     let isMounted = true;
     fetchAllAdminUsers()
       .then((list) => {
@@ -56,7 +62,7 @@ export default function AdminMessages() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isSuperAdmin]);
 
   const userNameIndex = useMemo(
     () => buildUserNameIndex(directoryUsers),
@@ -96,7 +102,6 @@ export default function AdminMessages() {
     if (conversation) {
       openedFromLink.current = true;
       openConversation(conversation.id);
-      setShowChatMobile(true);
     } else if (userId) {
       openedFromLink.current = true;
       startSupportConversation(userId).then((newRoomId) => {
@@ -152,9 +157,24 @@ export default function AdminMessages() {
   });
 
   const activeConversation = conversations.find((c) => c.id === activeId);
+  const hasAutoOpenRequest = Boolean(
+    location.state?.openRoomId ||
+    location.state?.openClassroomId ||
+    location.state?.openClassroomName ||
+    location.state?.openUserId,
+  );
+  const mobileChatVisible = showChatMobile || (
+    hasAutoOpenRequest && Boolean(activeConversation)
+  );
   const activeConversationUser = activeConversation
     ? resolveConversationUser(activeConversation)
     : null;
+  // On medium windows the expanded application sidebar leaves too little room
+  // for a readable master-detail pair. Keep one pane until there is genuine
+  // room for both; the expanded sidebar always remains single-pane by design.
+  const desktopPaneGrid = sidebarOpen
+    ? ""
+    : "xl:grid-cols-[minmax(280px,350px)_minmax(0,1fr)]";
 
   return (
     <AdminLayout>
@@ -170,12 +190,12 @@ export default function AdminMessages() {
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-900 border-t-transparent" />
           </div>
         ) : (
-          <div className="grid h-[calc(100dvh-160px)] grid-cols-1 gap-3 sm:gap-4 md:h-[750px] md:grid-cols-[300px_1fr] lg:h-[800px] lg:grid-cols-[350px_1fr]">
+          <div className={`grid h-[calc(100dvh-160px)] min-w-0 grid-cols-1 gap-3 sm:gap-4 md:h-[750px] lg:h-[800px] ${desktopPaneGrid}`}>
             {/* Conversations List */}
             <div
               className={`${
-                showChatMobile ? "hidden" : "flex"
-              } min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white sm:rounded-3xl md:flex`}
+                mobileChatVisible ? "hidden" : "flex"
+              } min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white sm:rounded-3xl ${sidebarOpen ? "" : "xl:flex"}`}
             >
               <ConversationsList
                 conversations={filteredConversations}
@@ -186,14 +206,15 @@ export default function AdminMessages() {
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
                 onCreateChat={handleCreateSupportChat}
+                canCreateDirectoryChat={isSuperAdmin}
               />
             </div>
 
             {/* Chat Box */}
             <div
               className={`${
-                showChatMobile ? "flex" : "hidden"
-              } min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white sm:rounded-3xl md:flex`}
+                mobileChatVisible ? "flex" : "hidden"
+              } min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white sm:rounded-3xl ${sidebarOpen ? "" : "xl:flex"}`}
             >
               {activeConversation ? (
                 <ChatBox
@@ -204,6 +225,8 @@ export default function AdminMessages() {
                   onDeleteMessage={removeMessage}
                   onToggleActive={setRoomActive}
                   onDeleteRoom={removeRoom}
+                  canManageUser={isSuperAdmin}
+                  isSinglePane={sidebarOpen}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center px-4 text-center text-sm text-gray-400">

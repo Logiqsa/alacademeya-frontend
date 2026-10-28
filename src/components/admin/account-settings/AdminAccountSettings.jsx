@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   Pencil,
   Eye,
   EyeOff,
-  ChevronDown,
   Loader2,
   Mail,
   MessageCircle,
@@ -175,20 +174,6 @@ const TextInput = ({ label, value, onChange, type = "text" }) => (
       onChange={onChange}
       className="w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-[14px] text-(--text-dark) outline-none focus:border-(--primary) focus:ring-2 focus:ring-(--primary) focus:ring-opacity-20 transition-all"
     />
-  </div>
-);
-
-const LockedPhoneField = ({ label, value }) => (
-  <div>
-    <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
-    <div
-      dir="ltr"
-      className="w-full h-11 rounded-lg border border-(--border-light) bg-(--bg-section) flex items-stretch overflow-hidden opacity-80 cursor-not-allowed"
-    >
-      <span className="flex-1 px-3 flex items-center text-sm text-(--text-light) truncate">
-        {value || "—"}
-      </span>
-    </div>
   </div>
 );
 
@@ -391,71 +376,6 @@ const ContactSettingsCard = () => {
   );
 };
 
-const Dropdown = ({
-  label,
-  value,
-  options,
-  onChange,
-  placeholder = "اختر",
-  disabled,
-}) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const selected = options.find((o) => o.id === value);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative">
-      <label className="block text-xs text-(--text-light) mb-1.5">
-        {label}
-      </label>
-      <button
-        type="button"
-        onClick={() => !disabled && setOpen((o) => !o)}
-        disabled={disabled}
-        className={`w-full h-11 px-3.5 rounded-lg border border-(--border-light) bg-(--bg-section) text-sm text-right flex items-center justify-between transition-colors ${
-          disabled
-            ? "opacity-60 cursor-not-allowed"
-            : "cursor-pointer hover:border-(--primary)"
-        }`}
-      >
-        <span
-          className={selected ? "text-(--text-dark)" : "text-(--text-light)"}
-        >
-          {selected ? selected.label : placeholder}
-        </span>
-        <ChevronDown
-          size={16}
-          className={`text-(--text-light) transition-transform shrink-0 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      {open && !disabled && (
-        <ul className="absolute z-20 top-full right-0 left-0 mt-1 max-h-56 overflow-y-auto bg-(--white) border border-(--border-light) rounded-lg shadow-lg">
-          {options.map((opt) => (
-            <li
-              key={opt.id}
-              onClick={() => {
-                onChange(opt.id);
-                setOpen(false);
-              }}
-              className="px-3.5 py-2.5 text-sm cursor-pointer hover:bg-(--bg-section) text-(--text-dark)"
-            >
-              {opt.label}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
-
 /* ------------------------------------------------------------------ */
 /* Cards                                                               */
 /* ------------------------------------------------------------------ */
@@ -479,12 +399,12 @@ const AdminPersonalCard = ({
   const [error, setError] = useState("");
   const [form, setForm] = useState(buildForm);
 
-  useEffect(() => {
-    setForm(buildForm());
-  }, [admin]);
-
   const handleChange = (key) => (e) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleStartEditing = () => {
+    setForm(buildForm());
+    setEditing(true);
+  };
   const handleCancel = () => {
     setForm(buildForm());
     setError("");
@@ -541,7 +461,7 @@ const AdminPersonalCard = ({
         title="البيانات الشخصية"
         subtitle="هذا القسم يحتوي على بياناتك الأساسية التي تُستخدم في جميع الخدمات الرسمية داخل المنصة."
         editing={editing}
-        onEditClick={() => setEditing(true)}
+        onEditClick={handleStartEditing}
       />
 
       {!editing ? (
@@ -726,26 +646,29 @@ const AdminAccountSettings = () => {
   const [loadError, setLoadError] = useState("");
   const [countryOptions, setCountryOptions] = useState([]);
 
-  const fetchProfile = async () => {
-    setLoading(true);
-    setLoadError("");
-    try {
-      const res = await getMyProfile();
-      const userData = extractUser(res.data);
-      if (userData) {
-        setAdmin(userData);
-        updateUser?.(userData);
-      }
-    } catch (err) {
-      setLoadError(err.response?.data?.message || "تعذر تحميل بيانات الحساب");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    let active = true;
+    getMyProfile()
+      .then((res) => {
+        if (!active) return;
+        const userData = extractUser(res.data);
+        if (userData) {
+          setAdmin(userData);
+          updateUser?.(userData);
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setLoadError(err.response?.data?.message || "تعذر تحميل بيانات الحساب");
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [updateUser]);
 
   useEffect(() => {
     getCountries()

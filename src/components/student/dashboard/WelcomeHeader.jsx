@@ -1,4 +1,3 @@
-import React from "react";
 
 const WelcomeHeader = ({ studentName = "محمد" }) => {
   return (

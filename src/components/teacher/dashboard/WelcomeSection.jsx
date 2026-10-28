@@ -8,7 +8,7 @@ import { useContext } from "react";
 
   
 
-const Welcome = ({ hasChildren = false }) => {
+const Welcome = () => {
 
   const { user } = useContext(AuthContext);
 

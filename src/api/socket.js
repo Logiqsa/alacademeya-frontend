@@ -1,14 +1,15 @@
 import { io } from "socket.io-client";
+import { API_ORIGIN } from "../services/apiUrl";
 
-const SOCKET_URL = "https://api.alacademeya.com";
 let socket = null;
 
 export function getSocket() {
   if (!socket) {
     const token = localStorage.getItem("token");
 
-    socket = io(SOCKET_URL, {
+    socket = io(API_ORIGIN, {
       auth: { token },
+      path: "/socket.io",
       transports: ["websocket"],
       autoConnect: true,
     });

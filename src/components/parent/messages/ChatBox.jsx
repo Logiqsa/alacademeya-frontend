@@ -6,19 +6,23 @@ import {
 } from "lucide-react";
 import { editMessage, deleteMessage } from "../../../api/chatApi";
 
-export default function ChatBox({ conversation, onSend, onBack }) {
+export default function ChatBox({ conversation, onSend, onBack, isSinglePane = false }) {
   const [text, setText] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [menuOpenId, setMenuOpenId] = useState(null);
-  const [localMessages, setLocalMessages] = useState([]);
+  const [messageOverrides, setMessageOverrides] = useState({});
+  const [removedMessageIds, setRemovedMessageIds] = useState(() => new Set());
   const endRef = useRef(null);
   const menuRef = useRef(null);
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    setLocalMessages(conversation?.messages ?? []);
-  }, [conversation?.messages]);
+  const localMessages = (conversation?.messages ?? [])
+    .filter((message) => !removedMessageIds.has(String(message.id ?? message._id)))
+    .map((message) => ({
+      ...message,
+      text: messageOverrides[String(message.id ?? message._id)] ?? message.text,
+    }));
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -82,10 +86,10 @@ export default function ChatBox({ conversation, onSend, onBack }) {
     const trimmed = editText.trim();
     if (!trimmed) return;
     try {
-      await editMessage(msgId, trimmed);
-      setLocalMessages((prev) =>
-        prev.map((m) => (m.id === msgId ? { ...m, text: trimmed } : m))
-      );
+      const response = await editMessage(msgId, trimmed);
+      const saved = response.data?.data ?? response.data;
+      const savedText = saved?.text ?? trimmed;
+      setMessageOverrides((current) => ({ ...current, [String(msgId)]: savedText }));
       setEditingId(null);
       setEditText("");
     } catch (err) {
@@ -97,7 +101,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
     setMenuOpenId(null);
     try {
       await deleteMessage(msgId);
-      setLocalMessages((prev) => prev.filter((m) => m.id !== msgId));
+      setRemovedMessageIds((current) => new Set([...current, String(msgId)]));
     } catch (err) {
       console.error("فشل حذف الرسالة:", err);
     }
@@ -112,7 +116,7 @@ export default function ChatBox({ conversation, onSend, onBack }) {
           type="button"
           onClick={onBack}
           aria-label="رجوع"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-gray-100 md:hidden"
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-gray-100 ${isSinglePane ? "" : "xl:hidden"}`}
         >
           <ArrowRight size={18} />
         </button>

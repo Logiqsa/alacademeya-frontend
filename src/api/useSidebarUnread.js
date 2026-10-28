@@ -49,6 +49,7 @@ export function useSidebarUnread() {
   const { user } = useContext(AuthContext);
   const userId = user?._id ?? user?.id;
   const isAdmin = user?.role === "admin";
+  const canReadUserDirectory = user?.role === "super-admin";
   const { pathname } = useLocation();
   const [unread, setUnread] = useState({ messages: false, notifications: false });
 
@@ -56,7 +57,7 @@ export function useSidebarUnread() {
     const [roomsResult, notificationsResult, usersResult] = await Promise.allSettled([
       getChatRooms(),
       getNotifications(),
-      isAdmin ? getUsers({ limit: 100 }) : Promise.resolve(null),
+      canReadUserDirectory ? getUsers({ limit: 100 }) : Promise.resolve(null),
     ]);
 
     const usersPayload = usersResult.status === "fulfilled" ? usersResult.value?.data : null;
@@ -84,7 +85,7 @@ export function useSidebarUnread() {
             })
           : current.notifications,
     }));
-  }, [isAdmin, userId]);
+  }, [canReadUserDirectory, isAdmin, userId]);
 
   useEffect(() => {
     if (!isAdmin) return undefined;

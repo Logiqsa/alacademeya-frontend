@@ -167,19 +167,9 @@ const StudentDetailsPages = () => {
       .finally(() => setLoadingCurriculums(false));
   }, []);
 
-  useEffect(() => {
-    if (!curriculumId) {
-      setStages([]);
-      setStageId("");
-      setGrades([]);
-      setGradeId("");
-      return;
-    }
+  const loadStages = (nextCurriculumId) => {
     setLoadingStages(true);
-    setStageId("");
-    setGrades([]);
-    setGradeId("");
-    getCurriculumStages(curriculumId)
+    return getCurriculumStages(nextCurriculumId)
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
         setStages(
@@ -191,25 +181,34 @@ const StudentDetailsPages = () => {
       })
       .catch(() => toast.error("تعذر تحميل المراحل"))
       .finally(() => setLoadingStages(false));
-  }, [curriculumId]);
+  };
 
-  // 3. Load grades when stage changes
-  useEffect(() => {
-    if (!stageId) {
-      setGrades([]);
-      setGradeId("");
-      return;
-    }
+  const loadGrades = (nextStageId) => {
     setLoadingGrades(true);
-    setGradeId("");
-    getStageGrades(stageId)
+    return getStageGrades(nextStageId)
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
         setGrades(list.map((g) => ({ id: g.id, label: toLabel(g.name) })));
       })
       .catch(() => toast.error("تعذر تحميل الصفوف"))
       .finally(() => setLoadingGrades(false));
-  }, [stageId]);
+  };
+
+  const handleCurriculumChange = (nextCurriculumId) => {
+    setCurriculumId(nextCurriculumId);
+    setStageId("");
+    setGradeId("");
+    setStages([]);
+    setGrades([]);
+    if (nextCurriculumId) loadStages(nextCurriculumId);
+  };
+
+  const handleStageChange = (nextStageId) => {
+    setStageId(nextStageId);
+    setGradeId("");
+    setGrades([]);
+    if (nextStageId) loadGrades(nextStageId);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -272,7 +271,7 @@ const StudentDetailsPages = () => {
             label="المنهج الدراسي"
             placeholder="اختر المنهج"
             value={curriculumId}
-            onChange={setCurriculumId}
+            onChange={handleCurriculumChange}
             options={curriculums}
             loading={loadingCurriculums}
           />
@@ -282,7 +281,7 @@ const StudentDetailsPages = () => {
             label="المرحلة الدراسية"
             placeholder="اختر المرحلة"
             value={stageId}
-            onChange={setStageId}
+            onChange={handleStageChange}
             options={stages}
             loading={loadingStages}
             disabled={!curriculumId}

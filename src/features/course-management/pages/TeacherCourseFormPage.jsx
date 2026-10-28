@@ -1558,6 +1558,7 @@ const TeacherCourseFormPage = ({ useTeacherLayout = true }) => {
                     <option value="general">عامة / General</option>
                     <option value="school">مدرسية / School</option>
                     <option value="university">جامعية / University</option>
+                    <option value="graduate">دراسات عليا / Graduate</option>
                   </select>
                 </label>
               </div>

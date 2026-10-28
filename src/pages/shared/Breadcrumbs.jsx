@@ -135,17 +135,16 @@ export default function Breadcrumbs({
 }) {
   const location = useLocation();
   const params = useParams();
-  const [resolvedLessonTitle, setResolvedLessonTitle] = useState("");
+  const [lessonTitles, setLessonTitles] = useState({});
   const lessonParamKey = params.lessonId ? "lessonId" : params.sessionId ? "sessionId" : "";
   const lessonId = params.lessonId || params.sessionId;
   const classroomId = params.groupId || params.classroomId;
   const providedLessonTitle = lessonParamKey ? dynamicLabels[lessonParamKey] : "";
+  const lessonTitleKey = lessonId && classroomId ? `${classroomId}:${lessonId}` : "";
+  const resolvedLessonTitle = lessonTitleKey ? lessonTitles[lessonTitleKey] || "" : "";
 
   useEffect(() => {
-    if (!lessonId || !classroomId || providedLessonTitle) {
-      setResolvedLessonTitle("");
-      return;
-    }
+    if (!lessonId || !classroomId || providedLessonTitle) return;
 
     let active = true;
     getClassroomSessions(classroomId)
@@ -155,16 +154,19 @@ export default function Breadcrumbs({
         const session = sessions.find(
           (item) => String(item.id || item._id) === String(lessonId)
         );
-        setResolvedLessonTitle(session?.title || "");
+        setLessonTitles((previous) => ({
+          ...previous,
+          [lessonTitleKey]: session?.title || "",
+        }));
       })
       .catch(() => {
-        if (active) setResolvedLessonTitle("");
+        if (active) setLessonTitles((previous) => ({ ...previous, [lessonTitleKey]: "" }));
       });
 
     return () => {
       active = false;
     };
-  }, [classroomId, lessonId, providedLessonTitle]);
+  }, [classroomId, lessonId, lessonTitleKey, providedLessonTitle]);
 
   const breadcrumbLabels = lessonParamKey && resolvedLessonTitle
     ? { ...dynamicLabels, [lessonParamKey]: resolvedLessonTitle }
@@ -181,10 +183,13 @@ export default function Breadcrumbs({
 
   if (segments.length === 0) return null; // في الصفحة الرئيسية مفيش داعي لبريدكرمب
 
-  let accumulatedPath = "";
+  const accumulatedPaths = segments.reduce((paths, segment) => [
+    ...paths,
+    `${paths.at(-1) || ""}/${segment}`,
+  ], []);
   const crumbs = segments
-    .map((segment) => {
-      accumulatedPath += `/${segment}`;
+    .map((segment, index) => {
+      const accumulatedPath = accumulatedPaths[index];
       if (HIDDEN_SEGMENTS.has(segment)) return null;
       // "schedule" segment: بيتشال بس لما يكون جوه lessons/schedule/new (مسار إنشاء/تعديل
       // الجدول بتاع مجموعة)، وبيفضل ظاهر لو هو نفسه صفحة مستقلة زي /parent/schedule

@@ -23,7 +23,6 @@ import {
   deleteNotification,
   getTeachers,
   getAllStudents,
-  getUsers,
 } from "../../../services/APIService";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import {
@@ -443,12 +442,33 @@ const NotificationsSection = ({
     setTeacherDetailsLoading(true);
     try {
       if (isNewUserNotification(notification)) {
-        const response = await getUsers({ limit: 100 });
-        const body = response.data ?? {};
-        const users =
-          body.data || body.users || (Array.isArray(body) ? body : []);
         const wantedId = notificationUserId(notification);
         const wantedName = notificationUserName(notification);
+        // Registration approval is deliberately limited to student and teacher
+        // profiles. Their existing administrative endpoints populate the
+        // account identity needed here, without enumerating every User record.
+        const [teachersResponse, studentsResponse] = await Promise.all([
+          getTeachers({ page: 1, limit: 1000 }),
+          getAllStudents({ page: 1, limit: 1000 }),
+        ]);
+        const teachersBody = teachersResponse.data?.data ?? teachersResponse.data ?? [];
+        const studentsBody = studentsResponse.data?.data ?? studentsResponse.data ?? [];
+        const teacherProfiles = Array.isArray(teachersBody)
+          ? teachersBody
+          : teachersBody.teachers || [];
+        const studentProfiles = Array.isArray(studentsBody)
+          ? studentsBody
+          : studentsBody.students || [];
+        const users = [
+          ...teacherProfiles.map((profile) => ({
+            ...(typeof profile.user === "object" ? profile.user : {}),
+            role: profile.user?.role || "teacher",
+          })),
+          ...studentProfiles.map((profile) => ({
+            ...(typeof profile.user === "object" ? profile.user : {}),
+            role: profile.user?.role || "student",
+          })),
+        ];
         const user = users.find(
           (item) =>
             (wantedId && String(item.id || item._id) === String(wantedId)) ||

@@ -26,8 +26,7 @@ const CreateSchedulePage = ({ role = "teacher" }) => {
   const { groupId } = useParams();
 
   const [groupName, setGroupName] = useState("مجموعة");
-  const [selectedDays, setSelectedDays] = useState([]);
-  const [time, setTime] = useState("");
+  const [timesByDay, setTimesByDay] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -41,8 +40,11 @@ const CreateSchedulePage = ({ role = "teacher" }) => {
         const schedule = response.data?.data?.schedule;
         if (Array.isArray(schedule) && schedule.length) {
           setEditing(true);
-          setSelectedDays(schedule.map((item) => item.day));
-          setTime(schedule[0].startTime || "");
+          setTimesByDay(
+            Object.fromEntries(
+              schedule.map((item) => [item.day, item.startTime || ""]),
+            ),
+          );
         }
       })
       .catch((err) => {
@@ -76,18 +78,28 @@ const CreateSchedulePage = ({ role = "teacher" }) => {
   }, [groupId]);
 
   const toggleDay = (key) => {
-    setSelectedDays((prev) =>
-      prev.includes(key) ? prev.filter((d) => d !== key) : [...prev, key],
-    );
+    setTimesByDay((current) => {
+      if (Object.hasOwn(current, key)) {
+        const remaining = { ...current };
+        delete remaining[key];
+        return remaining;
+      }
+      return { ...current, [key]: "" };
+    });
+  };
+
+  const updateDayTime = (key, startTime) => {
+    setTimesByDay((current) => ({ ...current, [key]: startTime }));
   };
 
   const handleSubmit = async () => {
+    const selectedDays = DAYS.filter((day) => Object.hasOwn(timesByDay, day.key));
     if (selectedDays.length === 0) {
       setError("من فضلك اختر يوم دراسة واحد على الأقل");
       return;
     }
-    if (!time) {
-      setError("من فضلك اختر وقت الحصص");
+    if (selectedDays.some((day) => !timesByDay[day.key])) {
+      setError("من فضلك اختر وقتًا لكل يوم محدد");
       return;
     }
 
@@ -96,7 +108,10 @@ const CreateSchedulePage = ({ role = "teacher" }) => {
     try {
       // ✅ تم التأكيد من الـ Postman collection: شكل الـ body الصحيح هو
       // { schedule: [ { day, startTime }, ... ] }
-      const schedule = selectedDays.map((day) => ({ day, startTime: time }));
+      const schedule = selectedDays.map(({ key }) => ({
+        day: key,
+        startTime: timesByDay[key],
+      }));
 
       await createOrUpdateClassroomSchedule(groupId, { schedule });
       navigate(
@@ -143,40 +158,37 @@ const CreateSchedulePage = ({ role = "teacher" }) => {
               <p className="text-sm font-semibold text-[#1A1A1A] mb-3">
                 أيام الدراسة
               </p>
-              <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {DAYS.map((day) => (
-                  <label
+                  <div
                     key={day.key}
-                    className="flex items-center gap-3 cursor-pointer select-none"
+                    className="rounded-xl border border-[#E5E5E5] bg-[#F9FAFA] p-3 transition-colors has-[:checked]:border-[#123C91] has-[:checked]:bg-[#EAF4FF]"
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedDays.includes(day.key)}
-                      onChange={() => toggleDay(day.key)}
-                      className="w-4 h-4 rounded border-[#8C9198] text-[#123C91] focus:ring-[#123C91] accent-[#123C91]"
-                    />
-                    <span className="text-sm text-[#1A1A1A]">{day.label}</span>
-                  </label>
+                    <label className="flex cursor-pointer items-center gap-3 select-none">
+                      <input
+                        type="checkbox"
+                        checked={Object.hasOwn(timesByDay, day.key)}
+                        onChange={() => toggleDay(day.key)}
+                        className="h-4 w-4 rounded border-[#8C9198] text-[#123C91] focus:ring-[#123C91] accent-[#123C91]"
+                      />
+                      <span className="text-sm font-medium text-[#1A1A1A]">{day.label}</span>
+                    </label>
+                    {Object.hasOwn(timesByDay, day.key) && (
+                      <label className="mt-3 block">
+                        <span className="mb-1.5 block text-xs text-[#575F69]">وقت الحصة</span>
+                        <div className="relative">
+                          <input
+                            type="time"
+                            value={timesByDay[day.key]}
+                            onChange={(event) => updateDayTime(day.key, event.target.value)}
+                            className="h-11 w-full rounded-lg border border-[#E5E5E5] bg-white px-3 pl-9 text-sm text-[#1A1A1A] outline-none transition-all focus:border-[#123C91] focus:ring-1 focus:ring-[#123C91]"
+                          />
+                          <Clock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8C9198]" size={15} />
+                        </div>
+                      </label>
+                    )}
+                  </div>
                 ))}
-              </div>
-            </div>
-
-            {/* الوقت */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                الوقت
-              </label>
-              <div className="relative">
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="w-full h-12 border border-[#E5E5E5] rounded-[8px] px-4 py-3 text-sm text-[#1A1A1A] focus:border-[#123C91] focus:ring-1 focus:ring-[#123C91] outline-none transition-all bg-[#F9FAFA] appearance-none placeholder:text-[#8C9198] pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
-                <Clock
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C9198] pointer-events-none"
-                  size={16}
-                />
               </div>
             </div>
 

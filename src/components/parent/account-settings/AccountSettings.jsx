@@ -215,7 +215,10 @@ const AccountSettings = () => {
   }, [ctxUser]);
 
   useEffect(() => {
-    loadData();
+    const loadInitialData = async () => {
+      await loadData();
+    };
+    void loadInitialData();
   }, [loadData]);
 
   // Country + curriculum lookups, fetched once — same endpoints as the
@@ -256,7 +259,9 @@ const AccountSettings = () => {
         "parentProfile",
         JSON.stringify({ ...prev, ...payload }),
       );
-    } catch {}
+    } catch {
+      // Local cache failures must not prevent a successful profile update.
+    }
     await afterSave(sens);
   };
   const handleSaveStudentInfo = async (payload, sens) => {
@@ -277,7 +282,9 @@ const AccountSettings = () => {
           "parentProfile",
           JSON.stringify({ ...saved, ...updatedTimezone }),
         );
-      } catch {}
+      } catch {
+        // Timezone persistence in the optional local cache is best effort.
+      }
       return next;
     });
   };
@@ -391,6 +398,7 @@ const AccountSettings = () => {
             onSave={handleSaveStudentInfo}
           />
           <StudentAcademicCard
+            key={`${activeStudent.id}-${activeStudent.curriculum?.id || activeStudent.curriculum || ""}-${activeStudent.stage?.id || activeStudent.stage || ""}`}
             student={activeStudent}
             curriculums={curriculums}
             loadingCurriculums={loadingCurriculums}

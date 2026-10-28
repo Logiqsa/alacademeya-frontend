@@ -1,12 +1,10 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { Pencil, Eye, EyeOff, ChevronDown, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   getMyProfile,
   updateMyProfile,
-  saveStudentInterests,
   getCountries,
-  getCurriculums,
   getCurriculumStages,
   getStageGrades,
   updatePassword,
@@ -43,7 +41,8 @@ const extractStudent = (resData) => {
   const data = resData?.data?.data ?? resData.data ?? resData;
   const user = data.user || data;
   // أي حاجة تانية على مستوى data (غير user) بنحطها جنب بيانات اليوزر
-  const { user: _omit, ...rest } = data;
+  const rest = { ...data };
+  delete rest.user;
   return {
     ...rest,
     ...user,
@@ -224,20 +223,6 @@ const TextInput = ({ label, value, onChange, type = "text" }) => (
   </div>
 );
 
-const LockedPhoneField = ({ label, value }) => (
-  <div>
-    <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
-    <div
-      dir="ltr"
-      className="w-full h-11 rounded-lg border border-(--border-light) bg-(--bg-section) flex items-stretch overflow-hidden opacity-80 cursor-not-allowed"
-    >
-      <span className="flex-1 px-3 flex items-center text-sm text-(--text-light) truncate">
-        {value || "—"}
-      </span>
-    </div>
-  </div>
-);
-
 const PasswordField = ({ label, value, onChange }) => {
   const [show, setShow] = useState(false);
   return (
@@ -370,7 +355,6 @@ const Dropdown = ({
 const StudentPersonalCard = ({
   student,
   countryOptions,
-  loadingCountries,
   onUpdated,
 }) => {
   const buildForm = () => ({
@@ -385,10 +369,6 @@ const StudentPersonalCard = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState(buildForm);
-
-  useEffect(() => {
-    setForm(buildForm());
-  }, [student]);
 
   const handleChange = (key) => (e) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -512,58 +492,45 @@ const StudentAcademicCard = ({ student, onUpdated }) => {
   const [error, setError] = useState("");
   const [form, setForm] = useState(buildForm);
 
-  const [curriculumOptions, setCurriculumOptions] = useState([]);
+  const [curriculumOptions] = useState([]);
   const [stageOptions, setStageOptions] = useState([]);
   const [gradeOptions, setGradeOptions] = useState([]);
-  const [loadingCurriculums, setLoadingCurriculums] = useState(false);
+  const [loadingCurriculums] = useState(false);
   const [loadingStages, setLoadingStages] = useState(false);
   const [loadingGrades, setLoadingGrades] = useState(false);
 
-  useEffect(() => {
-    setForm(buildForm());
-  }, [student]);
-
-  // تحميل المناهج أول ما المستخدم يفتح وضع التعديل
-  useEffect(() => {
-    if (!editing || curriculumOptions.length > 0) return;
-    setLoadingCurriculums(true);
-    getCurriculums()
-      .then((res) =>
-        setCurriculumOptions(extractList(res.data).map(normalizeOption)),
-      )
-      .catch(() => toast.error("تعذر تحميل قائمة المناهج"))
-      .finally(() => setLoadingCurriculums(false));
-  }, [editing]);
-
-  // تحميل المراحل المرتبطة بالمنهج المختار
-  useEffect(() => {
-    if (!editing || !form.curriculumId) {
-      setStageOptions([]);
-      return;
-    }
+  const loadStages = (curriculumId) => {
     setLoadingStages(true);
-    getCurriculumStages(form.curriculumId)
+    return getCurriculumStages(curriculumId)
       .then((res) =>
         setStageOptions(extractList(res.data).map(normalizeOption)),
       )
       .catch(() => toast.error("تعذر تحميل المراحل الدراسية"))
       .finally(() => setLoadingStages(false));
-  }, [editing, form.curriculumId]);
+  };
 
-  // تحميل الصفوف المرتبطة بالمرحلة المختارة
-  useEffect(() => {
-    if (!editing || !form.stageId) {
-      setGradeOptions([]);
-      return;
-    }
+  const loadGrades = (stageId) => {
     setLoadingGrades(true);
-    getStageGrades(form.stageId)
+    return getStageGrades(stageId)
       .then((res) =>
         setGradeOptions(extractList(res.data).map(normalizeOption)),
       )
       .catch(() => toast.error("تعذر تحميل الصفوف الدراسية"))
       .finally(() => setLoadingGrades(false));
-  }, [editing, form.stageId]);
+  };
+
+  const handleCurriculumChange = (id) => {
+    setForm((prev) => ({ ...prev, curriculumId: id, stageId: "", gradeId: "" }));
+    setStageOptions([]);
+    setGradeOptions([]);
+    if (id) loadStages(id);
+  };
+
+  const handleStageChange = (id) => {
+    setForm((prev) => ({ ...prev, stageId: id, gradeId: "" }));
+    setGradeOptions([]);
+    if (id) loadGrades(id);
+  };
 
   const handleCancel = () => {
     setForm(buildForm());
@@ -635,14 +602,7 @@ const StudentAcademicCard = ({ student, onUpdated }) => {
             value={form.curriculumId}
             options={curriculumOptions}
             loading={loadingCurriculums}
-            onChange={(id) =>
-              setForm((prev) => ({
-                ...prev,
-                curriculumId: id,
-                stageId: "",
-                gradeId: "",
-              }))
-            }
+            onChange={handleCurriculumChange}
             placeholder="اختر المنهج الدراسي"
           />
           <Dropdown
@@ -651,9 +611,7 @@ const StudentAcademicCard = ({ student, onUpdated }) => {
             options={stageOptions}
             loading={loadingStages}
             disabled={!form.curriculumId}
-            onChange={(id) =>
-              setForm((prev) => ({ ...prev, stageId: id, gradeId: "" }))
-            }
+            onChange={handleStageChange}
             placeholder={
               form.curriculumId ? "اختر المرحلة الدراسية" : "اختر المنهج أولاً"
             }
@@ -810,31 +768,33 @@ const StudentAccountSettings = () => {
 
   // قائمة الدول محمّلة على مستوى الصفحة عشان نعرض اسم الدولة في وضع العرض برضه (مش وضع التعديل بس)
   const [countryOptions, setCountryOptions] = useState([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-
-  const fetchProfile = async () => {
-    setLoading(true);
-    setLoadError("");
-    try {
-      const res = await getMyProfile();
-      const studentData = extractStudent(res.data);
-      if (studentData) {
-        setStudent(studentData);
-        updateUser?.(studentData);
-      }
-    } catch (err) {
-      setLoadError(err.response?.data?.message || "تعذر تحميل بيانات الحساب");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loadingCountries, setLoadingCountries] = useState(true);
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    let active = true;
+    getMyProfile()
+      .then((res) => {
+        if (!active) return;
+        const studentData = extractStudent(res.data);
+        if (studentData) {
+          setStudent(studentData);
+          updateUser?.(studentData);
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setLoadError(err.response?.data?.message || "تعذر تحميل بيانات الحساب");
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [updateUser]);
 
   useEffect(() => {
-    setLoadingCountries(true);
     getCountries()
       .then((res) =>
         setCountryOptions(extractList(res.data).map(normalizeOption)),

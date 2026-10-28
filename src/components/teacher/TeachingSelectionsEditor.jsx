@@ -40,7 +40,7 @@ const Subjects = ({ gradeId, value, onChange }) => {
   const [options, setOptions] = useState([]);
   useEffect(() => {
     let active = true;
-    if (!gradeId) return setOptions([]);
+    if (!gradeId) return () => { active = false; };
     getSubjects({ grade: gradeId }).then((res) => {
       if (active) setOptions(list(res).map(subjectOption));
     }).catch(() => toast.error("تعذر تحميل المواد"));
@@ -60,7 +60,7 @@ const StageEditor = ({ value, onChange, stageLabel }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [grades, setGrades] = useState([]);
   useEffect(() => {
-    if (!value.stage) return setGrades([]);
+    if (!value.stage) return;
     getStageGrades(value.stage).then((res) => setGrades(list(res).map(option))).catch(() => toast.error("تعذر تحميل الصفوف"));
   }, [value.stage]);
   const changeGrade = (index, next) => onChange({ ...value, grades: value.grades.map((g, i) => i === index ? next : g) });
@@ -169,19 +169,10 @@ export default function TeachingSelectionsEditor({ value, onChange }) {
           onChange(next.length ? next : [emptyCurriculum()]);
         }}><Trash2 size={18} className="text-red-500" /></button>}
       </div>
-      {!collapsedCurricula[index] && <CurriculumStagesEditor curriculumId={selection.curriculum} value={selection.stages}
+      {!collapsedCurricula[index] && <CurriculumStagesEditor key={selection.curriculum} curriculumId={selection.curriculum} value={selection.stages}
         onChange={(stages) => changeCurriculum(index, { ...selection, stages })} />}
     </div>)}
     <button type="button" disabled={visibleSelections.some((item) => !item.curriculum)} onClick={() => onChange([...value, emptyCurriculum()])}
       className="inline-flex items-center gap-1 rounded-xl border border-[#123C91] px-4 py-2 text-sm font-medium text-[#123C91] disabled:cursor-not-allowed disabled:opacity-40"><Plus size={16}/> إضافة منهج آخر</button>
   </div>;
 }
-
-export const sanitizeTeachingSelections = (items) => items.map((curriculum) => ({
-  ...curriculum,
-  stages: (curriculum.stages || []).filter((stage) => stage.stage),
-}));
-
-export const validTeachingSelections = (items) => items.length > 0 && items.every((curriculum) =>
-  curriculum.curriculum && curriculum.stages.length > 0 && curriculum.stages.every((stage) =>
-    stage.stage && stage.grades.length > 0 && stage.grades.every((grade) => grade.grade && grade.subjects.length > 0)));

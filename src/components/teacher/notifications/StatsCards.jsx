@@ -1,4 +1,3 @@
-import React from "react";
 import { Bell, BellRing, GraduationCap, Settings } from "lucide-react";
 
 const StatsCards = ({ notifications = [] }) => {

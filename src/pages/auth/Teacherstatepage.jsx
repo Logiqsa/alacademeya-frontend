@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Check, Clock, MessageCircle } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
@@ -26,7 +26,7 @@ const steps = [
   },
 ];
 
-const StepIcon = ({ color, done }) => {
+const StepIcon = ({ color }) => {
   if (color === "green")
     return (
       <div className="w-8 h-8 rounded-full bg-[#00A63E26] flex items-center justify-center shrink-0">
@@ -46,13 +46,12 @@ const StepIcon = ({ color, done }) => {
 
 const AccountStatePage = () => {
   const navigate = useNavigate();
-  const [state, setState] = useState(null);
   const { contactSettings } = useContactSettings();
   const whatsappUrl = whatsappLink(contactSettings?.whatsappNumber);
 
   useEffect(() => {
     getAccountState()
-      .then((res) => setState(res.data))
+      .then(() => undefined)
       .catch(() => {});
   }, []);
 

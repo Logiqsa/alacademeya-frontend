@@ -1,4 +1,3 @@
-import React from "react";
 import GroupsCard from "../../components/student/dashboard/GroupsCard";
 import StudentLayout from "../../components/student/layout/StudentLayout";
 

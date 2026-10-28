@@ -231,64 +231,39 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
       setLoadingCountries(true);
       try {
         const res = await getCountries();
-        setCountries(normalizeCountries(res.data));
+        const availableCountries = normalizeCountries(res.data);
+        setCountries(availableCountries);
+        if (isEditMode) {
+          const rawPhone = (supervisor.phone || "").trim();
+          const matchedCountry = availableCountries.find((c) => c.id === supervisor.countryId);
+          const matchedCode = normalizePhoneCode(matchedCountry?.phoneCode);
+          const fallbackMatch = rawPhone.startsWith("+") && !matchedCode
+            ? availableCountries.find((c) => {
+                const code = normalizePhoneCode(c.phoneCode);
+                return code && rawPhone.startsWith(code);
+              })
+            : null;
+          const codeToStrip = matchedCode || normalizePhoneCode(fallbackMatch?.phoneCode);
+          const localPhone = codeToStrip && rawPhone.startsWith(codeToStrip)
+            ? rawPhone.slice(codeToStrip.length)
+            : rawPhone;
+          setData({
+            name: supervisor.name || "",
+            email: supervisor.email || "",
+            phone: localPhone.replace(/[^\d+]/g, ""),
+            password: "",
+            country: supervisor.countryId || "",
+            role: supervisor.role || "admin",
+          });
+        }
       } catch (err) {
         console.error("Failed to load countries", err);
       } finally {
         setLoadingCountries(false);
       }
     };
-    loadCountries();
-  }, [open]);
-
-  // Prefill the form when editing.
-  // Waits for `countries` so we can strip the existing calling code out of the
-  // stored phone number (otherwise it gets prepended a second time on save).
-  useEffect(() => {
-    if (!open) return;
-    if (!isEditMode) {
-      setData(EMPTY_FORM);
-      setErrors({});
-      return;
-    }
-    if (countries.length === 0) return; // wait for countries to load first
-
-    const rawPhone = (supervisor.phone || "").trim();
-    const matchedCountry = countries.find((c) => c.id === supervisor.countryId);
-    const matchedCode = matchedCountry
-      ? normalizePhoneCode(matchedCountry.phoneCode)
-      : "";
-
-    let localPhone = rawPhone;
-    if (matchedCode && rawPhone.startsWith(matchedCode)) {
-      // Known country + code matches the stored number → strip it cleanly
-      localPhone = rawPhone.slice(matchedCode.length);
-    } else if (rawPhone.startsWith("+")) {
-      // Country code unknown/unmatched — try every known calling code as a
-      // fallback so we don't accidentally double it up later.
-      const fallbackMatch = countries.find((c) => {
-        const code = normalizePhoneCode(c.phoneCode);
-        return code && rawPhone.startsWith(code);
-      });
-      if (fallbackMatch) {
-        localPhone = rawPhone.slice(
-          normalizePhoneCode(fallbackMatch.phoneCode).length,
-        );
-      }
-      // else: leave rawPhone as-is; handleSubmit will detect the leading "+"
-      // and send it unchanged instead of prepending a code on top of it.
-    }
-
-    setData({
-      name: supervisor.name || "",
-      email: supervisor.email || "",
-      phone: localPhone.replace(/[^\d+]/g, ""),
-      password: "",
-      country: supervisor.countryId || "",
-      role: supervisor.role || "admin", // ⚠️ عدّل حسب اسم الحقل الراجع من الباك اند لو مختلف
-    });
-    setErrors({});
-  }, [open, isEditMode, supervisor, countries]);
+    void loadCountries();
+  }, [isEditMode, open, supervisor]);
 
   if (!open) return null;
 

@@ -130,7 +130,10 @@ const AssignmentDetailsPage = () => {
   }, [assignmentId]);
 
   useEffect(() => {
-    fetchAssignment();
+    const loadInitialAssignment = async () => {
+      await fetchAssignment();
+    };
+    void loadInitialAssignment();
   }, [fetchAssignment]);
 
   const handleAction = async ({ student, type, grade, feedback }) => {

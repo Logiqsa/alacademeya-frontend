@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
+import { useState, useRef, useEffect, useContext, useCallback } from "react";
 import { Pencil, Eye, EyeOff, ChevronDown, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -23,7 +23,8 @@ import { isRegistrationIncomplete } from "../../../utils/roles";
 import TimezoneSettingsCard from "../../account-settings/TimezoneSettingsCard";
 import { AccountStatusBadge, AccountTypeBadge } from "../../account-settings/AccountRegistrationStatus";
 import PhoneDisplay from "../../account-settings/PhoneDisplay";
-import TeachingSelectionsEditor, { sanitizeTeachingSelections, validTeachingSelections } from "../TeachingSelectionsEditor";
+import TeachingSelectionsEditor from "../TeachingSelectionsEditor";
+import { sanitizeTeachingSelections, validTeachingSelections } from "../teachingSelections";
 import {
   getCountryId,
   resolveCountryLabel,
@@ -49,7 +50,10 @@ const extractUser = (resData) => {
 
   // ملحوظة: root.id هو ID بتاع الـ Teacher/Parent profile document، مختلف عن user.id
   // (ID بتاع الـ User document). بنحتفظ بيهم منفصلين عشان محدش يتكتب فوق التاني بالغلط.
-  const { user: _omit, id: profileId, ...restWithoutId } = root || {};
+  const restWithoutId = { ...(root || {}) };
+  delete restWithoutId.user;
+  const profileId = restWithoutId.id;
+  delete restWithoutId.id;
 
   return {
     ...user,
@@ -287,20 +291,6 @@ const TextInput = ({ label, value, onChange, type = "text" }) => (
   </div>
 );
 
-const LockedPhoneField = ({ label, value }) => (
-  <div>
-    <label className="block text-xs text-(--text-light) mb-1.5">{label}</label>
-    <div
-      dir="ltr"
-      className="w-full h-11 rounded-lg border border-(--border-light) bg-(--bg-section) flex items-stretch overflow-hidden opacity-80 cursor-not-allowed"
-    >
-      <span className="flex-1 px-3 flex items-center text-sm text-(--text-light) truncate">
-        {value || "—"}
-      </span>
-    </div>
-  </div>
-);
-
 const PasswordField = ({ label, value, onChange }) => {
   const [show, setShow] = useState(false);
   return (
@@ -488,7 +478,6 @@ const InlineMultiSelect = ({
 const TeacherPersonalCard = ({
   teacher,
   countryOptions,
-  loadingCountries,
   onSaved,
 }) => {
   const buildForm = () => ({
@@ -503,12 +492,12 @@ const TeacherPersonalCard = ({
   const [error, setError] = useState("");
   const [form, setForm] = useState(buildForm);
 
-  useEffect(() => {
-    setForm(buildForm());
-  }, [teacher]);
-
   const handleChange = (key) => (e) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const handleStartEditing = () => {
+    setForm(buildForm());
+    setEditing(true);
+  };
   const handleCancel = () => {
     setForm(buildForm());
     setError("");
@@ -553,7 +542,7 @@ const TeacherPersonalCard = ({
         title="البيانات الشخصية"
         subtitle="هذا القسم يحتوي على بياناتك الأساسية التي تُستخدم في جميع الخدمات الرسمية داخل المنصة."
         editing={editing}
-        onEditClick={() => setEditing(true)}
+        onEditClick={handleStartEditing}
       />
       {!editing ? (
         <ViewGrid>
@@ -623,7 +612,7 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
   const [experienceYears, setExperienceYears] = useState("");
   const [selections, setSelections] = useState([]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getMyTeachingSelections();
@@ -637,8 +626,13 @@ const TeacherProfessionalCard = ({ teacher, onSaved }) => {
         ? normalizeTeachingLanguages(teacher.language)
         : ["arabic"]);
     } finally { setLoading(false); }
-  };
-  useEffect(() => { load(); }, [teacher]);
+  }, [incomplete, teacher]);
+  useEffect(() => {
+    const loadInitialSelections = async () => {
+      await load();
+    };
+    void loadInitialSelections();
+  }, [load]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -724,137 +718,87 @@ const LegacyTeacherProfessionalCard = ({ teacher, onSaved }) => {
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
-  useEffect(() => {
-    setForm(buildForm());
-  }, [teacher]);
+  const loadCurriculums = () => {
+    setLoadingCurriculums(true);
+    return getCurriculums()
+      .then((res) => setCurriculumOptions(extractList(res.data).map(normalizeOption)))
+      .catch(() => toast.error("تعذر تحميل قائمة المناهج"))
+      .finally(() => setLoadingCurriculums(false));
+  };
 
-  useEffect(() => {
-    if (!editing) return;
-    if (curriculumOptions.length === 0) {
-      setLoadingCurriculums(true);
-      getCurriculums()
-        .then((res) =>
-          setCurriculumOptions(extractList(res.data).map(normalizeOption)),
-        )
-        .catch(() => toast.error("تعذر تحميل قائمة المناهج"))
-        .finally(() => setLoadingCurriculums(false));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing]);
-
-  useEffect(() => {
-    if (!editing || form.stageId || !form.gradeIds.length) return;
-    let active = true;
-
-    getGrade(form.gradeIds[0])
-      .then((res) => {
-        if (!active) return;
-        const grade = res?.data?.data ?? res?.data ?? {};
-        const stageId = entityId(grade.stage) || entityId(grade.stageId);
-        if (stageId) {
-          setForm((previous) => ({ ...previous, stageId }));
-        }
-      })
-      .catch(() => {
-        // The saved grades and subjects remain selected even if stage lookup fails.
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [editing, form.gradeIds, form.stageId]);
-
-  useEffect(() => {
-    if (!editing || !form.curriculumId) {
-      setStageOptions([]);
-      return;
-    }
-    let active = true;
+  const loadStages = (curriculumId) => {
     setLoadingStages(true);
-    getCurriculumStages(form.curriculumId)
-      .then((res) => {
-        if (active) setStageOptions(extractList(res.data).map(normalizeOption));
-      })
+    return getCurriculumStages(curriculumId)
+      .then((res) => setStageOptions(extractList(res.data).map(normalizeOption)))
       .catch(() => toast.error("تعذر تحميل المراحل الدراسية"))
-      .finally(() => active && setLoadingStages(false));
-    return () => { active = false; };
-  }, [editing, form.curriculumId]);
+      .finally(() => setLoadingStages(false));
+  };
 
-  useEffect(() => {
-    if (!editing || !form.stageId) {
-      setGradeOptions([]);
-      return;
-    }
-    let active = true;
+  const loadGrades = (stageId) => {
     setLoadingGrades(true);
-    getStageGrades(form.stageId)
-      .then((res) => {
-        if (active) setGradeOptions(extractList(res.data).map(normalizeOption));
-      })
+    return getStageGrades(stageId)
+      .then((res) => setGradeOptions(extractList(res.data).map(normalizeOption)))
       .catch(() => toast.error("تعذر تحميل الصفوف الدراسية"))
-      .finally(() => active && setLoadingGrades(false));
-    return () => { active = false; };
-  }, [editing, form.stageId]);
+      .finally(() => setLoadingGrades(false));
+  };
 
-  useEffect(() => {
-    if (!editing) return;
-    if (!form.gradeIds.length) {
-      setSubjectOptions([]);
-      return;
-    }
-
-    let active = true;
+  const loadSubjects = (gradeIds) => {
     setLoadingSubjects(true);
-    Promise.all(
-      form.gradeIds.map((grade) =>
+    return Promise.all(
+      gradeIds.map((grade) =>
         getSubjects({ grade })
           .then((res) => extractList(res.data))
           .catch(() => []),
       ),
     )
       .then((results) => {
-        if (active) {
-          const groupedSubjects = groupOptionsByLabel(
-            results.flat().map(normalizeOption),
-          );
-          setSubjectOptions(groupedSubjects);
+        const groupedSubjects = groupOptionsByLabel(results.flat().map(normalizeOption));
+        setSubjectOptions(groupedSubjects);
 
-          const currentSubjectNames = new Set(
-            (teacher.subjects || [])
-              .map((subject) => pickName(subject?.name).trim().toLocaleLowerCase("ar"))
-              .filter(Boolean),
-          );
-          const currentSubjectIds = new Set(
-            (teacher.subjects || []).map(entityId).filter(Boolean),
-          );
-          const resolvedIds = groupedSubjects
-            .filter(
-              (option) =>
-                currentSubjectNames.has(option.label.trim().toLocaleLowerCase("ar")) ||
-                (option.ids ?? [option.id]).some((id) => currentSubjectIds.has(id)),
-            )
-            .flatMap((option) => option.ids ?? [option.id]);
+        const currentSubjectNames = new Set(
+          (teacher.subjects || []).map((subject) => pickName(subject?.name).trim().toLocaleLowerCase("ar")).filter(Boolean),
+        );
+        const currentSubjectIds = new Set((teacher.subjects || []).map(entityId).filter(Boolean));
+        const resolvedIds = groupedSubjects
+          .filter((option) => currentSubjectNames.has(option.label.trim().toLocaleLowerCase("ar")) || (option.ids ?? [option.id]).some((id) => currentSubjectIds.has(id)))
+          .flatMap((option) => option.ids ?? [option.id]);
 
-          if (resolvedIds.length) {
-            setForm((previous) => ({
-              ...previous,
-              subjects: [...new Set([...previous.subjects, ...resolvedIds])],
-            }));
-          }
+        if (resolvedIds.length) {
+          setForm((previous) => ({ ...previous, subjects: [...new Set([...previous.subjects, ...resolvedIds])]}));
         }
       })
       .catch(() => toast.error("تعذر تحميل المواد الدراسية"))
-      .finally(() => active && setLoadingSubjects(false));
-
-    return () => {
-      active = false;
-    };
-  }, [editing, form.gradeIds]);
+      .finally(() => setLoadingSubjects(false));
+  };
 
   const handleCancel = () => {
     setForm(buildForm());
     setError("");
     setEditing(false);
+  };
+  const handleStartEditing = () => {
+    const next = buildForm();
+    setForm(next);
+    setStageOptions([]);
+    setGradeOptions([]);
+    setSubjectOptions([]);
+    setEditing(true);
+    void loadCurriculums();
+    if (next.curriculumId) void loadStages(next.curriculumId);
+    if (next.stageId) {
+      void loadGrades(next.stageId);
+    } else if (next.gradeIds.length) {
+      getGrade(next.gradeIds[0])
+        .then((res) => {
+          const grade = res?.data?.data ?? res?.data ?? {};
+          const stageId = entityId(grade.stage) || entityId(grade.stageId);
+          if (!stageId) return;
+          setForm((previous) => ({ ...previous, stageId }));
+          void loadGrades(stageId);
+        })
+        .catch(() => {});
+    }
+    if (next.gradeIds.length) void loadSubjects(next.gradeIds);
   };
 
   const handleSubmit = async (e) => {
@@ -935,7 +879,7 @@ const LegacyTeacherProfessionalCard = ({ teacher, onSaved }) => {
         title="البيانات الأكاديمية"
         subtitle="يتضمن هذا القسم بياناتك التعليمية والمهنية الأساسية، والتي تُستخدم لإدارة الحصص والمجموعات الدراسية والتواصل مع الطلاب داخل المنصة."
         editing={editing}
-        onEditClick={() => setEditing(true)}
+        onEditClick={handleStartEditing}
       />
       {!editing ? (
         <ViewGrid>
@@ -972,15 +916,13 @@ const LegacyTeacherProfessionalCard = ({ teacher, onSaved }) => {
             value={form.curriculumId}
             options={curriculumOptions}
             loading={loadingCurriculums}
-            onChange={(id) =>
-              setForm((prev) => ({
-                ...prev,
-                curriculumId: id,
-                stageId: "",
-                gradeIds: [],
-                subjects: [],
-              }))
-            }
+            onChange={(id) => {
+              setForm((prev) => ({ ...prev, curriculumId: id, stageId: "", gradeIds: [], subjects: [] }));
+              setStageOptions([]);
+              setGradeOptions([]);
+              setSubjectOptions([]);
+              if (id) void loadStages(id);
+            }}
             placeholder="اختر المنهج الدراسي"
           />
           <Dropdown
@@ -989,14 +931,12 @@ const LegacyTeacherProfessionalCard = ({ teacher, onSaved }) => {
             options={stageOptions}
             loading={loadingStages}
             disabled={!form.curriculumId}
-            onChange={(id) =>
-              setForm((prev) => ({
-                ...prev,
-                stageId: id,
-                gradeIds: [],
-                subjects: [],
-              }))
-            }
+            onChange={(id) => {
+              setForm((prev) => ({ ...prev, stageId: id, gradeIds: [], subjects: [] }));
+              setGradeOptions([]);
+              setSubjectOptions([]);
+              if (id) void loadGrades(id);
+            }}
             placeholder={form.curriculumId ? "اختر المرحلة الدراسية" : "اختر المنهج أولاً"}
           />
           <InlineMultiSelect
@@ -1005,9 +945,11 @@ const LegacyTeacherProfessionalCard = ({ teacher, onSaved }) => {
             options={gradeOptions}
             loading={loadingGrades}
             disabled={!form.stageId}
-            onChange={(ids) =>
-              setForm((prev) => ({ ...prev, gradeIds: ids, subjects: [] }))
-            }
+            onChange={(ids) => {
+              setForm((prev) => ({ ...prev, gradeIds: ids, subjects: [] }));
+              setSubjectOptions([]);
+              if (ids.length) void loadSubjects(ids);
+            }}
             placeholder={form.stageId ? "اختر الصفوف الدراسية" : "اختر المرحلة أولاً"}
           />
           <TextInput
@@ -1168,33 +1110,48 @@ const TeacherAccountSettings = () => {
 
   // قائمة الدول بنحملها مرة واحدة هنا عشان نستخدمها في العرض والتعديل مع
   const [countryOptions, setCountryOptions] = useState([]);
-  const [loadingCountries, setLoadingCountries] = useState(false);
-
-  const fetchProfile = async () => {
-    setLoading(true);
-    setLoadError("");
-    try {
-      const res = await getMyProfile();
-      const userData = extractUser(res.data);
-      if (userData) {
-        setTeacher(userData);
-        // بيانات /users/me لا تحمل دائمًا هوية ملف المحاضر؛ نحافظ عليها حتى
-        // لا تختفي روابط المحاضر من القائمة بعد فتح صفحة الإعدادات.
-        updateUser?.((current) => ({ ...current, ...userData }));
-      }
-    } catch (err) {
-      setLoadError(err.response?.data?.message || "تعذر تحميل بيانات الحساب");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loadingCountries, setLoadingCountries] = useState(true);
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    let active = true;
+    getMyProfile()
+      .then((res) => {
+        if (!active) return;
+        const userData = extractUser(res.data);
+        if (userData) {
+          setTeacher(userData);
+          // بيانات /users/me لا تحمل دائمًا هوية ملف المحاضر؛ نحافظ عليها حتى
+          // لا تختفي روابط المحاضر من القائمة بعد فتح صفحة الإعدادات.
+          updateUser?.((current) => ({ ...current, ...userData }));
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setLoadError(err.response?.data?.message || "تعذر تحميل بيانات الحساب");
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [updateUser]);
+
+  const refreshProfile = () =>
+    getMyProfile()
+      .then((res) => {
+        const userData = extractUser(res.data);
+        if (userData) {
+          setTeacher(userData);
+          updateUser?.((current) => ({ ...current, ...userData }));
+        }
+      })
+      .catch((err) => {
+        setLoadError(err.response?.data?.message || "تعذر تحميل بيانات الحساب");
+      });
 
   useEffect(() => {
-    setLoadingCountries(true);
     getCountries()
       .then((res) =>
         setCountryOptions(extractList(res.data).map(normalizeOption)),
@@ -1259,14 +1216,14 @@ const TeacherAccountSettings = () => {
         teacher={teacher}
         countryOptions={countryOptions}
         loadingCountries={loadingCountries}
-        onSaved={fetchProfile}
+        onSaved={refreshProfile}
       />
       <TimezoneSettingsCard
         timezone={teacher.timezone}
         onUpdated={handleTimezoneUpdated}
       />
       {teacher.role === "teacher" && (
-        <TeacherProfessionalCard teacher={teacher} onSaved={fetchProfile} />
+        <TeacherProfessionalCard teacher={teacher} onSaved={refreshProfile} />
       )}
       <SecurityCard lastPasswordChange={teacher.passwordChangedAt} />
     </div>

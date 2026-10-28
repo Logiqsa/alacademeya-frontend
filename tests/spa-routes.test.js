@@ -15,6 +15,13 @@ test("real static application routes are SPA eligible", () => {
   ], SPA_ROUTE_KIND.STATIC_APP_ROUTE);
 });
 
+test("parent payments supports direct navigation and refresh", () => {
+  assert.equal(
+    classifySpaPath("/parent/payments").kind,
+    SPA_ROUTE_KIND.STATIC_APP_ROUTE,
+  );
+});
+
 test("classifier recognizes every active path declared by App.jsx", async () => {
   const source = (await readFile(new URL("../src/App.jsx", import.meta.url), "utf8"))
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, "");

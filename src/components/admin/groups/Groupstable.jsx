@@ -25,7 +25,6 @@ import {
   getCurriculumStages,
   getStage,
   getAllGrades,
-  getUsers,
   updateClassroom,
   updateClassroomSubstituteTeacher,
   createSubscription,
@@ -493,19 +492,6 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
           allRes.status === "fulfilled"
             ? extractList(allRes.value, ["students", "results", "items"])
             : [];
-
-        if (all.length === 0) {
-          try {
-            const usersResponse = await getUsers({
-              role: "student",
-              page: 1,
-              limit: 1000,
-            });
-            all = extractList(usersResponse, ["users", "results", "items"]);
-          } catch {
-            // The primary student endpoint remains the source of truth.
-          }
-        }
 
         if (cancelled) return;
         setStudents(all.filter((student) => resolveStudentId(student)));

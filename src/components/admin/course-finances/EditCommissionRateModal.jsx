@@ -1,14 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 
-const EditCommissionRateModal = ({ isOpen, currentRate, onClose, onSave }) => {
+const CommissionRateForm = ({ currentRate, onClose, onSave }) => {
   const [rate, setRate] = useState(currentRate);
-
-  useEffect(() => {
-    if (isOpen) setRate(currentRate);
-  }, [isOpen, currentRate]);
-
-  if (!isOpen) return null;
 
   const exampleAmount = 1000;
   const exampleCommission = Math.round((exampleAmount * (Number(rate) || 0)) / 100);
@@ -62,6 +56,18 @@ const EditCommissionRateModal = ({ isOpen, currentRate, onClose, onSave }) => {
         </div>
       </div>
     </div>
+  );
+};
+
+const EditCommissionRateModal = ({ isOpen, currentRate, onClose, onSave }) => {
+  if (!isOpen) return null;
+  return (
+    <CommissionRateForm
+      key={currentRate}
+      currentRate={currentRate}
+      onClose={onClose}
+      onSave={onSave}
+    />
   );
 };
 

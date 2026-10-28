@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import process from 'node:process'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -14,7 +15,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://api.alacademeya.com',
+        target: process.env.VITE_API_PROXY_TARGET || 'https://api.alacademeya.com',
         changeOrigin: true,
         secure: true,
       },

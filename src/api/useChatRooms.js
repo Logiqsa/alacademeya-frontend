@@ -303,6 +303,40 @@ export function useChatRooms(currentUserId) {
     return () => socket.off("newMessage", handleNewMessage);
   }, [currentUserId, fetchRooms]);
 
+  useEffect(() => {
+    const socket = getSocket();
+    const handleMessageEdited = (rawMessage) => {
+      const roomId = rawMessage.room?._id ?? rawMessage.room?.id ?? rawMessage.room;
+      const messageId = rawMessage._id ?? rawMessage.id;
+      if (!roomId || !messageId) return;
+
+      const updatedMessage = normalizeMessage(rawMessage, currentUserId);
+      setConversations((current) =>
+        current.map((room) => {
+          if (String(room.id) !== String(roomId)) return room;
+          const messages = room.messages.map((message) =>
+            String(message.id) === String(messageId)
+              ? { ...message, ...updatedMessage }
+              : message,
+          );
+          return {
+            ...room,
+            messages,
+            lastMessagePreview:
+              room.lastMessagePreview === room.messages.find(
+                (message) => String(message.id) === String(messageId),
+              )?.text
+                ? updatedMessage.text
+                : room.lastMessagePreview,
+          };
+        }),
+      );
+    };
+
+    socket.on("messageEdited", handleMessageEdited);
+    return () => socket.off("messageEdited", handleMessageEdited);
+  }, [currentUserId]);
+
   const openConversation = useCallback(
     async (roomId) => {
       setActiveId(roomId);

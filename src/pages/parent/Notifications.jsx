@@ -1,5 +1,5 @@
 // Notifications.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import ParentLayout from "../../components/parent/layout/ParentLayout";
 import StatsCardds from "../../components/parent/notifications/StatsCards";
 import NotificationsSection from "../../components/parent/notifications/NotificationsSection";

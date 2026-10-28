@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import StatsCards from "../../../components/teacher/notifications/StatsCards";
 import NotificationsSection from "../../../components/teacher/notifications/NotificationsSection";

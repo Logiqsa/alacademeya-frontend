@@ -135,7 +135,10 @@ const StudentDetailsPage = () => {
   }, [groupId, studentId]);
 
   useEffect(() => {
-    fetchData();
+    const loadInitialData = async () => {
+      await fetchData();
+    };
+    void loadInitialData();
   }, [fetchData]);
 
   const filtered = lessons.filter(

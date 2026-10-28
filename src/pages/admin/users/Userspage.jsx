@@ -131,6 +131,7 @@ const UsersPage = ({
 }) => {
   const navigate = useNavigate();
   const { user: currentUser } = useContext(AuthContext);
+  const currentRole = currentUser?.role;
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -150,8 +151,9 @@ const UsersPage = ({
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
+      const canReadAllUsers = currentRole === "super-admin";
       const [list, studentsResponse, teachersResponse] = await Promise.all([
-        fetchAllAdminUsers(),
+        canReadAllUsers ? fetchAllAdminUsers() : Promise.resolve([]),
         getAllStudents({ page: 1, limit: FETCH_LIMIT }).catch(() => null),
         getTeachers({ page: 1, limit: FETCH_LIMIT }).catch(() => null),
       ]);
@@ -159,7 +161,24 @@ const UsersPage = ({
       const studentProfiles = Array.isArray(studentProfilesData)
         ? studentProfilesData
         : [];
-      const completeUsers = Array.isArray(list) ? [...list] : [];
+      const teacherProfilesData = teachersResponse?.data?.data;
+      const teacherProfiles = Array.isArray(teacherProfilesData)
+        ? teacherProfilesData
+        : teacherProfilesData?.teachers || [];
+      // Admin may approve and manage student/teacher profiles, but is not
+      // permitted to enumerate every User document. Those scoped endpoints
+      // already include the minimal populated account identity the table uses.
+      const scopedUsers = canReadAllUsers
+        ? []
+        : [...studentProfiles, ...teacherProfiles]
+            .map((profile) =>
+              profile && typeof profile.user === "object" ? profile.user : null,
+            )
+            .filter(Boolean);
+      const completeUsers = [
+        ...(Array.isArray(list) ? list : []),
+        ...scopedUsers,
+      ];
       const knownUserIds = new Set(
         completeUsers.map((item) => String(item.id || item._id)).filter(Boolean),
       );
@@ -174,14 +193,18 @@ const UsersPage = ({
             .filter((id) => id && !knownUserIds.has(String(id))),
         ),
       ];
-      const missingUserResponses = await Promise.allSettled(
-        missingUserIds.map((userId) => getUser(userId)),
-      );
-      missingUserResponses.forEach((result) => {
-        if (result.status !== "fulfilled") return;
-        const userData = result.value.data?.data || result.value.data;
-        if (userData?.id || userData?._id) completeUsers.push(userData);
-      });
+      // Only super-admin can retrieve a missing account record individually.
+      // An admin keeps the scoped profile data instead of bypassing /users.
+      if (canReadAllUsers && missingUserIds.length) {
+        const missingUserResponses = await Promise.allSettled(
+          missingUserIds.map((userId) => getUser(userId)),
+        );
+        missingUserResponses.forEach((result) => {
+          if (result.status !== "fulfilled") return;
+          const userData = result.value.data?.data || result.value.data;
+          if (userData?.id || userData?._id) completeUsers.push(userData);
+        });
+      }
       const studentsByUserId = new Map(
         studentProfiles.map((student) => [
           String(
@@ -192,10 +215,6 @@ const UsersPage = ({
           student,
         ]),
       );
-      const teacherProfilesData = teachersResponse?.data?.data;
-      const teacherProfiles = Array.isArray(teacherProfilesData)
-        ? teacherProfilesData
-        : teacherProfilesData?.teachers || [];
       const teachersByUserId = new Map(
         teacherProfiles.map((teacher) => [
           String(
@@ -285,7 +304,9 @@ const UsersPage = ({
               return student
                 ? {
                     ...mapped,
-                    status: isStudentProfileIncomplete(rawUser, student)
+                    status: mapped.status === "معلق"
+                      ? mapped.status
+                      : isStudentProfileIncomplete(rawUser, student)
                       ? "ملف غير مكتمل"
                       : mapped.status,
                     missingProfileFields: getMissingStudentProfileFields(
@@ -326,10 +347,13 @@ const UsersPage = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentRole]);
 
   useEffect(() => {
-    fetchUsers();
+    const loadInitialUsers = async () => {
+      await fetchUsers();
+    };
+    void loadInitialUsers();
   }, [fetchUsers]);
 
   // استبعد أي مستخدم متعمله soft-delete من الجدول والإحصائيات
@@ -440,14 +464,11 @@ const UsersPage = ({
   };
 
   const totalPages = Math.max(1, Math.ceil(sortedUsers.length / pageSize));
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [totalPages, page]);
+  const currentPage = Math.min(page, totalPages);
 
   const paginatedUsers = sortedUsers.slice(
-    (page - 1) * pageSize,
-    page * pageSize,
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
   );
 
   // ⚠️ الأرقام دي بتحسب من كل اليوزرز اللي جم من السيرفر (visibleUsers) مش
@@ -610,7 +631,7 @@ const UsersPage = ({
           {!loading && filtered.length > 0 && (
             <div className="mb-4">
               <Paginationn
-                page={page}
+                page={currentPage}
                 totalPages={totalPages}
                 onChange={setPage}
                 totalItems={filtered.length}

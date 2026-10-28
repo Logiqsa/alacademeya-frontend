@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import NotificationsList from "../notifications/NotificationsSection";
 import { getNotifications, getUsers } from "../../../services/APIService";
 import { mergeAdminNotifications } from "../../../utils/adminLocalNotifications";
 import { filterIncompleteJoinNotifications } from "../../../utils/incompleteRegistration";
+import { AuthContext } from "../../../context/AuthContext";
 
 const extractList = (response) => {
   const body = response?.data?.data ?? response?.data ?? response ?? [];
@@ -11,6 +12,8 @@ const extractList = (response) => {
 };
 
 const NotificationsSection = () => {
+  const { user } = useContext(AuthContext);
+  const canReadAllUsers = user?.role === "super-admin";
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -22,7 +25,7 @@ const NotificationsSection = () => {
         setLoadError("");
         const [response, usersResponse] = await Promise.all([
           getNotifications(),
-          getUsers({ limit: 100 }).catch(() => null),
+          canReadAllUsers ? getUsers({ limit: 100 }).catch(() => null) : null,
         ]);
         const usersBody = usersResponse?.data || {};
         const users = usersBody.data || usersBody.users || [];
@@ -38,7 +41,7 @@ const NotificationsSection = () => {
       }
     };
     fetchNotifications();
-  }, []);
+  }, [canReadAllUsers]);
 
   return (
     <NotificationsList

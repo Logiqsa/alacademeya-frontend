@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, Hourglass, XCircle, RotateCcw } from 'lucide-react';
 import { getMyStudents } from '../../../services/APIService';
 
@@ -66,7 +66,7 @@ const RequestStatusPage = () => {
     try {
       const data = await fetchLatestRequestStatus();
       setStatusData(data);
-    } catch (err) {
+    } catch {
       setError('تعذر تحميل حالة الطلب، يرجى المحاولة مرة أخرى');
     } finally {
       if (!silent) setLoading(false);
@@ -75,7 +75,10 @@ const RequestStatusPage = () => {
 
   // التحميل الأول
   useEffect(() => {
-    load();
+    const loadInitialStatus = async () => {
+      await load();
+    };
+    void loadInitialStatus();
   }, []);
 
   // Polling تلقائي: طول ما الحالة "pending"، نعيد السؤال كل فترة من غير ما نظهر لودينج
@@ -96,7 +99,6 @@ const RequestStatusPage = () => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusData?.status]);
 
   if (loading) {

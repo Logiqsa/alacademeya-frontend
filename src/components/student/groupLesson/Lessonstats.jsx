@@ -1,4 +1,3 @@
-import React from "react";
 import { HiOutlineUsers, HiOutlineCheckCircle, HiOutlineXCircle } from "react-icons/hi";
 
 const StatCard = ({ icon, value, label, iconBg, iconColor }) => (

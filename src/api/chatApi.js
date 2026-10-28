@@ -1,7 +1,8 @@
 import axios from "axios";
+import { API_BASE_URL } from "../services/apiUrl";
 
 const API = axios.create({
-  baseURL: "https://api.alacademeya.com/api",
+  baseURL: API_BASE_URL,
 });
 
 const attachToken = (config) => {

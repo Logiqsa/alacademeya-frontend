@@ -8,7 +8,6 @@ import Paginationn from "../../../components/teacher/groups/students/Paginationn
 import {
   getClassroom,
   getClassroomStudents,
-  getAllStudents,
 } from "../../../services/APIService";
 import LoadingState from "../../../components/shared/LoadingState";
 
@@ -17,14 +16,17 @@ const PAGE_SIZE = 6;
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
 
-// الحقل الصح لحالة الطالب هو "status" مش "registrationStatus"
-// القيم المؤكدة من الـ API: "active" | "removed" | "pending-contact" | "pending-approval"
+// يدعم قيم Student الحالية مع القيم القديمة التي قد ترجعها عضوية المجموعة.
 const mapStatus = (entryStatus) => {
   switch (entryStatus) {
     case "active":
+    case "approved":
       return "نشط";
     case "removed":
+    case "rejected":
       return "مستبعد";
+    case "pending":
+    case "suspended":
     case "pending-contact":
     case "pending-approval":
       return "معلق";
@@ -52,14 +54,10 @@ const GroupStudentsPage = () => {
     setLoading(true);
     setError(null);
 
-    // ⚠️ GET /classrooms/:id/students/ بيرجع بيانات ناقصة (مفيش createdAt دايمًا، مفيش phone دايمًا).
-    // بنجيب GET /students كمان ونعمل merge بالـ user.id لتعويض اللي ينقص.
-    // ملحوظة: GET /users/ اتجرب وطلع مش متاح/مش بيترّد لحساب المعلم، فاتشال من هنا.
-    const [classroomResult, studentsResult, allStudentsResult] =
+    const [classroomResult, studentsResult] =
       await Promise.allSettled([
         getClassroom(groupId),
         getClassroomStudents(groupId),
-        getAllStudents(),
       ]);
 
     if (classroomResult.status === "fulfilled") {
@@ -81,24 +79,9 @@ const GroupStudentsPage = () => {
     if (studentsResult.status === "fulfilled") {
       const rawStudents = studentsResult.value.data?.data || [];
 
-      const extraByUserId = new Map();
-      if (allStudentsResult.status === "fulfilled") {
-        const rawAllStudents = allStudentsResult.value.data?.data || [];
-        rawAllStudents.forEach((s) => {
-          if (s.user?.id) extraByUserId.set(s.user.id, s);
-        });
-      } else {
-        console.warn(
-          "Failed to load full students list:",
-          allStudentsResult.reason,
-        );
-      }
-
       const mapped = rawStudents.map((entry) => {
         const user = entry.user; // ممكن تكون null لو الطالب لسه معندوش حساب
-        const extra = user?.id ? extraByUserId.get(user.id) : null;
-
-        const createdAt = entry.createdAt || extra?.createdAt;
+        const createdAt = entry.createdAt;
         return {
           id: entry.id,
           name: user?.fullName || "—",
@@ -115,13 +98,12 @@ const GroupStudentsPage = () => {
           // الأفضل إن الباك إند يعمل populate لحقل parent ويرجّع fullName مباشرة
           // في GET /classrooms/:id/students/ بدل ما الفرونت يلف على endpoint تاني.
           parent: "--",
-          status: mapStatus(entry.status ?? extra?.status),
+          status: mapStatus(entry.status),
           stageName: resolveName(entry.stage?.name),
           gradeName: resolveName(entry.grade?.name),
           username: user?.username || "--",
-          averageScore: entry.averageScore ?? extra?.averageScore ?? "--",
-          totalStudySessions:
-            entry.totalStudySessions ?? extra?.totalStudySessions ?? 0,
+          averageScore: entry.averageScore ?? "--",
+          totalStudySessions: entry.totalStudySessions ?? 0,
         };
       });
 
@@ -135,7 +117,10 @@ const GroupStudentsPage = () => {
   }, [groupId]);
 
   useEffect(() => {
-    fetchStudents();
+    const loadInitialStudents = async () => {
+      await fetchStudents();
+    };
+    void loadInitialStudents();
   }, [fetchStudents]);
 
   const filtered = students.filter(

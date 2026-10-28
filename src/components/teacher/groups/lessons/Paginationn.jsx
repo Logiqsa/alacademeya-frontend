@@ -1,4 +1,3 @@
-import React from 'react';
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 
 const Paginationn = ({ page, totalPages, onChange, totalItems, displayedCount, unitLabel = "حصة", pageSize, onPageSizeChange, pageSizeOptions = [5, 10, 20] }) => {

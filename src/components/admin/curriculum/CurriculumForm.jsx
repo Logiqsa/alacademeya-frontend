@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { getCountries } from "../../../services/APIService";
-import { Loader2 } from "lucide-react";
 import { countryOption } from "../../../utils/countryName";
 
 const CurriculumForm = ({ data, onChange }) => {
   const [countries, setCountries] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
     getCountries()
       .then((res) => {
         const list = res?.data?.data || res?.data || [];

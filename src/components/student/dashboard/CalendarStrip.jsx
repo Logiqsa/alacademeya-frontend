@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, memo, useCallback } from "react";
+import { useMemo, useState, memo, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { WEEK_DAYS } from "../../../utils/scheduleWeek";
 
@@ -110,20 +110,17 @@ const CalendarStrip = ({
 }) => {
   const today = useMemo(() => new Date(), []);
   const [viewDate, setViewDate] = useState(() => new Date());
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [pickedDate, setPickedDate] = useState(() => new Date());
 
   const days = useMemo(() => buildMonthGrid(viewDate), [viewDate]);
   const eventDateSet = useMemo(() => new Set(eventDates), [eventDates]);
 
-  // Keep the internal selection in sync if the parent drives selectedDayKey externally.
-  useEffect(() => {
-    if (!selectedDayKey) return;
-    const currentKey = WEEK_DAYS[weekdayIndex(selectedDate)]?.key;
-    if (currentKey === selectedDayKey) return;
-    const nextDate = findDateForWeekdayKey(days, selectedDayKey, selectedDate);
-    setSelectedDate(nextDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDayKey, days]);
+  const selectedDate = useMemo(
+    () => selectedDayKey
+      ? findDateForWeekdayKey(days, selectedDayKey, pickedDate)
+      : pickedDate,
+    [days, pickedDate, selectedDayKey],
+  );
 
   const monthYearLabel = useMemo(
     () =>
@@ -153,7 +150,7 @@ const CalendarStrip = ({
 
   const handlePick = useCallback(
     (date) => {
-      setSelectedDate(date);
+      setPickedDate(date);
       const key = WEEK_DAYS[weekdayIndex(date)]?.key;
       if (key) onSelectDay?.(key);
     },

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Check, Hourglass, Bell } from 'lucide-react';
 import academyLogo from '../../../assets/icons/logo.svg';
 

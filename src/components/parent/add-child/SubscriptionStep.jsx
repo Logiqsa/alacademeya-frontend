@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Upload, Copy, Check } from 'lucide-react';
 import vodafoneIcon from '../../../assets/icons/vodafone-cash.svg';
 

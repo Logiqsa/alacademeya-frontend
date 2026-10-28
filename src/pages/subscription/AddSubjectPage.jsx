@@ -12,7 +12,6 @@ import {
   getExchangeRates,
   getMyStudentsSubscriptions,
   getMySubscriptions,
-  getStudent,
   getStudentSubscriptionOptions,
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
@@ -90,9 +89,9 @@ const AddSubjectPage = ({ role }) => {
         const studentId = entityId(source.student);
         if (!studentId) throw new Error("STUDENT_NOT_FOUND");
 
-        const profileResponse = await getStudent(studentId);
-        const profileData = responseData(profileResponse);
-        const profile = profileData?.student || profileData;
+        const optionsResponse = await getStudentSubscriptionOptions(studentId);
+        const options = responseData(optionsResponse);
+        const profile = options?.student;
         const curriculumId = entityId(profile?.curriculum);
         const stageId = entityId(profile?.stage);
         const gradeId = entityId(profile?.grade);
@@ -103,16 +102,10 @@ const AddSubjectPage = ({ role }) => {
           ...(gradeId ? { grade: gradeId } : {}),
         };
 
-        const [
-          optionsResponse,
-          ratesResponse,
-          subjectsResponse,
-        ] = await Promise.all([
-          getStudentSubscriptionOptions(studentId),
+        const [ratesResponse, subjectsResponse] = await Promise.all([
           getExchangeRates(),
           getAllSubjects(subjectParams),
         ]);
-        const options = responseData(optionsResponse);
         const rates = responseData(ratesResponse);
         const gradeSubjects = responseData(subjectsResponse);
         const optionSubjects = options?.subjects || [];

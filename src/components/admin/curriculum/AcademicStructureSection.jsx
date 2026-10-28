@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -51,18 +51,13 @@ const GradePill = ({ label }) => (
 const StageRow = ({ stage, defaultOpen = false }) => {
   const [open, setOpen] = useState(defaultOpen);
   const [grades, setGrades] = useState([]);
-  const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     if (!open) return;
-
-    setLoading(true);
 
     getStageGrades(stage._id || stage.id)
       .then((res) => {
         setGrades(extractList(res.data));
-      })
-      .finally(() => setLoading(false));
+      });
   }, [open, stage]);
 
   return (
@@ -119,21 +114,35 @@ const CurriculumCard = ({
 }) => {
   const [open, setOpen] = useState(defaultOpen);
   const [stages, setStages] = useState(null); // null = not fetched yet
-  const [loadingStages, setLoadingStages] = useState(false);
+  const [loadingStages, setLoadingStages] = useState(defaultOpen);
 
   const curriculumId = curriculum._id || curriculum.id;
 
   useEffect(() => {
     if (!open || stages !== null) return;
-    setLoadingStages(true);
+    let active = true;
     getCurriculumStages(curriculumId)
-      .then((res) => setStages(extractList(res.data)))
-      .catch(() => {
-        toast.error("تعذر تحميل المراحل الدراسية");
-        setStages([]);
+      .then((res) => {
+        if (active) setStages(extractList(res.data));
       })
-      .finally(() => setLoadingStages(false));
+      .catch(() => {
+        if (active) {
+          toast.error("تعذر تحميل المراحل الدراسية");
+          setStages([]);
+        }
+      })
+      .finally(() => {
+        if (active) setLoadingStages(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [open, stages, curriculumId]);
+
+  const handleToggle = () => {
+    if (!open && stages === null) setLoadingStages(true);
+    setOpen((current) => !current);
+  };
 
   return (
     <div className="bg-white border border-[#E5E5E5] rounded-2xl overflow-hidden">
@@ -156,7 +165,7 @@ const CurriculumCard = ({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setOpen((p) => !p)}
+            onClick={handleToggle}
             className="text-[#575F69] cursor-pointer p-1 -m-1"
             aria-label="عرض / إخفاء"
           >
@@ -220,23 +229,26 @@ const AcademicStructureSection = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  const fetchCurricula = async () => {
-    setLoading(true);
-    setLoadError("");
-    try {
-      const res = await getCurriculums();
-      setCurricula(extractList(res.data));
-    } catch (err) {
-      setLoadError(
-        err.response?.data?.message || "تعذر تحميل المناهج الدراسية",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchCurricula();
+    let active = true;
+    const loadCurricula = async () => {
+      try {
+        const res = await getCurriculums();
+        if (active) setCurricula(extractList(res.data));
+      } catch (err) {
+        if (active) {
+          setLoadError(
+            err.response?.data?.message || "تعذر تحميل المناهج الدراسية",
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void loadCurricula();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleAdd = () => navigate("/admin/curriculum/create");

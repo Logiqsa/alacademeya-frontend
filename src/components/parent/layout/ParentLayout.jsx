@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import ParentSidebar from "./ParentSidebar";
 import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 import { AccountStatusNotice } from "../../account-settings/AccountRegistrationStatus";
+import LayoutSidebarContext from "../../../context/LayoutSidebarContext";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -28,7 +29,8 @@ const ParentLayout = ({ children }) => {
   }, []);
 
   return (
-    <div className="flex h-dvh bg-[#F5F7FB] overflow-hidden">
+    <LayoutSidebarContext.Provider value={isOpen}>
+    <div className="flex h-dvh min-w-0 bg-[#F5F7FB] overflow-hidden">
       <div className="h-full shrink-0">
         <ParentSidebar
           isOpen={isOpen}
@@ -36,13 +38,14 @@ const ParentLayout = ({ children }) => {
         />
       </div>
 
-      <main data-route-scroll className="flex-1 h-full overflow-y-auto p-4 md:p-6">
+      <main data-route-scroll className="h-full min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
          <Breadcrumbs homeTo="/parent-dashboard" />
         <AccountStatusNotice />
         {children}
       </main>
 
     </div>
+    </LayoutSidebarContext.Provider>
   );
 };
 

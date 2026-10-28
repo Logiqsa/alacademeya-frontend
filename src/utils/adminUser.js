@@ -23,8 +23,8 @@ export const adminAccountTypeLabel = (user = {}) => {
 
 export const statusOf = (u) => {
   if (u.isDeleted) return "محذوف";
-  if (!u.isActive) return "موقوف";
   if (u.registrationStatus?.startsWith("pending")) return "معلق";
+  if (!u.isActive) return "موقوف";
   return "نشط";
 };
 

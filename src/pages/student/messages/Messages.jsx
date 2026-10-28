@@ -6,10 +6,12 @@ import ChatBox from "../../../components/student/messgaes/ChatBox";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import { useChatRooms } from "../../../api/useChatRooms";
 import { AuthContext } from "../../../context/AuthContext";
+import useLayoutSidebarOpen from "../../../hooks/useLayoutSidebarOpen";
 
 export default function StudentMessages() {
   const { user } = useContext(AuthContext);
   const currentUserId = user?._id ?? user?.id;
+  const sidebarOpen = useLayoutSidebarOpen();
 
   const {
     conversations,
@@ -78,7 +80,6 @@ export default function StudentMessages() {
     if (conversation) {
       openedFromLink.current = true;
       openConversation(conversation.id);
-      setShowChatOnMobile(true);
     }
   }, [conversations, loading, location.state, openConversation, searchParams]);
 
@@ -100,6 +101,18 @@ export default function StudentMessages() {
 
   const activeConversation = conversations.find((c) => c.id === activeId);
   const shouldShowChat = Boolean(activeConversation);
+  const hasAutoOpenRequest = Boolean(
+    location.state?.openSupportConversation ||
+    location.state?.openRoomId ||
+    location.state?.openClassroomId ||
+    location.state?.openClassroomName ||
+    searchParams.get("room") ||
+    searchParams.get("classroom") ||
+    searchParams.get("name"),
+  );
+  const mobileChatVisible = showChatOnMobile || (
+    hasAutoOpenRequest && shouldShowChat
+  );
 
   return (
     <StudentLayout>
@@ -140,8 +153,8 @@ export default function StudentMessages() {
             {/* قائمة المحادثات */}
             <div
               className={`
-                ${showChatOnMobile ? "hidden" : "flex"}
-                md:flex
+                ${mobileChatVisible ? "hidden" : "flex"}
+                ${sidebarOpen ? "" : "xl:flex"}
                 w-full md:w-[320px] lg:w-90
                 shrink-0
                 min-w-0
@@ -169,8 +182,8 @@ export default function StudentMessages() {
               <div
                 key={activeId}
                 className={`
-                  ${showChatOnMobile ? "flex" : "hidden"}
-                  md:flex
+                  ${mobileChatVisible ? "flex" : "hidden"}
+                  ${sidebarOpen ? "" : "xl:flex"}
                   w-full
                   min-w-0
                   flex-1
@@ -187,6 +200,7 @@ export default function StudentMessages() {
                   conversation={activeConversation}
                   onSend={sendMessage}
                   onBack={handleBackToList}
+                  isSinglePane={sidebarOpen}
                 />
               </div>
             )}

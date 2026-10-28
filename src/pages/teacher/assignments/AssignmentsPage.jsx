@@ -46,7 +46,6 @@ const AssignmentsPage = () => {
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState(queryGroupName || "جميع المجموعات");
   const [groupSubject, setGroupSubject] = useState(queryGroupSubjectName || "");
-  const [groupPlace, setGroupPlace] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
@@ -73,14 +72,6 @@ const AssignmentsPage = () => {
           : "";
         if (!queryGroupSubjectName && resolvedSubject && resolvedSubject !== "--") {
           setGroupSubject(resolvedSubject);
-        }
-        if (selectedClassroom) {
-          const resolvedPlace =
-            selectedClassroom.meetingLink ||
-            selectedClassroom.location ||
-            selectedClassroom.address ||
-            "";
-          setGroupPlace(resolvedPlace);
         }
       }
 
@@ -162,10 +153,13 @@ const AssignmentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [queryGroupId, queryGroupName, queryGroupSubjectName]);
 
   useEffect(() => {
-    fetchAllAssignments();
+    const loadInitialAssignments = async () => {
+      await fetchAllAssignments();
+    };
+    void loadInitialAssignments();
   }, [fetchAllAssignments]);
 
   const filtered = assignments.filter((a) => {

@@ -36,55 +36,51 @@ const extractList = (response, keys = []) => {
 // ─── Add/Edit Package Modal ───────────────────────────────────────────────────
 const PackageModal = ({ open, onClose, pkg, onSaved }) => {
   const isEdit = !!pkg;
+  const initialCurriculum = entityId(pkg?.curriculum);
 
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
-  const [sessions, setSessions] = useState("");
-  const [description, setDescription] = useState("");
-  const [curriculum, setCurriculum] = useState("");
-  const [scope, setScope] = useState("all_curriculum");
-  const [selectedGrades, setSelectedGrades] = useState([]);
-  const [isActive, setIsActive] = useState(true);
-  const [isMostPopular, setIsMostPopular] = useState(false);
+  const initialGradeIds = () => (pkg?.grades || []).map(entityId).filter(Boolean);
+  const [name, setName] = useState(() => pkg?.name ?? "");
+  const [price, setPrice] = useState(() => pkg?.price ?? "");
+  const [sessions, setSessions] = useState(() => pkg?.sessions ?? "");
+  const [description, setDescription] = useState(() => pkg?.description ?? "");
+  const [curriculum, setCurriculum] = useState(() => initialCurriculum);
+  const [scope, setScope] = useState(() => initialGradeIds().length ? "specific_grades" : "all_curriculum");
+  const [selectedGrades, setSelectedGrades] = useState(initialGradeIds);
+  const [isActive, setIsActive] = useState(() => pkg?.isActive !== false);
+  const [isMostPopular, setIsMostPopular] = useState(() => pkg?.isMostPopular === true);
   const [curriculums, setCurriculums] = useState([]);
   const [grades, setGrades] = useState([]);
-  const [optionsLoading, setOptionsLoading] = useState(false);
+  const [optionsLoading, setOptionsLoading] = useState(() => Boolean(initialCurriculum));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (open) {
-      setName(pkg?.name ?? "");
-      setPrice(pkg?.price ?? "");
-      setSessions(pkg?.sessions ?? "");
-      setDescription(pkg?.description ?? "");
-      setCurriculum(entityId(pkg?.curriculum));
-      const gradeIds = (pkg?.grades || []).map(entityId).filter(Boolean);
-      setSelectedGrades(gradeIds);
-      setScope(gradeIds.length ? "specific_grades" : "all_curriculum");
-      setIsActive(pkg?.isActive !== false);
-      setIsMostPopular(pkg?.isMostPopular === true);
-      setError("");
-      getCurriculums()
-        .then((response) => setCurriculums(extractList(response, ["curriculums", "results", "items"])))
-        .catch(() => setError("تعذر تحميل المناهج"));
-    }
-  }, [open, pkg]);
+    if (!open) return;
+    getCurriculums()
+      .then((response) => setCurriculums(extractList(response, ["curriculums", "results", "items"])))
+      .catch(() => setError("تعذر تحميل المناهج"));
+  }, [open]);
 
   useEffect(() => {
-    if (!open || !curriculum) {
-      return;
-    }
+    if (!open || !initialCurriculum) return;
     let active = true;
-    setOptionsLoading(true);
-    getAllGrades({ curriculum })
+    getAllGrades({ curriculum: initialCurriculum })
       .then((response) => {
         if (active) setGrades(extractList(response, ["grades", "results", "items"]));
       })
       .catch(() => active && setError("تعذر تحميل صفوف المنهج"))
       .finally(() => active && setOptionsLoading(false));
     return () => { active = false; };
-  }, [open, curriculum]);
+  }, [initialCurriculum, open]);
+
+  const loadGrades = (curriculumId) => {
+    if (!curriculumId) return;
+    setOptionsLoading(true);
+    getAllGrades({ curriculum: curriculumId })
+      .then((response) => setGrades(extractList(response, ["grades", "results", "items"])))
+      .catch(() => setError("تعذر تحميل صفوف المنهج"))
+      .finally(() => setOptionsLoading(false));
+  };
 
   if (!open) return null;
 
@@ -165,7 +161,7 @@ const PackageModal = ({ open, onClose, pkg, onSaved }) => {
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="وصف مختصر للباقة" className={`${inputCls} h-20 py-3 resize-none`} />
           </Field>
           <Field label="المنهج">
-            <select value={curriculum} onChange={(e) => { setCurriculum(e.target.value); setSelectedGrades([]); setGrades([]); setOptionsLoading(Boolean(e.target.value)); }} className={inputCls}>
+            <select value={curriculum} onChange={(e) => { const nextCurriculum = e.target.value; setCurriculum(nextCurriculum); setSelectedGrades([]); setGrades([]); if (nextCurriculum) loadGrades(nextCurriculum); }} className={inputCls}>
               <option value="">اختر المنهج</option>
               {curriculums.map((item) => <option key={entityId(item)} value={entityId(item)}>{entityName(item)}</option>)}
             </select>
@@ -348,7 +344,10 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   };
 
   useEffect(() => {
-    fetchPackages();
+    const loadInitialPackages = async () => {
+      await fetchPackages();
+    };
+    void loadInitialPackages();
   }, []);
 
   const unassignedCount = useMemo(
@@ -680,10 +679,11 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
       )}
 
       {/* Add Modal */}
-      <PackageModal open={showAdd} onClose={onCloseAdd} onSaved={handleSaved} />
+      <PackageModal key={`add-package-${showAdd}`} open={showAdd} onClose={onCloseAdd} onSaved={handleSaved} />
 
       {/* Edit Modal */}
       <PackageModal
+        key={`edit-package-${editPkg?.id || "closed"}`}
         open={!!editPkg}
         onClose={() => setEditPkg(null)}
         pkg={editPkg}

@@ -1,11 +1,7 @@
-import React from "react";
-import { useParams } from "react-router-dom";
 import StudentLayout from "../../../components/student/layout/StudentLayout";
 import LessonFiles from "../../../components/student/groupLesson/Lessonfiles";
 
 const LessonFilesPage = () => {
-  const { groupId, lessonId } = useParams();
-
   return (
     <StudentLayout>
       <div className="w-full p-2 font-['IBM_Plex_Sans_Arabic'] text-right" dir="rtl">

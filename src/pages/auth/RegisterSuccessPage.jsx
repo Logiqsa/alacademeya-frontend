@@ -1,4 +1,3 @@
-import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";

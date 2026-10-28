@@ -18,6 +18,7 @@ export default function ConversationsLists({
   activeFilter,
   onFilterChange,
   onCreateChat,
+  canCreateDirectoryChat = true,
   mode = "chat",
 }) {
   const [showNewChat, setShowNewChat] = useState(false);
@@ -91,7 +92,7 @@ export default function ConversationsLists({
         <h2 className="text-[15px] font-bold text-slate-800 font-['IBM_Plex_Sans_Arabic'] sm:text-base">
           المحادثات
         </h2>
-        {mode === "chat" && (
+        {mode === "chat" && canCreateDirectoryChat && (
           <button
             type="button"
             aria-label="محادثة جديدة"

@@ -7,7 +7,8 @@ import { AuthContext } from "../../context/AuthContext";
 import {
   completeTeacherProfile,
 } from "../../services/APIService";
-import TeachingSelectionsEditor, { sanitizeTeachingSelections, validTeachingSelections } from "../../components/teacher/TeachingSelectionsEditor";
+import TeachingSelectionsEditor from "../../components/teacher/TeachingSelectionsEditor";
+import { sanitizeTeachingSelections, validTeachingSelections } from "../../components/teacher/teachingSelections";
 
 const MAX_TEACHER_FILES = 10;
 const MAX_TEACHER_FILE_SIZE = 20 * 1024 * 1024;

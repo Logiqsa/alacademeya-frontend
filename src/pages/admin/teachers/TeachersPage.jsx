@@ -33,6 +33,7 @@ import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeachingSelections";
+import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import { confirmToast } from "../../../utils/confirmToast";
 import { normalizePhoneSearch } from "../../../utils/phone";
 
@@ -309,16 +310,13 @@ const TeachersPage = () => {
 
   const handleApproveTeacher = async () => {
     if (!selectedTeacher || selectedTeacher.isApproved) return;
+    if (!selectedTeacher.userId) {
+      toast.error("معرّف حساب المعلم غير متاح");
+      return;
+    }
     setApprovingTeacher(true);
     try {
-      await updateTeacherProfile(selectedTeacher.id, { status: "approved" });
-      if (selectedTeacher.userId) {
-        await updateUser(selectedTeacher.userId, {
-          status: "active",
-          registrationStatus: "active",
-          isActive: true,
-        });
-      }
+      await approveRegistrationRequest({ userId: selectedTeacher.userId });
       const approvedTeacher = {
         ...selectedTeacher,
         status: "معتمد",

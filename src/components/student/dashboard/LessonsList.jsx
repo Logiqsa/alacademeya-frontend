@@ -1,4 +1,3 @@
-import React from "react";
 import { Clock, Video } from "lucide-react";
 
 const LessonCard = ({ title, location, duration, time, status, actionLabel, onAction }) => {

@@ -21,6 +21,7 @@ export default function ForgotPassword() {
 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(new Array(OTP_LENGTH).fill(""));
+  const [resetToken, setResetToken] = useState("");
   const [timer, setTimer] = useState(TIMER_START);
 
   const [password, setPassword] = useState("");
@@ -63,6 +64,7 @@ export default function ForgotPassword() {
       setOtp(new Array(OTP_LENGTH).fill(""));
       setPassword("");
       setPasswordConfirm("");
+      setResetToken("");
       setTimer(TIMER_START);
       setModalStep("otp");
       setShowResetModal(true);
@@ -119,7 +121,10 @@ export default function ForgotPassword() {
 
     setVerifyLoading(true);
     try {
-      await verifyPasswordResetCode(code);
+      const response = await verifyPasswordResetCode({ email, resetCode: code });
+      const issuedResetToken = response.data?.data?.resetToken;
+      if (!issuedResetToken) throw new Error("RESET_TOKEN_MISSING");
+      setResetToken(issuedResetToken);
       toast.success("تم التحقق من الكود بنجاح");
       setModalStep("password");
     } catch (err) {
@@ -154,7 +159,7 @@ export default function ForgotPassword() {
     setResetLoading(true);
     try {
       await resetPassword({
-        email,
+        resetToken,
         newPassword: password,
       });
 
@@ -178,6 +183,7 @@ export default function ForgotPassword() {
       await forgotPassword(email);
       toast.success("تم إعادة إرسال الكود. تحقق من مجلد Spam إذا لم تجده.");
       setOtp(new Array(OTP_LENGTH).fill(""));
+      setResetToken("");
       setTimer(TIMER_START);
     } catch (err) {
       toast.error(err.response?.data?.message || "حدث خطأ أثناء إعادة الإرسال");

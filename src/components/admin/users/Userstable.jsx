@@ -30,6 +30,7 @@ import {
   getClassrooms,
   getTeacher,
 } from "../../../services/APIService";
+import { resolveApiEndpoint } from "../../../services/apiUrl";
 const getCurrentMonth = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -120,7 +121,7 @@ const fileUrl = (value) => {
       : value?.url || value?.secureUrl || value?.path) || "";
   if (!raw) return "";
   if (/^https?:\/\//i.test(raw)) return raw;
-  return `https://api.alacademeya.com/api/${raw.replace(/^\/+/, "").replace(/^api\//, "")}`;
+  return resolveApiEndpoint(raw);
 };
 
 const whatsappUrl = (phone) => {
@@ -1174,7 +1175,7 @@ const UsersTable = ({
 
       // الحصول على Teacher Profile باستخدام User ID
       const teacherResponse = await fetch(
-        `https://api.alacademeya.com/api/teachers?user=${user.id}`,
+        resolveApiEndpoint(`teachers?user=${encodeURIComponent(user.id)}`),
         {
           method: "GET",
           headers: {
@@ -1235,7 +1236,9 @@ const UsersTable = ({
 
       // الحصول على التقرير الشهري
       const reportResponse = await fetch(
-        `https://api.alacademeya.com/api/teachers/${teacherId}/monthly-report?month=${month}`,
+        resolveApiEndpoint(
+          `teachers/${encodeURIComponent(teacherId)}/monthly-report?month=${encodeURIComponent(month)}`,
+        ),
         {
           method: "GET",
           headers: {

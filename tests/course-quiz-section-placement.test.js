@@ -52,11 +52,11 @@ test("course steps are clickable and old quiz warning stays outside the lesson g
   assert.match(form, /<\/div>\s*\{lesson\._sectionUnlinked && lesson\.type === "اختبار"/);
 });
 
-test("save anchors quizzes after regular lessons and submits teacher edits for review", () => {
+test("save anchors quizzes after regular lessons and keeps teacher edits as a draft", () => {
   assert.match(api, /lesson: orderedLessonIds\[0\] \|\| null/);
   assert.match(api, /section\.lessons\[left\]\.type === 'اختبار'/);
-  assert.match(form, /save\(isAdminFlow \? course\.status : "قيد المراجعة"\)/);
-  assert.match(form, /بعد اكتمال حفظ الدورة والملفات ستُرسل تلقائيًا للمراجعة/);
+  assert.match(form, /save\(isAdminFlow \? course\.status : "مسودة"\)/);
+  assert.match(details, /إرسال للمراجعة/);
 });
 
 test("teacher course list and details share the same status badge palette", () => {

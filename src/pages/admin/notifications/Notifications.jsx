@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import StatsCardds from "../../../components/admin/notifications/StatsCards";
 import NotificationsSection from "../../../components/admin/notifications/NotificationsSection";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
@@ -12,6 +12,7 @@ import Breadcrumbs from "../../shared/Breadcrumbs";
 import { mergeAdminNotifications } from "../../../utils/adminLocalNotifications";
 import { filterIncompleteJoinNotifications } from "../../../utils/incompleteRegistration";
 import { NOTIFICATION_RECEIVED_EVENT } from "../../../utils/notificationTypes";
+import { AuthContext } from "../../../context/AuthContext";
 
 const extractList = (resData) => {
   if (!resData) return [];
@@ -151,6 +152,8 @@ const enrichPaymentNotifications = async (notifications) => {
 };
 
 const AdminNotificationss = () => {
+  const { user } = useContext(AuthContext);
+  const canReadAllUsers = user?.role === "super-admin";
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -161,7 +164,7 @@ const AdminNotificationss = () => {
     try {
       const [res, usersResponse, studentsResponse] = await Promise.all([
         getNotifications(),
-        getUsers({ limit: 100 }).catch(() => null),
+        canReadAllUsers ? getUsers({ limit: 100 }).catch(() => null) : null,
         getAllStudents({ limit: 500 }).catch(() => null),
       ]);
       const usersBody = usersResponse?.data || {};
@@ -179,7 +182,7 @@ const AdminNotificationss = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canReadAllUsers]);
 
   useEffect(() => {
     // Data loading is intentionally triggered when the page mounts.

@@ -1,7 +1,8 @@
 import { STATIC_INDEXABLE_PATHS } from "../src/components/seo/seoRoutes.js";
+import { SERVER_API_ORIGIN } from "./api-origin.js";
 
 export const SITE_ORIGIN = "https://www.alacademeya.com";
-export const API_ORIGIN = "https://api.alacademeya.com/api";
+export const API_ORIGIN = SERVER_API_ORIGIN;
 export const SITEMAP_LIMIT = 50_000;
 export const FEED_PAGE_SIZE = 1_000;
 export const MAX_FEED_ITERATIONS = 100;

@@ -6,10 +6,12 @@ import ChatBox from "../../components/parent/messages/ChatBox";
 import ParentLayout from "../../components/parent/layout/ParentLayout";
 import { useChatRooms } from "../../api/useChatRooms";
 import { AuthContext } from "../../context/AuthContext";
+import useLayoutSidebarOpen from "../../hooks/useLayoutSidebarOpen";
 
 export default function Messages() {
   const { user } = useContext(AuthContext);
   const currentUserId = user?._id ?? user?.id;
+  const sidebarOpen = useLayoutSidebarOpen();
 
   const {
     conversations,
@@ -61,7 +63,6 @@ export default function Messages() {
     if (conversation) {
       openedFromLink.current = true;
       openConversation(conversation.id);
-      setShowChatOnMobile(true);
     }
   }, [conversations, loading, location.state, openConversation, searchParams]);
 
@@ -83,6 +84,16 @@ export default function Messages() {
 
   const activeConversation = conversations.find((c) => c.id === activeId);
   const shouldShowChat = Boolean(activeConversation);
+  const hasAutoOpenRequest = Boolean(
+    location.state?.openSupportConversation ||
+    location.state?.openRoomId ||
+    location.state?.openClassroomId ||
+    searchParams.get("room") ||
+    searchParams.get("classroom"),
+  );
+  const mobileChatVisible = showChatOnMobile || (
+    hasAutoOpenRequest && shouldShowChat
+  );
 
   return (
     <ParentLayout>
@@ -133,8 +144,8 @@ export default function Messages() {
             {/* قائمة المحادثات */}
             <div
               className={`
-                ${showChatOnMobile ? "hidden" : "flex"}
-                md:flex
+                ${mobileChatVisible ? "hidden" : "flex"}
+                ${sidebarOpen ? "" : "xl:flex"}
                 w-full md:w-[320px] lg:w-90
                 shrink-0
                 min-w-0
@@ -162,8 +173,8 @@ export default function Messages() {
               <div
                 key={activeId}
                 className={`
-                  ${showChatOnMobile ? "flex" : "hidden"}
-                  md:flex
+                  ${mobileChatVisible ? "flex" : "hidden"}
+                  ${sidebarOpen ? "" : "xl:flex"}
                   w-full
                   min-w-0
                   flex-1
@@ -180,6 +191,7 @@ export default function Messages() {
                   conversation={activeConversation}
                   onSend={sendMessage}
                   onBack={handleBackToList}
+                  isSinglePane={sidebarOpen}
                 />
               </div>
             )}

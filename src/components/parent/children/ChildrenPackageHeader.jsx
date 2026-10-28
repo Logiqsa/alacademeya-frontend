@@ -1,4 +1,3 @@
-import React from 'react';
 import familyIcon from '../../../assets/icons/family-icon.svg';
 const ChildrenPackageHeader = () => {
     return (

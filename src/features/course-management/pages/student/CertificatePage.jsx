@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import StudentLayout from '../../../../components/student/layout/StudentLayout';
 import { fetchPublicCourse } from '../../api/coursesApi';
 import { claimCourseCertificate, getCourseCertificateState } from '../../../../services/APIService';
+import { resolveApiEndpoint } from '../../../../services/apiUrl';
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
 const text = (value) => value?.ar || value?.en || value || '';
@@ -30,7 +31,7 @@ export default function CertificatePage() {
   const certificate = state?.certificate;
   if (!state?.issued || !certificate) return <StudentLayout><div dir='rtl' className='mx-auto max-w-xl p-10 text-center'><Award className='mx-auto text-gray-300' size={52} /><h1 className='mt-4 text-xl font-extrabold'>الشهادة غير متاحة بعد</h1><p className='mt-2 text-gray-500'>أكمل جميع الدروس والاختبارات المطلوبة أولاً.</p><Link to={`/learn/${slug}`} className='mt-6 inline-block font-bold text-[#123C91]'>العودة إلى الدورة</Link></div></StudentLayout>;
 
-  const verificationUrl = 'https://api.alacademeya.com/api/certificates/verify/' + certificate.verificationCode;
+  const verificationUrl = resolveApiEndpoint(`certificates/verify/${certificate.verificationCode}`);
   const copy = async () => { await navigator.clipboard.writeText(verificationUrl); toast.success('تم نسخ رابط التحقق'); };
 
   return <StudentLayout><div dir='rtl' className='min-h-screen bg-[#F7F7FC] px-4 py-10'>
@@ -50,4 +51,3 @@ export default function CertificatePage() {
     </div>
   </div></StudentLayout>;
 }
-

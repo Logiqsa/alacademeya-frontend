@@ -1,18 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 
-const PayoutAccountModal = ({ isOpen, initialData, onClose, onSave }) => {
+const PayoutAccountForm = ({ initialData, onClose, onSave }) => {
   const [label, setLabel] = useState(initialData?.label ?? "");
   const [number, setNumber] = useState(initialData?.number ?? "");
-
-  useEffect(() => {
-    if (isOpen) {
-      setLabel(initialData?.label ?? "");
-      setNumber(initialData?.number ?? "");
-    }
-  }, [isOpen, initialData]);
-
-  if (!isOpen) return null;
 
   const handleSave = () => {
     if (!label.trim() || !number.trim()) return;
@@ -66,6 +57,19 @@ const PayoutAccountModal = ({ isOpen, initialData, onClose, onSave }) => {
         </div>
       </div>
     </div>
+  );
+};
+
+const PayoutAccountModal = ({ isOpen, initialData, onClose, onSave }) => {
+  if (!isOpen) return null;
+  const formKey = `${initialData?.label ?? ""}:${initialData?.number ?? ""}`;
+  return (
+    <PayoutAccountForm
+      key={formKey}
+      initialData={initialData}
+      onClose={onClose}
+      onSave={onSave}
+    />
   );
 };
 

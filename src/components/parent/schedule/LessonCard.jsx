@@ -1,4 +1,3 @@
-import React from "react";
 import { Clock, BookOpen, Video } from "lucide-react";
 
 const STATUS_STYLES = {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import AdminSidebar from "./AdminSidebar";
+import LayoutSidebarContext from "../../../context/LayoutSidebarContext";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -40,6 +41,7 @@ const AdminLayout = ({ children }) => {
   }, []);
 
   return (
+    <LayoutSidebarContext.Provider value={isOpen}>
     <div className="flex h-dvh min-h-0 w-full overflow-hidden bg-[#F5F7FB]">
       <div className="h-full min-h-0 shrink-0 overflow-hidden">
         <AdminSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
@@ -49,6 +51,7 @@ const AdminLayout = ({ children }) => {
         {children}
       </main>
     </div>
+    </LayoutSidebarContext.Provider>
   );
 };
 

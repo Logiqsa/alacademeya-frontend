@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import StudentSidebar from "./StudentSidebar";
 import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 import { AccountStatusNotice } from "../../account-settings/AccountRegistrationStatus";
+import LayoutSidebarContext from "../../../context/LayoutSidebarContext";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -31,6 +32,7 @@ const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, mar
   }, []);
 
   return (
+    <LayoutSidebarContext.Provider value={isOpen}>
     <div className="h-screen flex bg-[#F5F7FB] overflow-hidden">
       <div className="h-full shrink-0">
         <StudentSidebar
@@ -40,7 +42,7 @@ const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, mar
         />
       </div>
 
-      <main data-route-scroll className="flex-1 h-full overflow-y-auto p-3 md:p-6">
+      <main data-route-scroll className="min-w-0 flex-1 h-full overflow-x-hidden overflow-y-auto p-3 md:p-6">
          {showBreadcrumbs && <Breadcrumbs
            homeTo={marketplaceOnly ? "/learner-dashboard" : "/student-dashboard"}
            dynamicLabels={breadcrumbLabels}
@@ -51,6 +53,7 @@ const StudentLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, mar
       </main>
 
     </div>
+    </LayoutSidebarContext.Provider>
   );
 };
 

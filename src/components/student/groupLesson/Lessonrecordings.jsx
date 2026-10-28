@@ -1,4 +1,3 @@
-import React from "react";
 import { HiOutlinePlay, HiOutlineDownload, HiOutlineShare } from "react-icons/hi";
 
 const RecordingCard = ({ title, subject, date, size, thumbnail, isLive, onPlay, onDownload, onShare }) => (

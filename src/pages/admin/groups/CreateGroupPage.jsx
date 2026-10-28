@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, Link as LinkIcon, Info } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 import {
   createClassroom,
@@ -153,50 +153,29 @@ const CreateGroupPages = () => {
     getCurriculums().then((res) => setCurriculums(res.data?.data || []));
   }, []);
 
-  /* ---------------------------------------------------------------- */
-  /* 2) المرحلة — بتعتمد على المنهج المختار                             */
-  /* ---------------------------------------------------------------- */
-  useEffect(() => {
-    if (!data.curriculum) {
-      setStages([]);
-      return;
-    }
+  const loadStages = (curriculumId) => {
     setLoadingStages(true);
-    getCurriculumStages(data.curriculum)
+    return getCurriculumStages(curriculumId)
       .then((res) => setStages(res.data?.data || []))
       .catch(() => setStages([]))
       .finally(() => setLoadingStages(false));
-  }, [data.curriculum]);
+  };
 
-  /* ---------------------------------------------------------------- */
-  /* 3) الصف — بيعتمد على المرحلة المختارة                              */
-  /* ---------------------------------------------------------------- */
-  useEffect(() => {
-    if (!data.stage) {
-      setGrades([]);
-      return;
-    }
+  const loadGrades = (stageId) => {
     setLoadingGrades(true);
-    getStageGrades(data.stage)
+    return getStageGrades(stageId)
       .then((res) => setGrades(res.data?.data || []))
       .catch(() => setGrades([]))
       .finally(() => setLoadingGrades(false));
-  }, [data.stage]);
+  };
 
-  /* ---------------------------------------------------------------- */
-  /* 4) المادة — تعتمد على الصف المختار                                */
-  /* ---------------------------------------------------------------- */
-  useEffect(() => {
-    if (!data.grade) {
-      setSubjects([]);
-      return;
-    }
+  const loadSubjects = (gradeId) => {
     setLoadingSubjects(true);
-    getSubjects({ grade: data.grade })
+    return getSubjects({ grade: gradeId })
       .then((res) => setSubjects(res.data?.data || []))
       .catch(() => setSubjects([]))
       .finally(() => setLoadingSubjects(false));
-  }, [data.grade]);
+  };
 
   /* ---------------------------------------------------------------- */
   /* المعلمين — بنجيب كل المعلمين (GET /teachers) ونفلتر محليًا حسب     */
@@ -204,22 +183,14 @@ const CreateGroupPages = () => {
   /* ⚠️ endpoint /teachers/available كان بيرجع فاضي دايمًا، فرجعنا      */
   /* لنفس endpoint /teachers المؤكد شغّال من الـ Postman                */
   /* ---------------------------------------------------------------- */
-  useEffect(() => {
-    const canLoadTeachers =
-      data.curriculum && data.stage && data.grade && data.subject;
-
-    if (!canLoadTeachers) {
-      setTeachers([]);
-      return;
-    }
-
+  const loadTeachers = ({ curriculum, grade, subject }) => {
     setLoadingTeachers(true);
 
-    getTeachers({ page: 1, limit: 1000 })
+    return getTeachers({ page: 1, limit: 1000 })
       .then((res) => {
         const raw = res.data?.data;
         const selectedSubject = subjects.find(
-          (subject) => idOf(subject) === data.subject,
+          (item) => idOf(item) === subject,
         );
         const selectedSubjectName = normalizedName(selectedSubject);
 
@@ -260,11 +231,11 @@ const CreateGroupPages = () => {
                 (teacher.isActive === true &&
                   teacher.registrationStatus === "active")) &&
               teacher.isDeleted !== true &&
-              (teacher.subjectIds.includes(data.subject) ||
+              (teacher.subjectIds.includes(subject) ||
                 (selectedSubjectName &&
                   teacher.subjectNames.includes(selectedSubjectName))) &&
-              teacher.gradeIds.includes(data.grade) &&
-              teacher.curriculumIds.includes(data.curriculum),
+              teacher.gradeIds.includes(grade) &&
+              teacher.curriculumIds.includes(curriculum),
           );
 
         setTeachers(normalizedTeachers);
@@ -274,7 +245,7 @@ const CreateGroupPages = () => {
         setTeachers([]);
       })
       .finally(() => setLoadingTeachers(false));
-  }, [data.curriculum, data.stage, data.grade, data.subject, subjects]);
+  };
 
   const handleField = (field, value) => {
     setData((prev) => {
@@ -301,6 +272,33 @@ const CreateGroupPages = () => {
 
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+
+    if (field === "curriculum") {
+      setStages([]);
+      setGrades([]);
+      setSubjects([]);
+      setTeachers([]);
+      if (value) loadStages(value);
+    } else if (field === "stage") {
+      setGrades([]);
+      setSubjects([]);
+      setTeachers([]);
+      if (value) loadGrades(value);
+    } else if (field === "grade") {
+      setSubjects([]);
+      setTeachers([]);
+      if (value) loadSubjects(value);
+    } else if (field === "subject") {
+      setTeachers([]);
+      const nextData = { ...data, subject: value };
+      if (nextData.curriculum && nextData.stage && nextData.grade && value) {
+        loadTeachers({
+          curriculum: nextData.curriculum,
+          grade: nextData.grade,
+          subject: value,
+        });
+      }
     }
   };
 

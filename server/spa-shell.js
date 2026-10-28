@@ -1,6 +1,7 @@
 import { classifySpaPath, SPA_ROUTE_KIND } from "./spa-routes.js";
+import { SERVER_API_ORIGIN } from "./api-origin.js";
 
-export const API_ORIGIN = "https://api.alacademeya.com/api";
+export const API_ORIGIN = SERVER_API_ORIGIN;
 export const ENTITY_TIMEOUT_MS = 5_000;
 
 export const CACHE = Object.freeze({

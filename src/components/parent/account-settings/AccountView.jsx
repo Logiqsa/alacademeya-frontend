@@ -140,6 +140,69 @@ const AccountView = () => {
       .catch(() => setCountries([]));
   }, []);
 
+  /* ── build id→name maps ── */
+  const buildLookupMaps = useCallback(async (studentList) => {
+    setLookupLoading(true);
+    try {
+      const curriculumIds = [
+        ...new Set(studentList.map((s) => s.curriculum).filter(Boolean)),
+      ];
+      const stageIds = [
+        ...new Set(studentList.map((s) => s.stage).filter(Boolean)),
+      ];
+      const currMap = {};
+      const stgMap = {};
+      const grdMap = {};
+
+      try {
+        const res = await getCurriculums();
+        const list = res?.data?.data ?? res?.data ?? [];
+        (Array.isArray(list) ? list : []).forEach((c) => {
+          currMap[c.id] = c.name?.ar || c.name?.en || c.name || c.id;
+        });
+      } catch {
+        // Lookup labels are supplementary and do not invalidate the student profile.
+      }
+
+      for (const currId of curriculumIds) {
+        try {
+          const res = await getCurriculumStages(currId);
+          const list = res?.data?.data ?? res?.data ?? [];
+          (Array.isArray(list) ? list : []).forEach((s) => {
+            stgMap[s.id] = s.name?.ar || s.name?.en || s.name || s.id;
+          });
+        } catch {
+          // A missing stage label is rendered as an unavailable lookup value.
+        }
+      }
+
+      for (const stageId of stageIds) {
+        try {
+          const res = await getStageGrades(stageId);
+          const list = res?.data?.data ?? res?.data ?? [];
+          (Array.isArray(list) ? list : []).forEach((g) => {
+            grdMap[g.id] = g.name?.ar || g.name?.en || g.name || g.id;
+          });
+        } catch {
+          // A missing grade label is rendered as an unavailable lookup value.
+        }
+      }
+
+      studentList.forEach((s) => {
+        if (s.grade && typeof s.grade === "object" && s.grade.id) {
+          grdMap[s.grade.id] = s.grade.name?.ar || s.grade.name?.en || s.grade.id;
+        }
+      });
+      setCurriculumMap(currMap);
+      setStageMap(stgMap);
+      setGradeMap(grdMap);
+    } catch (err) {
+      console.error("buildLookupMaps error:", err);
+    } finally {
+      setLookupLoading(false);
+    }
+  }, []);
+
   /* ── load ── */
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -163,7 +226,9 @@ const AccountView = () => {
       try {
         const raw = localStorage.getItem("parentProfile");
         if (raw) savedProfile = JSON.parse(raw);
-      } catch {}
+      } catch {
+        // Registration cache is optional; API data is used when it is unavailable.
+      }
 
       setParent({
         // الاسم بييجي من الـ API دايماً (أحدث نسخة)
@@ -211,74 +276,13 @@ const AccountView = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  /* ── build id→name maps ── */
-  const buildLookupMaps = async (studentList) => {
-    setLookupLoading(true);
-    try {
-      const curriculumIds = [
-        ...new Set(studentList.map((s) => s.curriculum).filter(Boolean)),
-      ];
-      const stageIds = [
-        ...new Set(studentList.map((s) => s.stage).filter(Boolean)),
-      ];
-
-      const currMap = {};
-      const stgMap = {};
-      const grdMap = {};
-
-      // Curriculums
-      try {
-        const res = await getCurriculums();
-        const list = res?.data?.data ?? res?.data ?? [];
-        (Array.isArray(list) ? list : []).forEach((c) => {
-          currMap[c.id] = c.name?.ar || c.name?.en || c.name || c.id;
-        });
-      } catch {}
-
-      // Stages per curriculum
-      for (const currId of curriculumIds) {
-        try {
-          const res = await getCurriculumStages(currId);
-          const list = res?.data?.data ?? res?.data ?? [];
-          (Array.isArray(list) ? list : []).forEach((s) => {
-            stgMap[s.id] = s.name?.ar || s.name?.en || s.name || s.id;
-          });
-        } catch {}
-      }
-
-      // Grades per stage
-      for (const stageId of stageIds) {
-        try {
-          const res = await getStageGrades(stageId);
-          const list = res?.data?.data ?? res?.data ?? [];
-          (Array.isArray(list) ? list : []).forEach((g) => {
-            grdMap[g.id] = g.name?.ar || g.name?.en || g.name || g.id;
-          });
-        } catch {}
-      }
-
-      // الـ grade بييجي كـ object كامل من students response — نضيفه مباشرة
-      studentList.forEach((s) => {
-        if (s.grade && typeof s.grade === "object" && s.grade.id) {
-          grdMap[s.grade.id] =
-            s.grade.name?.ar || s.grade.name?.en || s.grade.id;
-        }
-      });
-
-      setCurriculumMap(currMap);
-      setStageMap(stgMap);
-      setGradeMap(grdMap);
-    } catch (err) {
-      console.error("buildLookupMaps error:", err);
-    } finally {
-      setLookupLoading(false);
-    }
-  };
+  }, [buildLookupMaps]);
 
   useEffect(() => {
-    loadData();
+    const loadInitialData = async () => {
+      await loadData();
+    };
+    void loadInitialData();
   }, [loadData]);
 
   const resolveName = (val, map) => {

@@ -14,6 +14,8 @@ export default function ChatBox({
   onDeleteMessage,
   onToggleActive,
   onDeleteRoom,
+  canManageUser = true,
+  isSinglePane = false,
 }) {
   const [text, setText] = useState("");
   const [confirmAction, setConfirmAction] = useState(null);
@@ -233,7 +235,7 @@ export default function ChatBox({
         <button
           type="button"
           onClick={onBack}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-gray-100 md:hidden"
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-gray-100 ${isSinglePane ? "" : "xl:hidden"}`}
           aria-label="رجوع"
         >
           <ArrowRight size={18} />
@@ -241,10 +243,10 @@ export default function ChatBox({
         <button
           type="button"
           onClick={handleOpenUserPopup}
-          disabled={userPopupLoading}
+          disabled={!canManageUser || userPopupLoading}
           className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg text-right transition-opacity hover:opacity-80 disabled:cursor-wait disabled:opacity-60 sm:gap-3"
           aria-label={`عرض بيانات ${conversation.name}`}
-          title="عرض بيانات المستخدم"
+          title={canManageUser ? "عرض بيانات المستخدم" : "تفاصيل الحساب متاحة للمشرف العام فقط"}
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-white [&_svg]:text-white text-sm font-bold text-white sm:h-10 sm:w-10">
             {conversation.avatarInitial}

@@ -266,13 +266,9 @@ const CreateCurriculumPage = () => {
       { subjectId },
     );
   };
-  const deleteGradeWithSubjects = async (grade) => {
+  const deleteGradeRecord = async (grade) => {
     const gradeId = entityId(grade);
     if (!gradeId) return;
-
-    for (const subject of grade.subjects || []) {
-      await deleteSubjectRecord(subject);
-    }
 
     await withSaveStep(
       `حذف الصف "${grade.name?.ar || grade.name?.en || gradeId}"`,
@@ -280,13 +276,9 @@ const CreateCurriculumPage = () => {
       { gradeId },
     );
   };
-  const deleteStageWithChildren = async (stage) => {
+  const deleteStageRecord = async (stage) => {
     const stageId = entityId(stage);
     if (!stageId) return;
-
-    for (const grade of stage.grades || []) {
-      await deleteGradeWithSubjects(grade);
-    }
 
     await withSaveStep(
       `حذف المرحلة "${stage.name?.ar || stage.name?.en || stageId}"`,
@@ -308,11 +300,13 @@ const CreateCurriculumPage = () => {
     );
 
     if (savedSubject) {
-      await withSaveStep(
-        `تحديث المادة "${subject.name.ar}"`,
-        () => updateSubject(entityId(subject), { name: subject.name }),
-        { name: subject.name },
-      );
+      if (!sameName(savedSubject.name, subject.name)) {
+        await withSaveStep(
+          `تحديث المادة "${subject.name.ar}"`,
+          () => updateSubject(entityId(subject), { name: subject.name }),
+          { name: subject.name },
+        );
+      }
       return;
     }
 
@@ -348,11 +342,13 @@ const CreateCurriculumPage = () => {
     let gradeId = entityId(savedGrade) || "";
 
     if (savedGrade) {
-      await withSaveStep(
-        `تحديث الصف "${grade.name.ar}"`,
-        () => updateGrade(gradeId, { name: grade.name }),
-        { name: grade.name },
-      );
+      if (!sameName(savedGrade.name, grade.name)) {
+        await withSaveStep(
+          `تحديث الصف "${grade.name.ar}"`,
+          () => updateGrade(gradeId, { name: grade.name }),
+          { name: grade.name },
+        );
+      }
     } else {
       await createGradeWithSubjects({ savedCurriculumId, stageId, grade });
       return;
@@ -365,28 +361,32 @@ const CreateCurriculumPage = () => {
       }
     }
 
-    for (const subject of grade.subjects) {
-      const savedSubject = savedGrade?.subjects.find(
-        (item) => entityId(item) === entityId(subject),
-      );
-      await saveSubject({
-        savedCurriculumId,
-        stageId,
-        gradeId,
-        subject,
-        savedSubject,
-      });
-    }
+    await Promise.all(
+      grade.subjects.map((subject) => {
+        const savedSubject = savedGrade?.subjects.find(
+          (item) => entityId(item) === entityId(subject),
+        );
+        return saveSubject({
+          savedCurriculumId,
+          stageId,
+          gradeId,
+          subject,
+          savedSubject,
+        });
+      }),
+    );
   };
   const saveStageTree = async ({ savedCurriculumId, stage, savedStage }) => {
     let stageId = entityId(savedStage) || "";
 
     if (savedStage) {
-      await withSaveStep(
-        `تحديث المرحلة "${stage.name.ar}"`,
-        () => updateStageRequest(stageId, { name: stage.name }),
-        { name: stage.name },
-      );
+      if (!sameName(savedStage.name, stage.name)) {
+        await withSaveStep(
+          `تحديث المرحلة "${stage.name.ar}"`,
+          () => updateStageRequest(stageId, { name: stage.name }),
+          { name: stage.name },
+        );
+      }
     } else {
       await createStageWithChildren({ savedCurriculumId, stage });
       return;
@@ -395,21 +395,23 @@ const CreateCurriculumPage = () => {
     const currentGradeIds = new Set(stage.grades.map(entityId).filter(Boolean));
     for (const oldGrade of savedStage?.grades || []) {
       if (!currentGradeIds.has(entityId(oldGrade))) {
-        await deleteGradeWithSubjects(oldGrade);
+        await deleteGradeRecord(oldGrade);
       }
     }
 
-    for (const grade of stage.grades) {
-      const savedGrade = savedStage?.grades.find(
-        (item) => entityId(item) === entityId(grade),
-      );
-      await saveGradeTree({
-        savedCurriculumId,
-        stageId,
-        grade,
-        savedGrade,
-      });
-    }
+    await Promise.all(
+      stage.grades.map((grade) => {
+        const savedGrade = savedStage?.grades.find(
+          (item) => entityId(item) === entityId(grade),
+        );
+        return saveGradeTree({
+          savedCurriculumId,
+          stageId,
+          grade,
+          savedGrade,
+        });
+      }),
+    );
   };
   const logSaveError = (err) => {
     if (!import.meta.env.DEV) return;
@@ -533,19 +535,23 @@ const CreateCurriculumPage = () => {
         const currentStageIds = new Set(curriculum.stages.map(entityId).filter(Boolean));
         for (const oldStage of originalStructure) {
           if (!currentStageIds.has(entityId(oldStage))) {
-            await deleteStageWithChildren(oldStage);
+            await deleteStageRecord(oldStage);
           }
         }
-        for (const stage of curriculum.stages) {
-          const savedStage = originalStructure.find((item) => entityId(item) === entityId(stage));
-          await saveStageTree({
-            savedCurriculumId: curriculumId,
-            stage,
-            savedStage,
-          });
-        }
+        await Promise.all(
+          curriculum.stages.map((stage) => {
+            const savedStage = originalStructure.find(
+              (item) => entityId(item) === entityId(stage),
+            );
+            return saveStageTree({
+              savedCurriculumId: curriculumId,
+              stage,
+              savedStage,
+            });
+          }),
+        );
         toast.success("تم تحديث المنهج بنجاح");
-        navigate("/admin/curriculum");
+        navigate("/admin-dashboard");
         return;
       }
 
@@ -569,7 +575,7 @@ const CreateCurriculumPage = () => {
         });
       }
       toast.success("تم بناء المنهج بالكامل بنجاح");
-      navigate("/admin/curriculum");
+      navigate("/admin-dashboard");
     } catch (err) {
       const message = apiErrorMessage(err);
       logSaveError(err);
@@ -608,7 +614,7 @@ const CreateCurriculumPage = () => {
     if (isEditing && savedStage) {
       setSaving(true);
       try {
-        await deleteStageWithChildren(savedStage);
+        await deleteStageRecord(savedStage);
         toast.success("تم حذف المرحلة بنجاح");
         refreshPage();
       } catch (err) {
@@ -636,7 +642,7 @@ const CreateCurriculumPage = () => {
     if (isEditing && savedGrade) {
       setSaving(true);
       try {
-        await deleteGradeWithSubjects(savedGrade);
+        await deleteGradeRecord(savedGrade);
         toast.success("تم حذف الصف بنجاح");
         refreshPage();
       } catch (err) {

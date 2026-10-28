@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Upload,
   X,
@@ -84,9 +84,6 @@ const AssignmentDetailsModal = ({ assignmentId, onClose }) => {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError("");
-
     Promise.all([
       getAssignment(assignmentId),
       getMySubmission(assignmentId).catch(() => null), // ممكن يرجع 404 لو لسه مقدمش
@@ -296,13 +293,16 @@ const StudentAssignmentsTable = ({
   onSubmitted,
   initialDetailsId = null,
 }) => {
-  const [localAssignments, setLocalAssignments] = useState(assignments);
+  const [submissionOverrides, setSubmissionOverrides] = useState({});
+  const localAssignments = useMemo(
+    () => assignments.map((assignment) => ({
+      ...assignment,
+      ...(submissionOverrides[assignment.id] || {}),
+    })),
+    [assignments, submissionOverrides],
+  );
   const [detailsId, setDetailsId] = useState(initialDetailsId);
   const [submitId, setSubmitId] = useState(null);
-
-  useEffect(() => {
-    setLocalAssignments(assignments);
-  }, [assignments]);
 
   // لو مررت onView من برة (مثلاً عشان تعمل navigate لصفحة تفاصيل)، هيتستخدم بدل المودال الداخلي
   const handleView = (assignmentId) => {
@@ -325,13 +325,10 @@ const StudentAssignmentsTable = ({
   };
 
   const handleSubmitted = (assignmentId) => {
-    setLocalAssignments((prev) =>
-      prev.map((a) =>
-        a.id === assignmentId
-          ? { ...a, status: "تم التسليم", grade: "لم يتم التصحيح" }
-          : a,
-      )
-    );
+    setSubmissionOverrides((previous) => ({
+      ...previous,
+      [assignmentId]: { status: "تم التسليم", grade: "لم يتم التصحيح" },
+    }));
     onSubmitted?.(assignmentId); // فرصة للأب يعمل refetch للداتا الحقيقية (الدرجة إلخ)
   };
 

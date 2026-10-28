@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import {
   getCurriculums,
@@ -66,19 +66,17 @@ const LANGUAGES = [
 
 const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
   const [allCurriculums, setAllCurriculums] = useState([]);
-  const [curriculums, setCurriculums] = useState([]);
   const [stages, setStages] = useState([]);
   const [grades, setGrades] = useState([]);
   const [allSubjects, setAllSubjects] = useState([]);
   const [errors, setErrors] = useState({});
 
-  const [loadingCurriculums, setLoadingCurriculums] = useState(false);
+  const [loadingCurriculums, setLoadingCurriculums] = useState(true);
   const [loadingStages, setLoadingStages] = useState(false);
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   useEffect(() => {
-    setLoadingCurriculums(true);
     getCurriculums()
       .then((res) => {
         const list = (res.data?.data || res.data || []).map((item) => ({
@@ -91,20 +89,8 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       .finally(() => setLoadingCurriculums(false));
   }, []);
 
-  useEffect(() => {
-    onChange("curriculum", "");
-    onChange("stage", "");
-    onChange("grade", "");
-    onChange("subjects", []);
-    setStages([]);
-    setGrades([]);
-    setAllSubjects([]);
-
-    if (!countryId || allCurriculums.length === 0) {
-      setCurriculums([]);
-      return;
-    }
-
+  const curriculums = useMemo(() => {
+    if (!countryId) return [];
     const filtered = allCurriculums.filter((c) => {
       if (c.country) {
         return (
@@ -115,21 +101,12 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       }
       return true;
     });
+    return filtered.length > 0 ? filtered : allCurriculums;
+  }, [allCurriculums, countryId]);
 
-    setCurriculums(filtered.length > 0 ? filtered : allCurriculums);
-  }, [countryId, allCurriculums]);
-
-  useEffect(() => {
-    setStages([]);
-    setGrades([]);
-    setAllSubjects([]);
-    onChange("stage", "");
-    onChange("grade", "");
-    onChange("subjects", []);
-    if (!data.curriculum) return;
-
+  const loadStages = (curriculumId) => {
     setLoadingStages(true);
-    getCurriculumStages(data.curriculum)
+    return getCurriculumStages(curriculumId)
       .then((res) => {
         const list = (res.data?.data || res.data || []).map((item) => ({
           ...item,
@@ -139,17 +116,11 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       })
       .catch(console.error)
       .finally(() => setLoadingStages(false));
-  }, [data.curriculum]);
+  };
 
-  useEffect(() => {
-    setGrades([]);
-    setAllSubjects([]);
-    onChange("grade", "");
-    onChange("subjects", []);
-    if (!data.stage) return;
-
+  const loadGrades = (stageId) => {
     setLoadingGrades(true);
-    getStageGrades(data.stage)
+    return getStageGrades(stageId)
       .then((res) => {
         const list = (res.data?.data || res.data || []).map((item) => ({
           ...item,
@@ -159,15 +130,11 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       })
       .catch(console.error)
       .finally(() => setLoadingGrades(false));
-  }, [data.stage]);
+  };
 
-  useEffect(() => {
-    setAllSubjects([]);
-    onChange("subjects", []);
-    if (!data.grade) return;
-
+  const loadSubjects = (gradeId) => {
     setLoadingSubjects(true);
-    getAllSubjects({ grade: data.grade })
+    return getAllSubjects({ grade: gradeId })
       .then((res) => {
         const list = (res.data?.data || res.data || []).map((item) => ({
           ...item,
@@ -177,7 +144,7 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       })
       .catch(console.error)
       .finally(() => setLoadingSubjects(false));
-  }, [data.grade]);
+  };
 
   const toggleSubject = (subId) => {
     const current = data.subjects || [];
@@ -189,7 +156,30 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
   };
 
   const handleSelect = (field, value) => {
-    onChange(field, value);
+    if (field === "curriculum") {
+      onChange("curriculum", value);
+      onChange("stage", "");
+      onChange("grade", "");
+      onChange("subjects", []);
+      setStages([]);
+      setGrades([]);
+      setAllSubjects([]);
+      if (value) loadStages(value);
+    } else if (field === "stage") {
+      onChange("stage", value);
+      onChange("grade", "");
+      onChange("subjects", []);
+      setGrades([]);
+      setAllSubjects([]);
+      if (value) loadGrades(value);
+    } else if (field === "grade") {
+      onChange("grade", value);
+      onChange("subjects", []);
+      setAllSubjects([]);
+      if (value) loadSubjects(value);
+    } else {
+      onChange(field, value);
+    }
     if (errors[field]) setErrors((p) => ({ ...p, [field]: null }));
   };
 

@@ -84,15 +84,15 @@ export const updatePassword = async ({ currentPassword, updatedPassword }) => {
 export const forgotPassword = (email) =>
   API.post("/auth/forgotPassword", { email });
 
-export const verifyPasswordResetCode = (resetCode) =>
+export const verifyPasswordResetCode = ({ email, resetCode }) =>
   API.post("/auth/verifyResetCode", {
+    email,
     resetCode,
   });
 
-export const resetPassword = ({ email, newPassword }) =>
+export const resetPassword = ({ resetToken, newPassword }) =>
   API.post("/auth/resetPassword", {
-    email,
-
+    resetToken,
     newPassword,
   });
 
@@ -681,6 +681,8 @@ export const getUsers = (params) => API.get("/users/", { params });
 export const getUser = (id) => API.get(`/users/${id}`);
 export const createUser = (payload) => API.post("/users/", payload); // ← جديد
 export const updateUser = (id, payload) => API.patch(`/users/${id}`, payload);
+export const approveRegistration = (id) =>
+  API.post(`/users/${id}/approve-registration`);
 export const deleteUser = (id) => API.delete(`/users/${id}`);
 
 // ──────────────────────────────────────────────────────────────────────────────

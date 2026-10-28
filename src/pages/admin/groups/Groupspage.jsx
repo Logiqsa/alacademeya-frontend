@@ -12,7 +12,7 @@ import {
   getAllSubjects,
   getAllGrades,
   getStage,
-  getUser,
+  getTeachers,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
@@ -65,10 +65,11 @@ const GroupsPage = () => {
     setError(null);
     try {
       // نجيب الـ lookups والـ classrooms مع بعض
-      const [classroomsRes, subjectsRes, gradesRes] = await Promise.all([
+      const [classroomsRes, subjectsRes, gradesRes, teachersRes] = await Promise.all([
         getClassrooms({ type: "group" }),
         getAllSubjects(),
         getAllGrades(),
+        getTeachers({ page: 1, limit: 1000 }),
       ]);
 
       const subjects = subjectsRes.data?.data || [];
@@ -107,40 +108,18 @@ const GroupsPage = () => {
       );
       const stageMap = Object.fromEntries(stageEntries);
 
-      // نفس الفكرة بالظبط للمعلم: classrooms ممكن ترجع teacher كـ id خام
-      // بدل object فيه fullName، فبنجيب اسم كل معلم فريد عن طريق /users/{id}
-      const uniqueTeacherIds = [
-        ...new Set(
-          rawClassrooms.flatMap((c) => {
-            const teacherId =
-              typeof c.teacher === "string"
-                ? c.teacher
-                : c.teacher?.id || c.teacher?._id || c.teacher?.user?.id;
-            const substituteTeacherId =
-              typeof c.substituteTeacher === "string"
-                ? c.substituteTeacher
-                : c.substituteTeacher?.id ||
-                  c.substituteTeacher?._id ||
-                  c.substituteTeacher?.user?.id;
-            return [teacherId, substituteTeacherId];
-          })
-            .filter(Boolean),
-        ),
-      ];
-
-      const teacherEntries = await Promise.all(
-        uniqueTeacherIds.map((id) =>
-          getUser(id)
-            .then((res) => [
-              id,
-              res.data?.data?.fullName ||
-                res.data?.data?.user?.fullName ||
-                null,
-            ])
-            .catch(() => [id, null]),
-        ),
-      );
-      const teacherMap = Object.fromEntries(teacherEntries);
+      // /teachers is the administrative, profile-scoped source for names.
+      const teachersBody = teachersRes.data?.data ?? teachersRes.data ?? [];
+      const teachers = Array.isArray(teachersBody)
+        ? teachersBody
+        : teachersBody.teachers || [];
+      const teacherMap = new Map();
+      teachers.forEach((teacher) => {
+        const name = teacher.user?.fullName || teacher.fullName || null;
+        [idOf(teacher), idOf(teacher.user)].filter(Boolean).forEach((id) => {
+          teacherMap.set(String(id), name);
+        });
+      });
 
       // اسم المجموعة نفسه ممكن يكون نص عادي أو object {ar, en} زي باقي الحقول
       const resolveName = (val) => {
@@ -170,13 +149,13 @@ const GroupsPage = () => {
           teacher:
             c.teacher?.user?.fullName ||
             c.teacher?.fullName ||
-            teacherMap[teacherId] ||
+            teacherMap.get(String(teacherId)) ||
             null,
           substituteTeacherId,
           substituteTeacher:
             c.substituteTeacher?.user?.fullName ||
             c.substituteTeacher?.fullName ||
-            teacherMap[substituteTeacherId] ||
+            teacherMap.get(String(substituteTeacherId)) ||
             null,
           // subjectId خام لازم نبعته لما نضيف طالب/اشتراك للمجموعة دي (items array)
           subjectId,
@@ -213,7 +192,10 @@ const GroupsPage = () => {
   }, []);
 
   useEffect(() => {
-    fetchGroups();
+    const loadInitialGroups = async () => {
+      await fetchGroups();
+    };
+    void loadInitialGroups();
   }, [fetchGroups]);
 
   const subjectOptions = [

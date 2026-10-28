@@ -1,5 +1,4 @@
 // components/parent/schedule/StatsCards.jsx
-import React from 'react';
 import { Calendar, CheckCircle, Clock } from 'lucide-react';
 
 const StatsCards = ({ stats = { upcoming: 0, completed: 0, totalHours: 0 } }) => {

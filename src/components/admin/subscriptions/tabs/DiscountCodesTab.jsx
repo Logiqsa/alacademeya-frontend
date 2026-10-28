@@ -355,13 +355,6 @@ const AddCodeModal = ({ open, onClose, onCreated }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (open) {
-      setForm({ name: "", code: "", type: "", value: "" });
-      setError("");
-    }
-  }, [open]);
-
   if (!open) return null;
 
   const handleChange = (key) => (e) =>
@@ -613,7 +606,10 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
   }, []);
 
   useEffect(() => {
-    fetchDiscounts();
+    const loadInitialDiscounts = async () => {
+      await fetchDiscounts();
+    };
+    void loadInitialDiscounts();
   }, [fetchDiscounts]);
 
   // ── Toggle active / paused ──────────────────────────────────────────────
@@ -819,6 +815,7 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
       )}
 
       <AddCodeModal
+        key={`add-discount-${showAdd}`}
         open={showAdd}
         onClose={onCloseAdd}
         onCreated={fetchDiscounts}

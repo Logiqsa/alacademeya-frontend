@@ -79,7 +79,10 @@ const BlogsPage = () => {
   }, []);
 
   useEffect(() => { 
-    loadData(); 
+    const loadInitialPosts = async () => {
+      await loadData();
+    };
+    void loadInitialPosts();
 
     // التقاط إشعار الـ Toast القادم من صفحات الإضافة والتعديل لو تم توجيهه مع الـ state
     // مثال لاستخدام الـ navigate في صفحة الإضافة: navigate('/admin/blogs', { state: { toastMessage: 'تم إضافة المقال بنجاح' } })

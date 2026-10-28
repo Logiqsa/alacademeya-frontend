@@ -4,6 +4,7 @@ import Breadcrumbs from "../../../pages/shared/Breadcrumbs";
 import { AccountStatusNotice } from "../../account-settings/AccountRegistrationStatus";
 import { AuthContext } from "../../../context/AuthContext";
 import { getDashboardPathByRole } from "../../../utils/roles";
+import LayoutSidebarContext from "../../../context/LayoutSidebarContext";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -34,6 +35,7 @@ const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, sho
   }, []);
 
   return (
+    <LayoutSidebarContext.Provider value={isOpen}>
     <div className="h-screen flex bg-[#F5F7FB] overflow-hidden">
      
       <div className="h-full shrink-0">
@@ -42,7 +44,7 @@ const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, sho
           setIsOpen={setIsOpen}
         />
       </div>
-      <main data-route-scroll className="flex-1 h-full overflow-y-auto p-3 md:p-6">
+      <main data-route-scroll className="h-full min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 md:p-6">
          {showBreadcrumbs && <Breadcrumbs
            homeTo={getDashboardPathByRole(user, "/teacher-dashboard")}
            dynamicLabels={breadcrumbLabels}
@@ -55,6 +57,7 @@ const TeacherLayout = ({ children, breadcrumbLabels, breadcrumbCurrentLabel, sho
       </main>
 
     </div>
+    </LayoutSidebarContext.Provider>
   );
 };
 

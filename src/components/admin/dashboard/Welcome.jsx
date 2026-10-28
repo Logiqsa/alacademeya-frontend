@@ -1,9 +1,7 @@
 import { useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
 
 const Welcome = () => {
-    const navigate = useNavigate();
     const { user } = useContext(AuthContext);
 
     const firstName = user?.fullName?.trim()?.split(" ")[0] || "";
