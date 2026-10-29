@@ -1966,7 +1966,11 @@ const UsersTable = ({
           <div className="mt-4 space-y-3 rounded-2xl border border-[#DCE6F7] bg-[#F8FBFF] p-4 text-sm text-[#374151]">
             <p className="font-bold text-[#173B78]">إجراءات اختيارية على العضويات النشطة</p>
             <p className="text-xs leading-5 text-[#6B7280]">اختيار أي بند لا يحذف السجلات السابقة، بل يوقف الوصول النشط فقط.</p>
-            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#E1EAF7] bg-white p-3.5 transition-colors hover:border-[#A9BDE5]">
+            <label className={`flex cursor-pointer select-none items-center justify-between gap-4 rounded-xl border p-3.5 transition-colors ${
+              retainedRemovalOptions.classrooms
+                ? "border-[#123C91] bg-[#EEF4FF]"
+                : "border-[#E1EAF7] bg-white hover:border-[#A9BDE5]"
+            }`}>
               <span className="min-w-0 text-right leading-6">
                 <span className="block font-semibold text-[#374151]">
                   {retainedAccountIsTeacher
@@ -1981,7 +1985,7 @@ const UsersTable = ({
               </span>
               <input
                 type="checkbox"
-                className="h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#A9BDE5] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
+                className="h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#123C91] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
                 checked={retainedRemovalOptions.classrooms}
                 onChange={(event) =>
                   setRetainedRemovalOptions((current) => ({
@@ -1991,14 +1995,18 @@ const UsersTable = ({
                 }
               />
             </label>
-            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#E1EAF7] bg-white p-3.5 transition-colors hover:border-[#A9BDE5]">
+            <label className={`flex cursor-pointer select-none items-center justify-between gap-4 rounded-xl border p-3.5 transition-colors ${
+              retainedRemovalOptions.chatRooms
+                ? "border-[#123C91] bg-[#EEF4FF]"
+                : "border-[#E1EAF7] bg-white hover:border-[#A9BDE5]"
+            }`}>
               <span className="min-w-0 text-right leading-6">
                 <span className="block font-semibold text-[#374151]">إزالة الحساب من غرف الشات النشطة</span>
                 <span className="block text-xs text-[#6B7280]">يحجب وصول الحساب للغرف النشطة فقط، مع الاحتفاظ بجميع الرسائل السابقة.</span>
               </span>
               <input
                 type="checkbox"
-                className="h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#A9BDE5] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
+                className="h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#123C91] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
                 checked={retainedRemovalOptions.chatRooms}
                 onChange={(event) =>
                   setRetainedRemovalOptions((current) => ({
