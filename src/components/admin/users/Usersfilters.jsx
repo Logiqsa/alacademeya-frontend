@@ -19,6 +19,9 @@ const UsersFilters = ({
   filterGrade,
   gradeOptions = [],
   onFilterGradeChange,
+  filterStage,
+  stageOptions = [],
+  onFilterStageChange,
   filterSubject,
   subjectOptions = [],
   onFilterSubjectChange,
@@ -27,6 +30,9 @@ const UsersFilters = ({
   onFilterCurriculumChange,
   hideRoleFilter = false,
 }) => {
+  const isAcademicRole = ["طالب أكاديمي", "معلم"].includes(filterRole);
+  const isStudentRole = filterRole === "طالب أكاديمي";
+
   return (
     <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-1" dir="rtl">
       <div className="relative w-full sm:flex-1 sm:min-w-50" style={{ height: "48px" }}>
@@ -70,12 +76,46 @@ const UsersFilters = ({
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
       </div>
 
-      {["طالب أكاديمي", "معلم"].includes(filterRole) && (
+      {isAcademicRole && (
+        <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
+          <select
+            value={filterCurriculum}
+            onChange={(e) => onFilterCurriculumChange?.(e.target.value)}
+            className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
+          >
+            <option value="جميع المناهج">جميع المناهج</option>
+            {curriculumOptions.map((curriculum) => (
+              <option key={curriculum} value={curriculum}>{curriculum}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </div>
+      )}
+
+      {isStudentRole && (
+        <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
+          <select
+            value={filterStage}
+            onChange={(e) => onFilterStageChange?.(e.target.value)}
+            disabled={filterCurriculum === "جميع المناهج"}
+            className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91] disabled:cursor-not-allowed disabled:bg-[#F2F4F7]"
+          >
+            <option value="جميع المراحل">جميع المراحل</option>
+            {stageOptions.map((stage) => (
+              <option key={stage} value={stage}>{stage}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </div>
+      )}
+
+      {isAcademicRole && (
         <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
           <select
             value={filterGrade}
             onChange={(e) => onFilterGradeChange?.(e.target.value)}
-            className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
+            disabled={isStudentRole ? filterStage === "جميع المراحل" : filterCurriculum === "جميع المناهج"}
+            className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91] disabled:cursor-not-allowed disabled:bg-[#F2F4F7]"
           >
             <option value="جميع الصفوف">جميع الصفوف</option>
             {gradeOptions.map((grade) => (
@@ -88,13 +128,13 @@ const UsersFilters = ({
         </div>
       )}
 
-      {["طالب أكاديمي", "معلم"].includes(filterRole) && (
-        <>
+      {isAcademicRole && (
           <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
             <select
               value={filterSubject}
               onChange={(e) => onFilterSubjectChange?.(e.target.value)}
-              className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
+              disabled={filterGrade === "جميع الصفوف"}
+              className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91] disabled:cursor-not-allowed disabled:bg-[#F2F4F7]"
             >
               <option value="جميع المواد">جميع المواد</option>
               {subjectOptions.map((subject) => (
@@ -103,21 +143,6 @@ const UsersFilters = ({
             </select>
             <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
           </div>
-
-          <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
-            <select
-              value={filterCurriculum}
-              onChange={(e) => onFilterCurriculumChange?.(e.target.value)}
-              className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
-            >
-              <option value="جميع المناهج">جميع المناهج</option>
-              {curriculumOptions.map((curriculum) => (
-                <option key={curriculum} value={curriculum}>{curriculum}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
-          </div>
-        </>
       )}
     </div>
   );

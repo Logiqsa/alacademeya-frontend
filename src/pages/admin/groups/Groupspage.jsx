@@ -9,6 +9,7 @@ import GroupTable from "../../../components/admin/groups/Groupstable";
 import GroupsStatsBar from "../../../components/admin/groups/Groupsstatsbar";
 import {
   getClassrooms,
+  getCurriculums,
   getAllSubjects,
   getAllGrades,
   getStage,
@@ -51,6 +52,7 @@ const GroupsPage = () => {
   const [search, setSearch] = useState("");
   const [filterSubject, setFilterSubject] = useState("جميع المواد");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
+  const [filterCurriculum, setFilterCurriculum] = useState("جميع المناهج");
   const [filterStage, setFilterStage] = useState("جميع المراحل");
   const [filterGrade, setFilterGrade] = useState("جميع الصفوف");
   const [page, setPage] = useState(1);
@@ -65,14 +67,16 @@ const GroupsPage = () => {
     setError(null);
     try {
       // نجيب الـ lookups والـ classrooms مع بعض
-      const [classroomsRes, subjectsRes, gradesRes, teachersRes] = await Promise.all([
+      const [classroomsRes, curriculumsRes, subjectsRes, gradesRes, teachersRes] = await Promise.all([
         getClassrooms({ type: "group" }),
+        getCurriculums(),
         getAllSubjects(),
         getAllGrades(),
         getTeachers({ page: 1, limit: 1000 }),
       ]);
 
       const subjects = subjectsRes.data?.data || [];
+      const curriculums = curriculumsRes.data?.data || [];
       const grades = gradesRes.data?.data || [];
       const rawClassrooms = classroomsRes.data?.data || [];
 
@@ -80,6 +84,12 @@ const GroupsPage = () => {
         subjects.map((subject) => [
           idOf(subject),
           localizedName(subject) || "—",
+        ]),
+      );
+      const curriculumMap = Object.fromEntries(
+        curriculums.map((curriculum) => [
+          idOf(curriculum),
+          localizedName(curriculum) || "—",
         ]),
       );
       const gradeMap = Object.fromEntries(
@@ -129,6 +139,7 @@ const GroupsPage = () => {
       };
 
       const mapped = rawClassrooms.map((c) => {
+        const curriculumId = idOf(c.curriculum);
         const subjectId = idOf(c.subject);
         const gradeId = idOf(c.grade);
         const stageId = idOf(c.stage);
@@ -145,6 +156,10 @@ const GroupsPage = () => {
         return {
           id: c.id,
           name: resolveName(c.name),
+          curriculum:
+            curriculumMap[curriculumId] ||
+            (typeof c.curriculum === "object" ? localizedName(c.curriculum) : "") ||
+            "--",
           teacherId,
           teacher:
             c.teacher?.user?.fullName ||
@@ -200,15 +215,42 @@ const GroupsPage = () => {
 
   const subjectOptions = [
     "جميع المواد",
-    ...new Set(groups.map((group) => group.subject).filter((name) => name && name !== "--")),
+    ...new Set(
+      groups
+        .filter(
+          (group) =>
+            (filterCurriculum === "جميع المناهج" || group.curriculum === filterCurriculum) &&
+            (filterStage === "جميع المراحل" || group.stage === filterStage) &&
+            (filterGrade === "جميع الصفوف" || group.grade === filterGrade),
+        )
+        .map((group) => group.subject)
+        .filter((name) => name && name !== "--"),
+    ),
   ];
   const statusOptions = [
     "جميع الحالات",
     ...new Set(groups.map((group) => group.status).filter((status) => status && status !== "—")),
   ];
+  const curriculumOptions = [
+    "جميع المناهج",
+    ...new Set(
+      groups
+        .map((group) => group.curriculum)
+        .filter((curriculum) => curriculum && curriculum !== "--"),
+    ),
+  ];
   const stageOptions = [
     "جميع المراحل",
-    ...new Set(groups.map((group) => group.stage).filter((stage) => stage && stage !== "--")),
+    ...new Set(
+      groups
+        .filter(
+          (group) =>
+            filterCurriculum === "جميع المناهج" ||
+            group.curriculum === filterCurriculum,
+        )
+        .map((group) => group.stage)
+        .filter((stage) => stage && stage !== "--"),
+    ),
   ];
   const gradeOptions = [
     "جميع الصفوف",
@@ -216,7 +258,9 @@ const GroupsPage = () => {
       groups
         .filter(
           (group) =>
-            filterStage === "جميع المراحل" || group.stage === filterStage,
+            (filterCurriculum === "جميع المناهج" ||
+              group.curriculum === filterCurriculum) &&
+            (filterStage === "جميع المراحل" || group.stage === filterStage),
         )
         .map((group) => group.grade)
         .filter((grade) => grade && grade !== "--"),
@@ -235,11 +279,15 @@ const GroupsPage = () => {
       filterStatus === "جميع الحالات" || group.status === filterStatus;
     const matchesStage =
       filterStage === "جميع المراحل" || group.stage === filterStage;
+    const matchesCurriculum =
+      filterCurriculum === "جميع المناهج" ||
+      group.curriculum === filterCurriculum;
     const matchesGrade =
       filterGrade === "جميع الصفوف" || group.grade === filterGrade;
 
     return (
       matchesSearch &&
+      matchesCurriculum &&
       matchesSubject &&
       matchesStatus &&
       matchesStage &&
@@ -308,17 +356,28 @@ const GroupsPage = () => {
               setFilterStatus(v);
               setPage(1);
             }}
+            filterCurriculum={filterCurriculum}
+            curriculumOptions={curriculumOptions}
+            onFilterCurriculumChange={(value) => {
+              setFilterCurriculum(value);
+              setFilterStage("جميع المراحل");
+              setFilterGrade("جميع الصفوف");
+              setFilterSubject("جميع المواد");
+              setPage(1);
+            }}
             filterStage={filterStage}
             stageOptions={stageOptions}
             onFilterStageChange={(value) => {
               setFilterStage(value);
               setFilterGrade("جميع الصفوف");
+              setFilterSubject("جميع المواد");
               setPage(1);
             }}
             filterGrade={filterGrade}
             gradeOptions={gradeOptions}
             onFilterGradeChange={(value) => {
               setFilterGrade(value);
+              setFilterSubject("جميع المواد");
               setPage(1);
             }}
           />

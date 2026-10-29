@@ -9,6 +9,9 @@ const GroupsFilters = ({
   filterStatus,
   statusOptions = ["جميع الحالات"],
   onFilterStatusChange,
+  filterCurriculum,
+  curriculumOptions = ["جميع المناهج"],
+  onFilterCurriculumChange,
   filterStage,
   stageOptions = ["جميع المراحل"],
   onFilterStageChange,
@@ -29,13 +32,13 @@ const GroupsFilters = ({
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" size={18} />
       </div>
 
-      <div className="relative w-full sm:w-55 lg:w-60" style={{ height: "48px" }}>
+      <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
         <select
-          value={filterSubject}
-          onChange={(e) => onFilterSubjectChange?.(e.target.value)}
+          value={filterCurriculum}
+          onChange={(e) => onFilterCurriculumChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
         >
-          {subjectOptions.map((opt) => (
+          {curriculumOptions.map((opt) => (
             <option key={opt} value={opt}>
               {opt}
             </option>
@@ -63,6 +66,7 @@ const GroupsFilters = ({
         <select
           value={filterStage}
           onChange={(e) => onFilterStageChange?.(e.target.value)}
+          disabled={filterCurriculum === "جميع المناهج"}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
         >
           {stageOptions.map((option) => (
@@ -74,22 +78,37 @@ const GroupsFilters = ({
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
       </div>
 
-      {filterStage !== "جميع المراحل" && (
-        <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
-          <select
-            value={filterGrade}
-            onChange={(e) => onFilterGradeChange?.(e.target.value)}
-            className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
-          >
-            {gradeOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
-        </div>
-      )}
+      <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
+        <select
+          value={filterGrade}
+          onChange={(e) => onFilterGradeChange?.(e.target.value)}
+          disabled={filterStage === "جميع المراحل"}
+          className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91] disabled:cursor-not-allowed disabled:bg-[#F2F4F7]"
+        >
+          {gradeOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+      </div>
+
+      <div className="relative w-full sm:w-55 lg:w-60" style={{ height: "48px" }}>
+        <select
+          value={filterSubject}
+          onChange={(e) => onFilterSubjectChange?.(e.target.value)}
+          disabled={filterGrade === "جميع الصفوف"}
+          className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91] disabled:cursor-not-allowed disabled:bg-[#F2F4F7]"
+        >
+          {subjectOptions.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+      </div>
     </div>
   );
 };

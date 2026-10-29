@@ -141,6 +141,7 @@ const UsersPage = ({
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState(fixedRole || "جميع المستخدمين");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
+  const [filterStage, setFilterStage] = useState("جميع المراحل");
   const [filterGrade, setFilterGrade] = useState("جميع الصفوف");
   const [filterSubject, setFilterSubject] = useState("جميع المواد");
   const [filterCurriculum, setFilterCurriculum] = useState("جميع المناهج");
@@ -361,26 +362,29 @@ const UsersPage = ({
 
   // استبعد أي مستخدم متعمله soft-delete من الجدول والإحصائيات
   const visibleUsers = users.filter((user) => !user.isDeleted);
-  const gradeOptions = [
-    ...new Set(
-      visibleUsers
-        .filter(
-          (user) => user.role === "طالب أكاديمي" && user.grade && user.grade !== "—",
-        )
-        .map((user) => user.grade),
-    ),
-  ].sort((a, b) => a.localeCompare(b, "ar"));
   const teacherGradeOptions = [
     ...new Set(
       visibleUsers
-        .filter((user) => user.role === "معلم")
+        .filter(
+          (user) =>
+            user.role === "معلم" &&
+            (filterCurriculum === "جميع المناهج" ||
+              user.teacherCurriculums?.includes(filterCurriculum)),
+        )
         .flatMap((user) => user.teacherGrades || []),
     ),
   ].sort((a, b) => a.localeCompare(b, "ar"));
   const teacherSubjectOptions = [
     ...new Set(
       visibleUsers
-        .filter((user) => user.role === "معلم")
+        .filter(
+          (user) =>
+            user.role === "معلم" &&
+            (filterCurriculum === "جميع المناهج" ||
+              user.teacherCurriculums?.includes(filterCurriculum)) &&
+            (filterGrade === "جميع الصفوف" ||
+              user.teacherGrades?.includes(filterGrade)),
+        )
         .flatMap((user) => user.teacherSubjects || []),
     ),
   ].sort((a, b) => a.localeCompare(b, "ar"));
@@ -394,7 +398,14 @@ const UsersPage = ({
   const studentSubjectOptions = [
     ...new Set(
       visibleUsers
-        .filter((user) => user.role === "طالب أكاديمي")
+        .filter(
+          (user) =>
+            user.role === "طالب أكاديمي" &&
+            (filterCurriculum === "جميع المناهج" ||
+              user.studentCurriculums?.includes(filterCurriculum)) &&
+            (filterStage === "جميع المراحل" || user.stage === filterStage) &&
+            (filterGrade === "جميع الصفوف" || user.grade === filterGrade),
+        )
         .flatMap((user) => user.studentSubjects || []),
     ),
   ].sort((a, b) => a.localeCompare(b, "ar"));
@@ -403,6 +414,33 @@ const UsersPage = ({
       visibleUsers
         .filter((user) => user.role === "طالب أكاديمي")
         .flatMap((user) => user.studentCurriculums || []),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const studentStageOptions = [
+    ...new Set(
+      visibleUsers
+        .filter(
+          (user) =>
+            user.role === "طالب أكاديمي" &&
+            (filterCurriculum === "جميع المناهج" ||
+              user.studentCurriculums?.includes(filterCurriculum)),
+        )
+        .map((user) => user.stage)
+        .filter((stage) => stage && stage !== "—"),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const studentGradeOptions = [
+    ...new Set(
+      visibleUsers
+        .filter(
+          (user) =>
+            user.role === "طالب أكاديمي" &&
+            (filterCurriculum === "جميع المناهج" ||
+              user.studentCurriculums?.includes(filterCurriculum)) &&
+            (filterStage === "جميع المراحل" || user.stage === filterStage),
+        )
+        .map((user) => user.grade)
+        .filter((grade) => grade && grade !== "—"),
     ),
   ].sort((a, b) => a.localeCompare(b, "ar"));
 
@@ -417,7 +455,8 @@ const UsersPage = ({
       (filterRole === "جميع المستخدمين" || u.role === filterRole) &&
       (filterStatus === "جميع الحالات" || u.status === filterStatus) &&
       (filterRole !== "طالب أكاديمي" ||
-        ((filterGrade === "جميع الصفوف" || u.grade === filterGrade) &&
+        ((filterStage === "جميع المراحل" || u.stage === filterStage) &&
+          (filterGrade === "جميع الصفوف" || u.grade === filterGrade) &&
           (filterSubject === "جميع المواد" ||
             u.studentSubjects?.includes(filterSubject)) &&
           (filterCurriculum === "جميع المناهج" ||
@@ -636,6 +675,7 @@ const UsersPage = ({
             filterRole={filterRole}
             onFilterRoleChange={(v) => {
               setFilterRole(v);
+              setFilterStage("جميع المراحل");
               setFilterGrade("جميع الصفوف");
               setFilterSubject("جميع المواد");
               setFilterCurriculum("جميع المناهج");
@@ -648,10 +688,19 @@ const UsersPage = ({
             }}
             filterGrade={filterGrade}
             gradeOptions={
-              filterRole === "معلم" ? teacherGradeOptions : gradeOptions
+              filterRole === "معلم" ? teacherGradeOptions : studentGradeOptions
             }
             onFilterGradeChange={(v) => {
               setFilterGrade(v);
+              setFilterSubject("جميع المواد");
+              setPage(1);
+            }}
+            filterStage={filterStage}
+            stageOptions={studentStageOptions}
+            onFilterStageChange={(v) => {
+              setFilterStage(v);
+              setFilterGrade("جميع الصفوف");
+              setFilterSubject("جميع المواد");
               setPage(1);
             }}
             filterSubject={filterSubject}
@@ -672,6 +721,9 @@ const UsersPage = ({
             }
             onFilterCurriculumChange={(v) => {
               setFilterCurriculum(v);
+              setFilterStage("جميع المراحل");
+              setFilterGrade("جميع الصفوف");
+              setFilterSubject("جميع المواد");
               setPage(1);
             }}
             hideRoleFilter={Boolean(fixedRole)}
