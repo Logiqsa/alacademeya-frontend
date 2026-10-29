@@ -24,6 +24,10 @@ import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
   getTeachers,
   getTeacher,
+  getCurriculums,
+  getCurriculumStages,
+  getStageGrades,
+  getAllSubjects,
   updateTeacherProfile,
   updateUser,
   deleteUser,
@@ -34,6 +38,7 @@ import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeaching
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import { confirmToast } from "../../../utils/confirmToast";
 import { normalizePhoneSearch } from "../../../utils/phone";
+import { apiList, idOf } from "../../../utils/adminSubscription";
 
 const PAGE_SIZE = 8;
 
@@ -67,15 +72,9 @@ const localizedName = (value) => {
   return value.name?.ar || value.name?.en || value.ar || value.en || "";
 };
 
-const listLabel = (value) => {
+const listIds = (value) => {
   const list = Array.isArray(value) ? value : value ? [value] : [];
-  const names = list.map(localizedName).filter(Boolean);
-  return [...new Set(names)].join("، ") || "—";
-};
-
-const listNames = (value) => {
-  const list = Array.isArray(value) ? value : value ? [value] : [];
-  return [...new Set(list.map(localizedName).filter(Boolean))];
+  return [...new Set(list.map(idOf).filter(Boolean).map(String))];
 };
 
 const DetailItem = ({ label, value }) => (
@@ -156,9 +155,15 @@ const TeachersPage = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterGrade, setFilterGrade] = useState("جميع الصفوف");
-  const [filterSubject, setFilterSubject] = useState("جميع المواد");
-  const [filterCurriculum, setFilterCurriculum] = useState("جميع المناهج");
+  const [filterGrade, setFilterGrade] = useState("");
+  const [filterStage, setFilterStage] = useState("");
+  const [filterSubject, setFilterSubject] = useState("");
+  const [filterCurriculum, setFilterCurriculum] = useState("");
+  const [curriculums, setCurriculums] = useState([]);
+  const [stages, setStages] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
   const [selectedTeacher, setSelectedTeacher] = useState(null);
@@ -171,9 +176,15 @@ const TeachersPage = () => {
   const loadTeachers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getTeachers({ limit: 100, month });
+      const [response, curriculumsResponse] = await Promise.all([
+        getTeachers({ limit: 100, month }),
+        getCurriculums().catch(() => null),
+      ]);
       const body = response.data?.data ?? response.data ?? [];
       const list = Array.isArray(body) ? body : body.teachers || [];
+      setCurriculums(
+        curriculumsResponse ? apiList(curriculumsResponse, ["curriculums"]) : [],
+      );
 
       const completedTeachers = list.filter(
         (teacher) => !hasIncompleteRegistration(teacher),
@@ -196,14 +207,9 @@ const TeachersPage = () => {
             completedSessions: summary.completedSessions ?? 0,
             missedSessions: summary.missedSessions ?? 0,
             experience: teacher.experienceYears ?? teacher.experience ?? "—",
-            subjects: listLabel(teacher.subjects ?? teacher.subject),
-            grades: listLabel(teacher.grades ?? teacher.grade),
-            curricula: listLabel(teacher.curriculums ?? teacher.curriculum),
-            subjectNames: listNames(teacher.subjects ?? teacher.subject),
-            gradeNames: listNames(teacher.grades ?? teacher.grade),
-            curriculumNames: listNames(
-              teacher.curriculums ?? teacher.curriculum,
-            ),
+            subjectIds: listIds(teacher.subjects ?? teacher.subject),
+            gradeIds: listIds(teacher.grades ?? teacher.grade),
+            curriculumIds: listIds(teacher.curriculums ?? teacher.curriculum),
             status:
               teacher.status === "approved"
                 ? "مقبول"
@@ -240,15 +246,76 @@ const TeachersPage = () => {
 
   const normalizedSearch = search.trim().toLowerCase();
   const normalizedPhoneSearch = normalizePhoneSearch(search);
-  const gradeOptions = [
-    ...new Set(teachers.flatMap((teacher) => teacher.gradeNames)),
-  ].sort((a, b) => a.localeCompare(b, "ar"));
-  const subjectOptions = [
-    ...new Set(teachers.flatMap((teacher) => teacher.subjectNames)),
-  ].sort((a, b) => a.localeCompare(b, "ar"));
-  const curriculumOptions = [
-    ...new Set(teachers.flatMap((teacher) => teacher.curriculumNames)),
-  ].sort((a, b) => a.localeCompare(b, "ar"));
+  const matchesCurriculum = (teacher) =>
+    !filterCurriculum || teacher.curriculumIds.includes(filterCurriculum);
+  const selectedStageGradeIds = useMemo(
+    () => new Set(grades.map(idOf).filter(Boolean).map(String)),
+    [grades],
+  );
+  const matchesStage = (teacher) =>
+    !filterStage || teacher.gradeIds.some((id) => selectedStageGradeIds.has(id));
+  const matchesGrade = (teacher) =>
+    !filterGrade || teacher.gradeIds.includes(filterGrade);
+
+  const handleCurriculumChange = async (value) => {
+    setFilterCurriculum(value);
+    setFilterStage("");
+    setFilterGrade("");
+    setFilterSubject("");
+    setStages([]);
+    setGrades([]);
+    setSubjects([]);
+    setPage(1);
+    if (!value) return;
+
+    setFilterOptionsLoading(true);
+    try {
+      const response = await getCurriculumStages(value);
+      setStages(apiList(response, ["stages"]));
+    } catch {
+      toast.error("تعذر تحميل مراحل المنهج");
+    } finally {
+      setFilterOptionsLoading(false);
+    }
+  };
+
+  const handleStageChange = async (value) => {
+    setFilterStage(value);
+    setFilterGrade("");
+    setFilterSubject("");
+    setGrades([]);
+    setSubjects([]);
+    setPage(1);
+    if (!value) return;
+
+    setFilterOptionsLoading(true);
+    try {
+      const response = await getStageGrades(value);
+      setGrades(apiList(response, ["grades"]));
+    } catch {
+      toast.error("تعذر تحميل صفوف المرحلة");
+    } finally {
+      setFilterOptionsLoading(false);
+    }
+  };
+
+  const handleGradeChange = async (value) => {
+    setFilterGrade(value);
+    setFilterSubject("");
+    setSubjects([]);
+    setPage(1);
+    if (!value) return;
+
+    setFilterOptionsLoading(true);
+    try {
+      const response = await getAllSubjects({ grade: value });
+      setSubjects(apiList(response, ["subjects"]));
+    } catch {
+      toast.error("تعذر تحميل مواد الصف");
+    } finally {
+      setFilterOptionsLoading(false);
+    }
+  };
   const filtered = teachers.filter((teacher) => {
     const matchesSearch =
       String(teacher.name || "").toLowerCase().includes(normalizedSearch) ||
@@ -257,12 +324,10 @@ const TeachersPage = () => {
         normalizePhoneSearch(teacher.phone).includes(normalizedPhoneSearch));
     return (
       matchesSearch &&
-      (filterGrade === "جميع الصفوف" ||
-        teacher.gradeNames.includes(filterGrade)) &&
-      (filterSubject === "جميع المواد" ||
-        teacher.subjectNames.includes(filterSubject)) &&
-      (filterCurriculum === "جميع المناهج" ||
-        teacher.curriculumNames.includes(filterCurriculum))
+      matchesCurriculum(teacher) &&
+      matchesStage(teacher) &&
+      matchesGrade(teacher) &&
+      (!filterSubject || teacher.subjectIds.includes(filterSubject))
     );
   });
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -481,23 +546,52 @@ const TeachersPage = () => {
               />
             </div>
             {[
-              [filterCurriculum, setFilterCurriculum, "جميع المناهج", curriculumOptions],
-              [filterGrade, setFilterGrade, "جميع الصفوف", gradeOptions],
-              [filterSubject, setFilterSubject, "جميع المواد", subjectOptions],
-            ].map(([value, setter, defaultLabel, options]) => (
-              <div key={defaultLabel} className="relative w-full sm:w-48">
+              {
+                value: filterCurriculum,
+                onChange: handleCurriculumChange,
+                label: "جميع المناهج",
+                options: curriculums,
+              },
+              {
+                value: filterStage,
+                onChange: handleStageChange,
+                label: "جميع المراحل",
+                options: stages,
+                disabled: !filterCurriculum,
+              },
+              {
+                value: filterGrade,
+                onChange: handleGradeChange,
+                label: "جميع الصفوف",
+                options: grades,
+                disabled: !filterStage,
+              },
+              {
+                value: filterSubject,
+                onChange: (value) => {
+                  setFilterSubject(value);
+                  setPage(1);
+                },
+                label: "جميع المواد",
+                options: subjects,
+                disabled: !filterGrade,
+              },
+            ].map(({ value, onChange, label, options, disabled = false }) => (
+              <div key={label} className="relative w-full sm:w-48">
                 <select
                   value={value}
                   onChange={(event) => {
-                    setter(event.target.value);
-                    setPage(1);
+                    onChange(event.target.value);
                   }}
-                  aria-label={defaultLabel}
-                  className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 px-3 pl-9 text-sm text-[#575F69] outline-none focus:border-[#123C91]"
+                  disabled={disabled || filterOptionsLoading}
+                  aria-label={label}
+                  className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 px-3 pl-9 text-sm text-[#575F69] outline-none focus:border-[#123C91] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                 >
-                  <option value={defaultLabel}>{defaultLabel}</option>
+                  <option value="">{label}</option>
                   {options.map((option) => (
-                    <option key={option} value={option}>{option}</option>
+                    <option key={idOf(option)} value={idOf(option)}>
+                      {localizedName(option)}
+                    </option>
                   ))}
                 </select>
                 <ChevronDown
