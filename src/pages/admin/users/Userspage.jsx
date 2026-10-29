@@ -660,15 +660,6 @@ const UsersPage = ({
               onDelete={handleDelete}
               sort={sort}
               onSort={handleSort}
-              typeFilter={filterRole}
-              onTypeFilter={(role) => {
-                setFilterRole(role);
-                setFilterGrade("جميع الصفوف");
-                setFilterSubject("جميع المواد");
-                setFilterCurriculum("جميع المناهج");
-                setPage(1);
-              }}
-              hideTypeFilter={Boolean(fixedRole)}
             />
           )}
         </div>

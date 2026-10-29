@@ -15,7 +15,6 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
-  ChevronDown,
   CreditCard,
 } from "lucide-react";
 import { createPortal } from "react-dom";
@@ -38,17 +37,6 @@ const getCurrentMonth = () => {
 
   return `${year}-${month}`;
 };
-
-const USER_TYPE_OPTIONS = [
-  "جميع المستخدمين",
-  "طالب دورات",
-  "محاضر دورات",
-  "معلم",
-  "طالب أكاديمي",
-  "ولي أمر",
-  "مشرف",
-  "مشرف عام",
-];
 
 const formatMonthlyHours = (minutes = 0) => {
   const hours = minutes / 60;
@@ -1006,9 +994,6 @@ const UsersTable = ({
   onDelete,
   sort,
   onSort,
-  typeFilter = "جميع المستخدمين",
-  onTypeFilter,
-  hideTypeFilter = false,
 }) => {
   const [detailsUser, setDetailsUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
@@ -1310,13 +1295,12 @@ const UsersTable = ({
           <div className="overflow-x-auto">
             <table
               className="w-full table-fixed text-right"
-              style={{ minWidth: "900px" }}
+              style={{ minWidth: "760px" }}
             >
               <colgroup>
-                <col className="w-[21%]" />
-                <col className="w-[12%]" />
-                <col className="w-[25%]" />
-                <col className="w-[12%]" />
+                <col className="w-[24%]" />
+                <col className="w-[30%]" />
+                <col className="w-[16%]" />
                 <col className="w-[18%]" />
                 <col className="w-[12%]" />
               </colgroup>
@@ -1324,12 +1308,11 @@ const UsersTable = ({
                 <tr>
                   {[
                     { label: "المستخدم", sortKey: "name" },
-                    { label: "النوع", isTypeFilter: true },
                     { label: "البريد الإلكتروني" },
                     { label: "الحالة", sortKey: "status" },
                     { label: "تاريخ الانضمام", sortKey: "joinDate" },
                     { label: "الإجراءات" },
-                  ].map(({ label, sortKey, isTypeFilter }) => {
+                  ].map(({ label, sortKey }) => {
                     const isActive = sortKey && sort?.key === sortKey;
                     const SortIcon = !isActive
                       ? ArrowUpDown
@@ -1349,32 +1332,7 @@ const UsersTable = ({
                             : undefined
                         }
                       >
-                        {isTypeFilter && !hideTypeFilter ? (
-                          <label className="relative inline-flex items-center">
-                            <select
-                              value={typeFilter}
-                              onChange={(event) =>
-                                onTypeFilter?.(event.target.value)
-                              }
-                              aria-label="اختيار نوع المستخدم"
-                              className={`h-9 cursor-pointer appearance-none rounded-lg border bg-white py-1 pr-3 pl-8 text-sm font-medium outline-none transition-colors hover:border-[#123C91] ${
-                                typeFilter !== "جميع المستخدمين"
-                                  ? "border-[#123C91] bg-[#EAF4FF] text-[#123C91]"
-                                  : "border-gray-200 text-[#575F69]"
-                              }`}
-                            >
-                              {USER_TYPE_OPTIONS.map((role) => (
-                                <option key={role} value={role}>
-                                  {role}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown
-                              size={15}
-                              className="pointer-events-none absolute left-2.5 text-[#123C91]"
-                            />
-                          </label>
-                        ) : sortKey ? (
+                        {sortKey ? (
                           <button
                             type="button"
                             onClick={() => onSort?.(sortKey)}
@@ -1407,9 +1365,6 @@ const UsersTable = ({
                         onClick={() => handleView(user)}
                       />
                     </td>
-
-                    <td className="px-5 py-3.5">{roleBadge(user.role)}</td>
-
                     <td
                       className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap"
                       dir="ltr"
