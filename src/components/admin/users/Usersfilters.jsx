@@ -1,6 +1,6 @@
 import { Search, ChevronDown } from "lucide-react";
 
-const ROLE_OPTIONS = ["جميع المستخدمين", "متعلم", "محاضر", "معلم", "طالب", "ولي أمر", "مشرف", "مشرف عام"];
+const ROLE_OPTIONS = ["جميع المستخدمين", "طالب دورات", "محاضر دورات", "معلم", "طالب أكاديمي", "ولي أمر", "مشرف", "مشرف عام"];
 const STATUS_OPTIONS = [
   "جميع الحالات",
   "نشط",
@@ -70,7 +70,7 @@ const UsersFilters = ({
         <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
       </div>
 
-      {["طالب", "معلم"].includes(filterRole) && (
+      {["طالب أكاديمي", "معلم"].includes(filterRole) && (
         <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
           <select
             value={filterGrade}
@@ -88,7 +88,7 @@ const UsersFilters = ({
         </div>
       )}
 
-      {["طالب", "معلم"].includes(filterRole) && (
+      {["طالب أكاديمي", "معلم"].includes(filterRole) && (
         <>
           <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
             <select

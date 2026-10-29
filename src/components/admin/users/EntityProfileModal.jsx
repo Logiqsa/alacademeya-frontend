@@ -360,7 +360,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           email: user.email,
           phone: user.phone,
           username: user.username,
-          role: "طالب",
+          role: "طالب أكاديمي",
           status: studentStatus,
           joinDate: user.createdAt
             ? new Date(user.createdAt).toLocaleDateString("ar-EG")

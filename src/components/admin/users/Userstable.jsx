@@ -41,10 +41,10 @@ const getCurrentMonth = () => {
 
 const USER_TYPE_OPTIONS = [
   "جميع المستخدمين",
-  "متعلم",
-  "محاضر",
+  "طالب دورات",
+  "محاضر دورات",
   "معلم",
-  "طالب",
+  "طالب أكاديمي",
   "ولي أمر",
   "مشرف",
   "مشرف عام",
@@ -203,10 +203,10 @@ const statusBadge = (status, missingProfileFields = []) => {
 };
 
 const roleBadge = (role) => {
-  if (role === "محاضر") return <Badge label={role} type="green" />;
-  if (role === "متعلم") return <Badge label={role} type="blue" />;
+  if (role === "محاضر دورات") return <Badge label={role} type="green" />;
+  if (role === "طالب دورات") return <Badge label={role} type="blue" />;
   if (role === "معلم") return <Badge label={role} type="green" />;
-  if (role === "طالب") return <Badge label={role} type="blue" />;
+  if (role === "طالب أكاديمي") return <Badge label={role} type="blue" />;
   if (role === "ولي أمر") return <Badge label={role} type="orange" />;
   return <Badge label={role} type="gray" />;
 };
@@ -371,7 +371,7 @@ export const UserDetailsModal = ({
 
   const isTeacher = user.role === "معلم";
   const isParent = user.role === "ولي أمر";
-  const isStudent = user.role === "طالب";
+  const isStudent = user.role === "طالب أكاديمي";
   const userWhatsappUrl = whatsappUrl(user.phone);
 
   return (
@@ -766,7 +766,7 @@ const ActionsMenu = ({
     onClick: () => onView?.(user),
   });
 
-  if (user.role === "طالب" && user.studentId) {
+  if (user.role === "طالب أكاديمي" && user.studentId) {
     items.push(
       {
         key: "view-subscriptions",
@@ -1027,13 +1027,13 @@ const UsersTable = ({
 
   const handleView = async (user) => {
     setDetailsUser(
-      user.role === "طالب"
+      user.role === "طالب أكاديمي"
         ? { ...user, groups: [], groupsLoading: true }
         : user,
     );
     setReportError("");
 
-    if (user.role === "طالب") {
+    if (user.role === "طالب أكاديمي") {
       try {
         const studentsResponse = await getAllStudents({
           user: user.id,

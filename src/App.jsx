@@ -825,9 +825,9 @@ function App() {
             path="/admin/users"
             element={<Navigate to="/admin/learners" replace />}
           />
-          <Route path="/admin/learners" element={user ? <UsersPage key="learners" fixedRole="متعلم" title="المتعلمون" description="إدارة حسابات المتعلمين المسجلين في دورات المنصة." /> : <Navigate to="/login" replace />} />
-          <Route path="/admin/instructors" element={user ? <UsersPage key="instructors" fixedRole="محاضر" title="المحاضرون" description="إدارة حسابات المحاضرين وملفاتهم على سوق الدورات." /> : <Navigate to="/login" replace />} />
-          <Route path="/admin/students" element={user ? <UsersPage key="students" fixedRole="طالب" title="الطلاب" description="إدارة حسابات الطلاب وبياناتهم الدراسية." /> : <Navigate to="/login" replace />} />
+          <Route path="/admin/learners" element={user ? <UsersPage key="learners" fixedRole="طالب دورات" title="طلاب الدورات" description="إدارة حسابات طلاب الدورات المسجلين في المنصة." /> : <Navigate to="/login" replace />} />
+          <Route path="/admin/instructors" element={user ? <UsersPage key="instructors" fixedRole="محاضر دورات" title="محاضرو الدورات" description="إدارة حسابات محاضري الدورات وملفاتهم على سوق الدورات." /> : <Navigate to="/login" replace />} />
+          <Route path="/admin/students" element={user ? <UsersPage key="students" fixedRole="طالب أكاديمي" title="الطلاب الأكاديميون" description="إدارة حسابات الطلاب الأكاديميين وبياناتهم الدراسية." /> : <Navigate to="/login" replace />} />
           <Route path="/admin/parents" element={user ? <UsersPage key="parents" fixedRole="ولي أمر" title="أولياء الأمور" description="إدارة حسابات أولياء الأمور المرتبطة بالطلاب." /> : <Navigate to="/login" replace />} />
           <Route path="/admin/students/new" element={user ? <CreateStudentPage /> : <Navigate to="/login" replace />} />
           <Route

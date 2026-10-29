@@ -2,8 +2,8 @@ import { getUsers } from "../services/APIService.js";
 
 // ⚠️ "مشرف" = admin (صلاحيات محدودة)، "مشرف عام" = super-admin (صلاحيات كاملة)
 export const ROLE_MAP = {
-  user: "متعلم",
-  student: "طالب",
+  user: "طالب دورات",
+  student: "طالب أكاديمي",
   teacher: "معلم",
   parent: "ولي أمر",
   admin: "مشرف",
@@ -17,7 +17,7 @@ export const adminAccountTypeLabel = (user = {}) => {
       user.instructorProfileSlug ||
       user.accountType === "instructor",
   );
-  if (hasInstructorProfile) return "محاضر";
+  if (hasInstructorProfile) return "محاضر دورات";
   return ROLE_MAP[user.role] || user.role || "غير محدد";
 };
 

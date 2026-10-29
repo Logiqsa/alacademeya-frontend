@@ -362,7 +362,7 @@ const UsersPage = ({
     ...new Set(
       visibleUsers
         .filter(
-          (user) => user.role === "طالب" && user.grade && user.grade !== "—",
+          (user) => user.role === "طالب أكاديمي" && user.grade && user.grade !== "—",
         )
         .map((user) => user.grade),
     ),
@@ -391,14 +391,14 @@ const UsersPage = ({
   const studentSubjectOptions = [
     ...new Set(
       visibleUsers
-        .filter((user) => user.role === "طالب")
+        .filter((user) => user.role === "طالب أكاديمي")
         .flatMap((user) => user.studentSubjects || []),
     ),
   ].sort((a, b) => a.localeCompare(b, "ar"));
   const studentCurriculumOptions = [
     ...new Set(
       visibleUsers
-        .filter((user) => user.role === "طالب")
+        .filter((user) => user.role === "طالب أكاديمي")
         .flatMap((user) => user.studentCurriculums || []),
     ),
   ].sort((a, b) => a.localeCompare(b, "ar"));
@@ -413,7 +413,7 @@ const UsersPage = ({
           normalizePhoneSearch(u.phone).includes(normalizedPhoneSearch))) &&
       (filterRole === "جميع المستخدمين" || u.role === filterRole) &&
       (filterStatus === "جميع الحالات" || u.status === filterStatus) &&
-      (filterRole !== "طالب" ||
+      (filterRole !== "طالب أكاديمي" ||
         ((filterGrade === "جميع الصفوف" || u.grade === filterGrade) &&
           (filterSubject === "جميع المواد" ||
             u.studentSubjects?.includes(filterSubject)) &&
@@ -478,7 +478,7 @@ const UsersPage = ({
     admins: visibleUsers.filter((u) => u.role === "مشرف عام").length,
     supervisors: visibleUsers.filter((u) => u.role === "مشرف").length,
     teachers: visibleUsers.filter((u) => u.role === "معلم").length,
-    students: visibleUsers.filter((u) => u.role === "طالب").length,
+    students: visibleUsers.filter((u) => u.role === "طالب أكاديمي").length,
     total: visibleUsers.length,
   };
 
@@ -568,7 +568,7 @@ const UsersPage = ({
             {description}
           </p>
           </div>
-          {fixedRole === "طالب" && currentUser?.role === "super-admin" && <button onClick={() => navigate("/admin/students/new")} className="shrink-0 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">إنشاء طالب</button>}
+          {fixedRole === "طالب أكاديمي" && currentUser?.role === "super-admin" && <button onClick={() => navigate("/admin/students/new")} className="shrink-0 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">إنشاء طالب</button>}
         </div>
 
         {!fixedRole && <div className="mb-6">
@@ -605,7 +605,7 @@ const UsersPage = ({
             }}
             filterSubject={filterSubject}
             subjectOptions={
-              filterRole === "طالب"
+              filterRole === "طالب أكاديمي"
                 ? studentSubjectOptions
                 : teacherSubjectOptions
             }
@@ -615,7 +615,7 @@ const UsersPage = ({
             }}
             filterCurriculum={filterCurriculum}
             curriculumOptions={
-              filterRole === "طالب"
+              filterRole === "طالب أكاديمي"
                 ? studentCurriculumOptions
                 : teacherCurriculumOptions
             }
