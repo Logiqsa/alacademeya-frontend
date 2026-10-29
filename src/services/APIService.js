@@ -711,6 +711,8 @@ export const getClassroomSessions = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/sessions/`, { params });
 export const getClassroomStudents = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/students/`, { params });
+export const getClassroomEnrollmentOptions = (classroomId) =>
+  API.get(`/classrooms/${classroomId}/enrollment-options`);
 
 // ─── Classroom Schedule ────────────────────────────────────────────────────────
 export const getMonthlySchedule = ({ year, month } = {}) =>
@@ -748,6 +750,10 @@ export const getTeachers = (params) => API.get("/teachers", { params });
 export const getTeacher = (teacherId) => API.get(`/teachers/${teacherId}`);
 export const getTeacherMonthlyReport = (teacherId, month) =>
   API.get(`/teachers/${teacherId}/monthly-report`, { params: { month } });
+export const getMyTeacherDashboardSummary = () =>
+  API.get("/teachers/me/dashboard-summary");
+export const getTeacherSessionList = (teacherId, status) =>
+  API.get(`/teachers/${teacherId}/sessions`, { params: { status } });
 export const updateTeacherProfile = (teacherId, payload) =>
   API.patch(`/teachers/${teacherId}`, payload);
 
@@ -786,6 +792,8 @@ export const deletePackage = (id) => API.delete(`/packages/${id}`);
 // GET /assignments/classroom/:classroomId → { success, results, data: [...] }
 export const getAssignmentsByClassroom = (classroomId, params) =>
   API.get(`/assignments/classroom/${classroomId}`, { params });
+export const getMyTeacherAssignmentSummaries = () =>
+  API.get("/assignments/teacher-summary");
 
 // GET /assignments/:assignmentId → { success, data: {...} }
 export const getAssignment = (assignmentId) =>

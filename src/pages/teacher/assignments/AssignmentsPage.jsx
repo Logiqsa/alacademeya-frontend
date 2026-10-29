@@ -9,11 +9,7 @@ import Paginationn from "../../../components/teacher/groups/students/Paginationn
 import TeacherLayout from "../../../components/teacher/layout/TeacherLayout";
 import LoadingState from "../../../components/shared/LoadingState";
 import {
-  getMyClassrooms,
-  getAssignmentsByClassroom,
-  getClassroomSessions,
-  getAssignmentSubmissions,
-  getClassroomStudents,
+  getMyTeacherAssignmentSummaries,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان api.js عندك
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || val?.name || "--";
@@ -49,103 +45,37 @@ const AssignmentsPage = () => {
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
   const [page, setPage] = useState(1);
 
-  // بيجيب كل مجموعات المعلّم، وبعدين واجبات وحصص وطلاب كل مجموعة،
-  // ويقرأ تسليمات كل واجب لحساب أرقام التسليم والتصحيح الفعلية.
+  // الـ API يعيد ملخصات واجبات المعلم في استجابة واحدة، حتى لا يكون هناك
+  // طلب لكل مجموعة/حصة/طالب/واجب.
   const fetchAllAssignments = useCallback(async () => {
     try {
       setLoading(true);
       setErrorMsg("");
 
-      const classroomsRes = await getMyClassrooms();
-      const classrooms = classroomsRes.data?.data || [];
-      setGroupNames(classrooms.map((c) => c.name));
-      if (queryGroupName && classrooms.some((c) => c.name === queryGroupName)) {
+      const response = await getMyTeacherAssignmentSummaries();
+      const summaries = response.data?.data ?? response.data ?? [];
+      const normalized = summaries.map((assignment) => ({
+        ...assignment,
+        subject: resolveName(assignment.subject),
+        dueDate: formatDate(assignment.dueDate),
+        status: mapStatus(assignment.status),
+      }));
+      const groups = [...new Set(normalized.map((assignment) => assignment.group))];
+      setGroupNames(groups);
+      if (queryGroupName && groups.includes(queryGroupName)) {
         setFilterGroup(queryGroupName);
       }
 
       if (queryGroupId) {
-        const selectedClassroom = classrooms.find(
-          (c) => String(c.id || c._id) === String(queryGroupId),
+        const selectedAssignment = normalized.find(
+          (assignment) => String(assignment.groupId) === String(queryGroupId),
         );
-        const resolvedSubject = selectedClassroom
-          ? resolveName(selectedClassroom.subject?.name || selectedClassroom.subject)
-          : "";
+        const resolvedSubject = selectedAssignment?.subject || "";
         if (!queryGroupSubjectName && resolvedSubject && resolvedSubject !== "--") {
           setGroupSubject(resolvedSubject);
         }
       }
-
-      const perClassroom = await Promise.all(
-        classrooms.map(async (classroom) => {
-          const [assignmentsRes, sessionsRes, studentsRes] = await Promise.all([
-            getAssignmentsByClassroom(classroom.id),
-            getClassroomSessions(classroom.id).catch(() => ({
-              data: { data: [] },
-            })),
-            getClassroomStudents(classroom.id).catch(() => ({
-              data: { data: [] },
-            })),
-          ]);
-
-          const sessionsById = {};
-          (sessionsRes.data?.data || []).forEach((s) => {
-            sessionsById[s.id] = s.title;
-          });
-
-          const roster = studentsRes.data?.data || [];
-          const classroomAssignments = assignmentsRes.data?.data || [];
-
-          return Promise.all(
-            classroomAssignments.map(async (a) => {
-              const submissionsRes = await getAssignmentSubmissions(a.id).catch(
-                () => ({ data: { data: [] } }),
-              );
-              const submissions = submissionsRes.data?.data || [];
-              const gradedCount = submissions.filter(
-                (submission) => submission.status === "graded",
-              ).length;
-
-              let correctionStatus = "لم يبدأ التصحيح";
-              if (gradedCount > 0 && gradedCount < submissions.length) {
-                correctionStatus = "قيد التصحيح";
-              } else if (
-                submissions.length > 0 &&
-                gradedCount === submissions.length
-              ) {
-                correctionStatus = "تم التصحيح";
-              }
-
-              const sessionId =
-                a.session?.id ?? a.session?._id ?? a.session;
-
-              return {
-                id: a.id,
-                title: a.title,
-                groupId: classroom.id || classroom._id || "",
-                group: classroom.name,
-                subject: resolveName(classroom.subject?.name || classroom.subject),
-                place:
-                  classroom.meetingLink ||
-                  classroom.location ||
-                  classroom.address ||
-                  "—",
-                lesson: a.session?.title || sessionsById[sessionId] || "-",
-                dueDate: formatDate(a.dueDate),
-                submitted: submissions.length,
-                totalStudents:
-                  roster.length ||
-                  classroom.students?.length ||
-                  classroom.studentsCount ||
-                  0,
-                status: mapStatus(a.status),
-                correctionStatus,
-              };
-            }),
-          );
-        }),
-      );
-
-      setAssignments(perClassroom.flat());
+      setAssignments(normalized);
     } catch (err) {
       setErrorMsg(
         err?.response?.data?.message || "حدث خطأ أثناء تحميل الواجبات",

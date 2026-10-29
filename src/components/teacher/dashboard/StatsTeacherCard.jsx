@@ -1,28 +1,10 @@
 import { useEffect, useState } from "react";
 import { Star, DollarSign, Clock3, Users } from "lucide-react";
-import {
-  getMyClassrooms,
-  getClassroomStudents,
-  getClassroomSessions,
-} from "../../../services/APIService";
+import { getMyTeacherDashboardSummary } from "../../../services/APIService";
 
 // ⚠️ ملحوظة مهمة: مفيش endpoints حاليًا لـ:
 //   - إجمالي الأرباح
 //   - متوسط التقييم
-
-const getSessionDurationMinutes = (session) => {
-  const duration = Number(session.duration);
-  if (Number.isFinite(duration) && duration > 0) return duration;
-
-  const start = new Date(session.startAt || session.scheduledDate);
-  const end = new Date(session.endAt);
-  if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
-    const minutes = (end.getTime() - start.getTime()) / 60000;
-    return minutes > 0 ? minutes : 0;
-  }
-
-  return 0;
-};
 
 const formatHours = (minutes) => {
   const hours = minutes / 60;
@@ -39,75 +21,22 @@ const StatsTeacherCard = () => {
   useEffect(() => {
     let cancelled = false;
 
-    const loadStudentsCount = async () => {
+    const loadDashboardSummary = async () => {
       setLoading(true);
       try {
-        // GET /classrooms/my -> كل مجموعات المعلّم
-        const classroomsRes = await getMyClassrooms();
-        const classrooms = classroomsRes.data?.data || [];
-
+        const response = await getMyTeacherDashboardSummary();
         if (cancelled) return;
-
-        // بنجيب طلاب كل مجموعة بالتوازي ونجمعهم (طالب ممكن يتكرر في أكتر من مجموعة،
-        // لو محتاجين عدد فريد بس، لازم نجمع الـ ids في Set بدل ما نجمع الطول مباشرة)
-        const [studentsResults, sessionsResults] = await Promise.all([
-          Promise.allSettled(
-          classrooms.map((c) => getClassroomStudents(c.id)),
-          ),
-          Promise.allSettled(
-            classrooms.map((c) => getClassroomSessions(c.id)),
-          ),
-        ]);
-
-        const uniqueStudentIds = new Set();
-        studentsResults.forEach((result, idx) => {
-          if (result.status === "fulfilled") {
-            const students = result.value.data?.data || [];
-            students.forEach((s) => {
-              if (s.id) uniqueStudentIds.add(s.id);
-            });
-          } else {
-            console.error(
-              `getClassroomStudents failed for classroom ${classrooms[idx]?.id}:`,
-              result.reason,
-            );
-          }
-        });
-
-        const countedSessionIds = new Set();
-        let completedMinutes = 0;
-        sessionsResults.forEach((result, idx) => {
-          if (result.status === "fulfilled") {
-            const sessions = result.value.data?.data || [];
-            sessions.forEach((session) => {
-              const sessionId = session.id ?? session._id;
-              if (
-                session.status !== "completed" ||
-                (sessionId && countedSessionIds.has(sessionId))
-              ) return;
-
-              if (sessionId) countedSessionIds.add(sessionId);
-              completedMinutes += getSessionDurationMinutes(session);
-            });
-          } else {
-            console.error(
-              `getClassroomSessions failed for classroom ${classrooms[idx]?.id}:`,
-              result.reason,
-            );
-          }
-        });
-
-        if (cancelled) return;
-        setTotalStudents(uniqueStudentIds.size);
-        setTotalMinutes(completedMinutes);
+        const summary = response.data?.data ?? response.data ?? {};
+        setTotalStudents(summary.totalStudents ?? 0);
+        setTotalMinutes(summary.totalTeachingMinutes ?? 0);
       } catch (err) {
-        console.error("Failed to load teacher stats:", err);
+        console.error("Failed to load teacher dashboard summary:", err);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
-    loadStudentsCount();
+    loadDashboardSummary();
     return () => {
       cancelled = true;
     };

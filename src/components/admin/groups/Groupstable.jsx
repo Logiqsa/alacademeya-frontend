@@ -18,13 +18,7 @@ import {
 } from "lucide-react";
 import {
   getTeachers,
-  getAllStudents,
-  getClassroomStudents,
-  getAllPackages,
-  getCurriculums,
-  getCurriculumStages,
-  getStage,
-  getAllGrades,
+  getClassroomEnrollmentOptions,
   updateClassroom,
   updateClassroomSubstituteTeacher,
   createSubscription,
@@ -80,27 +74,6 @@ const studentIdentityIds = (student) =>
   ]
     .filter(Boolean)
     .map(String);
-
-// ⚠️ بقى فيها fallback عام: لو المفاتيح المعروفة (keys) ملقتش array، بتدور
-// على أي array تاني جوه نفس الـ object أيًا كان اسم الحقل. ده بيخليها تشتغل
-// حتى لو شكل الـ response مختلف عن اللي احنا متوقعينه بالظبط.
-const extractList = (response, keys = []) => {
-  let value = response?.data ?? response;
-
-  for (let depth = 0; depth < 3 && value && !Array.isArray(value); depth += 1) {
-    const keyedValue = keys.map((key) => value?.[key]).find(Array.isArray);
-    if (keyedValue) return keyedValue;
-
-    if (typeof value === "object") {
-      const anyArray = Object.values(value).find(Array.isArray);
-      if (anyArray) return anyArray;
-    }
-
-    value = value?.data;
-  }
-
-  return Array.isArray(value) ? value : [];
-};
 
 // ⚠️ افتراض: الطالب فيه حقل "stage" و"grade" مباشر أو جوه object فيه name/ar/en —
 // لسه محتاج تأكيد من بوستمان/Network tab لشكل الـ student object الراجع من getAllStudents()
@@ -479,120 +452,14 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
 
     const load = async () => {
       try {
-        const [allRes, classroomRes, packagesRes, curriculumsRes, gradesRes] =
-          await Promise.allSettled([
-            getAllStudents({ page: 1, limit: 1000 }),
-            getClassroomStudents(group.id),
-            getAllPackages({ page: 1, limit: 1000 }),
-            getCurriculums(),
-            getAllGrades({ page: 1, limit: 1000 }),
-          ]);
-
-        let all =
-          allRes.status === "fulfilled"
-            ? extractList(allRes.value, ["students", "results", "items"])
-            : [];
-
+        const response = await getClassroomEnrollmentOptions(group.id);
+        const data = response.data?.data ?? response.data ?? {};
         if (cancelled) return;
-        setStudents(all.filter((student) => resolveStudentId(student)));
-
-        const currentStudents =
-          classroomRes.status === "fulfilled"
-            ? extractList(classroomRes.value, ["students", "results", "items"])
-            : [];
-        setClassroomStudentIds(
-          new Set(currentStudents.flatMap(studentIdentityIds)),
-        );
-
-        setPackages(
-          packagesRes.status === "fulfilled"
-            ? extractList(packagesRes.value, ["packages", "results", "items"])
-            : [],
-        );
-
-        const loadedGrades =
-          gradesRes.status === "fulfilled"
-            ? extractList(gradesRes.value, ["grades", "results", "items"])
-            : [];
-        setGrades(loadedGrades);
-
-        const curriculums =
-          curriculumsRes.status === "fulfilled"
-            ? extractList(curriculumsRes.value, [
-                "curriculums",
-                "results",
-                "items",
-              ])
-            : [];
-
-        const stageResponses = await Promise.allSettled(
-          curriculums
-            .map(resolveEntityId)
-            .filter(Boolean)
-            .map((curriculumId) => getCurriculumStages(curriculumId)),
-        );
-        const loadedStages = stageResponses.flatMap((result) =>
-          result.status === "fulfilled"
-            ? extractList(result.value, ["stages", "results", "items"])
-            : [],
-        );
-        const stagesFromGrades = loadedGrades
-          .map((grade) => grade?.stage)
-          .filter(Boolean);
-        const combinedStages = [...loadedStages, ...stagesFromGrades];
-
-        // ⚠️ لو المرحلة جاية كـ id خام (string) مش object فيه name (يعني مش populated
-        // من الباك)، بنجيب اسمها لوحدها عن طريق GET /stages/:id — نفس الباترن
-        // المستخدم في GroupsPage.jsx لحل نفس المشكلة بالظبط
-        const rawStageIds = [
-          ...new Set(
-            combinedStages
-              .filter((stage) => typeof stage === "string")
-              .map(String),
-          ),
-        ];
-        const stageFetchResults = await Promise.allSettled(
-          rawStageIds.map((id) => getStage(id)),
-        );
-        const stageNameById = Object.fromEntries(
-          stageFetchResults.map((result, idx) => {
-            const id = rawStageIds[idx];
-            if (result.status !== "fulfilled") return [id, null];
-            const stageData =
-              result.value?.data?.data ?? result.value?.data ?? null;
-            return [id, stageData];
-          }),
-        );
-        const resolvedStages = combinedStages.map((stage) =>
-          typeof stage === "string" ? stageNameById[stage] || stage : stage,
-        );
-
-        if (cancelled) return;
-        setStages(
-          Array.from(
-            new Map(
-              resolvedStages
-                .map((stage) => [
-                  String(
-                    resolveEntityId(stage) || resolveName(stage?.name ?? stage),
-                  ),
-                  stage,
-                ])
-                .filter(([id]) => id && id !== "--"),
-            ).values(),
-          ),
-        );
-
-        if (allRes.status === "rejected" && all.length === 0) {
-          setError("تعذر تحميل قائمة الطلاب");
-        } else if (packagesRes.status === "rejected") {
-          setError("تعذر تحميل قائمة الباقات");
-        } else if (
-          curriculumsRes.status === "rejected" &&
-          gradesRes.status === "rejected"
-        ) {
-          setError("تعذر تحميل المراحل والصفوف");
-        }
+        setStudents((data.students || []).filter((student) => resolveStudentId(student)));
+        setClassroomStudentIds(new Set((data.enrolledStudentIds || []).map(String)));
+        setPackages(data.packages || []);
+        setGrades(data.grades || []);
+        setStages(data.stages || []);
       } catch {
         if (!cancelled) {
           setError("حصل خطأ أثناء تحميل البيانات");

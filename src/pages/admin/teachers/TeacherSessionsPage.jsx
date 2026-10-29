@@ -5,20 +5,9 @@ import { Loader2 } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
-  getClassrooms,
-  getClassroomSessions,
   getTeacher,
+  getTeacherSessionList,
 } from "../../../services/APIService";
-import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
-
-const idOf = (value) =>
-  value?.id ?? value?._id ?? (typeof value === "string" ? value : null);
-
-const nameOf = (value) => {
-  if (!value) return "المجموعة";
-  if (typeof value === "string") return value;
-  return value.ar || value.en || "المجموعة";
-};
 
 const TeacherSessionsPage = () => {
   const { teacherId, sessionStatus } = useParams();
@@ -57,59 +46,11 @@ const TeacherSessionsPage = () => {
     const load = async () => {
       setLoading(true);
       try {
-        if (isMissed) {
-          const teacherResponse = await getTeacher(teacherId).catch(() => null);
-          const teacher = teacherResponse?.data?.data ??
-            teacherResponse?.data ?? { id: teacherId };
-          const missed = await getTeacherMissedSessions(teacher);
-          if (active) setSessions(missed);
-          return;
-        }
-
-        const classroomResponse = await getClassrooms({
-          teacher: teacherId,
-          limit: 100,
-        });
-        const body =
-          classroomResponse.data?.data ?? classroomResponse.data ?? [];
-        const returnedClassrooms = Array.isArray(body)
-          ? body
-          : body.classrooms || [];
-        const matchingClassrooms = returnedClassrooms.filter((classroom) => {
-          const ids = [
-            idOf(classroom.teacher),
-            idOf(classroom.teacher?.user),
-            idOf(classroom.substituteTeacher),
-            idOf(classroom.substituteTeacher?.user),
-          ].filter(Boolean);
-          return ids.some((id) => String(id) === String(teacherId));
-        });
-        const hasTeacherReferences = returnedClassrooms.some(
-          (classroom) => classroom.teacher || classroom.substituteTeacher,
+        const response = await getTeacherSessionList(
+          teacherId,
+          isMissed ? "missed" : "completed",
         );
-        const classrooms = matchingClassrooms.length
-          ? matchingClassrooms
-          : hasTeacherReferences
-            ? []
-            : returnedClassrooms;
-        const results = await Promise.allSettled(
-          classrooms.map((classroom) => getClassroomSessions(idOf(classroom))),
-        );
-        const completed = results.flatMap((result, index) => {
-          if (result.status !== "fulfilled") return [];
-          const classroom = classrooms[index];
-          return (result.value.data?.data || [])
-            .filter((session) => session.status === "completed")
-            .map((session) => ({
-              id: idOf(session),
-              title: session.title || "حصة",
-              classroomId: idOf(classroom),
-              classroomName: nameOf(classroom.name),
-              scheduledAt: session.scheduledDate || session.startAt,
-              duration: session.duration,
-            }));
-        });
-        if (active) setSessions(completed);
+        if (active) setSessions(response.data?.data ?? response.data ?? []);
       } finally {
         if (active) setLoading(false);
       }
@@ -167,7 +108,7 @@ const TeacherSessionsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {sessions.map((session) => (
-                    <tr key={session.id} className="hover:bg-gray-50">
+                    <tr key={session.id || session.eventId} className="hover:bg-gray-50">
                       <td className="px-6 py-4 font-medium">
                         {session.classroomId && session.id ? (
                           <button
