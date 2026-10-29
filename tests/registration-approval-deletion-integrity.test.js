@@ -65,7 +65,10 @@ test("retained account deletion shows a safe super-admin redaction path", () => 
   assert.match(table, /aria-expanded=\{expanded\}/);
   assert.match(table, /جاري التحقق من السجلات المرتبطة بالحساب/);
   assert.match(table, /أرباح المحاضرين وسجلات موافقة السياسات وأمان المحتوى/);
-  assert.match(table, /dialogClassName="max-w-3xl max-h-\[86vh\] overflow-y-auto"/);
+  assert.match(table, /dialogClassName="max-w-5xl max-h-\[92vh\] overflow-y-auto p-5 sm:p-7"/);
+  assert.match(table, /const retainedRecordFields/);
+  assert.match(table, /لا تُعرض المعرفات التقنية أو البيانات الحساسة/);
+  assert.doesNotMatch(table, /JSON\.stringify\(record, null, 2\)/);
   assert.match(table, /إزالة من الفصول والمجموعات النشطة/);
   assert.match(table, /إزالة من غرف الشات النشطة/);
   assert.match(page, /removeFromActiveClassrooms/);

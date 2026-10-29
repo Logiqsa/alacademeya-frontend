@@ -230,6 +230,130 @@ const retainedReferenceLabels = {
 const retainedReferenceLabel = (type) =>
   retainedReferenceLabels[type] || "سجلات مرتبطة";
 
+const readableDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString("ar-EG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+};
+
+const readableValue = (value) => {
+  if (value === null || value === undefined || value === "") return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "object") {
+    return (
+      value.fullName ||
+      value.title ||
+      localizedName(value.name ?? value) ||
+      ""
+    );
+  }
+  return "";
+};
+
+const readableAmount = (record) => {
+  const value =
+    record.finalPrice ??
+    record.totalAmount ??
+    record.amount ??
+    record.price ??
+    record.originalPrice;
+  if (value === null || value === undefined || value === "") return "";
+  const currency = readableValue(record.currency) || "";
+  return `${new Intl.NumberFormat("ar-EG").format(Number(value))}${
+    currency ? ` ${currency}` : ""
+  }`;
+};
+
+const retainedRecordFields = (type, record = {}) => {
+  const fields = [];
+  const add = (label, value) => {
+    const text = readableValue(value);
+    if (text) fields.push({ label, value: text });
+  };
+  const addDate = (label, value) => {
+    const text = readableDate(value);
+    if (text) fields.push({ label, value: text });
+  };
+  const addAmount = () => {
+    const amount = readableAmount(record);
+    if (amount) fields.push({ label: "المبلغ", value: amount });
+  };
+
+  switch (type) {
+    case "CoursePurchase":
+      add("اسم المشتري", record.buyerName);
+      add("الدورة", record.courseTitle || record.courseName);
+      add("الحالة", record.status);
+      addAmount();
+      addDate("تاريخ الشراء", record.paidAt || record.purchasedAt || record.createdAt);
+      break;
+    case "SubscriptionOrder":
+      add("رقم الطلب", record.orderNumber || record.reference);
+      add("الطالب", record.studentName || record.buyerName);
+      add("الحالة", record.status);
+      addAmount();
+      if (Array.isArray(record.items)) add("عدد المواد", record.items.length);
+      addDate("تاريخ الطلب", record.createdAt);
+      break;
+    case "CourseCertificate":
+      add("الدورة", record.courseTitle || record.courseName);
+      add("رقم الشهادة", record.certificateNumber);
+      add("الحالة", record.status);
+      addDate("تاريخ الإصدار", record.issuedAt || record.createdAt);
+      break;
+    case "CourseEnrollment":
+    case "Subscription":
+    case "SubjectSubscription":
+      add("العنصر المرتبط", record.courseTitle || record.subjectName || record.title || record.name);
+      add("الحالة", record.status);
+      addDate("تاريخ الإنشاء", record.createdAt);
+      break;
+    case "TeacherSalary":
+    case "InstructorWithdrawalRequest":
+    case "InstructorPayoutBalance":
+      add("الحالة", record.status);
+      addAmount();
+      addDate("التاريخ", record.paidAt || record.requestedAt || record.createdAt);
+      break;
+    case "Classroom":
+      add("اسم المجموعة", record.name);
+      add("الحالة", record.status);
+      if (Array.isArray(record.students)) add("عدد الطلاب", record.students.length);
+      addDate("تاريخ الإنشاء", record.createdAt);
+      break;
+    case "Session":
+      add("اسم الحصة", record.title);
+      add("الحالة", record.status);
+      add("المدة", record.duration ? `${record.duration} دقيقة` : "");
+      addDate("الموعد", record.scheduledDate || record.startAt || record.createdAt);
+      break;
+    case "Assignment":
+    case "AssignmentSubmission":
+      add("العنوان", record.title || record.assignmentTitle);
+      add("الحالة", record.status);
+      add("الدرجة", record.score);
+      addDate("التاريخ", record.submittedAt || record.createdAt);
+      break;
+    case "TeacherAbsence":
+      add("سبب التسجيل", record.reason === "session_not_created" ? "لم يتم إنشاء الحصة" : record.reason === "session_not_started_on_time" ? "لم تبدأ الحصة في وقتها" : record.reason);
+      addDate("موعد الحصة", record.scheduledDate || record.createdAt);
+      break;
+    default:
+      add("العنوان", record.title || record.name || record.subjectName || record.courseTitle);
+      add("الحالة", record.status);
+      addDate("تاريخ السجل", record.createdAt || record.updatedAt);
+  }
+
+  if (!fields.some((field) => field.label === "تاريخ السجل" || field.label.includes("تاريخ"))) {
+    addDate("تاريخ السجل", record.createdAt);
+  }
+  return fields;
+};
+
 const Avatar = ({ name, avatarUrl, size = 8 }) => (
   <div
     className={`w-${size} h-${size} rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0`}
@@ -1612,10 +1736,13 @@ const UsersTable = ({
         confirmLabel={retainedUser?.canAnonymize ? "تأكيد الإخفاء الآمن" : "حسنًا"}
         confirmClass={retainedUser?.canAnonymize ? "bg-orange-500 hover:bg-orange-600" : "bg-[#123C91] hover:bg-[#0f3280]"}
         iconColor="bg-orange-100 text-orange-500"
-        dialogClassName="max-w-3xl max-h-[86vh] overflow-y-auto"
+        dialogClassName="max-w-5xl max-h-[92vh] overflow-y-auto p-5 sm:p-7"
       >
-        <p className="mb-2 text-sm font-semibold text-[#374151]">السجلات التعليمية والمالية المرتبطة:</p>
-        <ul className="max-h-52 space-y-1.5 overflow-y-auto rounded-xl bg-[#F9FAFA] p-4 text-sm text-[#575F69]">
+        <p className="mb-3 text-sm font-semibold text-[#374151]">السجلات التعليمية والمالية المرتبطة:</p>
+        <p className="mb-3 text-xs leading-6 text-[#575F69]">
+          اضغط على أي نوع سجل ثم على السجل المطلوب لعرض بياناته المنظمة. لا تُعرض المعرفات التقنية أو البيانات الحساسة.
+        </p>
+        <ul className="max-h-[46vh] space-y-2 overflow-y-auto rounded-2xl bg-[#F9FAFA] p-3 sm:p-4 text-sm text-[#575F69]">
           {(retainedUser?.references || []).map((reference) => {
             const expanded = referenceDetails?.type === reference.type;
             return (
@@ -1624,34 +1751,51 @@ const UsersTable = ({
                   <button
                     type="button"
                     onClick={() => showReferenceDetails(reference)}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-right hover:bg-[#EAF0FB]"
+                    className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-right transition-colors hover:bg-[#EAF0FB]"
                     aria-expanded={expanded}
                     aria-label={`عرض تفاصيل ${retainedReferenceLabel(reference.type)}`}
                   >
                     <span>{retainedReferenceLabel(reference.type)}</span>
                     <span className="flex items-center gap-2 font-semibold text-[#123C91]">
-                      {reference.count}
+                      <span className="rounded-full bg-[#EAF0FB] px-2.5 py-1 text-xs">{reference.count}</span>
                       <ChevronDown size={16} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} />
                     </span>
                   </button>
                 ) : (
-                  <div className="flex items-center justify-between gap-3 px-3 py-2">
+                  <div className="flex items-center justify-between gap-3 px-4 py-3">
                     <span>{retainedReferenceLabel(reference.type)}</span>
                     <span className="font-semibold text-[#123C91]">{reference.count}</span>
                   </div>
                 )}
                 {expanded && (
-                  <div className="border-t border-[#E5E7EB] bg-[#F8FBFF] p-3 text-right">
+                  <div className="border-t border-[#E5E7EB] bg-[#F8FBFF] p-3 sm:p-4 text-right">
                     {referenceDetailsLoading ? (
                       <p className="py-4 text-center text-sm text-[#575F69]">جاري تحميل التفاصيل...</p>
                     ) : referenceDetails.records?.length ? (
-                      <div className="max-h-64 space-y-2 overflow-y-auto">
+                      <div className="max-h-[38vh] space-y-2 overflow-y-auto pl-1">
                         {referenceDetails.records.map((record, index) => (
-                          <details key={record._id || index} className="rounded-lg border border-[#E5E7EB] bg-white p-2 text-xs text-[#374151]">
-                            <summary className="cursor-pointer font-semibold">سجل {index + 1}</summary>
-                            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded bg-[#F9FAFA] p-2 text-left" dir="ltr">
-                              {JSON.stringify(record, null, 2)}
-                            </pre>
+                          <details key={record._id || index} className="group rounded-xl border border-[#E5E7EB] bg-white text-sm text-[#374151] shadow-sm">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-semibold marker:content-none">
+                              <span>سجل {index + 1}</span>
+                              <span className="flex items-center gap-2 text-xs font-medium text-[#123C91]">
+                                عرض التفاصيل
+                                <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
+                              </span>
+                            </summary>
+                            <div className="grid gap-2 border-t border-[#E5E7EB] bg-[#FCFDFF] p-3 sm:grid-cols-2">
+                              {retainedRecordFields(reference.type, record).length ? (
+                                retainedRecordFields(reference.type, record).map((field) => (
+                                  <div key={field.label} className="rounded-lg border border-[#EDF0F5] bg-white px-3 py-2.5">
+                                    <p className="text-[11px] font-medium text-[#8C9198]">{field.label}</p>
+                                    <p className="mt-1 break-words text-[13px] font-semibold text-[#1F2937]">{field.value}</p>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="sm:col-span-2 rounded-lg bg-white px-3 py-3 text-xs text-[#575F69]">
+                                  لا توجد بيانات قابلة للعرض لهذا السجل، لكنه محفوظ لحماية السجل المالي أو التعليمي.
+                                </p>
+                              )}
+                            </div>
                           </details>
                         ))}
                       </div>
