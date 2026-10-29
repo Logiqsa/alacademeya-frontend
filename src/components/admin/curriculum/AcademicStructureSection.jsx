@@ -14,6 +14,7 @@ import {
   getCurriculums,
   getCurriculumStages,
   getStageGrades,
+  getAllSubjects,
   deleteCurriculum,
 } from "../../../services/APIService";
 
@@ -34,14 +35,82 @@ const extractList = (resData) => {
 };
 
 /* ------------------------------------------------------------------ */
-/* Grade Pill                                                           */
+/* Grade Row                                                            */
 /* ------------------------------------------------------------------ */
 
-const GradePill = ({ label }) => (
-  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#F2F4F7] border border-[#E5E5E5] text-[#1F2937] font-['IBM_Plex_Sans_Arabic'] text-[13px] whitespace-nowrap">
-    {label}
-  </span>
-);
+const GradeRow = ({ grade }) => {
+  const [open, setOpen] = useState(false);
+  const [subjects, setSubjects] = useState(null);
+  const gradeId = grade._id || grade.id || grade;
+  const loading = open && subjects === null;
+
+  useEffect(() => {
+    if (!open || subjects !== null) return;
+
+    let active = true;
+    getAllSubjects({ grade: gradeId })
+      .then((res) => {
+        if (active) setSubjects(extractList(res.data));
+      })
+      .catch(() => {
+        if (active) {
+          setSubjects([]);
+          toast.error("تعذر تحميل مواد الصف");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [gradeId, open, subjects]);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-[#E5E5E5] bg-[#F9FAFA]">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-right transition-colors hover:bg-[#F2F4F7]"
+      >
+        <span className="font-['IBM_Plex_Sans_Arabic'] text-[13px] text-[#1F2937]">
+          {pickName(grade.name) || grade}
+        </span>
+        {open ? (
+          <ChevronUp size={15} className="shrink-0 text-[#575F69]" />
+        ) : (
+          <ChevronDown size={15} className="shrink-0 text-[#575F69]" />
+        )}
+      </button>
+      {open && (
+        <div className="border-t border-[#E5E5E5] bg-white px-3 py-3">
+          <p className="font-['IBM_Plex_Sans_Arabic'] text-xs text-[#8C9198]">
+            المواد الدراسية
+          </p>
+          {loading ? (
+            <div className="flex justify-center py-3">
+              <Loader2 size={16} className="animate-spin text-(--primary)" />
+            </div>
+          ) : subjects?.length ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {subjects.map((subject) => (
+                <span
+                  key={subject._id || subject.id || subject}
+                  className="rounded-lg border border-[#D7E2F3] bg-[#EEF4FF] px-2 py-1 font-['IBM_Plex_Sans_Arabic'] text-xs text-[#123C91]"
+                >
+                  {pickName(subject.name) || subject}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 font-['IBM_Plex_Sans_Arabic'] text-xs text-[#8C9198]">
+              لا توجد مواد مضافة لهذا الصف.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 /* ------------------------------------------------------------------ */
 /* Stage Row — collapsible, lists grade pills                           */
@@ -82,12 +151,12 @@ const StageRow = ({ stage, defaultOpen = false }) => {
           <p className="font-['IBM_Plex_Sans_Arabic'] text-[16px] text-[#8C9198]">
             الصفوف الدراسية
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {grades.length > 0 ? (
               grades.map((g) => (
-                <GradePill
+                <GradeRow
                   key={g._id || g.id || g}
-                  label={pickName(g.name) || g}
+                  grade={g}
                 />
               ))
             ) : (
