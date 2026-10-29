@@ -20,6 +20,7 @@ import {
   getTeacherSalariesSummary,
   getTeacherSalary,
   getTeacher,
+  getCurriculums,
   payTeacherSalary,
   previewTeacherSalary,
 } from "../../../services/APIService";
@@ -78,6 +79,13 @@ const referenceFields = {
 const statusLabels = { paid: "مصروف", cancelled: "ملغي" };
 const errorMessage = (error, fallback) =>
   error.response?.data?.message || fallback;
+const responseList = (response) => {
+  const data = response?.data?.data ?? response?.data ?? [];
+  return Array.isArray(data) ? data : data.items || data.results || [];
+};
+const entityId = (entity) => entity?._id || entity?.id || entity;
+const localizedName = (entity) =>
+  entity?.name?.ar || entity?.name?.en || entity?.name || "—";
 
 const Modal = ({ title, onClose, children, wide = false }) => (
   <div
@@ -147,7 +155,23 @@ export default function TeacherSalariesPage() {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
+  const [curriculums, setCurriculums] = useState([]);
+  const [curriculum, setCurriculum] = useState("");
   const [profileTeacher, setProfileTeacher] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    getCurriculums()
+      .then((response) => {
+        if (active) setCurriculums(responseList(response));
+      })
+      .catch(() => {
+        if (active) setCurriculums([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -159,6 +183,7 @@ export default function TeacherSalariesPage() {
               month,
               year,
               teacherStatus: "approved",
+              curriculum: curriculum || undefined,
               page,
               limit: LIMIT,
             })
@@ -167,6 +192,7 @@ export default function TeacherSalariesPage() {
               year,
               teacherStatus: "approved",
               status: status || undefined,
+              curriculum: curriculum || undefined,
               page,
               limit: LIMIT,
             });
@@ -178,7 +204,7 @@ export default function TeacherSalariesPage() {
     } finally {
       setLoading(false);
     }
-  }, [tab, month, year, page, status]);
+  }, [tab, month, year, page, status, curriculum]);
   useEffect(() => {
     const timer = window.setTimeout(load, 0);
     return () => window.clearTimeout(timer);
@@ -337,6 +363,21 @@ export default function TeacherSalariesPage() {
               onChange={changeFilter(setYear, true)}
               className="mt-1 w-full rounded-lg border px-3 py-2 text-gray-800"
             />
+          </label>
+          <label className="text-sm text-gray-600">
+            المنهج
+            <select
+              value={curriculum}
+              onChange={changeFilter(setCurriculum)}
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-gray-800"
+            >
+              <option value="">كل المناهج</option>
+              {curriculums.map((item) => (
+                <option key={entityId(item)} value={entityId(item)}>
+                  {localizedName(item)}
+                </option>
+              ))}
+            </select>
           </label>
           {tab === "history" && (
             <label className="text-sm text-gray-600 xl:col-start-4">

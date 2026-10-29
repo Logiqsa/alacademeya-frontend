@@ -12,7 +12,7 @@ import RouteSeo from "./components/seo/RouteSeo";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthContextProvider>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true }}>
         <RouteSeo />
         <ScrollToTopOnNavigate />
         <RouteProgress />

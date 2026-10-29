@@ -1,31 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import AdminSidebar from "./AdminSidebar";
 import LayoutSidebarContext from "../../../context/LayoutSidebarContext";
-
-const MOBILE_BREAKPOINT = 768;
-
-const getInitialSidebarState = () => {
-  if (typeof window === "undefined") return true;
-  return window.innerWidth >= MOBILE_BREAKPOINT;
-};
+import usePersistedSidebarOpen from "../../../hooks/usePersistedSidebarOpen";
 
 const AdminLayout = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(getInitialSidebarState);
-
-  const wasAboveBreakpoint = useRef(getInitialSidebarState());
-
-  useEffect(() => {
-    const handleResize = () => {
-      const isAboveBreakpoint = window.innerWidth >= MOBILE_BREAKPOINT;
-      if (isAboveBreakpoint !== wasAboveBreakpoint.current) {
-        wasAboveBreakpoint.current = isAboveBreakpoint;
-        setIsOpen(isAboveBreakpoint);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  const [isOpen, setIsOpen] = usePersistedSidebarOpen("admin");
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;

@@ -603,10 +603,6 @@ const CreateCurriculumPage = () => {
     }));
   };
 
-  const refreshPage = () => {
-    window.location.reload();
-  };
-
   const removeStage = async (stageId) => {
     const savedStage = originalStructure.find(
       (stage) => entityId(stage) === stageId,
@@ -615,8 +611,14 @@ const CreateCurriculumPage = () => {
       setSaving(true);
       try {
         await deleteStageRecord(savedStage);
+        setCurriculum((prev) => ({
+          ...prev,
+          stages: prev.stages.filter((stage) => entityId(stage) !== stageId),
+        }));
+        setOriginalStructure((prev) =>
+          prev.filter((stage) => entityId(stage) !== stageId),
+        );
         toast.success("تم حذف المرحلة بنجاح");
-        refreshPage();
       } catch (err) {
         logSaveError(err);
         toast.error(apiErrorMessage(err));
@@ -643,8 +645,28 @@ const CreateCurriculumPage = () => {
       setSaving(true);
       try {
         await deleteGradeRecord(savedGrade);
+        setCurriculum((prev) => ({
+          ...prev,
+          stages: prev.stages.map((stage) =>
+            entityId(stage) === stageId
+              ? {
+                  ...stage,
+                  grades: stage.grades.filter((grade) => entityId(grade) !== gradeId),
+                }
+              : stage,
+          ),
+        }));
+        setOriginalStructure((prev) =>
+          prev.map((stage) =>
+            entityId(stage) === stageId
+              ? {
+                  ...stage,
+                  grades: stage.grades.filter((grade) => entityId(grade) !== gradeId),
+                }
+              : stage,
+          ),
+        );
         toast.success("تم حذف الصف بنجاح");
-        refreshPage();
       } catch (err) {
         logSaveError(err);
         toast.error(apiErrorMessage(err));
@@ -678,8 +700,28 @@ const CreateCurriculumPage = () => {
       setSaving(true);
       try {
         await deleteSubjectRecord(savedSubject);
+        const removeSubjectFromStage = (stage) =>
+          entityId(stage) === stageId
+            ? {
+                ...stage,
+                grades: stage.grades.map((grade) =>
+                  entityId(grade) === gradeId
+                    ? {
+                        ...grade,
+                        subjects: grade.subjects.filter(
+                          (subject) => entityId(subject) !== subjectId,
+                        ),
+                      }
+                    : grade,
+                ),
+              }
+            : stage;
+        setCurriculum((prev) => ({
+          ...prev,
+          stages: prev.stages.map(removeSubjectFromStage),
+        }));
+        setOriginalStructure((prev) => prev.map(removeSubjectFromStage));
         toast.success("تم حذف المادة بنجاح");
-        refreshPage();
       } catch (err) {
         logSaveError(err);
         toast.error(apiErrorMessage(err));
