@@ -684,6 +684,10 @@ export const updateUser = (id, payload) => API.patch(`/users/${id}`, payload);
 export const approveRegistration = (id) =>
   API.post(`/users/${id}/approve-registration`);
 export const deleteUser = (id) => API.delete(`/users/${id}`);
+export const getUserDeletionImpact = (id) =>
+  API.get(`/users/${id}/deletion-impact`);
+export const anonymizeRetainedUser = (id) =>
+  API.post(`/users/${id}/anonymize-retained-account`);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Classrooms (Groups)

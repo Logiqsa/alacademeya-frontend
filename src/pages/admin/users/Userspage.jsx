@@ -10,6 +10,8 @@ import UsersFilters from "../../../components/admin/users/Usersfilters";
 import UsersTable from "../../../components/admin/users/Userstable";
 import {
   deleteUser as deleteUserApi,
+  getUserDeletionImpact,
+  anonymizeRetainedUser,
   getAllStudents,
   getCurriculums,
   getSubjects,
@@ -541,13 +543,47 @@ const UsersPage = ({
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (user) => {
     try {
-      await deleteUserApi(id);
-      setUsers((prev) => prev.filter((u) => u.id !== id));
+      await deleteUserApi(user.id);
+      setUsers((prev) => prev.filter((item) => item.id !== user.id));
       toast.success("تم حذف المستخدم");
+      return { deleted: true };
     } catch (err) {
+      if (
+        err.response?.status === 409 &&
+        err.response?.data?.code === "USER_HAS_RETAINED_RECORDS"
+      ) {
+        try {
+          const impactResponse = await getUserDeletionImpact(user.id);
+          const impact = impactResponse.data?.data || impactResponse.data;
+          return {
+            retained: true,
+            references: impact?.references || [],
+            canAnonymize:
+              currentRole === "super-admin" && Boolean(impact?.canAnonymize),
+          };
+        } catch (impactError) {
+          toast.error(
+            impactError.response?.data?.message || "تعذر تحميل السجلات المرتبطة",
+          );
+          return null;
+        }
+      }
       toast.error(err.response?.data?.message || "تعذر حذف المستخدم");
+      return null;
+    }
+  };
+
+  const handleAnonymizeRetainedUser = async (user) => {
+    try {
+      await anonymizeRetainedUser(user.id);
+      setUsers((prev) => prev.filter((item) => item.id !== user.id));
+      toast.success("تم إيقاف الحساب وإخفاء بياناته الشخصية");
+      return true;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "تعذر إخفاء بيانات الحساب");
+      return false;
     }
   };
 
@@ -658,6 +694,7 @@ const UsersPage = ({
               onApprove={handleApprove}
               onToggleStatus={handleToggleStatus}
               onDelete={handleDelete}
+              onAnonymizeRetainedUser={handleAnonymizeRetainedUser}
               sort={sort}
               onSort={handleSort}
             />

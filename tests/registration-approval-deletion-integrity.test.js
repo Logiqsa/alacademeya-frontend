@@ -45,3 +45,17 @@ test("academic delete failures preserve the displayed curriculum and use the ser
   assert.match(deleteHandler, /toast\.error\(err\.response\?\.data\?\.message/);
   assert.ok(deleteHandler.indexOf("setCurricula(prev)") > deleteHandler.indexOf("await deleteCurriculum(id)"));
 });
+
+test("retained account deletion shows a safe super-admin redaction path", () => {
+  const api = read("src/services/APIService.js");
+  const page = read("src/pages/admin/users/Userspage.jsx");
+  const table = read("src/components/admin/users/Userstable.jsx");
+
+  assert.match(api, /API\.get\(`\/users\/\$\{id\}\/deletion-impact`\)/);
+  assert.match(api, /API\.post\(`\/users\/\$\{id\}\/anonymize-retained-account`\)/);
+  assert.match(page, /USER_HAS_RETAINED_RECORDS/);
+  assert.match(page, /getUserDeletionImpact\(user\.id\)/);
+  assert.match(page, /anonymizeRetainedUser\(user\.id\)/);
+  assert.match(table, /السجلات التي ستبقى محفوظة/);
+  assert.match(table, /تأكيد الإخفاء الآمن/);
+});

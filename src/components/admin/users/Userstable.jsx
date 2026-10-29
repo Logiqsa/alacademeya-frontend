@@ -199,6 +199,35 @@ const roleBadge = (role) => {
   return <Badge label={role} type="gray" />;
 };
 
+const retainedReferenceLabels = {
+  CoursePurchase: "مشتريات الدورات",
+  CourseCertificate: "شهادات الدورات",
+  CourseEnrollment: "تسجيلات الدورات",
+  InstructorEarning: "أرباح المحاضرين",
+  InstructorPayoutBalance: "أرصدة المحاضرين",
+  InstructorWithdrawalRequest: "طلبات سحب المحاضرين",
+  Subscription: "اشتراكات أكاديمية",
+  SubscriptionOrder: "طلبات اشتراك",
+  SubjectSubscription: "اشتراكات المواد",
+  TeacherSalary: "رواتب المعلمين",
+  SessionAttendance: "سجلات الحضور",
+  AssignmentSubmission: "تسليمات الواجبات",
+  Classroom: "مجموعات دراسية",
+  ClassroomSubject: "مواد المجموعات",
+  Session: "حصص دراسية",
+  SessionRecording: "تسجيلات الحصص",
+  TeacherAbsence: "سجلات غياب المعلمين",
+  Course: "دورات مرتبطة",
+  CourseModerationReview: "مراجعات الدورات",
+  PolicyAcceptance: "موافقات السياسات",
+  PolicyVersion: "إصدارات السياسات",
+  MediaSecurityEvent: "سجلات أمان المحتوى",
+  BlogPost: "مقالات",
+};
+
+const retainedReferenceLabel = (type) =>
+  retainedReferenceLabels[type] || "سجلات مرتبطة";
+
 const Avatar = ({ name, avatarUrl, size = 8 }) => (
   <div
     className={`w-${size} h-${size} rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0`}
@@ -663,6 +692,7 @@ const ConfirmDialog = ({
   confirmLabel,
   confirmClass,
   iconColor,
+  children,
 }) => {
   if (!open) return null;
 
@@ -687,9 +717,13 @@ const ConfirmDialog = ({
           {title}
         </h3>
 
-        <p className="text-[13px] text-[#6B7280] mb-6 font-['IBM_Plex_Sans_Arabic']">
-          {message}
-        </p>
+        {message && (
+          <p className={`text-[13px] text-[#6B7280] font-['IBM_Plex_Sans_Arabic'] ${children ? "mb-3" : "mb-6"}`}>
+            {message}
+          </p>
+        )}
+
+        {children && <div className="mb-6 text-right">{children}</div>}
 
         <div className="flex gap-3">
           <button
@@ -992,11 +1026,13 @@ const UsersTable = ({
   onApprove,
   onToggleStatus,
   onDelete,
+  onAnonymizeRetainedUser,
   sort,
   onSort,
 }) => {
   const [detailsUser, setDetailsUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
+  const [retainedUser, setRetainedUser] = useState(null);
   const [approveUser, setApproveUser] = useState(null);
   const [suspendUser, setSuspendUser] = useState(null);
   const [activateUser, setActivateUser] = useState(null);
@@ -1473,9 +1509,12 @@ const UsersTable = ({
       <ConfirmDialog
         open={Boolean(deleteUser)}
         onClose={() => setDeleteUser(null)}
-        onConfirm={() => {
-          onDelete?.(deleteUser.id);
+        onConfirm={async () => {
+          const result = await onDelete?.(deleteUser);
           setDeleteUser(null);
+          if (result?.retained) {
+            setRetainedUser({ user: deleteUser, ...result });
+          }
         }}
         title="حذف المستخدم"
         message="هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع."
@@ -1483,6 +1522,38 @@ const UsersTable = ({
         confirmClass="bg-red-500 hover:bg-red-600"
         iconColor="bg-red-100 text-red-500"
       />
+
+      <ConfirmDialog
+        open={Boolean(retainedUser)}
+        onClose={() => setRetainedUser(null)}
+        onConfirm={async () => {
+          if (!retainedUser?.canAnonymize) {
+            setRetainedUser(null);
+            return;
+          }
+          const completed = await onAnonymizeRetainedUser?.(retainedUser.user);
+          if (completed) setRetainedUser(null);
+        }}
+        title="سجلات مرتبطة بالحساب"
+        message={
+          retainedUser?.canAnonymize
+            ? "لن تُحذف السجلات المالية أو التعليمية. سيُوقف الحساب وتُخفى بياناته الشخصية فقط."
+            : "لا يمكن حذف الحساب لوجود سجلات محفوظة. السوبر أدمن فقط يمكنه إيقاف الحساب وإخفاء بياناته الشخصية."
+        }
+        confirmLabel={retainedUser?.canAnonymize ? "تأكيد الإخفاء الآمن" : "حسنًا"}
+        confirmClass={retainedUser?.canAnonymize ? "bg-orange-500 hover:bg-orange-600" : "bg-[#123C91] hover:bg-[#0f3280]"}
+        iconColor="bg-orange-100 text-orange-500"
+      >
+        <p className="mb-2 text-xs font-semibold text-[#374151]">السجلات التي ستبقى محفوظة:</p>
+        <ul className="max-h-36 space-y-1 overflow-y-auto rounded-xl bg-[#F9FAFA] p-3 text-xs text-[#575F69]">
+          {(retainedUser?.references || []).map((reference) => (
+            <li key={reference.type} className="flex items-center justify-between gap-3">
+              <span>{retainedReferenceLabel(reference.type)}</span>
+              <span className="font-semibold text-[#123C91]">{reference.count}</span>
+            </li>
+          ))}
+        </ul>
+      </ConfirmDialog>
     </>
   );
 };
