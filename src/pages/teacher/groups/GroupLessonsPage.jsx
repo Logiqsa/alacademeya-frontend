@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   CalendarClock,
   CheckCircle2,
+  CircleHelp,
   MessageCircle,
   UserPlus,
   Users,
@@ -101,6 +102,10 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const routedGroupTeacherId = location.state?.groupTeacherId;
   const routedGroupSubjectId = location.state?.groupSubjectId;
   const routedClassroomType = location.state?.classroomType;
+  const routedGroupCurriculumName = location.state?.groupCurriculumName;
+  const routedGroupStageName = location.state?.groupStageName;
+  const routedGroupGradeName = location.state?.groupGradeName;
+  const routedGroupSubjectName = location.state?.groupSubjectName;
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
@@ -111,9 +116,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   );
 
   const [groupName, setGroupName] = useState(location.state?.groupName || "");
-  const [groupSubject, setGroupSubject] = useState(
-    location.state?.groupSubjectName || "—",
-  );
+  const [groupSubject, setGroupSubject] = useState(routedGroupSubjectName || "—");
   const [groupTeacher, setGroupTeacher] = useState(routedGroupTeacher || "—");
   const [groupStudents, setGroupStudents] = useState([]);
   const [groupDetails, setGroupDetails] = useState(null);
@@ -239,6 +242,12 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         classroomData.substituteTeacher?.fullName;
       setGroupDetails({
         id: classroomData.id || classroomData._id || groupId,
+        curriculumName: resolveName(
+          classroomData.curriculum?.name || classroomData.curriculum,
+        ),
+        stageName: resolveName(classroomData.stage?.name || classroomData.stage),
+        gradeName: resolveName(classroomData.grade?.name || classroomData.grade),
+        subjectName: resolvedSubject,
         teacherId: teacherId || routedGroupTeacherId,
         teacher: nestedTeacherName || routedGroupTeacher || "—",
         subjectId:
@@ -344,6 +353,10 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         (prev) =>
           prev || {
             id: groupId,
+            curriculumName: resolveName(routedGroupCurriculumName),
+            stageName: resolveName(routedGroupStageName),
+            gradeName: resolveName(routedGroupGradeName),
+            subjectName: routedGroupSubjectName || "—",
             teacherId: routedGroupTeacherId,
             teacher: routedGroupTeacher || "—",
             subjectId: routedGroupSubjectId,
@@ -517,6 +530,10 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     isAdmin,
     routedClassroomType,
     routedGroupSubjectId,
+    routedGroupCurriculumName,
+    routedGroupGradeName,
+    routedGroupStageName,
+    routedGroupSubjectName,
     routedGroupTeacher,
     routedGroupTeacherId,
     currentUser?.fullName,
@@ -638,9 +655,54 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div>
-            <h1 className="mb-2 text-xl font-semibold text-[#123C91] sm:text-2xl">
-              {groupName || "المجموعة"}
-            </h1>
+            <div className="group relative mb-2 flex w-fit items-center gap-2">
+              <h1 className="text-xl font-semibold text-[#123C91] sm:text-2xl">
+                {groupName || "المجموعة"}
+              </h1>
+              <button
+                type="button"
+                aria-label="عرض تفاصيل المجموعة التعليمية"
+                aria-describedby="group-academic-details"
+                className="rounded-full text-[#5277B8] transition-colors hover:text-[#123C91] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91] focus-visible:ring-offset-2"
+              >
+                <CircleHelp size={19} aria-hidden="true" />
+              </button>
+              <div
+                id="group-academic-details"
+                role="tooltip"
+                className="pointer-events-none absolute right-0 top-full z-30 mt-2 w-72 rounded-xl border border-[#CFE0FF] bg-white p-3 text-sm shadow-lg opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+              >
+                <p className="mb-2 font-semibold text-[#123C91]">
+                  تفاصيل المجموعة التعليمية
+                </p>
+                <dl className="space-y-1.5 text-[#575F69]">
+                  <div className="flex items-center justify-between gap-3">
+                    <dt>المنهج</dt>
+                    <dd className="font-medium text-[#1F2937]">
+                      {groupDetails?.curriculumName || "غير محدد"}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <dt>المرحلة</dt>
+                    <dd className="font-medium text-[#1F2937]">
+                      {groupDetails?.stageName || "غير محددة"}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <dt>الصف</dt>
+                    <dd className="font-medium text-[#1F2937]">
+                      {groupDetails?.gradeName || "غير محدد"}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <dt>المادة</dt>
+                    <dd className="font-medium text-[#1F2937]">
+                      {groupDetails?.subjectName || groupSubject || "غير محددة"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
             {/* <p className="text-sm sm:text-[16px] font-medium leading-6 text-[#123C91] mb-2">
               المادة: {groupSubject || "—"}
               {groupPlace ? ` • المكان: ${groupPlace}` : ""}
