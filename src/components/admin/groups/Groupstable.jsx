@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   MoreVertical,
   Users,
@@ -663,6 +664,7 @@ const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
     try {
       await updateClassroom(group.id, { teacher: selectedTeacher });
       onChanged?.();
+      toast.success("تم التعيين بنجاح");
       onClose();
     } catch (err) {
       setError(err.response?.data?.message || "حدث خطأ أثناء تعيين المعلم");
@@ -727,6 +729,7 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
     try {
       await updateClassroomSubstituteTeacher(group.id, selectedTeacher);
       onChanged?.();
+      toast.success("تم التعيين بنجاح");
       onClose();
     } catch (err) {
       const apiMessage = err.response?.data?.message;

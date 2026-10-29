@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CircleHelp, Search, X } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   getClassroomReplacementTeachers,
   updateClassroomSubstituteTeacher,
@@ -94,6 +95,7 @@ const SubstituteTeacherModal = ({
     try {
       await updateClassroomSubstituteTeacher(groupId, selectedTeacher);
       await onChanged?.();
+      toast.success("تم التعيين بنجاح");
       onClose();
     } catch (requestError) {
       setError(
