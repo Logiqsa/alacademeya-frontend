@@ -77,6 +77,8 @@ test("retained account deletion shows a safe super-admin redaction path", () => 
   assert.match(table, /لا يوقف أي معلم آخر/);
   assert.match(table, /cursor-pointer select-none items-center/);
   assert.match(table, /border-\[#123C91\] bg-\[#EEF4FF\]/);
+  assert.match(table, /grid max-h-\[38vh\] grid-cols-1 gap-3 overflow-y-auto pl-1 lg:grid-cols-2/);
+  assert.match(table, /grid grid-cols-1 gap-3 lg:grid-cols-2/);
   assert.match(table, /لا تُعرض المعرفات التقنية أو البيانات الحساسة/);
   assert.doesNotMatch(table, /JSON\.stringify\(record, null, 2\)/);
   assert.match(table, /إزالة الحساب من الفصول والمجموعات النشطة/);

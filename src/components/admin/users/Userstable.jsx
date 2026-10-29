@@ -1906,7 +1906,7 @@ const UsersTable = ({
                     {referenceDetailsLoading ? (
                       <p className="py-4 text-center text-sm text-[#575F69]">جاري تحميل التفاصيل...</p>
                     ) : referenceDetails.records?.length ? (
-                      <div className="max-h-[38vh] space-y-3 overflow-y-auto pl-1">
+                      <div className="grid max-h-[38vh] grid-cols-1 gap-3 overflow-y-auto pl-1 lg:grid-cols-2">
                         {referenceDetails.records.map((record, index) => {
                           const card = retainedRecordCard(reference.type, record, index);
                           const fields = retainedRecordFields(reference.type, record);
@@ -1966,6 +1966,7 @@ const UsersTable = ({
           <div className="mt-4 space-y-3 rounded-2xl border border-[#DCE6F7] bg-[#F8FBFF] p-4 text-sm text-[#374151]">
             <p className="font-bold text-[#173B78]">إجراءات اختيارية على العضويات النشطة</p>
             <p className="text-xs leading-5 text-[#6B7280]">اختيار أي بند لا يحذف السجلات السابقة، بل يوقف الوصول النشط فقط.</p>
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <label className={`flex cursor-pointer select-none items-center justify-between gap-4 rounded-xl border p-3.5 transition-colors ${
               retainedRemovalOptions.classrooms
                 ? "border-[#123C91] bg-[#EEF4FF]"
@@ -2016,6 +2017,7 @@ const UsersTable = ({
                 }
               />
             </label>
+            </div>
           </div>
         )}
       </ConfirmDialog>
