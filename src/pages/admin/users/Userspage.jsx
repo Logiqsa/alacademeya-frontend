@@ -575,9 +575,12 @@ const UsersPage = ({
     }
   };
 
-  const handleAnonymizeRetainedUser = async (user) => {
+  const handleAnonymizeRetainedUser = async (user, options) => {
     try {
-      await anonymizeRetainedUser(user.id);
+      await anonymizeRetainedUser(user.id, {
+        removeFromActiveClassrooms: Boolean(options?.classrooms),
+        removeFromActiveChatRooms: Boolean(options?.chatRooms),
+      });
       setUsers((prev) => prev.filter((item) => item.id !== user.id));
       toast.success("تم إيقاف الحساب وإخفاء بياناته الشخصية");
       return true;

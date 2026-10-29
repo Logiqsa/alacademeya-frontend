@@ -52,10 +52,14 @@ test("retained account deletion shows a safe super-admin redaction path", () => 
   const table = read("src/components/admin/users/Userstable.jsx");
 
   assert.match(api, /API\.get\(`\/users\/\$\{id\}\/deletion-impact`\)/);
-  assert.match(api, /API\.post\(`\/users\/\$\{id\}\/anonymize-retained-account`\)/);
+  assert.match(api, /API\.post\(`\/users\/\$\{id\}\/anonymize-retained-account`, options\)/);
   assert.match(page, /USER_HAS_RETAINED_RECORDS/);
   assert.match(page, /getUserDeletionImpact\(user\.id\)/);
-  assert.match(page, /anonymizeRetainedUser\(user\.id\)/);
+  assert.match(page, /anonymizeRetainedUser\(user\.id/);
   assert.match(table, /السجلات التي ستبقى محفوظة/);
   assert.match(table, /تأكيد الإخفاء الآمن/);
+  assert.match(table, /إزالة من الفصول والمجموعات النشطة/);
+  assert.match(table, /إزالة من غرف الشات النشطة/);
+  assert.match(page, /removeFromActiveClassrooms/);
+  assert.match(page, /removeFromActiveChatRooms/);
 });

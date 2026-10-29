@@ -1033,6 +1033,10 @@ const UsersTable = ({
   const [detailsUser, setDetailsUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
   const [retainedUser, setRetainedUser] = useState(null);
+  const [retainedRemovalOptions, setRetainedRemovalOptions] = useState({
+    classrooms: false,
+    chatRooms: false,
+  });
   const [approveUser, setApproveUser] = useState(null);
   const [suspendUser, setSuspendUser] = useState(null);
   const [activateUser, setActivateUser] = useState(null);
@@ -1513,11 +1517,12 @@ const UsersTable = ({
           const result = await onDelete?.(deleteUser);
           setDeleteUser(null);
           if (result?.retained) {
+            setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
             setRetainedUser({ user: deleteUser, ...result });
           }
         }}
         title="حذف المستخدم"
-        message="هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع."
+        message="سيُحذف الحساب نهائيًا فقط إن لم توجد له سجلات مالية أو تعليمية أو تاريخية. عند وجودها ستظهر خيارات الإيقاف الآمن."
         confirmLabel="حذف"
         confirmClass="bg-red-500 hover:bg-red-600"
         iconColor="bg-red-100 text-red-500"
@@ -1525,14 +1530,23 @@ const UsersTable = ({
 
       <ConfirmDialog
         open={Boolean(retainedUser)}
-        onClose={() => setRetainedUser(null)}
+        onClose={() => {
+          setRetainedUser(null);
+          setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
+        }}
         onConfirm={async () => {
           if (!retainedUser?.canAnonymize) {
             setRetainedUser(null);
             return;
           }
-          const completed = await onAnonymizeRetainedUser?.(retainedUser.user);
-          if (completed) setRetainedUser(null);
+          const completed = await onAnonymizeRetainedUser?.(
+            retainedUser.user,
+            retainedRemovalOptions,
+          );
+          if (completed) {
+            setRetainedUser(null);
+            setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
+          }
         }}
         title="سجلات مرتبطة بالحساب"
         message={
@@ -1553,6 +1567,37 @@ const UsersTable = ({
             </li>
           ))}
         </ul>
+        {retainedUser?.canAnonymize && (
+          <div className="mt-3 space-y-2 rounded-xl border border-[#E5E7EB] bg-white p-3 text-xs text-[#374151]">
+            <p className="font-semibold">إجراءات اختيارية على العضويات النشطة:</p>
+            <label className="flex cursor-pointer items-start gap-2">
+              <input
+                type="checkbox"
+                checked={retainedRemovalOptions.classrooms}
+                onChange={(event) =>
+                  setRetainedRemovalOptions((current) => ({
+                    ...current,
+                    classrooms: event.target.checked,
+                  }))
+                }
+              />
+              <span>إزالة من الفصول والمجموعات النشطة (تُوقف مجموعة المعلم النشطة بدل حذفها).</span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-2">
+              <input
+                type="checkbox"
+                checked={retainedRemovalOptions.chatRooms}
+                onChange={(event) =>
+                  setRetainedRemovalOptions((current) => ({
+                    ...current,
+                    chatRooms: event.target.checked,
+                  }))
+                }
+              />
+              <span>إزالة من غرف الشات النشطة مع الاحتفاظ بالرسائل السابقة.</span>
+            </label>
+          </div>
+        )}
       </ConfirmDialog>
     </>
   );

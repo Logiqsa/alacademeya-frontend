@@ -686,8 +686,8 @@ export const approveRegistration = (id) =>
 export const deleteUser = (id) => API.delete(`/users/${id}`);
 export const getUserDeletionImpact = (id) =>
   API.get(`/users/${id}/deletion-impact`);
-export const anonymizeRetainedUser = (id) =>
-  API.post(`/users/${id}/anonymize-retained-account`);
+export const anonymizeRetainedUser = (id, options) =>
+  API.post(`/users/${id}/anonymize-retained-account`, options);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Classrooms (Groups)
