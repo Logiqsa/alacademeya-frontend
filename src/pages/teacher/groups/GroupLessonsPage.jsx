@@ -57,6 +57,23 @@ const STATUS_LABELS = {
 const resolveName = (val) =>
   typeof val === "string" ? val : val?.ar || val?.en || "--";
 
+const isMongoId = (value) => /^[a-f\d]{24}$/i.test(String(value || ""));
+
+const resolveAcademicName = (field, primaryClassroom, fallbackClassroom) => {
+  const references = [
+    primaryClassroom?.[field],
+    fallbackClassroom?.[field],
+  ].filter(Boolean);
+  const populatedReference = references.find(
+    (reference) => typeof reference === "object" && !Array.isArray(reference),
+  );
+  const name = resolveName(
+    populatedReference?.name || populatedReference || references[0],
+  );
+
+  return isMongoId(name) ? "غير محدد" : name;
+};
+
 const unwrapTeacher = (response) => {
   const body = response?.data?.data ?? response?.data ?? response;
   return body?.teacher ?? body;
@@ -198,13 +215,39 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     const classroomData = matchingClassroom
       ? { ...classroomResponseData, ...matchingClassroom }
       : classroomResponseData;
+    // قائمة المجموعات قد تحتوي المراجع كـ IDs، بينما endpoint التفاصيل يعيدها
+    // populated. نعطي الاسم المعبأ أولوية كي لا تظهر IDs في واجهة الإدارة.
+    const academicNames = {
+      curriculum: resolveAcademicName(
+        "curriculum",
+        classroomResponseData,
+        matchingClassroom,
+      ),
+      stage: resolveAcademicName(
+        "stage",
+        classroomResponseData,
+        matchingClassroom,
+      ),
+      grade: resolveAcademicName(
+        "grade",
+        classroomResponseData,
+        matchingClassroom,
+      ),
+      subject: resolveAcademicName(
+        "subject",
+        classroomResponseData,
+        matchingClassroom,
+      ),
+    };
     const hasClassroomData = Object.keys(classroomData).length > 0;
 
     if (hasClassroomData) {
-      const resolvedSubject = resolveName(
-        classroomData.subject?.name || classroomData.subject,
-      );
-      if (resolvedSubject && resolvedSubject !== "--") {
+      const resolvedSubject = academicNames.subject;
+      if (
+        resolvedSubject &&
+        resolvedSubject !== "--" &&
+        resolvedSubject !== "غير محدد"
+      ) {
         setGroupSubject(resolvedSubject);
       }
 
@@ -242,11 +285,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         classroomData.substituteTeacher?.fullName;
       setGroupDetails({
         id: classroomData.id || classroomData._id || groupId,
-        curriculumName: resolveName(
-          classroomData.curriculum?.name || classroomData.curriculum,
-        ),
-        stageName: resolveName(classroomData.stage?.name || classroomData.stage),
-        gradeName: resolveName(classroomData.grade?.name || classroomData.grade),
+        curriculumName: academicNames.curriculum,
+        stageName: academicNames.stage,
+        gradeName: academicNames.grade,
         subjectName: resolvedSubject,
         teacherId: teacherId || routedGroupTeacherId,
         teacher: nestedTeacherName || routedGroupTeacher || "—",

@@ -21,8 +21,11 @@ test("group lessons header exposes academic group details through an accessible 
   assert.match(source, /المرحلة/);
   assert.match(source, /الصف/);
   assert.match(source, /المادة/);
-  assert.match(source, /classroomData\.curriculum/);
-  assert.match(source, /classroomData\.stage/);
-  assert.match(source, /classroomData\.grade/);
+  assert.match(source, /academicNames\.curriculum/);
+  assert.match(source, /academicNames\.stage/);
+  assert.match(source, /academicNames\.grade/);
+  assert.match(source, /resolveAcademicName/);
+  assert.match(source, /isMongoId/);
+  assert.match(source, /endpoint التفاصيل يعيدها[\s\S]*populated/);
   assert.match(source, /group-focus-within:opacity-100/);
 });
