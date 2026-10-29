@@ -3,6 +3,7 @@ import { useContext } from "react";
 import { Award, Compass, GraduationCap, Library, UsersRound, Wallet } from "lucide-react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
+import usePersistentSidebarScroll from "../../../hooks/usePersistentSidebarScroll";
 
 import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
@@ -18,6 +19,7 @@ import logoutIcon from "../../../assets/icons/logout.png";
 
 const StudentSidebar = ({ isOpen, setIsOpen, marketplaceOnly = false }) => {
   const unread = useSidebarUnread();
+  const { scrollRef, savePosition } = usePersistentSidebarScroll("student");
   const academicMenu = [
     {
       title: "لوحة التحكم",
@@ -147,7 +149,11 @@ const StudentSidebar = ({ isOpen, setIsOpen, marketplaceOnly = false }) => {
       </div>
 
       {/* Menu */}
-      <div className="flex-1 px-3 mt-4 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        onScroll={savePosition}
+        className="flex-1 px-3 mt-4 overflow-y-auto"
+      >
         {menu.map((item) => (
           <NavLink
             key={item.path}

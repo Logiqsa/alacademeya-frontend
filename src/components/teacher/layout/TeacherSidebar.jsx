@@ -2,6 +2,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
+import usePersistentSidebarScroll from "../../../hooks/usePersistentSidebarScroll";
 import { getDashboardPathByRole, isInstructor, canHaveInstructorProfile } from "../../../utils/roles";
 import { getMyInstructorProfile } from "../../../services/APIService";
 import {
@@ -31,6 +32,7 @@ import logoutIcon from "../../../assets/icons/logout.png";
 
 const TeacherSidebar = ({ isOpen, setIsOpen }) => {
   const unread = useSidebarUnread();
+  const { scrollRef, savePosition } = usePersistentSidebarScroll("teacher");
   const { user, logout, updateUser } = useContext(AuthContext);
   const checkedInstructorUserRef = useRef(null);
   const instructor = isInstructor(user);
@@ -230,7 +232,11 @@ const TeacherSidebar = ({ isOpen, setIsOpen }) => {
       </div>
 
       {/* Menu */}
-      <div className="admin-sidebar-scroll mt-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2">
+      <div
+        ref={scrollRef}
+        onScroll={savePosition}
+        className="admin-sidebar-scroll mt-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2"
+      >
         {menuSections.filter((section) => section.items.length).map((section) => (
           <div key={section.label} className="mb-2">
             {isOpen && (

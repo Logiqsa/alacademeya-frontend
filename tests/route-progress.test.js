@@ -29,3 +29,12 @@ test("account sidebars retain their open state across internal route remounts", 
   );
   assert.match(source, /sessionStorage\.setItem\(storageKey, String\(isOpen\)\)/);
 });
+
+test("scrollable sidebars retain their own scroll position across internal navigation", () => {
+  const source = readFileSync(
+    new URL("../src/hooks/usePersistentSidebarScroll.js", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /sidebar-scroll/);
+  assert.match(source, /scrollRef\.current\.scrollTop = savedPosition/);
+});

@@ -25,12 +25,14 @@ import {
 } from "lucide-react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useSidebarUnread } from "../../../api/useSidebarUnread";
+import usePersistentSidebarScroll from "../../../hooks/usePersistentSidebarScroll";
 
 import logo from "../../../assets/icons/loogo.svg";
 import toggleIcon from "../../../assets/icons/sidebar-toggle.png";
 
 const AdminSidebar = ({ isOpen, setIsOpen }) => {
   const unread = useSidebarUnread();
+  const { scrollRef, savePosition } = usePersistentSidebarScroll("admin");
   const menuSections = [
     {
       label: "رئيسي",
@@ -161,7 +163,11 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       </div>
 
       {/* Menu */}
-      <div className="admin-sidebar-scroll mt-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2">
+      <div
+        ref={scrollRef}
+        onScroll={savePosition}
+        className="admin-sidebar-scroll mt-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2"
+      >
         {menuSections.map((section) => (
           <div key={section.label} className="mb-2">
             {isOpen && (
