@@ -391,102 +391,6 @@ const retainedRecordCard = (type, record = {}, index) => {
   }
 };
 
-const retainedRecordFields = (type, record = {}) => {
-  const fields = [];
-  const add = (label, value) => {
-    const text = readableValue(value);
-    if (text) fields.push({ label, value: text });
-  };
-  const addDate = (label, value) => {
-    const text = readableDate(value);
-    if (text) fields.push({ label, value: text });
-  };
-  const addAmount = () => {
-    const amount = readableAmount(record);
-    if (amount) fields.push({ label: "المبلغ", value: amount });
-  };
-
-  switch (type) {
-    case "CoursePurchase":
-      add("اسم المشتري", record.buyerName);
-      add("الدورة", courseName(record));
-      add("حالة الدفع", readableStatus(record.paymentStatus || record.status));
-      addAmount();
-      addDate("تاريخ الشراء", record.paidAt || record.purchasedAt || record.createdAt);
-      break;
-    case "SubscriptionOrder":
-      add("رقم الطلب", record.orderNumber || record.reference);
-      add("الطالب", record.studentName || record.buyerName);
-      add("المواد", subscriptionSubjects(record));
-      add("الحالة", readableStatus(record.status));
-      addAmount();
-      if (Array.isArray(record.items)) add("عدد المواد", record.items.length);
-      addDate("تاريخ الطلب", record.createdAt);
-      break;
-    case "CourseCertificate":
-      add("الدورة", courseName(record));
-      add("رقم الشهادة", record.certificateNumber);
-      add("الحالة", readableStatus(record.status));
-      addDate("تاريخ الإصدار", record.issuedAt || record.createdAt);
-      break;
-    case "CourseEnrollment":
-      add("الدورة", courseName(record));
-      add("الحالة", readableStatus(record.status));
-      addDate("تاريخ التسجيل", record.enrolledAt || record.createdAt);
-      break;
-    case "SubjectSubscription":
-      add("المادة", subjectName(record));
-      add("المجموعة", classroomName(record));
-      add("الحالة", readableStatus(record.status));
-      addAmount();
-      addDate("تاريخ الإنشاء", record.createdAt);
-      break;
-    case "Subscription":
-      add("الحالة", readableStatus(record.status));
-      addDate("تاريخ الإنشاء", record.createdAt);
-      break;
-    case "TeacherSalary":
-    case "InstructorWithdrawalRequest":
-    case "InstructorPayoutBalance":
-      add("الحالة", readableStatus(record.status));
-      addAmount();
-      addDate("التاريخ", record.paidAt || record.requestedAt || record.createdAt);
-      break;
-    case "Classroom":
-      add("اسم المجموعة", record.name);
-      add("الحالة", readableStatus(record.status));
-      if (Array.isArray(record.students)) add("عدد الطلاب", record.students.length);
-      addDate("تاريخ الإنشاء", record.createdAt);
-      break;
-    case "Session":
-      add("اسم الحصة", record.title);
-      add("الحالة", readableStatus(record.status));
-      add("المدة", record.duration ? `${record.duration} دقيقة` : "");
-      addDate("الموعد", record.scheduledDate || record.startAt || record.createdAt);
-      break;
-    case "Assignment":
-    case "AssignmentSubmission":
-      add("العنوان", record.title || record.assignmentTitle);
-      add("الحالة", readableStatus(record.status));
-      add("الدرجة", record.score);
-      addDate("التاريخ", record.submittedAt || record.createdAt);
-      break;
-    case "TeacherAbsence":
-      add("سبب التسجيل", record.reason === "session_not_created" ? "لم يتم إنشاء الحصة" : record.reason === "session_not_started_on_time" ? "لم تبدأ الحصة في وقتها" : record.reason);
-      addDate("موعد الحصة", record.scheduledDate || record.createdAt);
-      break;
-    default:
-      add("العنوان", record.title || record.name || record.subjectName || record.courseTitle);
-      add("الحالة", record.status);
-      addDate("تاريخ السجل", record.createdAt || record.updatedAt);
-  }
-
-  if (!fields.some((field) => field.label === "تاريخ السجل" || field.label.includes("تاريخ"))) {
-    addDate("تاريخ السجل", record.createdAt);
-  }
-  return fields;
-};
-
 const Avatar = ({ name, avatarUrl, size = 8 }) => (
   <div
     className={`w-${size} h-${size} rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0`}
@@ -1874,7 +1778,7 @@ const UsersTable = ({
       >
         <p className="mb-3 text-sm font-semibold text-[#374151]">السجلات التعليمية والمالية المرتبطة:</p>
         <p className="mb-3 text-xs leading-6 text-[#575F69]">
-          اضغط على أي نوع سجل ثم على السجل المطلوب لعرض بياناته المنظمة. لا تُعرض المعرفات التقنية أو البيانات الحساسة.
+          اضغط على أي نوع سجل لعرض السجلات المرتبطة. لا تُعرض المعرفات التقنية أو البيانات الحساسة.
         </p>
         <ul className="max-h-[46vh] space-y-2 overflow-y-auto rounded-2xl bg-[#F9FAFA] p-3 sm:p-4 text-sm text-[#575F69]">
           {(retainedUser?.references || []).map((reference) => {
@@ -1909,39 +1813,18 @@ const UsersTable = ({
                       <div className="grid max-h-[38vh] grid-cols-1 gap-3 overflow-y-auto pl-1 lg:grid-cols-2">
                         {referenceDetails.records.map((record, index) => {
                           const card = retainedRecordCard(reference.type, record, index);
-                          const fields = retainedRecordFields(reference.type, record);
                           return (
-                            <details key={record._id || index} className="group overflow-hidden rounded-2xl border border-[#DCE6F7] bg-white text-sm text-[#374151] shadow-sm transition-shadow hover:shadow-md">
-                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-l from-[#F8FBFF] to-white px-4 py-3 marker:content-none sm:px-5">
-                                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 text-right">
-                                  <p className="min-w-48 flex-1 truncate font-bold text-[#173B78]">{card.title}</p>
-                                  {card.details.map((detail) => (
-                                    <span key={detail.label} className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-[11px] ring-1 ring-[#E1EAF7]">
-                                      <span className="font-medium text-[#7A8494]">{detail.label}:</span>
-                                      <span className="font-semibold text-[#374151]">{detail.value}</span>
-                                    </span>
-                                  ))}
-                                </div>
-                                <span className="flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#123C91] ring-1 ring-[#DCE6F7]">
-                                  التفاصيل
-                                  <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
-                                </span>
-                              </summary>
-                              <div className="grid gap-2 border-t border-[#DCE6F7] bg-[#FCFDFF] p-3 sm:grid-cols-2 sm:p-4">
-                              {fields.length ? (
-                                fields.map((field) => (
-                                  <div key={field.label} className="rounded-lg border border-[#EDF0F5] bg-white px-3 py-2.5">
-                                    <p className="text-[11px] font-medium text-[#8C9198]">{field.label}</p>
-                                    <p className="mt-1 break-words text-[13px] font-semibold text-[#1F2937]">{field.value}</p>
-                                  </div>
-                                ))
-                              ) : (
-                                <p className="sm:col-span-2 rounded-lg bg-white px-3 py-3 text-xs text-[#575F69]">
-                                  لا توجد بيانات قابلة للعرض لهذا السجل، لكنه محفوظ لحماية السجل المالي أو التعليمي.
-                                </p>
-                              )}
+                            <article key={record._id || index} className="overflow-hidden rounded-2xl border border-[#DCE6F7] bg-gradient-to-l from-[#F8FBFF] to-white px-4 py-3 text-sm text-[#374151] shadow-sm sm:px-5">
+                              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-right">
+                                <p className="min-w-48 flex-1 truncate font-bold text-[#173B78]">{card.title}</p>
+                                {card.details.map((detail) => (
+                                  <span key={detail.label} className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-[11px] ring-1 ring-[#E1EAF7]">
+                                    <span className="font-medium text-[#7A8494]">{detail.label}:</span>
+                                    <span className="font-semibold text-[#374151]">{detail.value}</span>
+                                  </span>
+                                ))}
                               </div>
-                            </details>
+                            </article>
                           );
                         })}
                       </div>

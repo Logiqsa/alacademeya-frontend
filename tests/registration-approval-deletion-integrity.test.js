@@ -66,7 +66,6 @@ test("retained account deletion shows a safe super-admin redaction path", () => 
   assert.match(table, /جاري التحقق من السجلات المرتبطة بالحساب/);
   assert.match(table, /أرباح المحاضرين وسجلات موافقة السياسات وأمان المحتوى/);
   assert.match(table, /dialogClassName="max-w-5xl max-h-\[92vh\] overflow-y-auto p-5 sm:p-7"/);
-  assert.match(table, /const retainedRecordFields/);
   assert.match(table, /const retainedRecordCard/);
   assert.match(table, /شراء دورة:/);
   assert.match(table, /شهادة دورة:/);
@@ -78,6 +77,9 @@ test("retained account deletion shows a safe super-admin redaction path", () => 
   assert.match(table, /cursor-pointer select-none items-center/);
   assert.match(table, /border-\[#123C91\] bg-\[#EEF4FF\]/);
   assert.match(table, /grid max-h-\[38vh\] grid-cols-1 gap-3 overflow-y-auto pl-1 lg:grid-cols-2/);
+  assert.match(table, /<article key=\{record\._id \|\| index\}/);
+  assert.doesNotMatch(table, /const retainedRecordFields/);
+  assert.doesNotMatch(table, /<details key=\{record\._id \|\| index\}/);
   assert.match(table, /grid grid-cols-1 gap-3 lg:grid-cols-2/);
   assert.match(table, /لا تُعرض المعرفات التقنية أو البيانات الحساسة/);
   assert.doesNotMatch(table, /JSON\.stringify\(record, null, 2\)/);
