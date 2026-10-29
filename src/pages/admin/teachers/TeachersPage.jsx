@@ -24,14 +24,12 @@ import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
   getTeachers,
   getTeacher,
-  getTeacherMonthlyReport,
   updateTeacherProfile,
   updateUser,
   deleteUser,
 } from "../../../services/APIService";
 import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
-import { getTeacherMissedSessions } from "../../../utils/teacherMissedSessions";
 import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeachingSelections";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import { confirmToast } from "../../../utils/confirmToast";
@@ -173,28 +171,16 @@ const TeachersPage = () => {
   const loadTeachers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getTeachers({ limit: 100 });
+      const response = await getTeachers({ limit: 100, month });
       const body = response.data?.data ?? response.data ?? [];
       const list = Array.isArray(body) ? body : body.teachers || [];
 
       const completedTeachers = list.filter(
         (teacher) => !hasIncompleteRegistration(teacher),
       );
-      const rows = await Promise.all(
-        completedTeachers.map(async (teacher) => {
+      const rows = completedTeachers.map((teacher) => {
           const id = teacher.id || teacher._id;
-          let summary = {};
-          let absences = [];
-          const [reportResult, absencesResult] = await Promise.allSettled([
-            getTeacherMonthlyReport(id, month),
-            getTeacherMissedSessions(teacher),
-          ]);
-          if (reportResult.status === "fulfilled") {
-            summary = reportResult.value.data?.data?.summary || {};
-          }
-          if (absencesResult.status === "fulfilled") {
-            absences = absencesResult.value;
-          }
+          const summary = teacher.monthlySummary || {};
 
           return {
             id,
@@ -208,6 +194,7 @@ const TeachersPage = () => {
             phone: teacherPhone(teacher),
             monthlyMinutes: summary.totalTeachingMinutes ?? 0,
             completedSessions: summary.completedSessions ?? 0,
+            missedSessions: summary.missedSessions ?? 0,
             experience: teacher.experienceYears ?? teacher.experience ?? "—",
             subjects: listLabel(teacher.subjects ?? teacher.subject),
             grades: listLabel(teacher.grades ?? teacher.grade),
@@ -228,10 +215,8 @@ const TeachersPage = () => {
             fileUrls: getTeacherFileUrls(teacher),
             createdAt: teacher.createdAt || teacher.user?.createdAt,
             raw: teacher,
-            absences,
           };
-        }),
-      );
+        });
 
       setTeachers(
         rows.sort(
@@ -282,6 +267,9 @@ const TeachersPage = () => {
   });
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
+  // The per-teacher totals are now computed by the API. This small local sum
+  // deliberately preserves the previous behavior of counting only displayed,
+  // completed teacher profiles.
   const totalMinutes = teachers.reduce(
     (sum, teacher) => sum + Number(teacher.monthlyMinutes || 0),
     0,
@@ -627,7 +615,7 @@ const TeachersPage = () => {
                             }
                             className="font-semibold text-amber-700 hover:underline"
                           >
-                            {teacher.absences.length}
+                            {teacher.missedSessions}
                           </button>
                         </td>
                         <td className="px-6 py-4 text-sm">
@@ -690,7 +678,7 @@ const TeachersPage = () => {
                     >
                       <p className="text-xs text-[#575F69]">الغياب</p>
                       <p className="mt-1 font-semibold text-amber-700">
-                        {teacher.absences.length}
+                        {teacher.missedSessions}
                       </p>
                     </button>
                     <div className="rounded-lg bg-white p-3 text-sm text-[#575F69]">

@@ -686,6 +686,8 @@ export const approveRegistration = (id) =>
 export const deleteUser = (id) => API.delete(`/users/${id}`);
 export const getUserDeletionImpact = (id) =>
   API.get(`/users/${id}/deletion-impact`);
+export const getUserDeletionReferenceDetails = (id, referenceType) =>
+  API.get(`/users/${id}/deletion-impact/${encodeURIComponent(referenceType)}`);
 export const anonymizeRetainedUser = (id, options) =>
   API.post(`/users/${id}/anonymize-retained-account`, options);
 

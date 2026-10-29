@@ -11,6 +11,7 @@ import UsersTable from "../../../components/admin/users/Userstable";
 import {
   deleteUser as deleteUserApi,
   getUserDeletionImpact,
+  getUserDeletionReferenceDetails,
   anonymizeRetainedUser,
   getAllStudents,
   getCurriculums,
@@ -590,6 +591,16 @@ const UsersPage = ({
     }
   };
 
+  const handleGetDeletionReferenceDetails = async (user, referenceType) => {
+    try {
+      const response = await getUserDeletionReferenceDetails(user.id, referenceType);
+      return response.data?.data || response.data;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "تعذر تحميل تفاصيل السجلات");
+      return null;
+    }
+  };
+
   return (
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
@@ -698,6 +709,7 @@ const UsersPage = ({
               onToggleStatus={handleToggleStatus}
               onDelete={handleDelete}
               onAnonymizeRetainedUser={handleAnonymizeRetainedUser}
+              onGetDeletionReferenceDetails={handleGetDeletionReferenceDetails}
               sort={sort}
               onSort={handleSort}
             />

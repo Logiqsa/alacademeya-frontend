@@ -693,6 +693,7 @@ const ConfirmDialog = ({
   confirmClass,
   iconColor,
   children,
+  dialogClassName = "max-w-xs",
 }) => {
   if (!open) return null;
 
@@ -704,7 +705,7 @@ const ConfirmDialog = ({
       }}
     >
       <div
-        className="bg-white w-full max-w-xs rounded-2xl p-6 shadow-xl text-center"
+        className={`w-full rounded-2xl bg-white p-6 text-center shadow-xl ${dialogClassName}`}
         dir="rtl"
       >
         <div
@@ -1027,6 +1028,7 @@ const UsersTable = ({
   onToggleStatus,
   onDelete,
   onAnonymizeRetainedUser,
+  onGetDeletionReferenceDetails,
   sort,
   onSort,
 }) => {
@@ -1037,6 +1039,8 @@ const UsersTable = ({
     classrooms: false,
     chatRooms: false,
   });
+  const [referenceDetails, setReferenceDetails] = useState(null);
+  const [referenceDetailsLoading, setReferenceDetailsLoading] = useState(false);
   const [approveUser, setApproveUser] = useState(null);
   const [suspendUser, setSuspendUser] = useState(null);
   const [activateUser, setActivateUser] = useState(null);
@@ -1045,6 +1049,28 @@ const UsersTable = ({
   const [reportError, setReportError] = useState("");
 
   const navigate = useNavigate();
+
+  const closeRetainedDialog = () => {
+    setRetainedUser(null);
+    setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
+    setReferenceDetails(null);
+    setReferenceDetailsLoading(false);
+  };
+
+  const showReferenceDetails = async (reference) => {
+    if (!retainedUser?.canAnonymize || !onGetDeletionReferenceDetails) return;
+
+    setReferenceDetails({
+      type: reference.type,
+      total: reference.count,
+      records: [],
+      loading: true,
+    });
+    setReferenceDetailsLoading(true);
+    const details = await onGetDeletionReferenceDetails(retainedUser.user, reference.type);
+    setReferenceDetails(details || null);
+    setReferenceDetailsLoading(false);
+  };
 
   const handleOpenChat = (user) => {
     navigate("/admin/messages", { state: { openUserId: user.id } });
@@ -1518,6 +1544,7 @@ const UsersTable = ({
           setDeleteUser(null);
           if (result?.retained) {
             setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
+            setReferenceDetails(null);
             setRetainedUser({ user: deleteUser, ...result });
           }
         }}
@@ -1530,13 +1557,10 @@ const UsersTable = ({
 
       <ConfirmDialog
         open={Boolean(retainedUser)}
-        onClose={() => {
-          setRetainedUser(null);
-          setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
-        }}
+        onClose={closeRetainedDialog}
         onConfirm={async () => {
           if (!retainedUser?.canAnonymize) {
-            setRetainedUser(null);
+            closeRetainedDialog();
             return;
           }
           const completed = await onAnonymizeRetainedUser?.(
@@ -1544,8 +1568,7 @@ const UsersTable = ({
             retainedRemovalOptions,
           );
           if (completed) {
-            setRetainedUser(null);
-            setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
+            closeRetainedDialog();
           }
         }}
         title="سجلات مرتبطة بالحساب"
@@ -1557,16 +1580,65 @@ const UsersTable = ({
         confirmLabel={retainedUser?.canAnonymize ? "تأكيد الإخفاء الآمن" : "حسنًا"}
         confirmClass={retainedUser?.canAnonymize ? "bg-orange-500 hover:bg-orange-600" : "bg-[#123C91] hover:bg-[#0f3280]"}
         iconColor="bg-orange-100 text-orange-500"
+        dialogClassName="max-w-3xl max-h-[86vh] overflow-y-auto"
       >
-        <p className="mb-2 text-xs font-semibold text-[#374151]">السجلات التي ستبقى محفوظة:</p>
-        <ul className="max-h-36 space-y-1 overflow-y-auto rounded-xl bg-[#F9FAFA] p-3 text-xs text-[#575F69]">
+        <p className="mb-2 text-sm font-semibold text-[#374151]">السجلات التي ستبقى محفوظة:</p>
+        <ul className="max-h-52 space-y-1.5 overflow-y-auto rounded-xl bg-[#F9FAFA] p-4 text-sm text-[#575F69]">
           {(retainedUser?.references || []).map((reference) => (
-            <li key={reference.type} className="flex items-center justify-between gap-3">
+            <li key={reference.type} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2">
               <span>{retainedReferenceLabel(reference.type)}</span>
-              <span className="font-semibold text-[#123C91]">{reference.count}</span>
+              {retainedUser?.canAnonymize ? (
+                <button
+                  type="button"
+                  onClick={() => showReferenceDetails(reference)}
+                  className="rounded-md px-2 py-1 font-semibold text-[#123C91] underline-offset-2 hover:bg-[#EAF0FB] hover:underline"
+                  aria-label={`عرض تفاصيل ${retainedReferenceLabel(reference.type)}`}
+                >
+                  {reference.count}
+                </button>
+              ) : (
+                <span className="font-semibold text-[#123C91]">{reference.count}</span>
+              )}
             </li>
           ))}
         </ul>
+        {referenceDetails && (
+          <div className="mt-3 rounded-xl border border-[#D6E2FA] bg-[#F8FBFF] p-3 text-right">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-[#1F2937]">
+                تفاصيل {retainedReferenceLabel(referenceDetails.type)}
+                {typeof referenceDetails.total === "number" ? ` (${referenceDetails.total})` : ""}
+              </p>
+              <button
+                type="button"
+                onClick={() => setReferenceDetails(null)}
+                className="rounded-md p-1 text-[#575F69] hover:bg-white"
+                aria-label="إغلاق التفاصيل"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            {referenceDetailsLoading ? (
+              <p className="py-4 text-center text-sm text-[#575F69]">جاري تحميل التفاصيل...</p>
+            ) : referenceDetails.records?.length ? (
+              <div className="max-h-64 space-y-2 overflow-y-auto">
+                {referenceDetails.records.map((record, index) => (
+                  <details key={record._id || index} className="rounded-lg border border-[#E5E7EB] bg-white p-2 text-xs text-[#374151]">
+                    <summary className="cursor-pointer font-semibold">سجل {index + 1}</summary>
+                    <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded bg-[#F9FAFA] p-2 text-left" dir="ltr">
+                      {JSON.stringify(record, null, 2)}
+                    </pre>
+                  </details>
+                ))}
+              </div>
+            ) : (
+              <p className="py-4 text-center text-sm text-[#575F69]">لا توجد سجلات لعرضها.</p>
+            )}
+            {referenceDetails.truncated && (
+              <p className="mt-2 text-xs text-[#575F69]">يتم عرض أول 100 سجل فقط.</p>
+            )}
+          </div>
+        )}
         {retainedUser?.canAnonymize && (
           <div className="mt-3 space-y-2 rounded-xl border border-[#E5E7EB] bg-white p-3 text-xs text-[#374151]">
             <p className="font-semibold">إجراءات اختيارية على العضويات النشطة:</p>
