@@ -25,6 +25,8 @@ test("replacement-teacher UI keeps its established action name and uses the scop
   assert.match(substituteModal, /اختيار معلم بديل/);
   assert.match(substituteModal, /سيُزال المعلم الحالي[\s\S]*شات المجموعة/);
   assert.match(substituteModal, /getClassroomReplacementTeachers\(groupId\)/);
+  assert.match(substituteModal, /معايير ظهور المعلمين في القائمة/);
+  assert.match(substituteModal, /نفس[\s\S]*المنهج والمرحلة والصف والمادة/);
   assert.doesNotMatch(substituteModal, /إزالة المعلم البديل/);
   assert.match(groups, /title="تعيين معلم بديل"/);
   assert.match(groups, /getClassroomReplacementTeachers\(group\.id\)/);
