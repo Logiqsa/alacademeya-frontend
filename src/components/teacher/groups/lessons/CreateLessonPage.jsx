@@ -13,8 +13,6 @@ import {
   createClassroomSession,
   getClassroom,
   getClassroomSchedule,
-  getTeachers,
-  updateClassroomSubstituteTeacher,
 } from "../../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 import { normalizeApiError } from "../../../../services/apiError";
 
@@ -56,9 +54,6 @@ const CreateLessonPage = ({ role = "teacher" }) => {
   const [groupTeacherId, setGroupTeacherId] = useState("");
   const [groupSubjectId, setGroupSubjectId] = useState("");
   const [classroomType, setClassroomType] = useState("group");
-  const [classroom, setClassroom] = useState(null);
-  const [teachers, setTeachers] = useState([]);
-  const [substituteTeacher, setSubstituteTeacher] = useState("");
   const [lessonTitle, setLessonTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -116,7 +111,6 @@ const CreateLessonPage = ({ role = "teacher" }) => {
             ? classroomData.type
             : "group";
 
-        setClassroom(classroomData);
         setGroupName(resolvedName);
         setLessonTitle((current) => current || `حصة ${resolvedName}`);
         setGroupTeacher(teacherName || "—");
@@ -131,41 +125,6 @@ const CreateLessonPage = ({ role = "teacher" }) => {
       active = false;
     };
   }, [groupId]);
-
-  useEffect(() => {
-    if (!isAdmin || !classroom) return;
-    let active = true;
-    getTeachers({ status: "approved", limit: 100 })
-      .then((response) => {
-        if (!active) return;
-        const subjectId =
-          typeof classroom.subject === "string"
-            ? classroom.subject
-            : classroom.subject?.id || classroom.subject?._id;
-        const list = response.data?.data || [];
-        setTeachers(
-          list.filter((teacher) => {
-            const user = teacher.user || {};
-            const supportsSubject =
-              !subjectId ||
-              (teacher.subjects || []).some(
-                (subject) =>
-                  String(subject?.id || subject?._id || subject) ===
-                  String(subjectId),
-              );
-            return (
-              supportsSubject &&
-              user.isActive !== false &&
-              user.registrationStatus !== "pending"
-            );
-          }),
-        );
-      })
-      .catch(() => setTeachers([]));
-    return () => {
-      active = false;
-    };
-  }, [classroom, isAdmin]);
 
   const handleSubmit = async () => {
     setError(null);
@@ -206,9 +165,6 @@ const CreateLessonPage = ({ role = "teacher" }) => {
     setSubmitting(true);
 
     try {
-      if (isAdmin && substituteTeacher) {
-        await updateClassroomSubstituteTeacher(groupId, substituteTeacher);
-      }
       const payload = new FormData();
       payload.append("classroom", groupId);
       payload.append("title", lessonTitle.trim());
@@ -386,29 +342,6 @@ const CreateLessonPage = ({ role = "teacher" }) => {
             )}
           </div>
 
-          {isAdmin && (
-            <div>
-              <label className={labelClass}>مدرس الحصة البديل (اختياري)</label>
-              <select
-                value={substituteTeacher}
-                onChange={(event) => setSubstituteTeacher(event.target.value)}
-                className={inputClass}
-              >
-                <option value="">مدرس المجموعة الأساسي</option>
-                {teachers.map((teacher) => (
-                  <option
-                    key={teacher.id || teacher._id}
-                    value={teacher.id || teacher._id}
-                  >
-                    {teacher.user?.fullName || teacher.fullName || "معلم"}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-2 text-xs text-[#8C9198]">
-                عند اختيار مدرس آخر سيتم تعيينه كمدرس بديل للمجموعة قبل إنشاء الحصة.
-              </p>
-            </div>
-          )}
         </div>
 
         {error && <p className="text-sm text-red-500 mt-4">{error}</p>}

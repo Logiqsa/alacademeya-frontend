@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import {
-  getTeachers,
+  getClassroomReplacementTeachers,
   updateClassroomSubstituteTeacher,
 } from "../../../services/APIService";
 
@@ -26,34 +26,16 @@ const teachersFromResponse = (response) => {
   return data.teachers || data.results || data.items || [];
 };
 
-const isAvailableTeacher = (teacher) => {
-  const user = teacher.user || {};
-  const isDeleted = teacher.isDeleted ?? user.isDeleted ?? false;
-  const isActive = teacher.isActive ?? user.isActive;
-  const status = teacher.registrationStatus ?? user.registrationStatus;
-
-  return (
-    isDeleted !== true &&
-    isActive !== false &&
-    status !== "pending" &&
-    status !== "rejected"
-  );
-};
-
 const SubstituteTeacherModal = ({
   groupId,
   primaryTeacherId,
   primaryTeacherName,
-  currentTeacherId,
-  currentTeacherName,
   onClose,
   onChanged,
 }) => {
   const [teachers, setTeachers] = useState([]);
   const [search, setSearch] = useState("");
-  const [selectedTeacher, setSelectedTeacher] = useState(
-    currentTeacherId || "",
-  );
+  const [selectedTeacher, setSelectedTeacher] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -61,12 +43,11 @@ const SubstituteTeacherModal = ({
   useEffect(() => {
     let active = true;
 
-    getTeachers({ limit: 1000 })
+    getClassroomReplacementTeachers(groupId)
       .then((response) => {
         if (!active) return;
         setTeachers(
           teachersFromResponse(response)
-            .filter(isAvailableTeacher)
             .filter((teacher) => teacherId(teacher)),
         );
       })
@@ -84,7 +65,7 @@ const SubstituteTeacherModal = ({
     return () => {
       active = false;
     };
-  }, []);
+  }, [groupId]);
 
   const filteredTeachers = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("ar");
@@ -124,23 +105,6 @@ const SubstituteTeacherModal = ({
     }
   };
 
-  const removeTeacher = async () => {
-    setSubmitting(true);
-    setError("");
-    try {
-      await updateClassroomSubstituteTeacher(groupId, null);
-      await onChanged?.();
-      onClose();
-    } catch (requestError) {
-      setError(
-        requestError.response?.data?.message ||
-          "تعذر إزالة المعلم البديل",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
@@ -172,11 +136,10 @@ const SubstituteTeacherModal = ({
             المعلم الأساسي: <strong>{primaryTeacherName}</strong>
           </p>
         )}
-        {currentTeacherName && (
-          <p className="mb-3 text-sm text-gray-600">
-            المعلم البديل الحالي: <strong>{currentTeacherName}</strong>
-          </p>
-        )}
+        <p className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm leading-6 text-[#123C91]">
+          المعلم المختار سيصبح المعلم الأساسي للمجموعة. سيُزال المعلم الحالي
+          من المجموعة وشات المجموعة، ولن تتغير الحصص أو المستحقات السابقة.
+        </p>
 
         <label
           htmlFor="teacher-search"
@@ -247,7 +210,7 @@ const SubstituteTeacherModal = ({
             disabled={loading || submitting || !selectedTeacher}
             className="flex-1 rounded-xl bg-[#123C91] py-3 text-sm font-medium text-white disabled:opacity-50"
           >
-            {submitting ? "جاري الحفظ..." : "حفظ المعلم البديل"}
+            {submitting ? "جاري الحفظ..." : "تأكيد التعيين"}
           </button>
           <button
             type="button"
@@ -258,17 +221,6 @@ const SubstituteTeacherModal = ({
             إلغاء
           </button>
         </div>
-
-        {currentTeacherId && (
-          <button
-            type="button"
-            onClick={removeTeacher}
-            disabled={submitting}
-            className="mt-3 w-full rounded-xl border border-red-200 py-3 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-          >
-            إزالة المعلم البديل
-          </button>
-        )}
       </div>
     </div>
   );

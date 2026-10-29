@@ -17,7 +17,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import {
-  getTeachers,
+  getClassroomReplacementTeachers,
   getClassroomEnrollmentOptions,
   updateClassroom,
   updateClassroomSubstituteTeacher,
@@ -123,18 +123,6 @@ const resolveStudentGrade = (student) =>
   student?.profile?.grade ??
   student?.studentProfile?.grade ??
   null;
-
-// بترجع بس المعلمين النشطين والموثّقين، بنفس شرط باقي الصفحات (AddSubscriptionPage/CreateGroupPages)
-const filterActiveTeachers = (list) =>
-  (list || []).filter((t) => {
-    const user = t.user || {};
-    const isActive = t.isActive ?? user.isActive;
-    const registrationStatus = t.registrationStatus ?? user.registrationStatus;
-    const isDeleted = t.isDeleted ?? user.isDeleted ?? false;
-    return (
-      isActive === true && registrationStatus === "active" && isDeleted !== true
-    );
-  });
 
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type }) => {
@@ -657,9 +645,8 @@ const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
     setError(null);
     setLoading(true);
 
-    // ⚠️ endpoint /teachers/available كان بيرجع فاضي، رجعنا لـ /teachers المؤكد شغّال
-    getTeachers()
-      .then((res) => setTeachers(filterActiveTeachers(res.data?.data || [])))
+    getClassroomReplacementTeachers(group.id)
+      .then((res) => setTeachers(res.data?.data || []))
       .catch(() => {
         setError("تعذر تحميل قائمة المعلمين");
       })
@@ -674,7 +661,6 @@ const AssignTeacherModal = ({ open, onClose, group, onChanged }) => {
     setSubmitting(true);
     setError(null);
     try {
-      // ⚠️ افتراض: PATCH /classrooms/:id بحقل "teacher" — لسه محتاج تأكيد من بوستمان
       await updateClassroom(group.id, { teacher: selectedTeacher });
       onChanged?.();
       onClose();
@@ -719,13 +705,12 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
 
   useEffect(() => {
     if (!open || !group) return;
-    setSelectedTeacher(group.substituteTeacherId || "");
+    setSelectedTeacher("");
     setError(null);
     setLoading(true);
 
-    // ⚠️ endpoint /teachers/available كان بيرجع فاضي، رجعنا لـ /teachers المؤكد شغّال
-    getTeachers()
-      .then((res) => setTeachers(filterActiveTeachers(res.data?.data || [])))
+    getClassroomReplacementTeachers(group.id)
+      .then((res) => setTeachers(res.data?.data || []))
       .catch(() => {
         setError("تعذر تحميل قائمة المعلمين");
       })
@@ -735,10 +720,6 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
   const handleSubmit = async () => {
     if (!selectedTeacher) {
       setError("من فضلك اختر المعلم البديل");
-      return;
-    }
-    if (selectedTeacher === group?.teacherId) {
-      setError("لا يمكن تعيين نفس المعلم الأساسي كمعلم بديل");
       return;
     }
     setSubmitting(true);
@@ -760,22 +741,6 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
     }
   };
 
-  const handleRemove = async () => {
-    setSubmitting(true);
-    setError(null);
-    try {
-      await updateClassroomSubstituteTeacher(group.id, null);
-      onChanged?.();
-      onClose();
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "حدث خطأ أثناء إزالة المعلم البديل",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <Modal open={open} onClose={onClose} title="تعيين معلم بديل">
       {group?.teacher && (
@@ -786,11 +751,10 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
           </span>
         </div>
       )}
-      {group?.substituteTeacher && (
-        <p className="text-[13px] text-[#575F69] mb-3">
-          المعلم البديل الحالي: <strong>{group.substituteTeacher}</strong>
-        </p>
-      )}
+      <p className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[13px] leading-6 text-[#123C91]">
+        المعلم المختار سيصبح المعلم الأساسي للمجموعة. سيُزال المعلم الحالي
+        من المجموعة وشات المجموعة، ولن تتغير الحصص أو المستحقات السابقة.
+      </p>
       <SelectField
         label="المعلم البديل"
         placeholder={loading ? "جاري التحميل..." : "اختر المعلم البديل"}
@@ -805,20 +769,10 @@ export const AssignSubstituteModal = ({ open, onClose, group, onChanged }) => {
       {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
       <ModalFooter
         onClose={onClose}
-        confirmLabel="حفظ المعلم البديل"
+        confirmLabel="تأكيد التعيين"
         onConfirm={handleSubmit}
         loading={submitting}
       />
-      {group?.substituteTeacherId && (
-        <button
-          type="button"
-          onClick={handleRemove}
-          disabled={submitting}
-          className="w-full mt-3 py-3 border border-red-200 rounded-xl text-red-600 font-medium text-[14px] font-['IBM_Plex_Sans_Arabic'] hover:bg-red-50 transition-colors disabled:opacity-60"
-        >
-          إزالة المعلم البديل
-        </button>
-      )}
     </Modal>
   );
 };
