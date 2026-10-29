@@ -72,10 +72,13 @@ test("retained account deletion shows a safe super-admin redaction path", () => 
   assert.match(table, /شهادة دورة:/);
   assert.match(table, /مجموعة:/);
   assert.match(table, /accent-\[#123C91\]/);
+  assert.match(table, /const cardDetails/);
+  assert.match(table, /إيقاف الفصول والمجموعات النشطة التي يدرّسها هذا الحساب/);
+  assert.match(table, /لا يوقف أي معلم آخر/);
   assert.match(table, /لا تُعرض المعرفات التقنية أو البيانات الحساسة/);
   assert.doesNotMatch(table, /JSON\.stringify\(record, null, 2\)/);
-  assert.match(table, /إزالة من الفصول والمجموعات النشطة/);
-  assert.match(table, /إزالة من غرف الشات النشطة/);
+  assert.match(table, /إزالة الحساب من الفصول والمجموعات النشطة/);
+  assert.match(table, /إزالة الحساب من غرف الشات النشطة/);
   assert.match(page, /removeFromActiveClassrooms/);
   assert.match(page, /removeFromActiveChatRooms/);
 });

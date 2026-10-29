@@ -302,6 +302,11 @@ const subscriptionSubjects = (record = {}) =>
     .filter(Boolean)
     .join("، ");
 
+const cardDetail = (label, value) =>
+  value ? { label, value: String(value) } : null;
+
+const cardDetails = (...details) => details.filter(Boolean);
+
 const retainedRecordCard = (type, record = {}, index) => {
   const fallback = `سجل محفوظ ${index + 1}`;
   const amount = readableAmount(record);
@@ -314,49 +319,74 @@ const retainedRecordCard = (type, record = {}, index) => {
       const title = courseName(record);
       return {
         title: title ? `شراء دورة: ${title}` : "شراء دورة",
-        meta: amount ? `القيمة: ${amount}` : date,
+        details: cardDetails(
+          cardDetail("القيمة", amount),
+          cardDetail("التاريخ", date),
+          cardDetail("الحالة", readableStatus(record.paymentStatus || record.status)),
+        ),
       };
     }
     case "CourseCertificate": {
       const title = courseName(record);
       return {
         title: title ? `شهادة دورة: ${title}` : "شهادة دورة",
-        meta: date ? `تاريخ الإصدار: ${date}` : "شهادة محفوظة",
+        details: cardDetails(
+          cardDetail("تاريخ الإصدار", date),
+          cardDetail("الحالة", readableStatus(record.status)),
+        ),
       };
     }
     case "CourseEnrollment": {
       const title = courseName(record);
       return {
         title: title ? `تسجيل في دورة: ${title}` : "تسجيل في دورة",
-        meta: readableStatus(record.status) || date,
+        details: cardDetails(
+          cardDetail("الحالة", readableStatus(record.status)),
+          cardDetail("التاريخ", date),
+        ),
       };
     }
     case "Classroom": {
       const title = classroomName(record);
       return {
         title: title ? `مجموعة: ${title}` : "مجموعة دراسية",
-        meta: readableStatus(record.status) || date,
+        details: cardDetails(
+          cardDetail("الحالة", readableStatus(record.status)),
+          cardDetail("تاريخ الإنشاء", date),
+        ),
       };
     }
     case "SubjectSubscription": {
       const title = subjectName(record);
       return {
         title: title ? `اشتراك مادة: ${title}` : "اشتراك مادة",
-        meta: amount ? `القيمة: ${amount}` : readableStatus(record.status) || date,
+        details: cardDetails(
+          cardDetail("القيمة", amount),
+          cardDetail("الحالة", readableStatus(record.status)),
+          cardDetail("التاريخ", date),
+        ),
       };
     }
     case "SubscriptionOrder": {
       const subjects = subscriptionSubjects(record);
       return {
         title: subjects ? `طلب اشتراك: ${subjects}` : "طلب اشتراك",
-        meta: amount ? `القيمة: ${amount}` : date,
+        details: cardDetails(
+          cardDetail("القيمة", amount),
+          cardDetail("التاريخ", date),
+          cardDetail("الحالة", readableStatus(record.status)),
+        ),
       };
     }
     default:
       return {
         title:
           readableValue(record.title || record.name || record.assignmentTitle) || fallback,
-        meta: amount || readableStatus(record.status) || date,
+        details: cardDetails(
+          cardDetail("القيمة", amount),
+          cardDetail("الحالة", readableStatus(record.status)),
+          cardDetail("التاريخ", date),
+        ),
       };
   }
 };
@@ -1284,6 +1314,7 @@ const UsersTable = ({
   const [reportError, setReportError] = useState("");
 
   const navigate = useNavigate();
+  const retainedAccountIsTeacher = retainedUser?.user?.role === "معلم";
 
   const closeRetainedDialog = () => {
     referenceDetailsRequest.current += 1;
@@ -1881,14 +1912,15 @@ const UsersTable = ({
                           const fields = retainedRecordFields(reference.type, record);
                           return (
                             <details key={record._id || index} className="group overflow-hidden rounded-2xl border border-[#DCE6F7] bg-white text-sm text-[#374151] shadow-sm transition-shadow hover:shadow-md">
-                              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-gradient-to-l from-[#F8FBFF] to-white px-4 py-3.5 marker:content-none sm:px-5">
-                                <div className="min-w-0 text-right">
-                                  <p className="truncate font-bold text-[#173B78]">{card.title}</p>
-                                  {card.meta && (
-                                    <p className="mt-1 truncate text-xs font-medium text-[#6B7280]">
-                                      {card.meta}
-                                    </p>
-                                  )}
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-l from-[#F8FBFF] to-white px-4 py-3 marker:content-none sm:px-5">
+                                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 text-right">
+                                  <p className="min-w-48 flex-1 truncate font-bold text-[#173B78]">{card.title}</p>
+                                  {card.details.map((detail) => (
+                                    <span key={detail.label} className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-[11px] ring-1 ring-[#E1EAF7]">
+                                      <span className="font-medium text-[#7A8494]">{detail.label}:</span>
+                                      <span className="font-semibold text-[#374151]">{detail.value}</span>
+                                    </span>
+                                  ))}
                                 </div>
                                 <span className="flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#123C91] ring-1 ring-[#DCE6F7]">
                                   التفاصيل
@@ -1934,10 +1966,22 @@ const UsersTable = ({
           <div className="mt-4 space-y-3 rounded-2xl border border-[#DCE6F7] bg-[#F8FBFF] p-4 text-sm text-[#374151]">
             <p className="font-bold text-[#173B78]">إجراءات اختيارية على العضويات النشطة</p>
             <p className="text-xs leading-5 text-[#6B7280]">اختيار أي بند لا يحذف السجلات السابقة، بل يوقف الوصول النشط فقط.</p>
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E1EAF7] bg-white p-3.5 transition-colors hover:border-[#A9BDE5]">
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#E1EAF7] bg-white p-3.5 transition-colors hover:border-[#A9BDE5]">
+              <span className="min-w-0 text-right leading-6">
+                <span className="block font-semibold text-[#374151]">
+                  {retainedAccountIsTeacher
+                    ? "إيقاف الفصول والمجموعات النشطة التي يدرّسها هذا الحساب"
+                    : "إزالة الحساب من الفصول والمجموعات النشطة"}
+                </span>
+                <span className="block text-xs text-[#6B7280]">
+                  {retainedAccountIsTeacher
+                    ? "لا يوقف أي معلم آخر؛ يوقف الفصول التابعة لهذا الحساب فقط، ولا يحذف سجلاتها السابقة."
+                    : "لا يحذف الفصول أو المجموعات ولا سجلاتها السابقة."}
+                </span>
+              </span>
               <input
                 type="checkbox"
-                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#A9BDE5] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
+                className="h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#A9BDE5] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
                 checked={retainedRemovalOptions.classrooms}
                 onChange={(event) =>
                   setRetainedRemovalOptions((current) => ({
@@ -1946,12 +1990,15 @@ const UsersTable = ({
                   }))
                 }
               />
-              <span className="leading-6">إزالة من الفصول والمجموعات النشطة <span className="block text-xs text-[#6B7280]">تُوقف مجموعة المعلم النشطة بدل حذفها.</span></span>
             </label>
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E1EAF7] bg-white p-3.5 transition-colors hover:border-[#A9BDE5]">
+            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#E1EAF7] bg-white p-3.5 transition-colors hover:border-[#A9BDE5]">
+              <span className="min-w-0 text-right leading-6">
+                <span className="block font-semibold text-[#374151]">إزالة الحساب من غرف الشات النشطة</span>
+                <span className="block text-xs text-[#6B7280]">يحجب وصول الحساب للغرف النشطة فقط، مع الاحتفاظ بجميع الرسائل السابقة.</span>
+              </span>
               <input
                 type="checkbox"
-                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#A9BDE5] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
+                className="h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#A9BDE5] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
                 checked={retainedRemovalOptions.chatRooms}
                 onChange={(event) =>
                   setRetainedRemovalOptions((current) => ({
@@ -1960,7 +2007,6 @@ const UsersTable = ({
                   }))
                 }
               />
-              <span className="leading-6">إزالة من غرف الشات النشطة <span className="block text-xs text-[#6B7280]">تُحفظ الرسائل السابقة ولا تتغير.</span></span>
             </label>
           </div>
         )}
