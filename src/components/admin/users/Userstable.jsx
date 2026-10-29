@@ -16,6 +16,8 @@ import {
   ArrowDown,
   ArrowUpDown,
   CreditCard,
+  ChevronDown,
+  LoaderCircle,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { getArabicCountryName } from "../../../utils/countryName";
@@ -694,6 +696,7 @@ const ConfirmDialog = ({
   iconColor,
   children,
   dialogClassName = "max-w-xs",
+  isProcessing = false,
 }) => {
   if (!open) return null;
 
@@ -701,7 +704,7 @@ const ConfirmDialog = ({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (!isProcessing && event.target === event.currentTarget) onClose();
       }}
     >
       <div
@@ -730,15 +733,18 @@ const ConfirmDialog = ({
           <button
             type="button"
             onClick={onConfirm}
-            className={`flex-1 py-2.5 rounded-xl text-white font-medium text-[14px] transition-opacity hover:opacity-90 ${confirmClass}`}
+            disabled={isProcessing}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-70 ${confirmClass}`}
           >
+            {isProcessing && <LoaderCircle size={16} className="animate-spin" />}
             {confirmLabel}
           </button>
 
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 border border-[#E5E5E5] rounded-xl text-[#374151] font-medium text-[14px] hover:border-gray-400"
+            disabled={isProcessing}
+            className="flex-1 rounded-xl border border-[#E5E5E5] py-2.5 text-[14px] font-medium text-[#374151] hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             إلغاء
           </button>
@@ -1034,6 +1040,7 @@ const UsersTable = ({
 }) => {
   const [detailsUser, setDetailsUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
+  const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [retainedUser, setRetainedUser] = useState(null);
   const [retainedRemovalOptions, setRetainedRemovalOptions] = useState({
     classrooms: false,
@@ -1041,6 +1048,7 @@ const UsersTable = ({
   });
   const [referenceDetails, setReferenceDetails] = useState(null);
   const [referenceDetailsLoading, setReferenceDetailsLoading] = useState(false);
+  const referenceDetailsRequest = useRef(0);
   const [approveUser, setApproveUser] = useState(null);
   const [suspendUser, setSuspendUser] = useState(null);
   const [activateUser, setActivateUser] = useState(null);
@@ -1051,6 +1059,7 @@ const UsersTable = ({
   const navigate = useNavigate();
 
   const closeRetainedDialog = () => {
+    referenceDetailsRequest.current += 1;
     setRetainedUser(null);
     setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
     setReferenceDetails(null);
@@ -1060,6 +1069,15 @@ const UsersTable = ({
   const showReferenceDetails = async (reference) => {
     if (!retainedUser?.canAnonymize || !onGetDeletionReferenceDetails) return;
 
+    if (referenceDetails?.type === reference.type) {
+      referenceDetailsRequest.current += 1;
+      setReferenceDetails(null);
+      setReferenceDetailsLoading(false);
+      return;
+    }
+
+    const requestId = referenceDetailsRequest.current + 1;
+    referenceDetailsRequest.current = requestId;
     setReferenceDetails({
       type: reference.type,
       total: reference.count,
@@ -1068,6 +1086,7 @@ const UsersTable = ({
     });
     setReferenceDetailsLoading(true);
     const details = await onGetDeletionReferenceDetails(retainedUser.user, reference.type);
+    if (requestId !== referenceDetailsRequest.current) return;
     setReferenceDetails(details || null);
     setReferenceDetailsLoading(false);
   };
@@ -1538,21 +1557,34 @@ const UsersTable = ({
 
       <ConfirmDialog
         open={Boolean(deleteUser)}
-        onClose={() => setDeleteUser(null)}
+        onClose={() => {
+          if (!deleteInProgress) setDeleteUser(null);
+        }}
         onConfirm={async () => {
-          const result = await onDelete?.(deleteUser);
-          setDeleteUser(null);
-          if (result?.retained) {
-            setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
-            setReferenceDetails(null);
-            setRetainedUser({ user: deleteUser, ...result });
+          if (deleteInProgress) return;
+          setDeleteInProgress(true);
+          try {
+            const result = await onDelete?.(deleteUser);
+            setDeleteUser(null);
+            if (result?.retained) {
+              setRetainedRemovalOptions({ classrooms: false, chatRooms: false });
+              setReferenceDetails(null);
+              setRetainedUser({ user: deleteUser, ...result });
+            }
+          } finally {
+            setDeleteInProgress(false);
           }
         }}
         title="حذف المستخدم"
-        message="سيُحذف الحساب نهائيًا فقط إن لم توجد له سجلات مالية أو تعليمية أو تاريخية. عند وجودها ستظهر خيارات الإيقاف الآمن."
-        confirmLabel="حذف"
+        message={
+          deleteInProgress
+            ? "جاري التحقق من السجلات المرتبطة بالحساب. لا تغلق النافذة أو تضغط مرة أخرى."
+            : "سيُحذف الحساب نهائيًا فقط إن لم توجد له سجلات مالية أو تعليمية أو تاريخية. عند وجودها ستظهر خيارات الإيقاف الآمن."
+        }
+        confirmLabel={deleteInProgress ? "جاري التحقق..." : "حذف"}
         confirmClass="bg-red-500 hover:bg-red-600"
         iconColor="bg-red-100 text-red-500"
+        isProcessing={deleteInProgress}
       />
 
       <ConfirmDialog
@@ -1582,62 +1614,63 @@ const UsersTable = ({
         iconColor="bg-orange-100 text-orange-500"
         dialogClassName="max-w-3xl max-h-[86vh] overflow-y-auto"
       >
-        <p className="mb-2 text-sm font-semibold text-[#374151]">السجلات التي ستبقى محفوظة:</p>
+        <p className="mb-2 text-sm font-semibold text-[#374151]">السجلات التعليمية والمالية المرتبطة:</p>
         <ul className="max-h-52 space-y-1.5 overflow-y-auto rounded-xl bg-[#F9FAFA] p-4 text-sm text-[#575F69]">
-          {(retainedUser?.references || []).map((reference) => (
-            <li key={reference.type} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2">
-              <span>{retainedReferenceLabel(reference.type)}</span>
-              {retainedUser?.canAnonymize ? (
-                <button
-                  type="button"
-                  onClick={() => showReferenceDetails(reference)}
-                  className="rounded-md px-2 py-1 font-semibold text-[#123C91] underline-offset-2 hover:bg-[#EAF0FB] hover:underline"
-                  aria-label={`عرض تفاصيل ${retainedReferenceLabel(reference.type)}`}
-                >
-                  {reference.count}
-                </button>
-              ) : (
-                <span className="font-semibold text-[#123C91]">{reference.count}</span>
-              )}
-            </li>
-          ))}
+          {(retainedUser?.references || []).map((reference) => {
+            const expanded = referenceDetails?.type === reference.type;
+            return (
+              <li key={reference.type} className="rounded-lg bg-white">
+                {retainedUser?.canAnonymize ? (
+                  <button
+                    type="button"
+                    onClick={() => showReferenceDetails(reference)}
+                    className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-right hover:bg-[#EAF0FB]"
+                    aria-expanded={expanded}
+                    aria-label={`عرض تفاصيل ${retainedReferenceLabel(reference.type)}`}
+                  >
+                    <span>{retainedReferenceLabel(reference.type)}</span>
+                    <span className="flex items-center gap-2 font-semibold text-[#123C91]">
+                      {reference.count}
+                      <ChevronDown size={16} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} />
+                    </span>
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-between gap-3 px-3 py-2">
+                    <span>{retainedReferenceLabel(reference.type)}</span>
+                    <span className="font-semibold text-[#123C91]">{reference.count}</span>
+                  </div>
+                )}
+                {expanded && (
+                  <div className="border-t border-[#E5E7EB] bg-[#F8FBFF] p-3 text-right">
+                    {referenceDetailsLoading ? (
+                      <p className="py-4 text-center text-sm text-[#575F69]">جاري تحميل التفاصيل...</p>
+                    ) : referenceDetails.records?.length ? (
+                      <div className="max-h-64 space-y-2 overflow-y-auto">
+                        {referenceDetails.records.map((record, index) => (
+                          <details key={record._id || index} className="rounded-lg border border-[#E5E7EB] bg-white p-2 text-xs text-[#374151]">
+                            <summary className="cursor-pointer font-semibold">سجل {index + 1}</summary>
+                            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded bg-[#F9FAFA] p-2 text-left" dir="ltr">
+                              {JSON.stringify(record, null, 2)}
+                            </pre>
+                          </details>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="py-4 text-center text-sm text-[#575F69]">لا توجد سجلات لعرضها.</p>
+                    )}
+                    {referenceDetails.truncated && (
+                      <p className="mt-2 text-xs text-[#575F69]">يتم عرض أول 100 سجل فقط.</p>
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
-        {referenceDetails && (
-          <div className="mt-3 rounded-xl border border-[#D6E2FA] bg-[#F8FBFF] p-3 text-right">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-[#1F2937]">
-                تفاصيل {retainedReferenceLabel(referenceDetails.type)}
-                {typeof referenceDetails.total === "number" ? ` (${referenceDetails.total})` : ""}
-              </p>
-              <button
-                type="button"
-                onClick={() => setReferenceDetails(null)}
-                className="rounded-md p-1 text-[#575F69] hover:bg-white"
-                aria-label="إغلاق التفاصيل"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            {referenceDetailsLoading ? (
-              <p className="py-4 text-center text-sm text-[#575F69]">جاري تحميل التفاصيل...</p>
-            ) : referenceDetails.records?.length ? (
-              <div className="max-h-64 space-y-2 overflow-y-auto">
-                {referenceDetails.records.map((record, index) => (
-                  <details key={record._id || index} className="rounded-lg border border-[#E5E7EB] bg-white p-2 text-xs text-[#374151]">
-                    <summary className="cursor-pointer font-semibold">سجل {index + 1}</summary>
-                    <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded bg-[#F9FAFA] p-2 text-left" dir="ltr">
-                      {JSON.stringify(record, null, 2)}
-                    </pre>
-                  </details>
-                ))}
-              </div>
-            ) : (
-              <p className="py-4 text-center text-sm text-[#575F69]">لا توجد سجلات لعرضها.</p>
-            )}
-            {referenceDetails.truncated && (
-              <p className="mt-2 text-xs text-[#575F69]">يتم عرض أول 100 سجل فقط.</p>
-            )}
-          </div>
+        {retainedUser?.hasInternalRecords && (
+          <p className="mt-3 rounded-xl bg-[#F9FAFA] p-3 text-xs text-[#575F69]">
+            أرباح المحاضرين وسجلات موافقة السياسات وأمان المحتوى محفوظة تلقائيًا للمحاسبة والتدقيق؛ لا تُحذف ولا تتغير بسبب هذا الإجراء ولا تظهر ضمن القائمة.
+          </p>
         )}
         {retainedUser?.canAnonymize && (
           <div className="mt-3 space-y-2 rounded-xl border border-[#E5E7EB] bg-white p-3 text-xs text-[#374151]">

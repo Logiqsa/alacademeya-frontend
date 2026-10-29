@@ -561,6 +561,7 @@ const UsersPage = ({
           return {
             retained: true,
             references: impact?.references || [],
+            hasInternalRecords: Boolean(impact?.hasInternalRecords),
             canAnonymize:
               currentRole === "super-admin" && Boolean(impact?.canAnonymize),
           };
