@@ -233,9 +233,35 @@ button {
   transform-origin: right center;
 }
 
+@keyframes route-progress {
+  from {
+    transform: translateX(180%);
+    width: 24%;
+  }
+
+  70% {
+    transform: translateX(10%);
+    width: 68%;
+  }
+
+  to {
+    transform: translateX(-145%);
+    width: 100%;
+  }
+}
+
+.route-progress-bar {
+  animation: route-progress 550ms ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .toast-countdown {
+  .toast-countdown,
+  .route-progress-bar {
     animation: none;
+  }
+
+  .route-progress-bar {
+    width: 100%;
   }
 }
 
