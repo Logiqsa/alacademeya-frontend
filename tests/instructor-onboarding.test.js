@@ -48,8 +48,20 @@ test("registration UI exposes intentional choices and explicit agreement", () =>
     new URL("../src/components/auth/RegisterForm.jsx", import.meta.url),
     "utf8",
   );
+  const orderedTypes = [...accountTypes.matchAll(/id: "([a-z]+)"/g)].map(
+    ([, id]) => id,
+  );
+  assert.deepEqual(orderedTypes, [
+    "student",
+    "parent",
+    "teacher",
+    "learner",
+    "instructor",
+  ]);
   assert.match(accountTypes, /id: "learner"/);
   assert.match(accountTypes, /id: "instructor"/);
+  assert.match(accountTypes, /لطلبة المدارس والجامعات/);
+  assert.match(accountTypes, /دورات مسجلة مسبقًا/);
   assert.match(form, /instructorAgreementAccepted/);
   assert.match(form, /disabled=\{loading \|\|/);
   assert.doesNotMatch(accountTypes, /id: "admin"|id: "super-admin"/);
