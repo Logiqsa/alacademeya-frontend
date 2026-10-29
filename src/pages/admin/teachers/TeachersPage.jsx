@@ -13,6 +13,7 @@ import {
   Users,
   Trash2,
   X,
+  MoreVertical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -713,11 +714,22 @@ const TeachersPage = () => {
                           </button>
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          <span
-                            className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${teacher.isApproved ? "bg-emerald-50 text-emerald-700" : teacher.isRejected ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}
-                          >
-                            {teacher.status}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${teacher.isApproved ? "bg-emerald-50 text-emerald-700" : teacher.isRejected ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}
+                            >
+                              {teacher.status}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => openTeacherDetails(teacher)}
+                              className="grid size-8 place-items-center rounded-lg text-[#575F69] transition-colors hover:bg-[#EEF4FF] hover:text-[#123C91]"
+                              aria-label={`إجراءات المعلم ${teacher.name}`}
+                              title="عرض التفاصيل والإجراءات"
+                            >
+                              <MoreVertical size={18} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
