@@ -268,6 +268,99 @@ const readableAmount = (record) => {
   }`;
 };
 
+const readableStatus = (status) => {
+  const labels = {
+    active: "نشط",
+    inactive: "غير نشط",
+    pending: "قيد الانتظار",
+    created: "تم الإنشاء",
+    paid: "مدفوع",
+    failed: "فشل الدفع",
+    cancelled: "ملغى",
+    refunded: "مسترد",
+    completed: "مكتمل",
+    ended: "منتهٍ",
+    revoked: "ملغى الوصول",
+    approved: "معتمد",
+    rejected: "مرفوض",
+  };
+  return labels[status] || readableValue(status);
+};
+
+const courseName = (record = {}) =>
+  readableValue(record.courseTitle || record.courseName || record.course?.title);
+
+const subjectName = (record = {}) =>
+  readableValue(record.subjectName || record.subject?.name);
+
+const classroomName = (record = {}) =>
+  readableValue(record.classroomName || record.classroom?.name || record.name);
+
+const subscriptionSubjects = (record = {}) =>
+  (record.items || [])
+    .map((item) => readableValue(item.subjectName || item.subject?.name))
+    .filter(Boolean)
+    .join("، ");
+
+const retainedRecordCard = (type, record = {}, index) => {
+  const fallback = `سجل محفوظ ${index + 1}`;
+  const amount = readableAmount(record);
+  const date = readableDate(
+    record.paidAt || record.purchasedAt || record.issuedAt || record.enrolledAt || record.createdAt,
+  );
+
+  switch (type) {
+    case "CoursePurchase": {
+      const title = courseName(record);
+      return {
+        title: title ? `شراء دورة: ${title}` : "شراء دورة",
+        meta: amount ? `القيمة: ${amount}` : date,
+      };
+    }
+    case "CourseCertificate": {
+      const title = courseName(record);
+      return {
+        title: title ? `شهادة دورة: ${title}` : "شهادة دورة",
+        meta: date ? `تاريخ الإصدار: ${date}` : "شهادة محفوظة",
+      };
+    }
+    case "CourseEnrollment": {
+      const title = courseName(record);
+      return {
+        title: title ? `تسجيل في دورة: ${title}` : "تسجيل في دورة",
+        meta: readableStatus(record.status) || date,
+      };
+    }
+    case "Classroom": {
+      const title = classroomName(record);
+      return {
+        title: title ? `مجموعة: ${title}` : "مجموعة دراسية",
+        meta: readableStatus(record.status) || date,
+      };
+    }
+    case "SubjectSubscription": {
+      const title = subjectName(record);
+      return {
+        title: title ? `اشتراك مادة: ${title}` : "اشتراك مادة",
+        meta: amount ? `القيمة: ${amount}` : readableStatus(record.status) || date,
+      };
+    }
+    case "SubscriptionOrder": {
+      const subjects = subscriptionSubjects(record);
+      return {
+        title: subjects ? `طلب اشتراك: ${subjects}` : "طلب اشتراك",
+        meta: amount ? `القيمة: ${amount}` : date,
+      };
+    }
+    default:
+      return {
+        title:
+          readableValue(record.title || record.name || record.assignmentTitle) || fallback,
+        meta: amount || readableStatus(record.status) || date,
+      };
+  }
+};
+
 const retainedRecordFields = (type, record = {}) => {
   const fields = [];
   const add = (label, value) => {
@@ -286,55 +379,65 @@ const retainedRecordFields = (type, record = {}) => {
   switch (type) {
     case "CoursePurchase":
       add("اسم المشتري", record.buyerName);
-      add("الدورة", record.courseTitle || record.courseName);
-      add("الحالة", record.status);
+      add("الدورة", courseName(record));
+      add("حالة الدفع", readableStatus(record.paymentStatus || record.status));
       addAmount();
       addDate("تاريخ الشراء", record.paidAt || record.purchasedAt || record.createdAt);
       break;
     case "SubscriptionOrder":
       add("رقم الطلب", record.orderNumber || record.reference);
       add("الطالب", record.studentName || record.buyerName);
-      add("الحالة", record.status);
+      add("المواد", subscriptionSubjects(record));
+      add("الحالة", readableStatus(record.status));
       addAmount();
       if (Array.isArray(record.items)) add("عدد المواد", record.items.length);
       addDate("تاريخ الطلب", record.createdAt);
       break;
     case "CourseCertificate":
-      add("الدورة", record.courseTitle || record.courseName);
+      add("الدورة", courseName(record));
       add("رقم الشهادة", record.certificateNumber);
-      add("الحالة", record.status);
+      add("الحالة", readableStatus(record.status));
       addDate("تاريخ الإصدار", record.issuedAt || record.createdAt);
       break;
     case "CourseEnrollment":
-    case "Subscription":
+      add("الدورة", courseName(record));
+      add("الحالة", readableStatus(record.status));
+      addDate("تاريخ التسجيل", record.enrolledAt || record.createdAt);
+      break;
     case "SubjectSubscription":
-      add("العنصر المرتبط", record.courseTitle || record.subjectName || record.title || record.name);
-      add("الحالة", record.status);
+      add("المادة", subjectName(record));
+      add("المجموعة", classroomName(record));
+      add("الحالة", readableStatus(record.status));
+      addAmount();
+      addDate("تاريخ الإنشاء", record.createdAt);
+      break;
+    case "Subscription":
+      add("الحالة", readableStatus(record.status));
       addDate("تاريخ الإنشاء", record.createdAt);
       break;
     case "TeacherSalary":
     case "InstructorWithdrawalRequest":
     case "InstructorPayoutBalance":
-      add("الحالة", record.status);
+      add("الحالة", readableStatus(record.status));
       addAmount();
       addDate("التاريخ", record.paidAt || record.requestedAt || record.createdAt);
       break;
     case "Classroom":
       add("اسم المجموعة", record.name);
-      add("الحالة", record.status);
+      add("الحالة", readableStatus(record.status));
       if (Array.isArray(record.students)) add("عدد الطلاب", record.students.length);
       addDate("تاريخ الإنشاء", record.createdAt);
       break;
     case "Session":
       add("اسم الحصة", record.title);
-      add("الحالة", record.status);
+      add("الحالة", readableStatus(record.status));
       add("المدة", record.duration ? `${record.duration} دقيقة` : "");
       addDate("الموعد", record.scheduledDate || record.startAt || record.createdAt);
       break;
     case "Assignment":
     case "AssignmentSubmission":
       add("العنوان", record.title || record.assignmentTitle);
-      add("الحالة", record.status);
+      add("الحالة", readableStatus(record.status));
       add("الدرجة", record.score);
       addDate("التاريخ", record.submittedAt || record.createdAt);
       break;
@@ -1772,19 +1875,29 @@ const UsersTable = ({
                     {referenceDetailsLoading ? (
                       <p className="py-4 text-center text-sm text-[#575F69]">جاري تحميل التفاصيل...</p>
                     ) : referenceDetails.records?.length ? (
-                      <div className="max-h-[38vh] space-y-2 overflow-y-auto pl-1">
-                        {referenceDetails.records.map((record, index) => (
-                          <details key={record._id || index} className="group rounded-xl border border-[#E5E7EB] bg-white text-sm text-[#374151] shadow-sm">
-                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-semibold marker:content-none">
-                              <span>سجل {index + 1}</span>
-                              <span className="flex items-center gap-2 text-xs font-medium text-[#123C91]">
-                                عرض التفاصيل
-                                <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
-                              </span>
-                            </summary>
-                            <div className="grid gap-2 border-t border-[#E5E7EB] bg-[#FCFDFF] p-3 sm:grid-cols-2">
-                              {retainedRecordFields(reference.type, record).length ? (
-                                retainedRecordFields(reference.type, record).map((field) => (
+                      <div className="max-h-[38vh] space-y-3 overflow-y-auto pl-1">
+                        {referenceDetails.records.map((record, index) => {
+                          const card = retainedRecordCard(reference.type, record, index);
+                          const fields = retainedRecordFields(reference.type, record);
+                          return (
+                            <details key={record._id || index} className="group overflow-hidden rounded-2xl border border-[#DCE6F7] bg-white text-sm text-[#374151] shadow-sm transition-shadow hover:shadow-md">
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-gradient-to-l from-[#F8FBFF] to-white px-4 py-3.5 marker:content-none sm:px-5">
+                                <div className="min-w-0 text-right">
+                                  <p className="truncate font-bold text-[#173B78]">{card.title}</p>
+                                  {card.meta && (
+                                    <p className="mt-1 truncate text-xs font-medium text-[#6B7280]">
+                                      {card.meta}
+                                    </p>
+                                  )}
+                                </div>
+                                <span className="flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#123C91] ring-1 ring-[#DCE6F7]">
+                                  التفاصيل
+                                  <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
+                                </span>
+                              </summary>
+                              <div className="grid gap-2 border-t border-[#DCE6F7] bg-[#FCFDFF] p-3 sm:grid-cols-2 sm:p-4">
+                              {fields.length ? (
+                                fields.map((field) => (
                                   <div key={field.label} className="rounded-lg border border-[#EDF0F5] bg-white px-3 py-2.5">
                                     <p className="text-[11px] font-medium text-[#8C9198]">{field.label}</p>
                                     <p className="mt-1 break-words text-[13px] font-semibold text-[#1F2937]">{field.value}</p>
@@ -1795,9 +1908,10 @@ const UsersTable = ({
                                   لا توجد بيانات قابلة للعرض لهذا السجل، لكنه محفوظ لحماية السجل المالي أو التعليمي.
                                 </p>
                               )}
-                            </div>
-                          </details>
-                        ))}
+                              </div>
+                            </details>
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="py-4 text-center text-sm text-[#575F69]">لا توجد سجلات لعرضها.</p>
@@ -1817,11 +1931,13 @@ const UsersTable = ({
           </p>
         )}
         {retainedUser?.canAnonymize && (
-          <div className="mt-3 space-y-2 rounded-xl border border-[#E5E7EB] bg-white p-3 text-xs text-[#374151]">
-            <p className="font-semibold">إجراءات اختيارية على العضويات النشطة:</p>
-            <label className="flex cursor-pointer items-start gap-2">
+          <div className="mt-4 space-y-3 rounded-2xl border border-[#DCE6F7] bg-[#F8FBFF] p-4 text-sm text-[#374151]">
+            <p className="font-bold text-[#173B78]">إجراءات اختيارية على العضويات النشطة</p>
+            <p className="text-xs leading-5 text-[#6B7280]">اختيار أي بند لا يحذف السجلات السابقة، بل يوقف الوصول النشط فقط.</p>
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E1EAF7] bg-white p-3.5 transition-colors hover:border-[#A9BDE5]">
               <input
                 type="checkbox"
+                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#A9BDE5] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
                 checked={retainedRemovalOptions.classrooms}
                 onChange={(event) =>
                   setRetainedRemovalOptions((current) => ({
@@ -1830,11 +1946,12 @@ const UsersTable = ({
                   }))
                 }
               />
-              <span>إزالة من الفصول والمجموعات النشطة (تُوقف مجموعة المعلم النشطة بدل حذفها).</span>
+              <span className="leading-6">إزالة من الفصول والمجموعات النشطة <span className="block text-xs text-[#6B7280]">تُوقف مجموعة المعلم النشطة بدل حذفها.</span></span>
             </label>
-            <label className="flex cursor-pointer items-start gap-2">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E1EAF7] bg-white p-3.5 transition-colors hover:border-[#A9BDE5]">
               <input
                 type="checkbox"
+                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-2 border-[#A9BDE5] accent-[#123C91] focus:ring-2 focus:ring-[#123C91]/30"
                 checked={retainedRemovalOptions.chatRooms}
                 onChange={(event) =>
                   setRetainedRemovalOptions((current) => ({
@@ -1843,7 +1960,7 @@ const UsersTable = ({
                   }))
                 }
               />
-              <span>إزالة من غرف الشات النشطة مع الاحتفاظ بالرسائل السابقة.</span>
+              <span className="leading-6">إزالة من غرف الشات النشطة <span className="block text-xs text-[#6B7280]">تُحفظ الرسائل السابقة ولا تتغير.</span></span>
             </label>
           </div>
         )}
