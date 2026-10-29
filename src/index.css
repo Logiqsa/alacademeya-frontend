@@ -401,7 +401,12 @@ select:disabled { cursor: not-allowed; background-color: #f2f4f7; color: #98a2b3
    TEXT SELECTION
 ========================= */
 ::selection {
-  background: var(--secondary);
+  background: var(--primary);
+  color: white;
+}
+
+::-moz-selection {
+  background: var(--primary);
   color: white;
 }
 
