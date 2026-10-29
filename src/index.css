@@ -251,7 +251,11 @@ button {
 }
 
 .route-progress-bar {
-  animation: route-progress 550ms ease-out forwards;
+  animation: route-progress 1200ms ease-out forwards;
+}
+
+[data-route-scroll] {
+  position: relative;
 }
 
 @media (prefers-reduced-motion: reduce) {

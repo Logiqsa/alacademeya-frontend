@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
-const PROGRESS_DURATION = 550;
+const PROGRESS_DURATION = 1200;
 
 export default function RouteProgress() {
   const [active, setActive] = useState(false);
@@ -38,13 +39,17 @@ export default function RouteProgress() {
 
   if (!active) return null;
 
-  return (
+  const contentContainer = document.querySelector("[data-route-scroll]");
+
+  const progress = (
     <div
-      className="route-progress fixed inset-x-0 top-0 z-[200] h-1 overflow-hidden bg-[#123C91]/10"
+      className="route-progress absolute inset-x-0 top-0 z-[200] h-1 overflow-hidden bg-[#123C91]/10"
       role="status"
       aria-label="جاري تحميل الصفحة"
     >
       <span className="route-progress-bar block h-full bg-[#123C91]" />
     </div>
   );
+
+  return contentContainer ? createPortal(progress, contentContainer) : progress;
 }

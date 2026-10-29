@@ -12,5 +12,7 @@ test("route progress starts for browser navigation and cleans up its history hoo
   assert.match(source, /window\.history\.replaceState = function replaceState/);
   assert.match(source, /window\.addEventListener\("popstate", start\)/);
   assert.match(source, /window\.history\.pushState = originalPushState/);
+  assert.match(source, /createPortal\(progress, contentContainer\)/);
+  assert.match(source, /\[data-route-scroll\]/);
   assert.match(source, /route-progress-bar/);
 });
