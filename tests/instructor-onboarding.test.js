@@ -60,6 +60,7 @@ test("registration UI exposes intentional choices and explicit agreement", () =>
   ]);
   assert.match(accountTypes, /id: "learner"/);
   assert.match(accountTypes, /id: "instructor"/);
+  assert.match(accountTypes, /title: "طالب دورات"/);
   assert.match(accountTypes, /لطلبة المدارس والجامعات/);
   assert.match(accountTypes, /دورات مسجلة مسبقًا/);
   assert.match(form, /instructorAgreementAccepted/);
