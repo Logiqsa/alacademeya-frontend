@@ -12,6 +12,7 @@ import {
   User,
   UserPlus,
   CheckCircle2,
+  TriangleAlert,
   ExternalLink,
   Trash2,
   X,
@@ -35,6 +36,7 @@ import {
   getNotificationTarget,
 } from "../../../utils/notificationTarget";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
+import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 import {
   getNotificationPresentation,
   getNotificationTypeLabel,
@@ -523,6 +525,14 @@ const NotificationsSection = ({
         const registrationStatus = String(
           user.registrationStatus || "",
         ).toLowerCase();
+        const isProfileIncomplete = [
+          user,
+          teacherProfile,
+          studentProfile,
+          notification,
+          notification.data,
+          notification.metadata,
+        ].some(hasIncompleteRegistration);
 
         setTeacherDetails({
           userId: user.id || user._id,
@@ -544,7 +554,9 @@ const NotificationsSection = ({
             }[user.role] || user.role,
           rawRole: user.role,
           status:
-            teacherProfile?.status === "approved"
+            isProfileIncomplete
+              ? "ملف غير مكتمل"
+              : teacherProfile?.status === "approved"
               ? "معتمد"
               : registrationStatus !== "active"
                 ? "معلق"
@@ -552,6 +564,7 @@ const NotificationsSection = ({
                   ? "موقوف"
                   : teacherProfile?.status || "نشط",
           isApproved: teacherProfile?.status === "approved",
+          isProfileIncomplete,
           canApproveAccount:
             registrationStatus !== "active" || user.isActive === false,
           experience:
@@ -605,7 +618,12 @@ const NotificationsSection = ({
         email: teacher.user?.email || teacher.email,
         phone: teacher.user?.phone || teacher.phone,
         username: teacher.user?.username || teacher.username,
-        status: teacher.status === "approved" ? "معتمد" : teacher.status,
+        status: hasIncompleteRegistration(teacher)
+          ? "ملف غير مكتمل"
+          : teacher.status === "approved"
+            ? "معتمد"
+            : teacher.status,
+        isProfileIncomplete: hasIncompleteRegistration(teacher),
         isApproved: teacher.status === "approved",
         experience: teacher.experienceYears ?? teacher.experience,
         subjects: listLabel(teacher.subjects ?? teacher.subject),
@@ -962,6 +980,22 @@ const NotificationsSection = ({
                 {teacherDetails.email}
               </p>
             </div>
+
+            {teacherDetails.isProfileIncomplete && (
+              <div
+                role="status"
+                className="mb-5 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900"
+              >
+                <TriangleAlert size={20} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-bold">الملف غير مكتمل</p>
+                  <p className="mt-1 text-xs leading-5">
+                    لم يستكمل المستخدم جميع بيانات ملفه، لذلك قد تكون بعض
+                    التفاصيل أدناه غير متاحة.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <DetailItem label="رقم الهاتف" value={teacherDetails.phone} />

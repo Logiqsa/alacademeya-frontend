@@ -8,10 +8,14 @@ test("account-specific admin pages label incomplete profiles without hiding them
   const users = await read("../src/pages/admin/users/Userspage.jsx");
   const supervisors = await read("../src/pages/admin/supervisors/SupervisorsPage.jsx");
   const supervisorFilters = await read("../src/components/admin/supervisors/SupervisorsFilters.jsx");
+  const notifications = await read("../src/components/admin/notifications/NotificationsSection.jsx");
 
   assert.match(users, /hasIncompleteRegistration\(rawUser\)/);
   assert.match(users, /status: "ملف غير مكتمل"/);
   assert.match(supervisors, /hasIncompleteRegistration\(u\)/);
   assert.match(supervisors, /"ملف غير مكتمل"/);
   assert.match(supervisorFilters, /"ملف غير مكتمل"/);
+  assert.match(notifications, /isProfileIncomplete/);
+  assert.match(notifications, /لم يستكمل المستخدم جميع بيانات ملفه/);
+  assert.match(notifications, /role="status"/);
 });
