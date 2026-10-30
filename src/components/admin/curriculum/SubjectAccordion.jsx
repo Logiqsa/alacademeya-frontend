@@ -18,12 +18,14 @@ const SubjectCard = ({ subject, onUpdate, onRemove }) => {
           placeholder="Subject Name (English)"
         />
       </div>
-      <button 
-        onClick={onRemove}
-        className="p-1 text-[#8C9198] hover:text-[#D92D20] hover:bg-[#FEF3F2] rounded transition-colors"
-      >
-        <Trash2 size={14} />
-      </button>
+      {onRemove && (
+        <button
+          onClick={onRemove}
+          className="p-1 text-[#8C9198] hover:text-[#D92D20] hover:bg-[#FEF3F2] rounded transition-colors"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
     </div>
   );
 };

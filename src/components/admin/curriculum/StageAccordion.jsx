@@ -2,7 +2,15 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Trash2, Plus } from "lucide-react";
 import GradeAccordion from "./GradeAccordion";
 
-const StageAccordion = ({ stage, onUpdate, onRemove, onRemoveGrade, onRemoveSubject }) => {
+const StageAccordion = ({
+  stage,
+  onUpdate,
+  onRemove,
+  onRemoveGrade,
+  onRemoveSubject,
+  canRemoveGrade = () => true,
+  canRemoveSubject = () => true,
+}) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const addGrade = () => {
@@ -78,15 +86,17 @@ const StageAccordion = ({ stage, onUpdate, onRemove, onRemoveGrade, onRemoveSubj
         </div>
 
         {/* زر الحذف */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-          className="p-1.5 text-[#D92D20] hover:bg-[#FEF3F2] rounded-lg transition-colors"
-        >
-          <Trash2 size={18} />
-        </button>
+        {onRemove && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="p-1.5 text-[#D92D20] hover:bg-[#FEF3F2] rounded-lg transition-colors"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
       </div>
 
       {isOpen && (
@@ -96,8 +106,15 @@ const StageAccordion = ({ stage, onUpdate, onRemove, onRemoveGrade, onRemoveSubj
               key={grade.id}
               grade={grade}
               onUpdate={(u) => updateGrade(grade.id, u)}
-              onRemove={() => removeGrade(grade.id)}
+              onRemove={
+                onRemoveGrade && canRemoveGrade(grade.id)
+                  ? () => removeGrade(grade.id)
+                  : undefined
+              }
               onRemoveSubject={(subjectId) => onRemoveSubject?.(grade.id, subjectId)}
+              canRemoveSubject={(subjectId) =>
+                canRemoveSubject(grade.id, subjectId)
+              }
             />
           ))}
           <button

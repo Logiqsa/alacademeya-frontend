@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PackagesTab from "../../../components/admin/subscriptions/tabs/PackagesTab";
 import DiscountCodesTab from "../../../components/admin/subscriptions/tabs/DiscountCodesTab";
 import SubscriptionsTab from "../../../components/admin/subscriptions/tabs/SubscriptionsTab";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import { AuthContext } from "../../../context/AuthContext";
 
 const TABS = [
   { key: "packages", label: "الباقات" },
@@ -14,9 +15,19 @@ const TABS = [
 
 const SubscriptionsPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("packages");
+  const { user } = useContext(AuthContext);
+  const isSuperAdmin = user?.role === "super-admin";
+  const visibleTabs = isSuperAdmin
+    ? TABS
+    : TABS.filter((tab) => tab.key !== "packages");
+  const [activeTab, setActiveTab] = useState(() =>
+    user?.role === "super-admin" ? "packages" : "discounts",
+  );
   const [showAddPackage, setShowAddPackage] = useState(false);
   const [showAddDiscount, setShowAddDiscount] = useState(false);
+  const currentTab = visibleTabs.some((tab) => tab.key === activeTab)
+    ? activeTab
+    : visibleTabs[0].key;
 
   const tabBtnLabel = {
     packages: "إضافة باقة",
@@ -24,8 +35,8 @@ const SubscriptionsPage = () => {
   };
 
   const handleHeaderBtn = () => {
-    if (activeTab === "packages") setShowAddPackage(true);
-    if (activeTab === "discounts") setShowAddDiscount(true);
+    if (currentTab === "packages") setShowAddPackage(true);
+    if (currentTab === "discounts") setShowAddDiscount(true);
   };
 
   return (
@@ -46,7 +57,7 @@ const SubscriptionsPage = () => {
             </p>
           </div>
 
-          {activeTab === "subscriptions" ? (
+          {currentTab === "subscriptions" ? (
             <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
               <button
                 onClick={() => navigate("/admin/subscriptions/requests")}
@@ -66,19 +77,19 @@ const SubscriptionsPage = () => {
               onClick={handleHeaderBtn}
               className="w-full sm:w-auto shrink-0 px-5 py-2.5 bg-[#123C91] text-white [&_svg]:text-white rounded-xl font-medium text-[14px] hover:bg-[#0f3280] active:bg-[#0c285f] transition-colors whitespace-nowrap"
             >
-              {tabBtnLabel[activeTab]}
+              {tabBtnLabel[currentTab]}
             </button>
           )}
         </div>
 
         {/* Tabs */}
         <div className="flex items-center gap-0.5 bg-[#F3F4F6] rounded-xl p-1 w-full sm:w-fit mb-5 sm:mb-6 overflow-x-auto no-scrollbar">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
               className={`flex-1 sm:flex-none px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
-                activeTab === t.key
+                currentTab === t.key
                   ? "bg-white text-[#123C91] shadow-sm"
                   : "text-[#6B7280] hover:text-[#374151]"
               }`}
@@ -90,19 +101,19 @@ const SubscriptionsPage = () => {
 
         {/* Tab Content */}
         <div className="min-w-0">
-          {activeTab === "packages" && (
+          {currentTab === "packages" && (
             <PackagesTab
               showAdd={showAddPackage}
               onCloseAdd={() => setShowAddPackage(false)}
             />
           )}
-          {activeTab === "discounts" && (
+          {currentTab === "discounts" && (
             <DiscountCodesTab
               showAdd={showAddDiscount}
               onCloseAdd={() => setShowAddDiscount(false)}
             />
           )}
-          {activeTab === "subscriptions" && <SubscriptionsTab />}
+          {currentTab === "subscriptions" && <SubscriptionsTab />}
         </div>
       </div>
     </AdminLayout>

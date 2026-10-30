@@ -47,7 +47,12 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
     {
       label: "المستخدمون",
       items: [
-        { title: "المشرفين", icon: ShieldCheck, path: "/admin/supervisors" },
+        {
+          title: "المشرفين",
+          icon: ShieldCheck,
+          path: "/admin/supervisors",
+          superAdminOnly: true,
+        },
         { title: "المعلمون", icon: GraduationCap, path: "/admin/teachers" },
         { title: "المحاضرون", icon: BookOpen, path: "/admin/instructors" },
         { title: "طلاب الدورات", icon: Users, path: "/admin/learners" },
@@ -96,13 +101,18 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
         { title: "أمان الوسائط", icon: ShieldAlert, path: "/admin/security/media" },
         { title: "الرسائل", icon: MessageSquare, path: "/admin/messages" },
         { title: "الإشعارات", icon: Bell, path: "/admin/notifications" },
-        { title: "المدونة", icon: Newspaper, path: "/admin/blogs" },
+        {
+          title: "المدونة",
+          icon: Newspaper,
+          path: "/admin/blogs",
+          superAdminOnly: true,
+        },
         { title: "الإعدادات", icon: Settings, path: "/admin/settings" },
       ],
     },
   ];
 
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -176,7 +186,9 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
               </p>
             )}
             {!isOpen && <div className="mx-2 mb-2 border-t border-white/10" />}
-            {section.items.map((item) => {
+            {section.items
+              .filter((item) => !item.superAdminOnly || user?.role === "super-admin")
+              .map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink
@@ -221,7 +233,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
                   )}
                 </NavLink>
               );
-            })}
+              })}
           </div>
         ))}
       </div>

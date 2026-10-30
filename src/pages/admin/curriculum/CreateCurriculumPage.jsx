@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Plus, Save, Loader2 } from "lucide-react";
@@ -24,9 +24,12 @@ import {
   updateSubject,
 } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import { AuthContext } from "../../../context/AuthContext";
 
 const CreateCurriculumPage = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const canDeleteSavedStructure = user?.role === "super-admin";
   const { curriculumId } = useParams();
   const isEditing = Boolean(curriculumId);
   const [saving, setSaving] = useState(false);
@@ -813,11 +816,39 @@ const CreateCurriculumPage = () => {
               key={stage.id}
               stage={stage}
               onUpdate={(updated) => updateStage(stage.id, updated)}
-              onRemove={() => removeStage(stage.id)}
-              onRemoveGrade={(gradeId) => removeGrade(stage.id, gradeId)}
-              onRemoveSubject={(gradeId, subjectId) =>
-                removeSubject(stage.id, gradeId, subjectId)
+              onRemove={
+                canDeleteSavedStructure ||
+                !originalStructure.some((item) => entityId(item) === entityId(stage))
+                  ? () => removeStage(stage.id)
+                  : undefined
               }
+              onRemoveGrade={(gradeId) => {
+                removeGrade(stage.id, gradeId);
+              }}
+              onRemoveSubject={(gradeId, subjectId) => {
+                removeSubject(stage.id, gradeId, subjectId);
+              }}
+              canRemoveGrade={(gradeId) => {
+                const savedStage = originalStructure.find(
+                  (item) => entityId(item) === entityId(stage),
+                );
+                const isSaved = savedStage?.grades?.some(
+                  (grade) => entityId(grade) === gradeId,
+                );
+                return canDeleteSavedStructure || !isSaved;
+              }}
+              canRemoveSubject={(gradeId, subjectId) => {
+                const savedStage = originalStructure.find(
+                  (item) => entityId(item) === entityId(stage),
+                );
+                const savedGrade = savedStage?.grades?.find(
+                  (grade) => entityId(grade) === gradeId,
+                );
+                const isSaved = savedGrade?.subjects?.some(
+                  (subject) => entityId(subject) === subjectId,
+                );
+                return canDeleteSavedStructure || !isSaved;
+              }}
             />
           ))}
         </div>

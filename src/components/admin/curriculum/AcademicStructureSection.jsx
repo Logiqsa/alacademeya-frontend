@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -17,6 +17,7 @@ import {
   getAllSubjects,
   deleteCurriculum,
 } from "../../../services/APIService";
+import { AuthContext } from "../../../context/AuthContext";
 
 const LANG = "ar"; // change to dynamic locale if you support i18n switching
 
@@ -240,14 +241,16 @@ const CurriculumCard = ({
           >
             {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
-          <button
-            type="button"
-            onClick={() => onDelete?.(curriculum)}
-            className="text-[#D92D20] cursor-pointer p-1 -m-1 hover:opacity-80"
-            aria-label="حذف"
-          >
-            <Trash2 size={17} />
-          </button>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(curriculum)}
+              className="text-[#D92D20] cursor-pointer p-1 -m-1 hover:opacity-80"
+              aria-label="حذف"
+            >
+              <Trash2 size={17} />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onEdit?.(curriculum)}
@@ -294,6 +297,8 @@ const CurriculumCard = ({
 
 const AcademicStructureSection = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const canDelete = user?.role === "super-admin";
   const [curricula, setCurricula] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -378,7 +383,7 @@ const AcademicStructureSection = () => {
               key={curriculum._id || curriculum.id}
               curriculum={curriculum}
               onEdit={handleEdit}
-              onDelete={handleDelete}
+              onDelete={canDelete ? handleDelete : undefined}
             />
           ))}
 

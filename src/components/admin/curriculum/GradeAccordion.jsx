@@ -2,7 +2,13 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Trash2, Plus } from "lucide-react";
 import SubjectCard from "./SubjectAccordion";
 
-const GradeAccordion = ({ grade, onUpdate, onRemove, onRemoveSubject }) => {
+const GradeAccordion = ({
+  grade,
+  onUpdate,
+  onRemove,
+  onRemoveSubject,
+  canRemoveSubject = () => true,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const addSubject = () => {
@@ -79,15 +85,17 @@ const GradeAccordion = ({ grade, onUpdate, onRemove, onRemoveSubject }) => {
         </div>
 
         {/* زر الحذف */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-          className="p-1.5 text-[#D92D20] hover:bg-[#FEF3F2] rounded-lg transition-colors"
-        >
-          <Trash2 size={18} />
-        </button>
+        {onRemove && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="p-1.5 text-[#D92D20] hover:bg-[#FEF3F2] rounded-lg transition-colors"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
       </div>
 
       {isOpen && (
@@ -97,7 +105,11 @@ const GradeAccordion = ({ grade, onUpdate, onRemove, onRemoveSubject }) => {
               key={subject.id}
               subject={subject}
               onUpdate={(u) => updateSubject(subject.id, u)}
-              onRemove={() => removeSubject(subject.id)}
+              onRemove={
+                onRemoveSubject && canRemoveSubject(subject.id)
+                  ? () => removeSubject(subject.id)
+                  : undefined
+              }
             />
           ))}
           <button
