@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   CircleHelp,
   MessageCircle,
+  Pencil,
   UserPlus,
   Users,
   UserCheck,
@@ -37,6 +38,7 @@ import {
   getUser,
   endSession,
   updateClassroomSession,
+  updateClassroom,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
@@ -139,6 +141,14 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const [groupDetails, setGroupDetails] = useState(null);
   const [showSubstituteModal, setShowSubstituteModal] = useState(false);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [showEditGroupModal, setShowEditGroupModal] = useState(false);
+  const [editGroupData, setEditGroupData] = useState({
+    name: "",
+    capacity: "",
+    meetingLink: "",
+  });
+  const [editGroupError, setEditGroupError] = useState("");
+  const [savingGroup, setSavingGroup] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -302,6 +312,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           : routedClassroomType || "group",
         substituteTeacherId,
         substituteTeacher: substituteTeacherName,
+        capacity: classroomData.capacity,
       });
       const profileOrUserId = teacherId || routedGroupTeacherId;
       if (nestedTeacherName) setGroupTeacher(nestedTeacherName);
@@ -604,6 +615,55 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     notHeld: lessons.filter((l) => l.status === "لم تُعقد").length,
   };
 
+  const openEditGroupModal = () => {
+    setEditGroupData({
+      name: groupName || "",
+      capacity:
+        groupDetails?.capacity === undefined || groupDetails?.capacity === null
+          ? ""
+          : String(groupDetails.capacity),
+      meetingLink: "",
+    });
+    setEditGroupError("");
+    setShowEditGroupModal(true);
+  };
+
+  const handleUpdateGroup = async (event) => {
+    event.preventDefault();
+    const name = editGroupData.name.trim();
+    const capacity = Number(editGroupData.capacity);
+
+    if (!name) {
+      setEditGroupError("اسم المجموعة مطلوب");
+      return;
+    }
+    if (!Number.isInteger(capacity) || capacity < 1) {
+      setEditGroupError("سعة المجموعة يجب أن تكون رقمًا صحيحًا أكبر من صفر");
+      return;
+    }
+
+    const payload = { name, capacity };
+    const meetingLink = editGroupData.meetingLink.trim();
+    if (meetingLink) payload.meetingLink = meetingLink;
+
+    setSavingGroup(true);
+    setEditGroupError("");
+    try {
+      await updateClassroom(groupId, payload);
+      setShowEditGroupModal(false);
+      setToastMessage("تم تعديل المجموعة بنجاح");
+      setShowToast(true);
+      await fetchData();
+      window.setTimeout(() => setShowToast(false), 4000);
+    } catch (updateError) {
+      setEditGroupError(
+        updateError.response?.data?.message || "تعذر تعديل بيانات المجموعة",
+      );
+    } finally {
+      setSavingGroup(false);
+    }
+  };
+
   // العنوان بيفضّل عرض اسم حصة محددة بدل اسم المجموعة:
   // الأولوية للحصة اللي شغالة live دلوقتي، وبعدين أقرب حصة قادمة.
   // لو مفيش أي حصة live ولا قادمة، بيرجع يعرض اسم المجموعة كـ fallback.
@@ -791,6 +851,14 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
           )}
           {isAdmin && (
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <button
+                type="button"
+                onClick={openEditGroupModal}
+                className="flex h-12 items-center justify-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-4 font-['Tajawal'] text-sm font-medium text-[#123C91] transition-colors hover:bg-[#EAF4FF]"
+              >
+                <Pencil size={18} />
+                <span>تعديل المجموعة</span>
+              </button>
               <button
                 type="button"
                 onClick={() => navigate(`/admin/groups/${groupId}/schedule`)}
@@ -1037,6 +1105,119 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         group={groupDetails}
         onChanged={fetchData}
       />
+      {showEditGroupModal && (
+        <div
+          dir="rtl"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !savingGroup) {
+              setShowEditGroupModal(false);
+            }
+          }}
+        >
+          <form
+            onSubmit={handleUpdateGroup}
+            className="w-full max-w-lg rounded-2xl bg-white p-6 text-right shadow-2xl"
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-[#1F2937]">
+                تعديل بيانات المجموعة
+              </h2>
+              <button
+                type="button"
+                aria-label="إغلاق"
+                disabled={savingGroup}
+                onClick={() => setShowEditGroupModal(false)}
+                className="rounded-lg bg-[#F3F4F6] p-2 text-[#575F69] hover:bg-[#E5E7EB] disabled:opacity-50"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-[#1F2937]">
+                  اسم المجموعة
+                </span>
+                <input
+                  value={editGroupData.name}
+                  onChange={(event) =>
+                    setEditGroupData((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  className="h-12 w-full rounded-lg border border-[#D7DEE8] px-4 outline-none focus:border-[#123C91] focus:ring-2 focus:ring-[#123C91]/15"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-[#1F2937]">
+                  سعة المجموعة
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={editGroupData.capacity}
+                  onChange={(event) =>
+                    setEditGroupData((current) => ({
+                      ...current,
+                      capacity: event.target.value,
+                    }))
+                  }
+                  className="h-12 w-full rounded-lg border border-[#D7DEE8] px-4 outline-none focus:border-[#123C91] focus:ring-2 focus:ring-[#123C91]/15"
+                />
+                <span className="mt-1 block text-xs text-[#6B7280]">
+                  لا يمكن جعل السعة أقل من عدد الطلاب الموجودين حاليًا.
+                </span>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-[#1F2937]">
+                  رابط الاجتماع الجديد (اختياري)
+                </span>
+                <input
+                  type="url"
+                  value={editGroupData.meetingLink}
+                  onChange={(event) =>
+                    setEditGroupData((current) => ({
+                      ...current,
+                      meetingLink: event.target.value,
+                    }))
+                  }
+                  placeholder="اتركه فارغًا للاحتفاظ بالرابط الحالي"
+                  className="h-12 w-full rounded-lg border border-[#D7DEE8] px-4 outline-none placeholder:text-[#9CA3AF] focus:border-[#123C91] focus:ring-2 focus:ring-[#123C91]/15"
+                />
+              </label>
+            </div>
+
+            {editGroupError && (
+              <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                {editGroupError}
+              </p>
+            )}
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="submit"
+                disabled={savingGroup}
+                className="h-12 flex-1 rounded-lg bg-[#123C91] font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingGroup ? "جاري الحفظ..." : "حفظ التعديلات"}
+              </button>
+              <button
+                type="button"
+                disabled={savingGroup}
+                onClick={() => setShowEditGroupModal(false)}
+                className="h-12 flex-1 rounded-lg border border-[#D7DEE8] font-medium text-[#374151] disabled:opacity-60"
+              >
+                إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </Layout>
   );
 };
