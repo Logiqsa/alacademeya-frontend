@@ -26,6 +26,27 @@ const roleLabel = (role) => {
   return role || "—";
 };
 
+const RoleBadge = ({ role }) => {
+  const isSuperAdmin = role === "super-admin";
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${
+        isSuperAdmin
+          ? "bg-[#F3E8FF] text-[#6B21A8] ring-[#E9D5FF]"
+          : "bg-[#EAF4FF] text-[#123C91] ring-[#CFE0FA]"
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          isSuperAdmin ? "bg-[#7E22CE]" : "bg-[#1D4ED8]"
+        }`}
+      />
+      {roleLabel(role)}
+    </span>
+  );
+};
+
 /* ─── Actions Dropdown (rendered via portal so it can never be clipped) ──── */
 const ActionsMenu = ({ s, onEdit, onToggleSuspend, onDelete }) => {
   const [open, setOpen] = useState(false);
@@ -148,7 +169,7 @@ const TableRow = ({ s, onEdit, onToggleSuspend, onDelete }) => (
     <td className="px-4 py-4 text-[14px] font-medium text-[#1F2937]">{s.name}</td>
     <td className="px-4 py-4 text-[14px] text-[#575F69]">{s.email}</td>
     <td className="px-4 py-4 text-[14px] text-[#575F69]" dir="ltr">{s.phone}</td>
-    <td className="px-4 py-4 text-[14px] text-[#575F69]">{roleLabel(s.role)}</td>
+    <td className="px-4 py-4"><RoleBadge role={s.role} /></td>
     <td className="px-4 py-4"><StatusBadge status={s.status} /></td>
     <td className="px-4 py-4">
       <ActionsMenu s={s} onEdit={onEdit} onToggleSuspend={onToggleSuspend} onDelete={onDelete} />
@@ -175,7 +196,7 @@ const MobileCard = ({ s, onEdit, onToggleSuspend, onDelete }) => (
       </div>
       <div className="flex items-center justify-between">
         <span className="text-[12px] text-[#9CA3AF]">الصلاحية</span>
-        <span className="text-[13px] text-[#575F69]">{roleLabel(s.role)}</span>
+        <RoleBadge role={s.role} />
       </div>
       <div className="flex items-center justify-between">
         <span className="text-[12px] text-[#9CA3AF]">الحالة</span>
