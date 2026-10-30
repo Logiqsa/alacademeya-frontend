@@ -733,7 +733,7 @@ const AdminAccountSettings = () => {
             href={apiDocsUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-10 w-fit items-center justify-center gap-2 rounded-lg bg-[#123C91] px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0E2F72]"
+            className="inline-flex h-10 w-fit items-center justify-center gap-2 rounded-lg bg-[#123C91] px-4 text-sm font-medium !text-white shadow-sm transition-colors hover:bg-[#0E2F72] hover:!text-white [&_svg]:text-white"
             title="فتح توثيق واجهات API"
           >
             <ExternalLink size={16} />
