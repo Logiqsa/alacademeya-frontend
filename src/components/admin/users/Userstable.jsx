@@ -6,7 +6,6 @@ import {
   Ban,
   CheckCircle2,
   Trash2,
-  User,
   X,
   Info,
   FileText,
@@ -25,6 +24,7 @@ import { getArabicCountryName } from "../../../utils/countryName";
 import { resolveTeacherTeachingSelections } from "../../../utils/teacherTeachingSelections";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { teacherLanguageLabel } from "../../../utils/teacherLanguage";
+import { getUserInitials } from "../../../utils/userInitials";
 import {
   getAllStudents,
   getAllSubscriptions,
@@ -392,17 +392,23 @@ const retainedRecordCard = (type, record = {}, index) => {
   }
 };
 
-const Avatar = ({ name, avatarUrl, size = 8 }) => (
-  <div
-    className={`w-${size} h-${size} rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0`}
-  >
-    {avatarUrl ? (
-      <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
-    ) : (
-      <User size={size === 8 ? 15 : 22} className="text-gray-400" />
-    )}
-  </div>
-);
+const Avatar = ({ name, avatarUrl, size = 8 }) => {
+  const isLarge = size === 16;
+
+  return (
+    <div
+      className={`${isLarge ? "h-16 w-16 text-xl" : "h-8 w-8 text-xs"} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#EAF4FF] font-bold text-[#123C91] ring-1 ring-[#D9E6FA]`}
+      aria-label={`الصورة الرمزية للمستخدم ${name || "غير معروف"}`}
+      title={name || undefined}
+    >
+      {avatarUrl ? (
+        <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+      ) : (
+        <span aria-hidden="true">{getUserInitials(name)}</span>
+      )}
+    </div>
+  );
+};
 
 const UserCell = ({ name, avatarUrl, onClick }) => (
   <button
