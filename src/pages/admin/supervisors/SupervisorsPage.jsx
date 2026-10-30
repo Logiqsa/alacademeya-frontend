@@ -7,7 +7,13 @@ import SupervisorsFilters from "../../../components/admin/supervisors/Supervisor
 import SupervisorsTable from "../../../components/admin/supervisors/SupervisorsTable";
 import AddSupervisorModal from "../../../components/admin/supervisors/AddSupervisorModal";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-import { getUsers, updateUser, deleteUser } from "../../../services/APIService";
+import {
+  getUsers,
+  updateUser,
+  deleteUser,
+  getUserDeletionImpact,
+  anonymizeRetainedUser,
+} from "../../../services/APIService";
 import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
@@ -56,6 +62,7 @@ const SupervisorsPage = () => {
 
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [retainedTarget, setRetainedTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   // Suspend/activate state (tracks which row is mid-request so we can disable it)
@@ -149,8 +156,46 @@ const SupervisorsPage = () => {
       await fetchSupervisors();
     } catch (err) {
       console.error(err);
-      setActionError("حدث خطأ أثناء حذف المشرف");
-      setDeleteTarget(null);
+      if (
+        err.response?.status === 409 &&
+        err.response?.data?.code === "USER_HAS_RETAINED_RECORDS"
+      ) {
+        try {
+          const response = await getUserDeletionImpact(deleteTarget.id);
+          const impact = response.data?.data || response.data;
+          setRetainedTarget({ supervisor: deleteTarget, impact });
+          setDeleteTarget(null);
+        } catch (impactError) {
+          setActionError(
+            impactError.response?.data?.message ||
+              "تعذر تحميل السجلات المرتبطة بالمشرف",
+          );
+        }
+      } else {
+        setActionError(
+          err.response?.data?.message || "حدث خطأ أثناء حذف المشرف",
+        );
+        setDeleteTarget(null);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleAnonymizeRetainedSupervisor = async () => {
+    if (!retainedTarget) return;
+    setDeleting(true);
+    try {
+      await anonymizeRetainedUser(retainedTarget.supervisor.id, {
+        removeFromActiveClassrooms: false,
+        removeFromActiveChatRooms: false,
+      });
+      setRetainedTarget(null);
+      await fetchSupervisors();
+    } catch (err) {
+      setActionError(
+        err.response?.data?.message || "تعذر إخفاء بيانات حساب المشرف",
+      );
     } finally {
       setDeleting(false);
     }
@@ -279,6 +324,20 @@ const SupervisorsPage = () => {
           loading={deleting}
           onConfirm={handleDeleteConfirm}
           onClose={() => setDeleteTarget(null)}
+        />
+
+        <ConfirmDialog
+          open={Boolean(retainedTarget)}
+          title="سجلات مرتبطة بحساب المشرف"
+          message={`لا يمكن حذف "${retainedTarget?.supervisor?.name || "المشرف"}" نهائيًا لأن الحساب مرتبط بسجلات إدارية محفوظة${
+            retainedTarget?.impact?.references?.length
+              ? ` (${retainedTarget.impact.references.reduce((total, item) => total + (item.count || 0), 0)} سجل)`
+              : ""
+          }. يمكنك إيقاف الحساب وإخفاء بياناته الشخصية مع الإبقاء على سجلات التدقيق.`}
+          confirmLabel="إخفاء الحساب بأمان"
+          loading={deleting}
+          onConfirm={handleAnonymizeRetainedSupervisor}
+          onClose={() => setRetainedTarget(null)}
         />
       </div>
     </AdminLayout>
