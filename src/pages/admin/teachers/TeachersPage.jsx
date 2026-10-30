@@ -16,6 +16,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
@@ -749,7 +750,10 @@ const TeachersPage = () => {
                           <div className="flex items-center">
                             <button
                               type="button"
-                              onClick={() => openTeacherDetails(teacher)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void openTeacherDetails(teacher);
+                              }}
                               className="grid size-8 place-items-center rounded-lg text-[#575F69] transition-colors hover:bg-[#EEF4FF] hover:text-[#123C91]"
                               aria-label={`إجراءات المعلم ${teacher.name}`}
                               title="عرض التفاصيل والإجراءات"
@@ -827,7 +831,7 @@ const TeachersPage = () => {
           </>
         )}
 
-        {selectedTeacher && (
+        {selectedTeacher && createPortal(
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
             onClick={(event) => {
@@ -1018,7 +1022,8 @@ const TeachersPage = () => {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body,
         )}
       </div>
     </AdminLayout>

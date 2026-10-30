@@ -10,7 +10,9 @@ const source = readFileSync(
 test("teacher rows expose the existing details and actions dialog from a three-dot button", () => {
   assert.match(source, /MoreVertical/);
   assert.match(source, /aria-label=\{`إجراءات المعلم \$\{teacher\.name\}`\}/);
-  assert.match(source, /onClick=\{\(\) => openTeacherDetails\(teacher\)\}/);
+  assert.match(source, /void openTeacherDetails\(teacher\)/);
+  assert.match(source, /selectedTeacher && createPortal/);
+  assert.match(source, /document\.body/);
 });
 
 test("teacher rows keep incomplete profiles visible and separate status from actions", () => {
