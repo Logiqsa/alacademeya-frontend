@@ -1,14 +1,6 @@
 import { Search, ChevronDown } from "lucide-react";
 
 const ROLE_OPTIONS = ["جميع المستخدمين", "طالب دورات", "محاضر دورات", "معلم", "طالب أكاديمي", "ولي أمر", "مشرف", "مشرف عام"];
-const STATUS_OPTIONS = [
-  "جميع الحالات",
-  "نشط",
-  "معلق",
-  "ملف غير مكتمل",
-  "موقوف",
-];
-
 const UsersFilters = ({
   search,
   onSearchChange,
@@ -29,6 +21,7 @@ const UsersFilters = ({
   curriculumOptions = [],
   onFilterCurriculumChange,
   hideRoleFilter = false,
+  statusOptions = [],
 }) => {
   const isAcademicRole = ["طالب أكاديمي", "معلم"].includes(filterRole);
   const isStudentRole = filterRole === "طالب أكاديمي";
@@ -67,7 +60,7 @@ const UsersFilters = ({
           onChange={(e) => onFilterStatusChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
         >
-          {STATUS_OPTIONS.map((opt) => (
+          {["جميع الحالات", ...statusOptions].map((opt) => (
             <option key={opt} value={opt}>
               {opt}
             </option>

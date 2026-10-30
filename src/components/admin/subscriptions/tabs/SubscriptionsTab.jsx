@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Eye, ChevronRight, ChevronLeft, Loader2, RefreshCw } from "lucide-react";
+import { Eye, ChevronRight, ChevronLeft, Loader2, RefreshCw, FilePenLine } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getAllSubscriptions } from "../../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
 import EntityProfileModal from "../../users/EntityProfileModal";
@@ -12,9 +12,10 @@ const StatusBadge = ({ status }) => {
     active: "bg-[#00A63E26] text-[#00A63E]",
     expired: "bg-[#FF8A0026] text-[#FF8A00]",
     suspended: "bg-red-100 text-red-500",
+    incomplete: "bg-amber-100 text-amber-700",
   };
   const label =
-    { active: "نشط", expired: "منتهي", suspended: "موقوف" }[status] ?? status;
+    { active: "نشط", expired: "منتهي", suspended: "موقوف", incomplete: "بيانات غير مكتملة" }[status] ?? status;
   return (
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${map[status] ?? "bg-gray-100 text-gray-500"}`}
@@ -25,13 +26,13 @@ const StatusBadge = ({ status }) => {
 };
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
-const RowActions = ({ onView, onRenew, canRenew }) => (<div className="flex items-center gap-1"><button
+const RowActions = ({ onView, onRenew, canRenew, onComplete }) => (<div className="flex items-center gap-1"><button
     onClick={onView}
     className="p-2 rounded-lg text-[#575F69] hover:bg-[#EAF4FF] hover:text-[#123C91] transition-colors"
     title="عرض التفاصيل"
   >
     <Eye size={17} />
-  </button>{canRenew && <button onClick={onRenew} className="p-2 rounded-lg text-[#123C91] hover:bg-[#EAF4FF]" title="تجديد يدوي"><RefreshCw size={17}/></button>}</div>);
+  </button>{canRenew && <button onClick={onRenew} className="p-2 rounded-lg text-[#123C91] hover:bg-[#EAF4FF]" title="تجديد يدوي"><RefreshCw size={17}/></button>}{onComplete && <button onClick={onComplete} className="p-2 rounded-lg text-amber-700 hover:bg-amber-50" title="استكمال بيانات الاشتراك"><FilePenLine size={17}/></button>}</div>);
 
 const valueOrDash = (value) => (value == null || value === "" ? "--" : value);
 
@@ -82,7 +83,7 @@ const Pagination = ({ page, total, totalPages, onChange }) => (
 );
 
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
-const SubCard = ({ s, onView, onRenew, onStudentClick }) => (
+const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick }) => (
   <div className="p-4 flex flex-col gap-2.5">
     <div className="flex items-start justify-between gap-2">
       <button
@@ -92,7 +93,7 @@ const SubCard = ({ s, onView, onRenew, onStudentClick }) => (
       >
         {s.student}
       </button>
-      <RowActions onView={onView} onRenew={onRenew} canRenew={s.status === "active"} />
+      <RowActions onView={onView} onRenew={onRenew} onComplete={onComplete} canRenew={s.status === "active" && !s.incomplete} />
     </div>
     <div className="flex items-center justify-between text-[13px]">
       <span className="text-[#9CA3AF]">المادة</span>
@@ -128,6 +129,23 @@ const flattenSubscriptions = (subscriptions) => {
   const rows = [];
   for (const sub of subscriptions) {
     const studentName = sub.student?.user?.fullName ?? "--";
+    if (!sub.items?.length) {
+      rows.push({
+        rowId: sub.id || sub._id,
+        subscriptionId: sub.id || sub._id,
+        studentId: sub.student?.id || sub.student?._id,
+        student: studentName,
+        studentEntity: sub.student,
+        subject: "غير متاحة",
+        package: "غير متاحة",
+        discount: "--",
+        usedSessions: "--",
+        remainingSessions: "--",
+        status: "incomplete",
+        incomplete: true,
+      });
+      continue;
+    }
     for (const [index, item] of (sub.items ?? []).entries()) {
       const totalSessions = sessionValue(
         item.totalSessions,
@@ -255,6 +273,7 @@ const SubscriptionsTab = () => {
                     navigate(`/admin/subscriptions/${s.subscriptionId}`)
                   }
                   onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
+                  onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
                   onStudentClick={() => setProfileStudent(s.studentEntity)}
                 />
               ))}
@@ -318,7 +337,8 @@ const SubscriptionsTab = () => {
                         <StatusBadge status={s.status} />
                       </td>
                       <td className="px-5 py-3.5">
-                        <RowActions canRenew={s.status === "active"} onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
+                        <RowActions canRenew={s.status === "active" && !s.incomplete} onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
+                          onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
                           onView={() =>
                             navigate(`/admin/subscriptions/${s.subscriptionId}`)
                           }

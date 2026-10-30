@@ -54,8 +54,6 @@ const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
   const startDate = sub.createdAt
     ? new Date(sub.createdAt).toLocaleDateString("en-GB")
     : "--";
-  const status = mapStatus(sub.status);
-
   if (!sub.items || sub.items.length === 0) {
     return [
       {
@@ -64,16 +62,18 @@ const mapSubscriptionToRows = (sub, gradeNameByStudentId) => {
         groupSize: 1,
         name: studentName,
         stage: studentGrade,
-        subjectName: "--",
+        subjectName: "يرجى التواصل مع الإدارة",
         teacherName: "",
         totalHours: "--",
         consumed: "--",
         remaining: "--",
-        duration: "شهر",
+        duration: "غير متاحة",
         startDate,
         endDate: "--",
         amount: "--",
-        status,
+        status: "بيانات الاشتراك غير مكتملة",
+        rawStatus: "incomplete",
+        incomplete: true,
         studentId,
       },
     ];
@@ -407,7 +407,9 @@ const SubscriptionPage = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#123C91] shadow-sm">
-                          {group.rows.length} مادة
+                          {group.rows.some((row) => row.incomplete)
+                            ? "اشتراك قديم"
+                            : `${group.rows.length} مادة`}
                         </span>
                         {group.rows.some(
                           (row) => row.rawStatus === "active" && row.groupId,

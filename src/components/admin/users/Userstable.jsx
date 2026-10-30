@@ -836,9 +836,15 @@ export const UserDetailsModal = ({
 
         {isParent && (
           <div className="grid grid-cols-2 gap-2 mb-2">
-            <DetailRow label="اسم الابن" value={user.childName ?? "علي محمد"} />
-
-            <DetailRow label="عدد الأبناء" value={user.childrenCount ?? "1"} />
+            <DetailRow
+              label={user.childrenCount === 1 ? "اسم الابن" : "أسماء الأبناء"}
+              value={
+                user.children?.length
+                  ? user.children.map((child) => child.name).join("، ")
+                  : "لا يوجد أبناء مرتبطون"
+              }
+            />
+            <DetailRow label="عدد الأبناء" value={user.childrenCount ?? 0} />
           </div>
         )}
       </div>

@@ -19,3 +19,9 @@ test("teacher rows keep incomplete profiles visible and separate status from act
   assert.match(source, /"الملف غير مكتمل"/);
   assert.match(source, /"الحالة",\s*"الإجراءات"/);
 });
+
+test("teacher status header filters the table by the selected state", () => {
+  assert.match(source, /aria-label="تصفية المعلمين حسب الحالة"/);
+  assert.match(source, /teacher\.status === filterStatus/);
+  assert.match(source, /setFilterStatus\(event\.target\.value\)/);
+});

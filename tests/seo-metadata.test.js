@@ -58,6 +58,13 @@ test("route policy classifies representative public and private URLs", () => {
   assert.equal(routeSeoFor("/does-not-exist").noindex, true);
 });
 
+test("admin document titles follow the active sidebar page", () => {
+  assert.equal(routeSeoFor("/admin/teachers").title, "المعلمون");
+  assert.equal(routeSeoFor("/admin/notifications").title, "الإشعارات");
+  assert.equal(routeSeoFor("/admin/groups/123/lessons").title, "المجموعات");
+  assert.equal(routeSeoFor("/admin-dashboard").title, "لوحة التحكم");
+});
+
 test("route matcher uses explicit semantics and normalizes trailing slashes", () => {
   const expectations = {
     "/admin": true,

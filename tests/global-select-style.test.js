@@ -11,5 +11,9 @@ test("native single selects use the shared branded trigger style", async () => {
   assert.match(source, /select:not\(\[multiple\]\)/);
   assert.match(source, /appearance: none/);
   assert.match(source, /background-image: url/);
+  assert.match(
+    source,
+    /select:not\(\[multiple\]\) \+ svg\s*\{[\s\S]*display: none/,
+  );
   assert.match(source, /select:not\(\[multiple\]\):focus-visible/);
 });

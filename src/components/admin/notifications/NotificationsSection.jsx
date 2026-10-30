@@ -486,9 +486,12 @@ const NotificationsSection = ({
           id: wantedId,
           _id: wantedId,
           fullName: wantedName,
+          email: notificationData.email,
           username: notificationData.username,
+          phone: notificationData.phone,
           role: notificationUserRole(notification) || "user",
           registrationStatus: notificationData.registrationStatus,
+          isActive: notificationData.isActive,
         };
 
         let teacherProfile = null;

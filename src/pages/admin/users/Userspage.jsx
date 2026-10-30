@@ -449,6 +449,17 @@ const UsersPage = ({
 
   const normalizedSearch = search.trim().toLowerCase();
   const normalizedPhoneSearch = normalizePhoneSearch(search);
+  const statusOptions = [
+    ...new Set(
+      visibleUsers
+        .filter(
+          (user) =>
+            filterRole === "جميع المستخدمين" || user.role === filterRole,
+        )
+        .map((user) => user.status)
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ar"));
   const filtered = visibleUsers.filter(
     (u) =>
       (String(u.name || "").toLowerCase().includes(normalizedSearch) ||
@@ -678,6 +689,7 @@ const UsersPage = ({
             filterRole={filterRole}
             onFilterRoleChange={(v) => {
               setFilterRole(v);
+              setFilterStatus("جميع الحالات");
               setFilterStage("جميع المراحل");
               setFilterGrade("جميع الصفوف");
               setFilterSubject("جميع المواد");
@@ -685,6 +697,7 @@ const UsersPage = ({
               setPage(1);
             }}
             filterStatus={filterStatus}
+            statusOptions={statusOptions}
             onFilterStatusChange={(v) => {
               setFilterStatus(v);
               setPage(1);

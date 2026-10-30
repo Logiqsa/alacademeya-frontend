@@ -180,7 +180,8 @@ const StudentLessonDetailsPage = () => {
           minute: "2-digit",
           hour12: true,
         }),
-        duration: `${session.duration || 45} دقيقة`,
+        duration:
+          session.duration > 0 ? `${session.duration} دقيقة` : "مدة غير محددة",
         status: STATUS_LABELS[status] || status,
         statusKey: status === "ended" ? "completed" : status,
         totalStudents: totalRecords || classroomData.students?.length || 0,

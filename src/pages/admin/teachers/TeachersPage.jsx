@@ -160,6 +160,7 @@ const TeachersPage = () => {
   const [filterStage, setFilterStage] = useState("");
   const [filterSubject, setFilterSubject] = useState("");
   const [filterCurriculum, setFilterCurriculum] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [curriculums, setCurriculums] = useState([]);
   const [stages, setStages] = useState([]);
   const [grades, setGrades] = useState([]);
@@ -329,7 +330,8 @@ const TeachersPage = () => {
       matchesCurriculum(teacher) &&
       matchesStage(teacher) &&
       matchesGrade(teacher) &&
-      (!filterSubject || teacher.subjectIds.includes(filterSubject))
+      (!filterSubject || teacher.subjectIds.includes(filterSubject)) &&
+      (!filterStatus || teacher.status === filterStatus)
     );
   });
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -652,7 +654,29 @@ const TeachersPage = () => {
                           key={header}
                           className="whitespace-nowrap px-6 py-4 text-[13px] font-medium text-[#575F69]"
                         >
-                          {header}
+                          {header === "الحالة" ? (
+                            <select
+                              aria-label="تصفية المعلمين حسب الحالة"
+                              value={filterStatus}
+                              onChange={(event) => {
+                                setFilterStatus(event.target.value);
+                                setPage(1);
+                              }}
+                              className="h-9 min-h-0 w-40 rounded-lg border border-[#D7DEE8] bg-white px-3 text-xs font-semibold text-[#575F69]"
+                            >
+                              <option value="">الحالة: الكل</option>
+                              <option value="مقبول">مقبول</option>
+                              <option value="في انتظار المراجعة">
+                                في انتظار المراجعة
+                              </option>
+                              <option value="الملف غير مكتمل">
+                                الملف غير مكتمل
+                              </option>
+                              <option value="مرفوض">مرفوض</option>
+                            </select>
+                          ) : (
+                            header
+                          )}
                         </th>
                       ))}
                     </tr>

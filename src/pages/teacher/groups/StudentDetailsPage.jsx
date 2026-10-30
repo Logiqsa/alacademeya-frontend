@@ -9,6 +9,7 @@ import {
   getClassroomStudents,
   getClassroomSessions,
   getSessionAttendance,
+  getClassroomStudentAssignmentStatistics,
 } from "../../../services/APIService";
 
 const PAGE_SIZE = 5;
@@ -34,6 +35,7 @@ const StudentDetailsPage = () => {
 
   const [student, setStudent] = useState(null);
   const [lessons, setLessons] = useState([]);
+  const [homeworkStats, setHomeworkStats] = useState({ submitted: 0, total: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -72,6 +74,10 @@ const StudentDetailsPage = () => {
         averageScore: entry.averageScore ?? "--",
         totalStudySessions: entry.totalStudySessions ?? 0,
       });
+
+      const homeworkStatsRes =
+        await getClassroomStudentAssignmentStatistics(groupId, entry.id);
+      setHomeworkStats(homeworkStatsRes.data?.data || { submitted: 0, total: 0 });
 
       // الحصص: من GET /classrooms/:groupId/sessions/
       const sessionsRes = await getClassroomSessions(groupId);
@@ -204,16 +210,14 @@ const StudentDetailsPage = () => {
         </div>
 
         {/* Stats */}
-        {/* ⚠️ TODO: homeworkDone/homeworkTotal لسه مش متوفرين في أي endpoint.
-            totalLessons و attendanceCount و absenceCount بقوا حقيقيين دلوقتي. */}
         <div className="mb-6">
           <StudentStatsCards
             student={{
               totalLessons: lessons.length,
               attendanceCount,
               absenceCount,
-              homeworkDone: "--",
-              homeworkTotal: "--",
+              homeworkDone: homeworkStats.submitted,
+              homeworkTotal: homeworkStats.total,
             }}
           />
         </div>

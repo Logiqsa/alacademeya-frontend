@@ -165,7 +165,7 @@ const StudentGroupLessonsPage = () => {
               minute: "2-digit",
               hour12: true,
             }),
-            duration: s.duration || 45,
+            duration: s.duration > 0 ? s.duration : "غير محددة",
             status: isPostponed ? "مؤجلة" : STATUS_LABELS[status] || status,
             _sortDate: date,
           };

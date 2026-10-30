@@ -567,6 +567,8 @@ export const updateMyTimezone = (payload) =>
 // ──────────────────────────────────────────────────────────────────────────────
 export const createSubscription = (payload) =>
   API.post("/subscriptions", payload);
+export const completeLegacySubscription = (id, payload) =>
+  API.patch(`/subscriptions/${id}/complete-legacy`, payload);
 export const getAllSubscriptions = (params) =>
   API.get("/subscriptions/", { params });
 export const getSubscription = (id) => API.get(`/subscriptions/${id}`);
@@ -794,6 +796,8 @@ export const deletePackage = (id) => API.delete(`/packages/${id}`);
 // GET /assignments/classroom/:classroomId → { success, results, data: [...] }
 export const getAssignmentsByClassroom = (classroomId, params) =>
   API.get(`/assignments/classroom/${classroomId}`, { params });
+export const getClassroomStudentAssignmentStatistics = (classroomId, studentId) =>
+  API.get(`/assignments/classroom/${classroomId}/students/${studentId}/statistics`);
 export const getMyTeacherAssignmentSummaries = () =>
   API.get("/assignments/teacher-summary");
 

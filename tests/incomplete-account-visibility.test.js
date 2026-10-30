@@ -18,4 +18,25 @@ test("account-specific admin pages label incomplete profiles without hiding them
   assert.match(notifications, /isProfileIncomplete/);
   assert.match(notifications, /لم يستكمل المستخدم جميع بيانات ملفه/);
   assert.match(notifications, /role="status"/);
+  assert.match(notifications, /phone: notificationData\.phone/);
+  assert.match(notifications, /email: notificationData\.email/);
+});
+
+test("user status filters follow the selected user type", async () => {
+  const users = await read("../src/pages/admin/users/Userspage.jsx");
+  const filters = await read("../src/components/admin/users/Usersfilters.jsx");
+
+  assert.match(users, /filterRole === "جميع المستخدمين" \|\| user\.role === filterRole/);
+  assert.match(users, /statusOptions=\{statusOptions\}/);
+  assert.match(filters, /\["جميع الحالات", \.\.\.statusOptions\]/);
+});
+
+test("parent details show linked children without placeholder data", async () => {
+  const mapper = await read("../src/utils/adminUser.js");
+  const table = await read("../src/components/admin/users/Userstable.jsx");
+
+  assert.match(mapper, /children: Array\.isArray\(u\.children\)/);
+  assert.match(table, /user\.children\.map\(\(child\) => child\.name\)/);
+  assert.match(table, /لا يوجد أبناء مرتبطون/);
+  assert.doesNotMatch(table, /علي محمد/);
 });

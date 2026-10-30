@@ -46,6 +46,8 @@ export const mapAdminUser = (u) => ({
   isDeleted: !!u.isDeleted,
   isActive: !!u.isActive,
   registrationStatus: u.registrationStatus,
+  children: Array.isArray(u.children) ? u.children : [],
+  childrenCount: Number(u.childrenCount ?? u.children?.length ?? 0),
   createdAt: u.createdAt,
   lastLoginAt:
     u.lastLoginAt ||

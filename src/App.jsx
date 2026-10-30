@@ -1016,7 +1016,11 @@ function App() {
           <Route
             path="/admin/subscriptions/add"
             element={
-              user ? <AddSubscriptionPage /> : <Navigate to="/login" replace />
+              ["admin", "super-admin"].includes(user?.role) ? (
+                <AddSubscriptionPage />
+              ) : (
+                <Navigate to="/admin-dashboard" replace />
+              )
             }
           />
         </Route>

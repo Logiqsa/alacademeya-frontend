@@ -10,6 +10,37 @@ const STATIC_INDEXABLE = {
   "/policies/course-terms": { title: "شروط شراء والالتحاق بالدورات" },
 };
 
+const PRIVATE_ROUTE_TITLES = [
+  ["/admin/course-finances/withdrawals", "طلبات السحب"],
+  ["/admin/course-finances", "مالية الدورات"],
+  ["/admin/course-categories", "تصنيفات الدورات"],
+  ["/admin/teacher-salaries", "رواتب المعلمين"],
+  ["/admin/subscription", "الاشتراكات"],
+  ["/admin/notifications", "الإشعارات"],
+  ["/admin/supervisors", "المشرفون"],
+  ["/admin/instructors", "المحاضرون"],
+  ["/admin/learners", "طلاب الدورات"],
+  ["/admin/teachers", "المعلمون"],
+  ["/admin/students", "الطلاب"],
+  ["/admin/parents", "أولياء الأمور"],
+  ["/admin/groups", "المجموعات"],
+  ["/admin/schedule", "جدول الحصص"],
+  ["/admin/records", "التسجيلات"],
+  ["/admin/courses", "الدورات"],
+  ["/admin/course-policies", "السياسات القانونية"],
+  ["/admin/payments", "المدفوعات"],
+  ["/admin/security/media", "أمان الوسائط"],
+  ["/admin/messages", "الرسائل"],
+  ["/admin/blogs", "المدونة"],
+  ["/admin/settings", "الإعدادات"],
+  ["/admin-dashboard", "لوحة التحكم"],
+];
+
+const privateRouteTitle = (path) =>
+  PRIVATE_ROUTE_TITLES.find(
+    ([prefix]) => path === prefix || path.startsWith(`${prefix}/`),
+  )?.[1];
+
 export const STATIC_INDEXABLE_PATHS = Object.freeze(Object.keys(STATIC_INDEXABLE));
 
 const isDynamicIndexable = (path) =>
@@ -26,7 +57,9 @@ export const routeSeoFor = (pathname) => {
     description: staticMetadata?.description || DEFAULT_DESCRIPTION,
     path: normalizedPath,
     noindex: !indexable,
-    title: staticMetadata?.title || (indexable ? undefined : "لوحة التحكم"),
+    title:
+      staticMetadata?.title ||
+      (indexable ? undefined : privateRouteTitle(normalizedPath) || "الأكاديمية"),
     lang: normalizedPath.startsWith("/certificates/verify") ? "en" : "ar",
   };
 };
