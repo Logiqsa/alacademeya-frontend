@@ -96,10 +96,10 @@ const Footer = () => {
                   href={whatsappLink(contactSettings.whatsappNumber)}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-2 text-[#123C91] hover:text-[#25D366]"
+                  className="flex items-center gap-2 text-[#123C91] hover:text-[#087A35]"
                   dir="ltr"
                 >
-                  <FaWhatsapp size={20} className="shrink-0 text-[#25D366]" />
+                  <FaWhatsapp size={20} className="shrink-0 text-[#087A35]" />
                   <span>{contactSettings.whatsappNumber}</span>
                 </a>
               )}

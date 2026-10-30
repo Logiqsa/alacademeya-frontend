@@ -367,7 +367,7 @@ export default function ChatBox({
               <button type="button" disabled={actionLoading} onClick={() => setConfirmAction(null)} className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60">
                 إلغاء
               </button>
-              <button type="button" disabled={actionLoading} onClick={confirmRequestedAction} className={`rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 ${confirmAction.destructive ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+              <button type="button" disabled={actionLoading} onClick={confirmRequestedAction} className={`rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 ${confirmAction.destructive ? "bg-red-600 hover:bg-red-700" : "bg-emerald-700 hover:bg-emerald-800"}`}>
                 {actionLoading ? "جاري التنفيذ..." : confirmAction.confirmLabel}
               </button>
             </div>

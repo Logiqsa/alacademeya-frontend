@@ -618,7 +618,7 @@ export const UserDetailsModal = ({
           }}
           className={`mb-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
             userWhatsappUrl
-              ? "bg-[#25D366] text-white hover:bg-[#20bd5a]"
+              ? "bg-[#087A35] text-white hover:bg-[#06672C]"
               : "cursor-not-allowed bg-gray-100 text-gray-400"
           }`}
         >
@@ -1011,7 +1011,7 @@ const ActionsMenu = ({
         const url = whatsappUrl(user.phone);
         if (url) window.open(url, "_blank");
       },
-      tone: user.phone ? "text-[#25D366]" : "text-gray-400",
+      tone: user.phone ? "text-[#087A35]" : "text-gray-400",
       disabled: !user.phone,
     },
   );

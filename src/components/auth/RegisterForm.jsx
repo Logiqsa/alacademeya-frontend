@@ -587,7 +587,7 @@ const RegisterForm = ({ type }) => {
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {passwordChecks.map((requirement) => (
                 <div key={requirement.label} className={`flex items-center gap-2 text-xs transition-colors ${requirement.met ? "text-emerald-600" : "text-[#6B7280]"}`}>
-                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${requirement.met ? "border-emerald-500 bg-emerald-500 text-white" : "border-[#9CA3AF] bg-white"}`}>
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${requirement.met ? "border-emerald-700 bg-emerald-700 text-white" : "border-[#9CA3AF] bg-white"}`}>
                     {requirement.met && <Check size={12} strokeWidth={3} />}
                   </span>
                   <span>{requirement.label}</span>

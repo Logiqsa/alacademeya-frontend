@@ -36,7 +36,7 @@ export default function CertificatePage() {
 
   return <StudentLayout><div dir='rtl' className='min-h-screen bg-[#F7F7FC] px-4 py-10'>
     <div className='mx-auto max-w-4xl text-center'>
-      <div className='mx-auto mb-5 grid h-14 w-14 place-items-center rounded-full bg-[#12C6B0] text-white'><Check size={32} /></div>
+      <div className='mx-auto mb-5 grid h-14 w-14 place-items-center rounded-full bg-[#087F73] text-white'><Check size={32} /></div>
       <h1 className='text-2xl font-extrabold'>تهانينا، تم إصدار شهادتك</h1>
       <section className='mt-8 border-[10px] border-double border-[#123C91] bg-white px-8 py-14 shadow-xl print:shadow-none'>
         <Award className='mx-auto text-[#123C91]' size={58} />

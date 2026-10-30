@@ -121,7 +121,7 @@ const AuthLayout = ({ children }) => {
               rel="noreferrer"
               aria-label="تواصل معنا عبر واتساب"
               title="تواصل معنا عبر واتساب"
-              className="flex size-13 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-all duration-300 hover:scale-110 hover:bg-[#1ebe5d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] [&_svg]:text-white"
+              className="flex size-13 items-center justify-center rounded-full bg-[#087A35] text-white shadow-lg transition-all duration-300 hover:scale-110 hover:bg-[#06672C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#087A35] [&_svg]:text-white"
             >
               <FaWhatsapp size={29} aria-hidden="true" />
             </a>

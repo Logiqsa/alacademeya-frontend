@@ -1085,7 +1085,7 @@ const NotificationsSection = ({
                   type="button"
                   disabled={approvingTeacher}
                   onClick={handleApproveTeacher}
-                  className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-700 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {approvingTeacher ? (
                     <Loader2 size={18} className="animate-spin" />
@@ -1111,7 +1111,7 @@ const NotificationsSection = ({
                 }}
                 className={`flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold !text-white ${
                   whatsappUrl(teacherDetails.phone)
-                    ? "bg-[#25D366] hover:bg-[#20bd5a]"
+                    ? "bg-[#087A35] hover:bg-[#06672C]"
                     : "cursor-not-allowed bg-gray-300"
                 }`}
               >

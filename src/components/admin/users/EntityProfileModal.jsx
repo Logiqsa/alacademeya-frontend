@@ -413,7 +413,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
             type="button"
             onClick={approveStudent}
             disabled={approving}
-            className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold !text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-semibold !text-white hover:bg-emerald-800 disabled:opacity-60"
           >
             {approving ? (
               <Loader2 size={18} className="animate-spin" />

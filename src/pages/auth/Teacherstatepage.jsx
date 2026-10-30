@@ -117,7 +117,7 @@ const AccountStatePage = () => {
           </div>
           <div className="bg-[#F9FAFA] rounded-2xl p-4 text-right flex flex-col gap-1">
             <div className="flex items-center gap-1.5 text-[#6B7280] text-[12px]">
-              <MessageCircle size={14} className="text-[#25D366]" />
+              <MessageCircle size={14} className="text-[#087A35]" />
               <span>تواصل معنا عبر واتساب</span>
             </div>
             <p className="text-[12px] text-[#6B7280] leading-5">
@@ -133,7 +133,7 @@ const AccountStatePage = () => {
           rel="noreferrer"
           aria-disabled={!whatsappUrl}
           onClick={(event) => { if (!whatsappUrl) event.preventDefault(); }}
-          className={`w-full h-12 mb-4 rounded-xl text-white font-semibold text-[15px] flex items-center justify-center gap-2 transition-colors ${whatsappUrl ? "bg-[#25D366] hover:bg-[#1ebe5d]" : "bg-gray-300 cursor-not-allowed"}`}
+          className={`w-full h-12 mb-4 rounded-xl text-white font-semibold text-[15px] flex items-center justify-center gap-2 transition-colors ${whatsappUrl ? "bg-[#087A35] hover:bg-[#06672C]" : "bg-gray-300 cursor-not-allowed"}`}
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           <MessageCircle size={18} />

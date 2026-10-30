@@ -314,7 +314,7 @@ const GroupsPage = () => {
         dir="rtl"
       >
         {toast && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-4 sm:px-6 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-semibold text-center w-[90%] sm:w-auto">
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-700 text-white px-4 sm:px-6 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-semibold text-center w-[90%] sm:w-auto">
             ✓ تم إنشاء مجموعتك بنجاح !
           </div>
         )}
