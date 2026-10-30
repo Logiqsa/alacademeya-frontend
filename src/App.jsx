@@ -112,6 +112,8 @@ class LazyRouteBoundary extends Component {
 
 function App() {
   const { user, checkingAccountState } = useContext(AuthContext);
+  const superAdminOnly = (page) =>
+    user?.role === "super-admin" ? page : <Navigate to="/forbidden" replace />;
 
   if (checkingAccountState) {
     return (
@@ -799,7 +801,10 @@ function App() {
             }
           />
           <Route path="/admin/course-finances/withdrawals" element={user ? <AdminWithdrawalsPage /> : <Navigate to="/login" replace />} />
-          <Route path="/admin/course-policies" element={user ? <AdminPoliciesPage /> : <Navigate to="/login" replace />} />
+          <Route
+            path="/admin/course-policies"
+            element={superAdminOnly(<AdminPoliciesPage />)}
+          />
           <Route
             path="/admin-dashboard"
             element={user ? <AdminHome /> : <Navigate to="/login" replace />}
@@ -894,13 +899,7 @@ function App() {
           />
           <Route
             path="/admin/supervisors"
-            element={
-              user?.role === "super-admin" ? (
-                <SupervisorsPage />
-              ) : (
-                <Navigate to="/admin-dashboard" replace />
-              )
-            }
+            element={superAdminOnly(<SupervisorsPage />)}
           />
           <Route
             path="/admin/teachers"
@@ -964,9 +963,7 @@ function App() {
           />
           <Route
             path="/admin/teacher-salaries"
-            element={
-              user ? <TeacherSalariesPage /> : <Navigate to="/login" replace />
-            }
+            element={superAdminOnly(<TeacherSalariesPage />)}
           />
           <Route
             path="/admin/subscriptions/:id"
@@ -981,33 +978,15 @@ function App() {
           <Route path="/admin/subscriptions/:id/renew" element={user ? <RenewSubscriptionPage /> : <Navigate to="/login" replace />} />
           <Route
             path="/admin/blogs"
-            element={
-              user?.role === "super-admin" ? (
-                <BlogsPage />
-              ) : (
-                <Navigate to="/admin-dashboard" replace />
-              )
-            }
+            element={superAdminOnly(<BlogsPage />)}
           />
           <Route
             path="/admin/blogs/add"
-            element={
-              user?.role === "super-admin" ? (
-                <BlogFormPage />
-              ) : (
-                <Navigate to="/admin-dashboard" replace />
-              )
-            }
+            element={superAdminOnly(<BlogFormPage />)}
           />
           <Route
             path="/admin/blogs/:id/edit"
-            element={
-              user?.role === "super-admin" ? (
-                <BlogFormPage />
-              ) : (
-                <Navigate to="/admin-dashboard" replace />
-              )
-            }
+            element={superAdminOnly(<BlogFormPage />)}
           />
           <Route
             path="/admin/subscriptions/requests/:id/activate"
@@ -1058,6 +1037,7 @@ function App() {
             </InstructorGuard>
           }
         />
+        <Route path="/forbidden" element={<NotFoundPage status={403} />} />
         {/* Fallback */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

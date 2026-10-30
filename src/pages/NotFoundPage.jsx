@@ -1,19 +1,20 @@
 import { useContext } from "react";
-import { ArrowLeft, Home, LayoutDashboard, SearchX } from "lucide-react";
+import { ArrowLeft, Home, LayoutDashboard, SearchX, ShieldX } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import logo from "../assets/icons/logo.svg";
 import { getDashboardPathByRole } from "../utils/roles";
 import Seo from "../components/seo/Seo";
 
-export default function NotFoundPage() {
+export default function NotFoundPage({ status = 404 }) {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const destination = user ? getDashboardPathByRole(user) : "/";
+  const forbidden = status === 403;
 
   return (
     <>
-    <Seo title="الصفحة غير موجودة" path={window.location.pathname} noindex />
+    <Seo title={forbidden ? "غير مصرح بالدخول" : "الصفحة غير موجودة"} path={window.location.pathname} noindex />
     <main
       dir="rtl"
       className="relative grid min-h-screen overflow-hidden bg-[#F4F7FC] px-4 py-8 sm:px-6"
@@ -34,15 +35,18 @@ export default function NotFoundPage() {
               <img src={logo} alt="الأكاديمية" className="h-10 w-auto" />
             </Link>
             <span className="w-fit rounded-full bg-[#E8F8F5] px-3 py-1.5 text-xs font-bold text-[#087F72]">
-              الصفحة غير موجودة
+              {forbidden ? "وصول غير مصرح" : "الصفحة غير موجودة"}
             </span>
             <h1 className="mt-5 text-3xl font-black leading-tight text-[#17213A] sm:text-4xl">
-              يبدو أنك وصلت إلى
-              <span className="block text-[#123C91]">صفحة غير متاحة</span>
+              {forbidden ? "هذه الصفحة خارج" : "يبدو أنك وصلت إلى"}
+              <span className="block text-[#123C91]">
+                {forbidden ? "نطاق صلاحيات حسابك" : "صفحة غير متاحة"}
+              </span>
             </h1>
             <p className="mt-4 max-w-lg text-sm leading-7 text-[#667085] sm:text-base">
-              ربما تم نقل الصفحة أو تغيير رابطها. يمكنك الرجوع للخلف أو الانتقال
-              إلى المكان المناسب لك.
+              {forbidden
+                ? "حسابك لا يملك الصلاحية اللازمة لعرض هذه الصفحة أو تنفيذ هذا الإجراء."
+                : "ربما تم نقل الصفحة أو تغيير رابطها. يمكنك الرجوع للخلف أو الانتقال إلى المكان المناسب لك."}
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -67,20 +71,26 @@ export default function NotFoundPage() {
             <div className="absolute -bottom-20 -left-14 h-64 w-64 rounded-full bg-[#12C6B0]/15" />
             <div className="relative text-center">
               <div className="relative mx-auto grid h-36 w-36 place-items-center rounded-[38px] border border-white/15 bg-white/10 shadow-2xl backdrop-blur-sm sm:h-44 sm:w-44">
-                <SearchX
+                {forbidden ? <ShieldX
                   size={72}
                   strokeWidth={1.35}
                   className="text-[#8FE3D8] sm:h-20 sm:w-20"
-                />
+                /> : <SearchX
+                  size={72}
+                  strokeWidth={1.35}
+                  className="text-[#8FE3D8] sm:h-20 sm:w-20"
+                />}
                 <span className="absolute -bottom-5 -left-5 grid h-14 w-14 place-items-center rounded-2xl bg-white text-xl font-black text-[#123C91] shadow-xl">
-                  ؟
+                  {forbidden ? "!" : "؟"}
                 </span>
               </div>
               <div className="mt-9 text-[76px] font-black leading-none tracking-tight sm:text-[96px]">
-                404
+                {status}
               </div>
               <p className="mt-3 text-sm font-medium text-white/70">
-                لم نتمكن من العثور على هذا الرابط
+                {forbidden
+                  ? "ليس لديك تصريح للوصول إلى هذه الصفحة"
+                  : "لم نتمكن من العثور على هذا الرابط"}
               </p>
             </div>
           </div>

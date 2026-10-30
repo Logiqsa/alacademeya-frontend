@@ -12,7 +12,22 @@ test("ordinary admins do not see super-admin navigation and package management",
 
   assert.match(sidebar, /superAdminOnly: true/);
   assert.match(sidebar, /user\?\.role === "super-admin"/);
+  assert.match(sidebar, /title: "السياسات القانونية"[\s\S]*?superAdminOnly: true/);
+  assert.match(sidebar, /title: "رواتب المعلمين"[\s\S]*?superAdminOnly: true/);
   assert.match(subscriptions, /tab\.key !== "packages"/);
+});
+
+test("platform settings and forbidden routes respect super-admin access", () => {
+  const settings = read(
+    "../src/components/admin/account-settings/AdminAccountSettings.jsx",
+  );
+  const app = read("../src/App.jsx");
+  const errorPage = read("../src/pages/NotFoundPage.jsx");
+
+  assert.match(settings, /admin\.role === "super-admin"[\s\S]*?<ContactSettingsCard/);
+  assert.match(app, /const superAdminOnly/);
+  assert.match(app, /path="\/forbidden"/);
+  assert.match(errorPage, /status === 403/);
 });
 
 test("saved academic structure delete actions are limited to super admins", () => {

@@ -73,7 +73,12 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
       items: [
         { title: "الدورات", icon: BookOpen, path: "/admin/courses" },
         { title: "التصنيفات", icon: Tags, path: "/admin/course-categories" },
-        { title: "السياسات القانونية", icon: Scale, path: "/admin/course-policies" },
+        {
+          title: "السياسات القانونية",
+          icon: Scale,
+          path: "/admin/course-policies",
+          superAdminOnly: true,
+        },
         {
           title: "مالية الدورات",
           icon: PiggyBank,
@@ -92,6 +97,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
           title: "رواتب المعلمين",
           icon: Banknote,
           path: "/admin/teacher-salaries",
+          superAdminOnly: true,
         },
       ],
     },

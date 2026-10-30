@@ -773,9 +773,13 @@ const AdminAccountSettings = () => {
         onUpdated={handleProfileUpdated}
       />
       <SecurityCard lastPasswordChange={admin.passwordChangedAt} />
-      <ContactSettingsCard />
-      <ExchangeRatesSettings />
-      <LandingStatsSettings />
+      {admin.role === "super-admin" && (
+        <>
+          <ContactSettingsCard />
+          <ExchangeRatesSettings />
+          <LandingStatsSettings />
+        </>
+      )}
     </div>
   );
 };
