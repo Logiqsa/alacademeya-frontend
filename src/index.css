@@ -566,3 +566,17 @@ select option {
 .border-secondary {
   border-color: var(--secondary);
 }
+
+/* Data tables: subtle zebra rows improve scanning without overriding rows
+   that deliberately carry a status/selection background utility. */
+:where(table tbody tr) {
+  transition: background-color 160ms ease;
+}
+
+:where(table tbody tr:nth-child(even)) {
+  background-color: #f7f9fc;
+}
+
+:where(table tbody tr:hover) {
+  background-color: #eef4fb;
+}
