@@ -169,6 +169,17 @@ const JOIN_ROLE_OPTIONS = [
   { value: "admin", label: "مشرف" },
 ];
 
+const roleDetailsLabel = (role) =>
+  ({
+    teacher: "المعلم",
+    student: "الطالب",
+    parent: "ولي الأمر",
+    user: "طالب الدورات",
+    instructor: "محاضر الدورات",
+    admin: "المشرف",
+    "super-admin": "المشرف العام",
+  })[role] || "المستخدم";
+
 const notificationUserRole = (notification) => {
   const sources = [notification, notification.data, notification.metadata];
   for (const source of sources) {
@@ -374,6 +385,7 @@ const NotificationsSection = ({
   const [deletingRead, setDeletingRead] = useState(false);
   const [teacherDetails, setTeacherDetails] = useState(null);
   const [teacherDetailsLoading, setTeacherDetailsLoading] = useState(false);
+  const [loadingUserRole, setLoadingUserRole] = useState("");
   const [approvingTeacher, setApprovingTeacher] = useState(false);
 
   const filtered = notifications.filter((n) => {
@@ -441,6 +453,11 @@ const NotificationsSection = ({
 
   const handleTeacherDetails = async (notification) => {
     if (!notification.isRead) await toggleRead(notification);
+    setLoadingUserRole(
+      isNewUserNotification(notification)
+        ? notificationUserRole(notification)
+        : "teacher",
+    );
     setTeacherDetailsLoading(true);
     try {
       if (isNewUserNotification(notification)) {
@@ -634,6 +651,7 @@ const NotificationsSection = ({
         curricula: listLabel(teacher.curriculums ?? teacher.curriculum),
         fileUrls: getTeacherFileUrls(teacher),
         role: "محاضر",
+        rawRole: "teacher",
         isTeacher: true,
       });
     } catch (err) {
@@ -945,7 +963,7 @@ const NotificationsSection = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="flex items-center gap-2 rounded-xl bg-white px-6 py-5 text-sm text-[#575F69] shadow-xl">
             <Loader2 size={18} className="animate-spin" />
-            جاري تحميل تفاصيل المعلم...
+            جاري تحميل تفاصيل {roleDetailsLabel(loadingUserRole)}...
           </div>
         </div>
       )}
@@ -960,7 +978,7 @@ const NotificationsSection = ({
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-6">
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-[#1F2937]">
-                تفاصيل المستخدم
+                تفاصيل {roleDetailsLabel(teacherDetails.rawRole)}
               </h3>
               <button
                 type="button"

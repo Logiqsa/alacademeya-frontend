@@ -16,6 +16,7 @@ import {
   ArrowDown,
   ArrowUpDown,
   CreditCard,
+  ArrowRight,
   ChevronDown,
   LoaderCircle,
 } from "lucide-react";
@@ -544,6 +545,8 @@ export const UserDetailsModal = ({
   onApprove,
   onToggleStatus,
   onDelete,
+  onChildClick,
+  onBack,
 }) => {
   const navigate = useNavigate();
 
@@ -568,9 +571,16 @@ export const UserDetailsModal = ({
         dir="rtl"
       >
         <div className="flex items-center justify-between mb-4">
-          <span className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937]">
-            تفاصيل المستخدم
-          </span>
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <button type="button" onClick={onBack} aria-label="الرجوع لولي الأمر" className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EAF4FF] text-[#123C91] hover:bg-[#dbe7fc]">
+                <ArrowRight size={16} />
+              </button>
+            )}
+            <span className="font-['Tajawal'] font-semibold text-[16px] text-[#1F2937]">
+              {isTeacher ? "تفاصيل المعلم" : isParent ? "تفاصيل ولي الأمر" : isStudent ? "تفاصيل الطالب" : "تفاصيل المستخدم"}
+            </span>
+          </div>
 
           <button
             type="button"
@@ -836,14 +846,18 @@ export const UserDetailsModal = ({
 
         {isParent && (
           <div className="grid grid-cols-2 gap-2 mb-2">
-            <DetailRow
-              label={user.childrenCount === 1 ? "اسم الابن" : "أسماء الأبناء"}
-              value={
-                user.children?.length
-                  ? user.children.map((child) => child.name).join("، ")
-                  : "لا يوجد أبناء مرتبطون"
-              }
-            />
+            <div className="rounded-xl bg-[#F9FAFA] px-4 py-3">
+              <p className="text-xs text-[#8C9198]">{user.childrenCount === 1 ? "اسم الابن" : "أسماء الأبناء"}</p>
+              {user.children?.length ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {user.children.map((child) => (
+                    <button key={child.id} type="button" onClick={() => onChildClick?.(child)} className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-[#123C91] hover:border-[#123C91] hover:bg-blue-100">
+                      {child.name}
+                    </button>
+                  ))}
+                </div>
+              ) : <p className="mt-1 text-sm font-medium text-[#1F2937]">لا يوجد أبناء مرتبطون</p>}
+            </div>
             <DetailRow label="عدد الأبناء" value={user.childrenCount ?? 0} />
           </div>
         )}
@@ -1149,7 +1163,18 @@ const MobileCard = ({
   onOpenChat,
 }) => (
   <div
-    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4"
+    role="button"
+    tabIndex={0}
+    onClick={(event) => {
+      if (!event.target.closest("button, a, input, select, textarea")) onView?.(u);
+    }}
+    onKeyDown={(event) => {
+      if (["Enter", " "].includes(event.key) && event.target === event.currentTarget) {
+        event.preventDefault();
+        onView?.(u);
+      }
+    }}
+    className="cursor-pointer bg-white rounded-2xl border border-gray-200 shadow-sm p-4 focus-visible:outline-2 focus-visible:outline-[#123C91]"
     dir="rtl"
   >
     <div className="flex items-center justify-between mb-3">
@@ -1206,6 +1231,7 @@ const UsersTable = ({
   onSort,
 }) => {
   const [detailsUser, setDetailsUser] = useState(null);
+  const [detailsParent, setDetailsParent] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [retainedUser, setRetainedUser] = useState(null);
@@ -1609,7 +1635,17 @@ const UsersTable = ({
                 {users.map((user) => (
                   <tr
                     key={user.id}
-                    className="hover:bg-gray-50/70 transition-colors"
+                    onClick={(event) => {
+                      if (!event.target.closest("button, a, input, select, textarea")) handleView(user);
+                    }}
+                    onKeyDown={(event) => {
+                      if (["Enter", " "].includes(event.key) && event.target === event.currentTarget) {
+                        event.preventDefault();
+                        handleView(user);
+                      }
+                    }}
+                    tabIndex={0}
+                    className="cursor-pointer hover:bg-gray-50/70 transition-colors focus-visible:outline-2 focus-visible:outline-[#123C91] focus-visible:outline-offset-[-2px]"
                   >
                     <td className="px-5 py-3.5">
                       <UserCell
@@ -1669,6 +1705,7 @@ const UsersTable = ({
         open={Boolean(detailsUser)}
         onClose={() => {
           setDetailsUser(null);
+          setDetailsParent(null);
           setReportError("");
         }}
         user={detailsUser}
@@ -1679,6 +1716,31 @@ const UsersTable = ({
         onApprove={handleApprove}
         onToggleStatus={handleToggleStatus}
         onDelete={handleDelete}
+        onChildClick={(child) => {
+          setDetailsParent(detailsUser);
+          handleView({
+            id: child.userId,
+            studentId: child.id,
+            name: child.name,
+            email: child.email,
+            phone: child.phone,
+            username: child.username,
+            role: "طالب أكاديمي",
+            status: child.registrationStatus?.startsWith("pending")
+              ? "معلق"
+              : child.isActive === false ? "موقوف" : "نشط",
+            joinDate: child.createdAt
+              ? new Date(child.createdAt).toLocaleDateString("en-CA")
+              : "—",
+            stage: child.stage?.name?.ar || child.stage?.name?.en || "—",
+            grade: child.grade?.name?.ar || child.grade?.name?.en || "—",
+            studentSubjects: (child.preferredSubjects || []).map((subject) => subject?.name?.ar || subject?.name?.en).filter(Boolean),
+          });
+        }}
+        onBack={detailsParent ? () => {
+          setDetailsUser(detailsParent);
+          setDetailsParent(null);
+        } : undefined}
       />
 
       <ConfirmDialog

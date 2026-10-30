@@ -65,6 +65,24 @@ test("admin document titles follow the active sidebar page", () => {
   assert.equal(routeSeoFor("/admin-dashboard").title, "لوحة التحكم");
 });
 
+test("document titles follow pages across every dashboard type", () => {
+  const expectations = {
+    "/parent-dashboard": "لوحة تحكم ولي الأمر",
+    "/parent/children": "الأبناء",
+    "/student-dashboard": "لوحة تحكم الطالب",
+    "/student/assignments": "الواجبات",
+    "/learner-dashboard": "لوحة تحكم طالب الدورات",
+    "/teacher-dashboard": "لوحة تحكم المعلم",
+    "/teacher/groups/123/students": "المجموعات",
+    "/instructor-dashboard": "لوحة تحكم المحاضر",
+    "/admin/users": "المستخدمون",
+    "/login": "تسجيل الدخول",
+  };
+  Object.entries(expectations).forEach(([path, title]) => {
+    assert.equal(routeSeoFor(path).title, title, path);
+  });
+});
+
 test("route matcher uses explicit semantics and normalizes trailing slashes", () => {
   const expectations = {
     "/admin": true,

@@ -36,7 +36,8 @@ test("parent details show linked children without placeholder data", async () =>
   const table = await read("../src/components/admin/users/Userstable.jsx");
 
   assert.match(mapper, /children: Array\.isArray\(u\.children\)/);
-  assert.match(table, /user\.children\.map\(\(child\) => child\.name\)/);
+  assert.match(table, /user\.children\.map\(\(child\) => \(/);
+  assert.match(table, /onChildClick\?\.\(child\)/);
   assert.match(table, /لا يوجد أبناء مرتبطون/);
   assert.doesNotMatch(table, /علي محمد/);
 });
