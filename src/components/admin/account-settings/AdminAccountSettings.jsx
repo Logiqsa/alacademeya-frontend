@@ -719,16 +719,27 @@ const AdminAccountSettings = () => {
     <div className="space-y-5" dir="rtl">
       <Breadcrumbs homeTo="/admin-dashboard" />
       {/* Page title */}
-      <div
-        className="max-w-7xl mx-auto p-2 font-['IBM_Plex_Sans_Arabic'] text-right"
-        dir="rtl"
-      >
-        <h1 className="text-[24px] font-semibold leading-8 text-[#123C91] mb-2">
-          إعدادات الحساب
-        </h1>
-        <p className="text-[16px] font-normal leading-6 text-[#575F69]">
-          إدارة معلومات حسابك وتفضيلاتك
-        </p>
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 p-2 font-['IBM_Plex_Sans_Arabic'] text-right sm:flex-row sm:items-center sm:justify-between" dir="rtl">
+        <div>
+          <h1 className="mb-2 text-[24px] font-semibold leading-8 text-[#123C91]">
+            إعدادات الحساب
+          </h1>
+          <p className="text-[16px] font-normal leading-6 text-[#575F69]">
+            إدارة معلومات حسابك وتفضيلاتك
+          </p>
+        </div>
+        {admin.role === "super-admin" && (
+          <a
+            href={apiDocsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-10 w-fit items-center justify-center gap-2 rounded-lg bg-[#123C91] px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0E2F72]"
+            title="فتح توثيق واجهات API"
+          >
+            <ExternalLink size={16} />
+            <span>API Docs</span>
+          </a>
+        )}
       </div>
 
       {/* Header card — avatar letter + name */}
@@ -765,20 +776,6 @@ const AdminAccountSettings = () => {
       <ContactSettingsCard />
       <ExchangeRatesSettings />
       <LandingStatsSettings />
-      {admin.role === "super-admin" && (
-        <div className="flex justify-end px-1 pb-2">
-          <a
-            href={apiDocsUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-[#667085] transition-colors hover:bg-[#F2F4F7] hover:text-[#123C91]"
-            title="فتح توثيق واجهات API"
-          >
-            <ExternalLink size={13} />
-            <span>API Docs</span>
-          </a>
-        </div>
-      )}
     </div>
   );
 };
