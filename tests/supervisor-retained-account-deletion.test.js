@@ -12,4 +12,6 @@ test("supervisors with retained records use the existing safe anonymization flow
   assert.match(source, /getUserDeletionImpact\(deleteTarget\.id\)/);
   assert.match(source, /anonymizeRetainedUser\(retainedTarget\.supervisor\.id/);
   assert.match(source, /إخفاء الحساب بأمان/);
+  assert.match(source, /retainedRecordSummary/);
+  assert.match(source, /PolicyVersion: "السياسات القانونية"/);
 });

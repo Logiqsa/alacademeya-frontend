@@ -22,6 +22,17 @@ import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration
 
 const PAGE_SIZE = 6;
 const SUPERVISOR_ROLES = ["admin", "super-admin"];
+const RETAINED_RECORD_LABELS = {
+  PolicyVersion: "السياسات القانونية",
+  SubscriptionOrder: "طلبات الاشتراك",
+  TeacherSalary: "رواتب المعلمين",
+  CourseModerationReview: "مراجعات الدورات",
+  CourseEnrollment: "تسجيلات الدورات",
+  Session: "الحصص",
+  Assignment: "الواجبات",
+  ClassroomSchedule: "جداول المجموعات",
+  BlogPost: "مقالات المدونة",
+};
 
 // حوّل شكل اليوزر الراجع من الـ API لشكل الجدول
 const mapUserToSupervisor = (u) => ({
@@ -201,6 +212,13 @@ const SupervisorsPage = () => {
     }
   };
 
+  const retainedRecordSummary = (retainedTarget?.impact?.references || [])
+    .map(
+      (reference) =>
+        `${RETAINED_RECORD_LABELS[reference.type] || reference.type}: ${reference.count}`,
+    )
+    .join("، ");
+
   if (user?.role !== "super-admin") {
     return <Navigate to="/admin-dashboard" replace />;
   }
@@ -329,11 +347,9 @@ const SupervisorsPage = () => {
         <ConfirmDialog
           open={Boolean(retainedTarget)}
           title="سجلات مرتبطة بحساب المشرف"
-          message={`لا يمكن حذف "${retainedTarget?.supervisor?.name || "المشرف"}" نهائيًا لأن الحساب مرتبط بسجلات إدارية محفوظة${
-            retainedTarget?.impact?.references?.length
-              ? ` (${retainedTarget.impact.references.reduce((total, item) => total + (item.count || 0), 0)} سجل)`
-              : ""
-          }. يمكنك إيقاف الحساب وإخفاء بياناته الشخصية مع الإبقاء على سجلات التدقيق.`}
+          message={`لا يمكن حذف "${retainedTarget?.supervisor?.name || "المشرف"}" نهائيًا لأن الحساب مرتبط بسجلات محفوظة${
+            retainedRecordSummary ? `: ${retainedRecordSummary}` : " داخلية للتدقيق"
+          }. يمكنك إيقاف الحساب وإخفاء بياناته الشخصية مع الإبقاء على السجلات.`}
           confirmLabel="إخفاء الحساب بأمان"
           loading={deleting}
           onConfirm={handleAnonymizeRetainedSupervisor}
