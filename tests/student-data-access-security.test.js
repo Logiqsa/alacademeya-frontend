@@ -64,6 +64,8 @@ test("admin registration notifications do not enumerate the global user director
   assert.doesNotMatch(notifications, /\bgetUsers\b/);
   assert.match(notifications, /getTeachers\(\{ page: 1, limit: 1000 \}\)/);
   assert.match(notifications, /getAllStudents\(\{ page: 1, limit: 1000 \}\)/);
+  assert.match(notifications, /const user = matchedUser \|\|/);
+  assert.match(notifications, /notificationUserRole\(notification\) \|\| "user"/);
 });
 
 test("admin message and supervisor screens keep directory-only actions super-admin scoped", async () => {

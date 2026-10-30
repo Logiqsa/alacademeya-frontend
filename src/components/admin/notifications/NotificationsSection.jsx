@@ -469,16 +469,25 @@ const NotificationsSection = ({
             role: profile.user?.role || "student",
           })),
         ];
-        const user = users.find(
+        const matchedUser = users.find(
           (item) =>
             (wantedId && String(item.id || item._id) === String(wantedId)) ||
             (wantedName && (item.fullName || item.name) === wantedName),
         );
 
-        if (!user) {
-          toast.error("تعذر العثور على بيانات المستخدم المرتبط بالإشعار");
-          return;
-        }
+        // Some join notifications belong to parents, supervisors or course
+        // learners, which intentionally have no teacher/student profile.
+        // The notification itself contains the safe identity summary needed
+        // by this dialog, so keep it usable instead of showing a false error.
+        const notificationData = notification.data || notification.metadata || {};
+        const user = matchedUser || {
+          id: wantedId,
+          _id: wantedId,
+          fullName: wantedName,
+          username: notificationData.username,
+          role: notificationUserRole(notification) || "user",
+          registrationStatus: notificationData.registrationStatus,
+        };
 
         let teacherProfile = null;
         let studentProfile = null;

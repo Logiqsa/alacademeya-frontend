@@ -187,12 +187,10 @@ const TeachersPage = () => {
         curriculumsResponse ? apiList(curriculumsResponse, ["curriculums"]) : [],
       );
 
-      const completedTeachers = list.filter(
-        (teacher) => !hasIncompleteRegistration(teacher),
-      );
-      const rows = completedTeachers.map((teacher) => {
+      const rows = list.map((teacher) => {
           const id = teacher.id || teacher._id;
           const summary = teacher.monthlySummary || {};
+          const isProfileIncomplete = hasIncompleteRegistration(teacher);
 
           return {
             id,
@@ -212,13 +210,16 @@ const TeachersPage = () => {
             gradeIds: listIds(teacher.grades ?? teacher.grade),
             curriculumIds: listIds(teacher.curriculums ?? teacher.curriculum),
             status:
-              teacher.status === "approved"
+              isProfileIncomplete
+                ? "الملف غير مكتمل"
+                : teacher.status === "approved"
                 ? "مقبول"
                 : teacher.status === "rejected"
                   ? "مرفوض"
                   : "في انتظار المراجعة",
             isApproved: teacher.status === "approved",
             isRejected: teacher.status === "rejected",
+            isProfileIncomplete,
             fileUrls: getTeacherFileUrls(teacher),
             createdAt: teacher.createdAt || teacher.user?.createdAt,
             raw: teacher,
@@ -334,8 +335,7 @@ const TeachersPage = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
   // The per-teacher totals are now computed by the API. This small local sum
-  // deliberately preserves the previous behavior of counting only displayed,
-  // completed teacher profiles.
+  // deliberately preserves the previous behavior of summing displayed profiles.
   const totalMinutes = teachers.reduce(
     (sum, teacher) => sum + Number(teacher.monthlyMinutes || 0),
     0,
@@ -645,6 +645,7 @@ const TeachersPage = () => {
                         "الساعات الشهرية",
                         "الحصص المكتملة",
                         "الغياب",
+                        "الحالة",
                         "الإجراءات",
                       ].map((header) => (
                         <th
@@ -714,12 +715,14 @@ const TeachersPage = () => {
                           </button>
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${teacher.isApproved ? "bg-emerald-50 text-emerald-700" : teacher.isRejected ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}
-                            >
-                              {teacher.status}
-                            </span>
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${teacher.isProfileIncomplete ? "bg-slate-100 text-slate-700" : teacher.isApproved ? "bg-emerald-50 text-emerald-700" : teacher.isRejected ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}
+                          >
+                            {teacher.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="flex items-center">
                             <button
                               type="button"
                               onClick={() => openTeacherDetails(teacher)}
