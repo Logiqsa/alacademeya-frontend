@@ -155,7 +155,7 @@ const UsersPage = ({
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const canReadAllUsers = currentRole === "super-admin";
+      const canReadAllUsers = ["admin", "super-admin"].includes(currentRole);
       const [list, studentsResponse, teachersResponse] = await Promise.all([
         canReadAllUsers ? fetchAllAdminUsers() : Promise.resolve([]),
         getAllStudents({ page: 1, limit: FETCH_LIMIT }).catch(() => null),
@@ -197,8 +197,8 @@ const UsersPage = ({
             .filter((id) => id && !knownUserIds.has(String(id))),
         ),
       ];
-      // Only super-admin can retrieve a missing account record individually.
-      // An admin keeps the scoped profile data instead of bypassing /users.
+      // Both admin roles can retrieve ordinary accounts; the backend keeps
+      // privileged admin accounts hidden from a regular admin.
       if (canReadAllUsers && missingUserIds.length) {
         const missingUserResponses = await Promise.allSettled(
           missingUserIds.map((userId) => getUser(userId)),
@@ -672,7 +672,7 @@ const UsersPage = ({
             {description}
           </p>
           </div>
-          {fixedRole === "طالب أكاديمي" && currentUser?.role === "super-admin" && <button onClick={() => navigate("/admin/students/new")} className="shrink-0 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">إنشاء طالب</button>}
+          {fixedRole === "طالب أكاديمي" && ["admin", "super-admin"].includes(currentUser?.role) && <button onClick={() => navigate("/admin/students/new")} className="shrink-0 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">إنشاء طالب</button>}
         </div>
 
         {!fixedRole && <div className="mb-6">

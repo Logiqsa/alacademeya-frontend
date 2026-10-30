@@ -108,7 +108,7 @@ export default function CreateStudentPage() {
     } finally { setSubmitting(false); }
   };
 
-  if (user?.role !== "super-admin") return <Navigate to="/admin/users" replace />;
+  if (!["admin", "super-admin"].includes(user?.role)) return <Navigate to="/admin/users" replace />;
 
   return <AdminLayout><Breadcrumbs homeTo="/admin-dashboard" /><main dir="rtl" className="mx-auto w-full max-w-6xl p-3 font-['IBM_Plex_Sans_Arabic'] sm:p-6">
     <div className="rounded-2xl bg-gradient-to-l from-[#123C91] to-[#1D55B3] px-5 py-4 text-white shadow-sm sm:px-6">

@@ -47,7 +47,7 @@ test("admin user management stays within its authorized profile endpoints", asyn
   const source = await read("../src/pages/admin/users/Userspage.jsx");
 
   assert.match(source, /const currentRole = currentUser\?\.role/);
-  assert.match(source, /const canReadAllUsers = currentRole === "super-admin"/);
+  assert.match(source, /const canReadAllUsers = \["admin", "super-admin"\]\.includes\(currentRole\)/);
   assert.match(
     source,
     /canReadAllUsers \? fetchAllAdminUsers\(\) : Promise\.resolve\(\[\]\)/,
