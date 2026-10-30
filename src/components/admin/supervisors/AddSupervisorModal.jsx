@@ -395,11 +395,21 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
       const isUsernameConflict =
         /اسم المستخدم/.test(msg) ||
         (/USERNAME/i.test(msg) && /(EXIST|TAKEN|DUPLICATE)/i.test(msg));
+      const isPhoneConflict =
+        /رقم الهاتف/.test(msg) ||
+        (/PHONE/i.test(msg) && /(EXIST|TAKEN|DUPLICATE)/i.test(msg));
+      const isEmailConflict =
+        /البريد الإلكتروني/.test(msg) ||
+        (/EMAIL/i.test(msg) && /(EXIST|TAKEN|DUPLICATE)/i.test(msg));
       setErrors((p) => ({
         ...p,
-        ...(isUsernameConflict
-          ? { username: "اسم المستخدم مستخدم بالفعل، اختر اسمًا آخر", form: null }
-          : { form: msg }),
+        ...(isPhoneConflict
+          ? { phone: "رقم الهاتف مستخدم بالفعل لحساب آخر", form: null }
+          : isEmailConflict
+            ? { email: "البريد الإلكتروني مستخدم بالفعل لحساب آخر", form: null }
+            : isUsernameConflict
+              ? { username: "اسم المستخدم مستخدم بالفعل، اختر اسمًا آخر", form: null }
+              : { form: msg }),
       }));
     } finally {
       setSaving(false);

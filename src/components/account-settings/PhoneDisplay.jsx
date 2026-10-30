@@ -43,15 +43,9 @@ export default function PhoneDisplay({ phone, country, countryCode, options = []
   const matchedCountry = resolveCountry({ phone, country, countryCode, options });
   const dialCode = dialCodeOf(matchedCountry);
   const phoneDigits = digits(phone);
-  const hasInternationalPrefix =
-    String(phone || "").trim().startsWith("+") &&
-    dialCode &&
-    phoneDigits.startsWith(dialCode);
-  const localNumber = hasInternationalPrefix
+  const localNumber = dialCode && phoneDigits.startsWith(dialCode)
     ? phoneDigits.slice(dialCode.length)
-    : dialCode
-      ? phoneDigits.replace(/^0+/, "")
-      : phoneDigits;
+    : phoneDigits;
   const flag = flagEmoji(matchedCountry?.code || matchedCountry?.countryCode);
 
   if (!dialCode) {

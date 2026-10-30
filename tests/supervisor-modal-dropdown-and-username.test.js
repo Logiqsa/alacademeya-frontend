@@ -23,4 +23,6 @@ test("supervisor username is visible, editable and sent explicitly", () => {
   assert.match(source, /if \(!data\.username\.trim\(\)\)/);
   assert.match(source, /username: data\.username/);
   assert.match(source, /اسم المستخدم مستخدم بالفعل، اختر اسمًا آخر/);
+  assert.match(source, /رقم الهاتف مستخدم بالفعل لحساب آخر/);
+  assert.match(source, /البريد الإلكتروني مستخدم بالفعل لحساب آخر/);
 });

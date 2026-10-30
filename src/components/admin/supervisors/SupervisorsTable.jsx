@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { MoreVertical, Pencil, Ban, Trash2 } from "lucide-react";
-import PhoneDisplay from "../../account-settings/PhoneDisplay";
 
 const StatusBadge = ({ status }) => {
   const isActive = status === "نشط";
@@ -165,13 +164,11 @@ const ActionsMenu = ({ s, onEdit, onToggleSuspend, onDelete }) => {
 };
 
 /* ─── Desktop Table Row ─────────────────────────────────────────────────── */
-const TableRow = ({ s, countryOptions, onEdit, onToggleSuspend, onDelete }) => (
+const TableRow = ({ s, onEdit, onToggleSuspend, onDelete }) => (
   <tr className="border-b border-[#E5E5E5] last:border-b-0 hover:bg-[#F9FAFA] transition-colors bg-white">
     <td className="px-4 py-4 text-[14px] font-medium text-[#1F2937]">{s.name}</td>
     <td className="px-4 py-4 text-[14px] text-[#575F69]">{s.email}</td>
-    <td className="px-4 py-4 text-[14px] text-[#575F69]">
-      <PhoneDisplay phone={s.phone} country={s.countryId} countryCode={s.countryCode} options={countryOptions} />
-    </td>
+    <td className="px-4 py-4 text-[14px] text-[#575F69]" dir="ltr">{s.phone}</td>
     <td className="px-4 py-4"><RoleBadge role={s.role} /></td>
     <td className="px-4 py-4"><StatusBadge status={s.status} /></td>
     <td className="px-4 py-4">
@@ -181,7 +178,7 @@ const TableRow = ({ s, countryOptions, onEdit, onToggleSuspend, onDelete }) => (
 );
 
 /* ─── Mobile Card ────────────────────────────────────────────────────────── */
-const MobileCard = ({ s, countryOptions, onEdit, onToggleSuspend, onDelete }) => (
+const MobileCard = ({ s, onEdit, onToggleSuspend, onDelete }) => (
   <div className="bg-white border border-[#E5E5E5] rounded-2xl p-4 space-y-3 font-['IBM_Plex_Sans_Arabic']" dir="rtl">
     <div className="flex items-center justify-between">
       <span className="text-[15px] font-medium text-[#1F2937]">{s.name}</span>
@@ -195,9 +192,7 @@ const MobileCard = ({ s, countryOptions, onEdit, onToggleSuspend, onDelete }) =>
       </div>
       <div className="flex items-center justify-between">
         <span className="text-[12px] text-[#9CA3AF]">رقم الهاتف</span>
-        <span className="text-[13px] text-[#575F69]">
-          <PhoneDisplay phone={s.phone} country={s.countryId} countryCode={s.countryCode} options={countryOptions} />
-        </span>
+        <span className="text-[13px] text-[#575F69]" dir="ltr">{s.phone}</span>
       </div>
       <div className="flex items-center justify-between">
         <span className="text-[12px] text-[#9CA3AF]">الصلاحية</span>
@@ -212,7 +207,7 @@ const MobileCard = ({ s, countryOptions, onEdit, onToggleSuspend, onDelete }) =>
 );
 
 /* ─── Main Component ─────────────────────────────────────────────────────── */
-const SupervisorsTable = ({ supervisors = [], countryOptions = [], onEdit, onToggleSuspend, onDelete }) => {
+const SupervisorsTable = ({ supervisors = [], onEdit, onToggleSuspend, onDelete }) => {
   return (
     <>
       <div className="hidden sm:block bg-white border border-[#E5E5E5] rounded-2xl overflow-hidden shadow-[0px_0px_4px_0px_rgba(0,0,0,0.08)]">
@@ -230,7 +225,7 @@ const SupervisorsTable = ({ supervisors = [], countryOptions = [], onEdit, onTog
             </thead>
             <tbody>
               {supervisors.map((s) => (
-                <TableRow key={s.id} s={s} countryOptions={countryOptions} onEdit={onEdit} onToggleSuspend={onToggleSuspend} onDelete={onDelete} />
+                <TableRow key={s.id} s={s} onEdit={onEdit} onToggleSuspend={onToggleSuspend} onDelete={onDelete} />
               ))}
               {supervisors.length === 0 && (
                 <tr>
@@ -249,7 +244,7 @@ const SupervisorsTable = ({ supervisors = [], countryOptions = [], onEdit, onTog
           <p className="text-center text-[#9CA3AF] text-[14px] py-10">لا توجد نتائج مطابقة</p>
         ) : (
           supervisors.map((s) => (
-            <MobileCard key={s.id} s={s} countryOptions={countryOptions} onEdit={onEdit} onToggleSuspend={onToggleSuspend} onDelete={onDelete} />
+            <MobileCard key={s.id} s={s} onEdit={onEdit} onToggleSuspend={onToggleSuspend} onDelete={onDelete} />
           ))
         )}
       </div>
