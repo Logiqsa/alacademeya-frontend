@@ -3,6 +3,7 @@ import {
   Pencil,
   Eye,
   EyeOff,
+  ExternalLink,
   Loader2,
   Mail,
   MessageCircle,
@@ -21,6 +22,7 @@ import {
   updatePassword,
 } from "../../../services/APIService";
 import { AuthContext } from "../../../context/AuthContext"; // عدّل المسار حسب مشروعك
+import { API_BASE_URL } from "../../../services/apiUrl";
 import {
   countryOption,
   getCountryId,
@@ -711,6 +713,7 @@ const AdminAccountSettings = () => {
 
   const firstLetter =
     (admin.fullName || "").trim().charAt(0).toUpperCase() || "؟";
+  const apiDocsUrl = `${API_BASE_URL.replace(/\/api\/?$/, "")}/api-docs`;
 
   return (
     <div className="space-y-5" dir="rtl">
@@ -762,6 +765,20 @@ const AdminAccountSettings = () => {
       <ContactSettingsCard />
       <ExchangeRatesSettings />
       <LandingStatsSettings />
+      {admin.role === "super-admin" && (
+        <div className="flex justify-end px-1 pb-2">
+          <a
+            href={apiDocsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-[#667085] transition-colors hover:bg-[#F2F4F7] hover:text-[#123C91]"
+            title="فتح توثيق واجهات API"
+          >
+            <ExternalLink size={13} />
+            <span>API Docs</span>
+          </a>
+        </div>
+      )}
     </div>
   );
 };
