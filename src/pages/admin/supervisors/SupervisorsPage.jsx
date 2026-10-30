@@ -7,7 +7,7 @@ import SupervisorsFilters from "../../../components/admin/supervisors/Supervisor
 import SupervisorsTable from "../../../components/admin/supervisors/SupervisorsTable";
 import AddSupervisorModal from "../../../components/admin/supervisors/AddSupervisorModal";
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
-import { getUsers, updateUser, deleteUser } from "../../../services/APIService";
+import { getUsers, updateUser, deleteUser, getCountries } from "../../../services/APIService";
 import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
@@ -24,6 +24,7 @@ const mapUserToSupervisor = (u) => ({
   email: u.email,
   phone: u.phone,
   countryId: u.country?.id || u.country, // ⚠️ عدّل حسب شكل الحقل الراجع من الباك اند (object ولا id مباشرة)
+  countryCode: u.countryCode || u.country?.code,
   role: u.role || "admin", // ⚠️ عدّل حسب اسم الحقل الفعلي لو مختلف ("admin" | "super-admin")
   isActive: Boolean(u.isActive ?? u.isVerified), // ⚠️ عدّل حسب اسم الحقل الفعلي
   status: hasIncompleteRegistration(u)
@@ -48,6 +49,7 @@ const SupervisorsPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   const [supervisors, setSupervisors] = useState([]);
+  const [countryOptions, setCountryOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -67,9 +69,12 @@ const SupervisorsPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const responses = await Promise.all(
-        SUPERVISOR_ROLES.map((role) => getUsers({ role })),
-      );
+      const [responses, countriesResponse] = await Promise.all([
+        Promise.all(SUPERVISOR_ROLES.map((role) => getUsers({ role }))),
+        getCountries(),
+      ]);
+      const countries = countriesResponse.data?.data || countriesResponse.data || [];
+      setCountryOptions(Array.isArray(countries) ? countries : []);
       const list = responses.flatMap(extractUsersList);
       const uniqueUsers = Array.from(
         new Map(
@@ -244,6 +249,7 @@ const SupervisorsPage = () => {
           ) : (
             <SupervisorsTable
               supervisors={paginated}
+              countryOptions={countryOptions}
               onEdit={handleEdit}
               onToggleSuspend={handleToggleSuspend}
               onDelete={handleDeleteRequest}
