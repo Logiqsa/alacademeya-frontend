@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { createUser, updateUser, getCountries } from "../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان ملف api.js عندك
 import { getArabicCountryName } from "../../../utils/countryName";
@@ -47,6 +48,9 @@ const CountryDropdown = ({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState(null);
 
   const selected = countries.find((c) => c.id === value);
   const filtered = countries.filter((c) =>
@@ -55,11 +59,42 @@ const CountryDropdown = ({
 
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (
+        ref.current &&
+        !ref.current.contains(e.target) &&
+        !menuRef.current?.contains(e.target)
+      ) {
+        setOpen(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const positionMenu = () => {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const menuHeight = 250;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openAbove = spaceBelow < menuHeight && rect.top > spaceBelow;
+      setMenuPosition({
+        left: rect.left,
+        top: openAbove ? Math.max(8, rect.top - menuHeight - 4) : rect.bottom + 4,
+        width: rect.width,
+      });
+    };
+
+    positionMenu();
+    window.addEventListener("resize", positionMenu);
+    window.addEventListener("scroll", positionMenu, true);
+    return () => {
+      window.removeEventListener("resize", positionMenu);
+      window.removeEventListener("scroll", positionMenu, true);
+    };
+  }, [open]);
 
   return (
     <div ref={ref} className="relative w-full">
@@ -67,6 +102,7 @@ const CountryDropdown = ({
         الدولة
       </label>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => {
           if (!loading) {
@@ -102,8 +138,18 @@ const CountryDropdown = ({
         <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>
       )}
 
-      {open && (
-        <div className="absolute top-full right-0 left-0 mt-1 bg-white border border-[#E5E5E5] rounded-lg shadow-lg z-50 overflow-hidden">
+      {open && menuPosition && createPortal(
+        <div
+          ref={menuRef}
+          dir="rtl"
+          style={{
+            position: "fixed",
+            left: menuPosition.left,
+            top: menuPosition.top,
+            width: menuPosition.width,
+          }}
+          className="z-[1000] bg-white border border-[#E5E5E5] rounded-lg shadow-xl overflow-hidden"
+        >
           <div className="p-2 border-b border-[#E5E5E5]">
             <input
               type="text"
@@ -129,7 +175,8 @@ const CountryDropdown = ({
               </li>
             ))}
           </ul>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -205,6 +252,7 @@ const RoleSelector = ({ value, onChange, error }) => (
 
 const EMPTY_FORM = {
   name: "",
+  username: "",
   email: "",
   phone: "",
   password: "",
@@ -249,6 +297,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
             : rawPhone;
           setData({
             name: supervisor.name || "",
+            username: supervisor.username || "",
             email: supervisor.email || "",
             phone: localPhone.replace(/[^\d+]/g, ""),
             password: "",
@@ -278,6 +327,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
   const validate = () => {
     const next = {};
     if (!data.name.trim()) next.name = "الاسم بالكامل مطلوب";
+    if (!data.username.trim()) next.username = "اسم المستخدم مطلوب";
     if (!data.email.trim()) next.email = "البريد الإلكتروني مطلوب";
     if (!data.country) next.country = "يرجى اختيار الدولة";
     if (!data.phone.trim()) next.phone = "رقم الهاتف مطلوب";
@@ -307,6 +357,7 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
       if (isEditMode) {
         const payload = {
           fullName: data.name,
+          username: data.username,
           email: data.email,
           phone: buildFullPhone(),
           country: data.country,
@@ -320,10 +371,9 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
         }
         await updateUser(supervisor.id, payload);
       } else {
-        const username = data.email.split("@")[0]; // مشتق تلقائيًا من الإيميل
         await createUser({
           fullName: data.name,
-          username,
+          username: data.username,
           email: data.email,
           phone: buildFullPhone(),
           password: data.password,
@@ -342,7 +392,15 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
         (isEditMode
           ? "حدث خطأ أثناء تعديل بيانات المشرف"
           : "حدث خطأ أثناء إضافة المشرف");
-      setErrors((p) => ({ ...p, form: msg }));
+      const isUsernameConflict =
+        /اسم المستخدم/.test(msg) ||
+        (/USERNAME/i.test(msg) && /(EXIST|TAKEN|DUPLICATE)/i.test(msg));
+      setErrors((p) => ({
+        ...p,
+        ...(isUsernameConflict
+          ? { username: "اسم المستخدم مستخدم بالفعل، اختر اسمًا آخر", form: null }
+          : { form: msg }),
+      }));
     } finally {
       setSaving(false);
     }
@@ -393,10 +451,24 @@ const AddSupervisorModal = ({ open, onClose, onSuccess, supervisor = null }) => 
           <InputField
             label="البريد الإلكتروني"
             value={data.email}
-            onChange={(v) => handleField("email", v)}
+            onChange={(v) => {
+              const previousSuggestion = data.email.split("@")[0];
+              handleField("email", v);
+              if (!data.username || data.username === previousSuggestion) {
+                handleField("username", v.split("@")[0]);
+              }
+            }}
             placeholder="example@email.com"
             type="email"
             error={errors.email}
+          />
+
+          <InputField
+            label="اسم المستخدم"
+            value={data.username}
+            onChange={(v) => handleField("username", v.trim().toLowerCase())}
+            placeholder="اختر اسم مستخدم فريدًا"
+            error={errors.username}
           />
 
           <RoleSelector
