@@ -40,4 +40,5 @@ test("prominent green actions no longer use the low-contrast WhatsApp green", ()
 
   assert.doesNotMatch(combinedSource, /#25D366|#20bd5a|#1ebe5d/i);
   assert.match(combinedSource, /#087A35|bg-emerald-700/);
+  assert.match(combinedSource, /#087A35[^"']*!text-white/);
 });

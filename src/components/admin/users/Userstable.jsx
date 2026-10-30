@@ -618,7 +618,7 @@ export const UserDetailsModal = ({
           }}
           className={`mb-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
             userWhatsappUrl
-              ? "bg-[#087A35] text-white hover:bg-[#06672C]"
+              ? "bg-[#087A35] !text-white hover:bg-[#06672C] hover:!text-white [&_svg]:text-white"
               : "cursor-not-allowed bg-gray-100 text-gray-400"
           }`}
         >

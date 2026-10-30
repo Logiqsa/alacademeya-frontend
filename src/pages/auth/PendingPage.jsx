@@ -188,7 +188,7 @@ const PendingPage = () => {
         {(whatsappUrl || contactSettings?.email) && (
           <div className="mb-4 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
             {whatsappUrl && (
-              <a href={whatsappUrl} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#087A35] text-sm font-semibold text-white hover:bg-[#06672C]">
+              <a href={whatsappUrl} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#087A35] text-sm font-semibold !text-white hover:bg-[#06672C] hover:!text-white [&_svg]:text-white">
                 <MessageCircle size={18} /> تواصل عبر واتساب
               </a>
             )}

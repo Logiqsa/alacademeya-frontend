@@ -133,7 +133,7 @@ const AccountStatePage = () => {
           rel="noreferrer"
           aria-disabled={!whatsappUrl}
           onClick={(event) => { if (!whatsappUrl) event.preventDefault(); }}
-          className={`w-full h-12 mb-4 rounded-xl text-white font-semibold text-[15px] flex items-center justify-center gap-2 transition-colors ${whatsappUrl ? "bg-[#087A35] hover:bg-[#06672C]" : "bg-gray-300 cursor-not-allowed"}`}
+          className={`w-full h-12 mb-4 rounded-xl font-semibold text-[15px] flex items-center justify-center gap-2 transition-colors ${whatsappUrl ? "bg-[#087A35] !text-white hover:bg-[#06672C] hover:!text-white [&_svg]:text-white" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
           style={{ fontFamily: "Tajawal, sans-serif" }}
         >
           <MessageCircle size={18} />
