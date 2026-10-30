@@ -12,6 +12,7 @@ import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
 import { AuthContext } from "../../../context/AuthContext";
+import { hasIncompleteRegistration } from "../../../utils/incompleteRegistration";
 
 const PAGE_SIZE = 6;
 const SUPERVISOR_ROLES = ["admin", "super-admin"];
@@ -25,7 +26,11 @@ const mapUserToSupervisor = (u) => ({
   countryId: u.country?.id || u.country, // ⚠️ عدّل حسب شكل الحقل الراجع من الباك اند (object ولا id مباشرة)
   role: u.role || "admin", // ⚠️ عدّل حسب اسم الحقل الفعلي لو مختلف ("admin" | "super-admin")
   isActive: Boolean(u.isActive ?? u.isVerified), // ⚠️ عدّل حسب اسم الحقل الفعلي
-  status: (u.isActive ?? u.isVerified) ? "نشط" : "متوقف",
+  status: hasIncompleteRegistration(u)
+    ? "ملف غير مكتمل"
+    : (u.isActive ?? u.isVerified)
+      ? "نشط"
+      : "متوقف",
 });
 
 const extractUsersList = (res) => {

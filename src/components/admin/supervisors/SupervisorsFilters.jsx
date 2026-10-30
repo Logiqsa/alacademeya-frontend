@@ -1,6 +1,6 @@
 import { Search, ChevronDown } from "lucide-react";
 
-const STATUS_OPTIONS = ["جميع الحالات", "نشط", "متوقف"];
+const STATUS_OPTIONS = ["جميع الحالات", "نشط", "متوقف", "ملف غير مكتمل"];
 const ROLE_OPTIONS = [
   { value: "جميع الصلاحيات", label: "جميع الصلاحيات" },
   { value: "admin", label: "مشرف" },

@@ -56,16 +56,20 @@ test("admin user management stays within its authorized profile endpoints", asyn
   assert.match(source, /\[\.\.\.studentProfiles, \.\.\.teacherProfiles\]/);
 });
 
-test("admin registration notifications do not enumerate the global user directory", async () => {
+test("admin registration notifications use scoped profiles and keep every account state visible", async () => {
   const dashboard = await read("../src/components/admin/dashboard/NotificationsSection.jsx");
   const notifications = await read("../src/components/admin/notifications/NotificationsSection.jsx");
 
-  assert.match(dashboard, /canReadAllUsers \? getUsers\(\{ limit: 100 \}\)\.catch\(\(\) => null\) : null/);
+  assert.doesNotMatch(dashboard, /filterIncompleteJoinNotifications/);
   assert.doesNotMatch(notifications, /\bgetUsers\b/);
   assert.match(notifications, /getTeachers\(\{ page: 1, limit: 1000 \}\)/);
   assert.match(notifications, /getAllStudents\(\{ page: 1, limit: 1000 \}\)/);
   assert.match(notifications, /const user = matchedUser \|\|/);
   assert.match(notifications, /notificationUserRole\(notification\) \|\| "user"/);
+  const page = await read("../src/pages/admin/notifications/Notifications.jsx");
+  const sidebarUnread = await read("../src/api/useSidebarUnread.js");
+  assert.doesNotMatch(page, /filterIncompleteJoinNotifications/);
+  assert.doesNotMatch(sidebarUnread, /filterIncompleteJoinNotifications/);
 });
 
 test("admin message and supervisor screens keep directory-only actions super-admin scoped", async () => {
@@ -88,14 +92,11 @@ test("admin message and supervisor screens keep directory-only actions super-adm
   assert.match(app, /user\?\.role === "super-admin"[\s\S]*<SupervisorsPage/);
 });
 
-test("shared admin sidebar never treats admin as a user-directory role", async () => {
+test("shared admin sidebar reads notifications without enumerating the user directory", async () => {
   const sidebarUnread = await read("../src/api/useSidebarUnread.js");
 
-  assert.match(sidebarUnread, /const canReadUserDirectory = user\?\.role === "super-admin"/);
-  assert.match(
-    sidebarUnread,
-    /canReadUserDirectory \? getUsers\(\{ limit: 100 \}\) : Promise\.resolve\(null\)/,
-  );
+  assert.doesNotMatch(sidebarUnread, /\bgetUsers\b/);
+  assert.match(sidebarUnread, /getNotifications\(\)/);
 });
 
 test("password-reset client follows the OTP and reset-token API contract", async () => {

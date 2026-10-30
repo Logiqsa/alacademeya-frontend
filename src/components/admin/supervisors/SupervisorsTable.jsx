@@ -4,10 +4,15 @@ import { MoreVertical, Pencil, Ban, Trash2 } from "lucide-react";
 
 const StatusBadge = ({ status }) => {
   const isActive = status === "نشط";
+  const isIncomplete = status === "ملف غير مكتمل";
   return (
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-        isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+        isIncomplete
+          ? "bg-blue-100 text-[#123C91]"
+          : isActive
+            ? "bg-green-100 text-green-800"
+            : "bg-red-100 text-red-800"
       }`}
     >
       {status}
@@ -75,7 +80,7 @@ const ActionsMenu = ({ s, onEdit, onToggleSuspend, onDelete }) => {
     };
   }, [open]);
 
-  const isActive = s.status === "نشط";
+  const isActive = s.isActive;
 
   const items = [
     { label: "تعديل", icon: Pencil, onClick: () => onEdit?.(s) },

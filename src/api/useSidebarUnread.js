@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { getNotifications, getUsers } from "../services/APIService";
+import { getNotifications } from "../services/APIService";
 import { getChatRooms } from "./chatApi";
 import { getSocket } from "./socket";
 import { incrementStoredUnread } from "./chatUnreadStorage";
@@ -9,7 +9,6 @@ import {
   ADMIN_NOTIFICATION_EVENT,
   getAdminLocalNotifications,
 } from "../utils/adminLocalNotifications";
-import { filterIncompleteJoinNotifications } from "../utils/incompleteRegistration";
 import {
   isNotificationRead,
   NOTIFICATION_RECEIVED_EVENT,
@@ -49,25 +48,18 @@ export function useSidebarUnread() {
   const { user } = useContext(AuthContext);
   const userId = user?._id ?? user?.id;
   const isAdmin = user?.role === "admin";
-  const canReadUserDirectory = user?.role === "super-admin";
   const { pathname } = useLocation();
   const [unread, setUnread] = useState({ messages: false, notifications: false });
 
   const refresh = useCallback(async () => {
-    const [roomsResult, notificationsResult, usersResult] = await Promise.allSettled([
+    const [roomsResult, notificationsResult] = await Promise.allSettled([
       getChatRooms(),
       getNotifications(),
-      canReadUserDirectory ? getUsers({ limit: 100 }) : Promise.resolve(null),
     ]);
 
-    const usersPayload = usersResult.status === "fulfilled" ? usersResult.value?.data : null;
-    const users = usersPayload?.data || usersPayload?.users || [];
     const remoteNotifications =
       notificationsResult.status === "fulfilled"
-        ? filterIncompleteJoinNotifications(
-            extractList(notificationsResult.value.data, ["notifications"]),
-            users,
-          )
+        ? extractList(notificationsResult.value.data, ["notifications"])
         : [];
 
     setUnread((current) => ({
@@ -85,7 +77,7 @@ export function useSidebarUnread() {
             })
           : current.notifications,
     }));
-  }, [canReadUserDirectory, isAdmin, userId]);
+  }, [isAdmin, userId]);
 
   useEffect(() => {
     if (!isAdmin) return undefined;

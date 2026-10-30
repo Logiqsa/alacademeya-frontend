@@ -537,6 +537,8 @@ const NotificationsSection = ({
               teacher: "محاضر",
               student: "طالب",
               parent: "ولي أمر",
+              user: "طالب دورات",
+              instructor: "محاضر دورات",
               admin: "مشرف",
               "super-admin": "مشرف عام",
             }[user.role] || user.role,
@@ -586,7 +588,9 @@ const NotificationsSection = ({
       });
 
       if (!teacher) {
-        toast.error("تعذر العثور على بيانات المعلم المرتبط بالإشعار");
+        toast.error(
+          "لا يمكن فتح ملف المعلم: قد يكون الحساب حُذف أو لم يعد مرتبطًا بملف معلم.",
+        );
         return;
       }
 
@@ -612,7 +616,10 @@ const NotificationsSection = ({
         isTeacher: true,
       });
     } catch (err) {
-      toast.error(err.response?.data?.message || "تعذر تحميل تفاصيل المعلم");
+      toast.error(
+        err.response?.data?.message ||
+          "تعذر تحميل بيانات الحساب الآن. تحقق من الاتصال ثم حاول مرة أخرى.",
+      );
     } finally {
       setTeacherDetailsLoading(false);
     }

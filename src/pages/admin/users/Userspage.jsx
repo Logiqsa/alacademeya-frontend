@@ -305,6 +305,9 @@ const UsersPage = ({
                   stage: "—",
                 };
               }
+              if (hasIncompleteRegistration(rawUser)) {
+                return { ...mapped, status: "ملف غير مكتمل" };
+              }
               return student
                 ? {
                     ...mapped,
