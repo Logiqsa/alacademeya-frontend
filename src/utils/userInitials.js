@@ -6,9 +6,15 @@ export const getUserInitials = (name) => {
 
   if (!words.length) return "؟";
 
-  return words
+  const initials = words
     .slice(0, 2)
     .map((word) => Array.from(word)[0] || "")
-    .join("")
-    .toLocaleUpperCase();
+    .filter(Boolean);
+
+  const separator =
+    initials.length === 2 && initials.every((letter) => /\p{Script=Arabic}/u.test(letter))
+      ? " "
+      : "";
+
+  return initials.join(separator).toLocaleUpperCase();
 };

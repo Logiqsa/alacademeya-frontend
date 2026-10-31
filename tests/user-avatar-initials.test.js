@@ -8,7 +8,7 @@ test("avatar initials support one-word and multi-word Arabic and English names",
   assert.equal(getUserInitials("Yara Elalfy"), "YE");
   assert.equal(getUserInitials("Course Learner Account"), "CL");
   assert.equal(getUserInitials("test"), "T");
-  assert.equal(getUserInitials("محمد حمد العويني"), "مح");
+  assert.equal(getUserInitials("محمد حمد العويني"), "م ح");
   assert.equal(getUserInitials("متعلم"), "م");
   assert.equal(getUserInitials("  "), "؟");
 });
