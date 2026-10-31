@@ -1,6 +1,6 @@
 import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, LockKeyhole } from "lucide-react";
+import { ChevronDown, LockKeyhole, Search } from "lucide-react";
 
 const optionsFromChildren = (children) =>
   Children.toArray(children).flatMap((child) => {
@@ -135,19 +135,22 @@ export default function AppSelect({
           ref={menuRef}
           role="listbox"
           dir={dir}
-          className="fixed z-[2000] max-h-64 overflow-y-auto rounded-xl border border-[#D7E2F3] bg-white p-1.5 shadow-xl"
+          className="fixed z-[2000] max-h-64 overflow-y-auto rounded-xl border border-[#D7E2F3] bg-white p-1.5 shadow-[0_12px_28px_rgba(16,24,40,0.14)]"
           style={position}
         >
           {searchable && (
             <div className="sticky top-0 z-10 bg-white pb-1.5">
+              <div className="relative">
+                <Search size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#667085]" />
               <input
                 autoFocus
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 onKeyDown={(event) => event.stopPropagation()}
                 placeholder={searchPlaceholder}
-                className="h-9 w-full rounded-lg border border-[#D0D5DD] px-3 text-right text-sm outline-none focus:border-[#123C91]"
+                className="h-9 w-full rounded-lg border border-[#D0D5DD] bg-[#F8FAFC] py-1 pr-9 pl-3 text-right text-sm outline-none transition focus:border-[#123C91] focus:bg-white focus:ring-2 focus:ring-[#123C91]/10"
               />
+              </div>
             </div>
           )}
           {visibleOptions.map((option) => {

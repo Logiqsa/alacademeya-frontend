@@ -20,7 +20,7 @@ import {
 } from "../../../utils/adminSubscription";
 
 const cls =
-  "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 outline-none focus:border-[#123C91] disabled:bg-gray-50";
+  "h-12 w-full rounded-xl border border-[#D0D5DD] bg-white px-4 text-sm text-[#344054] shadow-sm outline-none transition focus:border-[#123C91] focus:ring-2 focus:ring-[#123C91]/10";
 const blank = {
   subject: "",
   package: "",
@@ -30,8 +30,8 @@ const blank = {
   discount: 0,
 };
 const Field = ({ label, children }) => (
-  <label className="block text-sm text-gray-700">
-    <span className="mb-1.5 block font-medium">{label}</span>
+  <label className="block text-sm text-[#344054]">
+    <span className="mb-2 block font-semibold">{label}</span>
     {children}
   </label>
 );
@@ -200,17 +200,18 @@ export default function AddSubscriptionPage() {
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
       <main dir="rtl" className="p-3 sm:p-6 font-['IBM_Plex_Sans_Arabic']">
-        <h1 className="text-xl font-semibold text-[#123C91]">
+        <div className="mx-auto max-w-5xl">
+        <h1 className="text-2xl font-bold text-[#123C91]">
           {legacySubscriptionId ? "استكمال بيانات الاشتراك" : "إنشاء اشتراك يدوي"}
         </h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-[#667085]">
           {legacySubscriptionId
             ? "هذا الإجراء متاح للإدارة فقط ويضيف التفاصيل إلى الاشتراك القديم نفسه."
             : "سيصبح الاشتراك نشطًا فور إنشائه."}
         </p>
         <form
           onSubmit={submit}
-          className="mt-6 grid gap-4 rounded-2xl border bg-white p-5 sm:grid-cols-2"
+          className="mt-6 grid gap-x-5 gap-y-5 rounded-2xl border border-[#DCE6F5] bg-white p-5 shadow-sm sm:grid-cols-2 sm:p-7"
         >
           <Field label="الطالب *">
             <AppSelect
@@ -328,7 +329,7 @@ export default function AddSubscriptionPage() {
           <div className="flex items-end gap-3">
             <button
               disabled={busy}
-              className="h-11 rounded-xl bg-[#123C91] px-6 text-white disabled:opacity-50"
+              className="h-12 rounded-xl bg-[#123C91] px-6 font-semibold text-white shadow-sm transition hover:bg-[#0E3177] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy
                 ? "جاري الحفظ..."
@@ -339,12 +340,13 @@ export default function AddSubscriptionPage() {
             <button
               type="button"
               onClick={() => nav(-1)}
-              className="h-11 rounded-xl border px-5"
+              className="h-12 rounded-xl border border-[#D0D5DD] bg-white px-5 font-semibold text-[#344054] transition hover:bg-[#F8FAFC]"
             >
               إلغاء
             </button>
           </div>
         </form>
+        </div>
       </main>
     </AdminLayout>
   );
