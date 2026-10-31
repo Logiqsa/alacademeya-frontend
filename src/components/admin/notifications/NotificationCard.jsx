@@ -34,6 +34,7 @@ const NotificationCard = ({
   linkedTextTitle,
   onLinkedTextClick,
   compact = false,
+  disableHover = false,
 }) => {
   const isAcademic = type === "academic";
 
@@ -60,7 +61,7 @@ const NotificationCard = ({
         border-[#E5E5E5]
         ${compact ? "rounded-lg p-3" : "rounded-xl p-4"}
         transition-all
-        ${onOpen ? "cursor-pointer hover:border-[#123C91] focus:outline-none focus:ring-2 focus:ring-[#123C91]/30" : ""}
+        ${onOpen ? `cursor-pointer ${disableHover ? "" : "hover:border-[#123C91]"} focus:outline-none focus:ring-2 focus:ring-[#123C91]/30` : ""}
         ${
           isRead
             ? "bg-white"

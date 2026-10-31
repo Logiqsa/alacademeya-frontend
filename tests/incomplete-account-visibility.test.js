@@ -22,9 +22,13 @@ test("account-specific admin pages label incomplete profiles without hiding them
   assert.match(notifications, /email: notificationData\.email/);
   assert.match(
     notifications,
-    /!isUserDetailsNotification\(n\) && getNotificationTarget\(n, "admin"\)/,
+    /isUserDetailsNotification\(n\) \|\| getNotificationTarget\(n, "admin"\)/,
   );
-  assert.match(notifications, /if \(!notification\.isRead\) await toggleRead\(notification\);/);
+  assert.match(notifications, /disableHover=\{isUserDetailsNotification\(n\)\}/);
+  assert.doesNotMatch(
+    notifications.match(/const handleTeacherDetails[\s\S]*?const handleApproveTeacher/)?.[0] || "",
+    /toggleRead\(notification\)/,
+  );
 });
 
 test("user status filters follow the selected user type", async () => {

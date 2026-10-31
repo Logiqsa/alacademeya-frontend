@@ -452,7 +452,6 @@ const NotificationsSection = ({
   };
 
   const handleTeacherDetails = async (notification) => {
-    if (!notification.isRead) await toggleRead(notification);
     setLoadingUserRole(
       isNewUserNotification(notification)
         ? notificationUserRole(notification)
@@ -927,7 +926,7 @@ const NotificationsSection = ({
                 isRead={n.isRead}
                 onToggleRead={() => toggleRead(n)}
                 onOpen={
-                  !isUserDetailsNotification(n) && getNotificationTarget(n, "admin")
+                  isUserDetailsNotification(n) || getNotificationTarget(n, "admin")
                     ? () => handleOpen(n)
                     : undefined
                 }
@@ -941,6 +940,7 @@ const NotificationsSection = ({
                     ? () => handleTeacherDetails(n)
                     : undefined
                 }
+                disableHover={isUserDetailsNotification(n)}
                 linkedText={course.id ? course.title : undefined}
                 linkedTextTitle="عرض الدورة"
                 onLinkedTextClick={course.id && course.title ? () => handleCourseOpen(n) : undefined}
