@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, Link as LinkIcon, Info } from "lucide-react";
+import { Link as LinkIcon, Info } from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import AppSelect from "../../../components/ui/AppSelect";
 import { useState, useEffect } from "react";
 
 import {
@@ -60,7 +61,7 @@ const SelectField = ({
       {label}
     </label>
     <div className="relative">
-      <select
+      <AppSelect
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
@@ -75,10 +76,7 @@ const SelectField = ({
             {o.name}
           </option>
         ))}
-      </select>
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
-        <ChevronDown size={16} />
-      </div>
+      </AppSelect>
     </div>
     {error && (
       <p className="text-red-500 text-[12px] mt-1 text-right">{error}</p>

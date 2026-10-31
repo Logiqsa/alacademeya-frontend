@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import AppSelect from "../../../components/ui/AppSelect";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import { AuthContext } from "../../../context/AuthContext";
 import {
@@ -132,11 +133,11 @@ export default function CreateStudentPage() {
       <div className="rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-3 border-b border-gray-100 pb-2"><h2 className="font-bold text-[#1F2937]">البيانات الدراسية</h2><p className="mt-0.5 text-xs text-[#8C9198]">حدد المنهج والمرحلة والصف بشكل مستقل عن دولة الإقامة</p></div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="دولة الإقامة" required error={errors.countryCode}><select className={inputClass} value={form.countryCode} onChange={(e) => change("countryCode",e.target.value)}><option value="">اختر دولة الإقامة</option>{countries.map((c)=><option key={idOf(c)} value={c.code || c.countryCode}>{nameOf(c)}</option>)}</select></Field>
-          <Field label="المنهج" required error={errors.curriculum}><select className={inputClass} value={form.curriculum} onChange={(e)=>selectCurriculum(e.target.value)}><option value="">اختر المنهج</option>{curriculums.map((c)=><option key={idOf(c)} value={idOf(c)}>{nameOf(c)}</option>)}</select></Field>
-          <Field label="المرحلة" required error={errors.stage}><select className={inputClass} value={form.stage} onChange={(e)=>selectStage(e.target.value)} disabled={!form.curriculum}><option value="">اختر المرحلة</option>{stages.map((s)=><option key={idOf(s)} value={idOf(s)}>{nameOf(s)}</option>)}</select></Field>
-          <Field label="الصف" required error={errors.grade}><select className={inputClass} value={form.grade} onChange={(e)=>selectGrade(e.target.value)} disabled={!form.stage}><option value="">اختر الصف</option>{grades.map((g)=><option key={idOf(g)} value={idOf(g)}>{nameOf(g)}</option>)}</select></Field>
-          <Field label="لغة الدراسة"><select className={inputClass} value={form.studyLanguage} onChange={(e)=>change("studyLanguage",e.target.value)}><option value="">غير محدد</option><option value="ar">العربية</option><option value="en">الإنجليزية</option><option value="fr">الفرنسية</option></select></Field>
+          <Field label="دولة الإقامة" required error={errors.countryCode}><AppSelect className={inputClass} value={form.countryCode} onChange={(e) => change("countryCode",e.target.value)}><option value="">اختر دولة الإقامة</option>{countries.map((c)=><option key={idOf(c)} value={c.code || c.countryCode}>{nameOf(c)}</option>)}</AppSelect></Field>
+          <Field label="المنهج" required error={errors.curriculum}><AppSelect className={inputClass} value={form.curriculum} onChange={(e)=>selectCurriculum(e.target.value)}><option value="">اختر المنهج</option>{curriculums.map((c)=><option key={idOf(c)} value={idOf(c)}>{nameOf(c)}</option>)}</AppSelect></Field>
+          <Field label="المرحلة" required error={errors.stage}><AppSelect className={inputClass} value={form.stage} onChange={(e)=>selectStage(e.target.value)} disabled={!form.curriculum}><option value="">اختر المرحلة</option>{stages.map((s)=><option key={idOf(s)} value={idOf(s)}>{nameOf(s)}</option>)}</AppSelect></Field>
+          <Field label="الصف" required error={errors.grade}><AppSelect className={inputClass} value={form.grade} onChange={(e)=>selectGrade(e.target.value)} disabled={!form.stage}><option value="">اختر الصف</option>{grades.map((g)=><option key={idOf(g)} value={idOf(g)}>{nameOf(g)}</option>)}</AppSelect></Field>
+          <Field label="لغة الدراسة"><AppSelect className={inputClass} value={form.studyLanguage} onChange={(e)=>change("studyLanguage",e.target.value)}><option value="">غير محدد</option><option value="ar">العربية</option><option value="en">الإنجليزية</option><option value="fr">الفرنسية</option></AppSelect></Field>
           <Field label="تاريخ الميلاد"><input className={inputClass} type="date" value={form.birthDate} onChange={(e)=>change("birthDate",e.target.value)} /></Field>
         </div>
         <div className="mt-4"><p className="text-sm font-medium text-[#374151]">المواد المفضلة</p><p className="mt-0.5 text-xs text-[#8C9198]">يمكنك اختيار أكثر من مادة</p>
