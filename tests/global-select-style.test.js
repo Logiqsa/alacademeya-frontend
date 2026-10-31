@@ -17,3 +17,14 @@ test("native single selects use the shared branded trigger style", async () => {
   );
   assert.match(source, /select:not\(\[multiple\]\):focus-visible/);
 });
+
+test("dependent shared selects clearly explain why they are locked", async () => {
+  const source = await readFile(
+    new URL("../src/components/ui/AppSelect.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /disabledMessage = "يرجى اختيار القائمة السابقة أولًا"/);
+  assert.match(source, /LockKeyhole/);
+  assert.match(source, /disabled \? disabledMessage/);
+});

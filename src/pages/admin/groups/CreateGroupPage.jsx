@@ -65,6 +65,7 @@ const SelectField = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
+        disabledMessage={placeholder}
         className={`w-full h-12 px-4 border rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[14px] focus:outline-none focus:ring-2 appearance-none transition-all
           ${error ? "border-red-400 focus:ring-red-300" : "border-[#E5E5E5] focus:ring-[#123C91]"}
           ${!value ? "text-[#8C9198]" : "text-[#1F2937]"}

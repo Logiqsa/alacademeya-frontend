@@ -1,6 +1,6 @@
 import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, LockKeyhole } from "lucide-react";
 
 const optionsFromChildren = (children) =>
   Children.toArray(children).flatMap((child) => {
@@ -27,6 +27,7 @@ export default function AppSelect({
   defaultValue,
   onChange,
   disabled = false,
+  disabledMessage = "يرجى اختيار القائمة السابقة أولًا",
   name,
   dir = "rtl",
   ...props
@@ -109,12 +110,15 @@ export default function AppSelect({
         dir={dir}
         aria-haspopup="listbox"
         aria-expanded={open}
+        title={disabled ? disabledMessage : props.title}
         onClick={() => !disabled && setOpen((current) => !current)}
         onKeyDown={onKeyDown}
-        className={`${className} flex items-center justify-between gap-2 text-right`}
+        className={`${className} flex items-center justify-between gap-2 text-right ${
+          disabled ? "!cursor-not-allowed !border-[#CBD5E1] !bg-[#EEF2F6] !text-[#98A2B3] !opacity-100" : ""
+        }`}
       >
-        <span className="min-w-0 flex-1 truncate">{selected ? optionLabel(selected) : "—"}</span>
-        <ChevronDown size={16} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className="min-w-0 flex-1 truncate">{disabled ? disabledMessage : selected ? optionLabel(selected) : "—"}</span>
+        {disabled ? <LockKeyhole size={15} className="shrink-0" /> : <ChevronDown size={16} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />}
       </button>
       {open && position && createPortal(
         <div

@@ -66,6 +66,7 @@ const GroupsFilters = ({
           value={filterStage}
           onChange={(e) => onFilterStageChange?.(e.target.value)}
           disabled={filterCurriculum === "جميع المناهج"}
+          disabledMessage="اختر المنهج أولًا"
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
         >
           {stageOptions.map((option) => (
@@ -81,6 +82,7 @@ const GroupsFilters = ({
           value={filterGrade}
           onChange={(e) => onFilterGradeChange?.(e.target.value)}
           disabled={filterStage === "جميع المراحل"}
+          disabledMessage="اختر المرحلة أولًا"
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91] disabled:cursor-not-allowed disabled:bg-[#F2F4F7]"
         >
           {gradeOptions.map((option) => (
@@ -96,6 +98,7 @@ const GroupsFilters = ({
           value={filterSubject}
           onChange={(e) => onFilterSubjectChange?.(e.target.value)}
           disabled={filterGrade === "جميع الصفوف"}
+          disabledMessage="اختر الصف أولًا"
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91] disabled:cursor-not-allowed disabled:bg-[#F2F4F7]"
         >
           {subjectOptions.map((opt) => (
