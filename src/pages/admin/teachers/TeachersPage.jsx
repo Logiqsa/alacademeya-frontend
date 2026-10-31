@@ -181,6 +181,7 @@ const TeachersPage = () => {
   const [sessionDialog, setSessionDialog] = useState(null);
   const [sessionDialogItems, setSessionDialogItems] = useState([]);
   const [sessionDialogLoading, setSessionDialogLoading] = useState(false);
+  const [actionMenu, setActionMenu] = useState(null);
   const month = useMemo(() => currentMonth(), []);
 
   const loadTeachers = useCallback(async () => {
@@ -771,7 +772,12 @@ const TeachersPage = () => {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                void openTeacherDetails(teacher);
+                                const rect = event.currentTarget.getBoundingClientRect();
+                                setActionMenu((current) =>
+                                  current?.teacher.id === teacher.id
+                                    ? null
+                                    : { teacher, top: rect.bottom + 4, left: rect.left },
+                                );
                               }}
                               className="grid size-8 place-items-center rounded-lg text-[#575F69] transition-colors hover:bg-[#EEF4FF] hover:text-[#123C91]"
                               aria-label={`إجراءات المعلم ${teacher.name}`}
@@ -1045,6 +1051,34 @@ const TeachersPage = () => {
               </div>
             </div>
           </div>,
+          document.body,
+        )}
+        {actionMenu && createPortal(
+          <>
+            <button
+              type="button"
+              aria-label="إغلاق قائمة الإجراءات"
+              className="fixed inset-0 z-40 cursor-default"
+              onClick={() => setActionMenu(null)}
+            />
+            <div
+              className="fixed z-50 min-w-44 rounded-xl border border-[#D7E2F3] bg-white p-1.5 shadow-xl"
+              style={{ top: actionMenu.top, left: actionMenu.left }}
+              dir="rtl"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  const { teacher } = actionMenu;
+                  setActionMenu(null);
+                  void openTeacherDetails(teacher);
+                }}
+                className="w-full rounded-lg px-3 py-2.5 text-right text-sm font-semibold text-[#123C91] transition-colors hover:bg-[#EEF4FC]"
+              >
+                عرض التفاصيل والإجراءات
+              </button>
+            </div>
+          </>,
           document.body,
         )}
         {sessionDialog && createPortal(

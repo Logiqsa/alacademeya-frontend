@@ -10,6 +10,8 @@ const source = readFileSync(
 test("teacher rows expose the existing details and actions dialog from a three-dot button", () => {
   assert.match(source, /MoreVertical/);
   assert.match(source, /aria-label=\{`إجراءات المعلم \$\{teacher\.name\}`\}/);
+  assert.match(source, /setActionMenu/);
+  assert.match(source, /عرض التفاصيل والإجراءات/);
   assert.match(source, /void openTeacherDetails\(teacher\)/);
   assert.match(source, /selectedTeacher && createPortal/);
   assert.match(source, /document\.body/);
