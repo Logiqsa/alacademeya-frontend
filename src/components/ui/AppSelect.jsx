@@ -28,6 +28,8 @@ export default function AppSelect({
   onChange,
   disabled = false,
   disabledMessage = "يرجى اختيار القائمة السابقة أولًا",
+  searchable = false,
+  searchPlaceholder = "ابحث...",
   name,
   dir = "rtl",
   ...props
@@ -37,6 +39,7 @@ export default function AppSelect({
   const selected = options.find((option) => option.value === currentValue) || options[0];
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState(null);
+  const [search, setSearch] = useState("");
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
 
@@ -69,6 +72,10 @@ export default function AppSelect({
     onChange?.({ target: { value: nextValue, name }, currentTarget: { value: nextValue, name } });
     setOpen(false);
   };
+
+  const visibleOptions = options.filter((option) =>
+    optionLabel(option).toLocaleLowerCase("ar").includes(search.trim().toLocaleLowerCase("ar")),
+  );
 
   const move = (direction) => {
     const enabled = options.filter((option) => !option.disabled);
@@ -111,7 +118,10 @@ export default function AppSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         title={disabled ? disabledMessage : props.title}
-        onClick={() => !disabled && setOpen((current) => !current)}
+        onClick={() => !disabled && setOpen((current) => {
+          if (!current) setSearch("");
+          return !current;
+        })}
         onKeyDown={onKeyDown}
         className={`${className} flex items-center justify-between gap-2 text-right ${
           disabled ? "!cursor-not-allowed !border-[#CBD5E1] !bg-[#EEF2F6] !text-[#98A2B3] !opacity-100" : ""
@@ -128,7 +138,19 @@ export default function AppSelect({
           className="fixed z-[2000] max-h-64 overflow-y-auto rounded-xl border border-[#D7E2F3] bg-white p-1.5 shadow-xl"
           style={position}
         >
-          {options.map((option) => {
+          {searchable && (
+            <div className="sticky top-0 z-10 bg-white pb-1.5">
+              <input
+                autoFocus
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onKeyDown={(event) => event.stopPropagation()}
+                placeholder={searchPlaceholder}
+                className="h-9 w-full rounded-lg border border-[#D0D5DD] px-3 text-right text-sm outline-none focus:border-[#123C91]"
+              />
+            </div>
+          )}
+          {visibleOptions.map((option) => {
             const active = option.value === currentValue;
             return (
               <button
@@ -148,6 +170,9 @@ export default function AppSelect({
               </button>
             );
           })}
+          {!visibleOptions.length && (
+            <p className="px-3 py-2 text-center text-sm text-[#667085]">لا توجد نتائج مطابقة</p>
+          )}
         </div>,
         document.body,
       )}

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
+import AppSelect from "../../../components/ui/AppSelect";
 import {
   completeLegacySubscription,
   createSubscription,
@@ -57,28 +58,43 @@ export default function AddSubscriptionPage() {
       .catch(() => toast.error("تعذر تحميل الطلاب"));
   }, []);
   useEffect(() => {
-    if (student)
-      getAdminStudentSubscriptionOptions(student)
-        .then((r) => setOptions(r.data?.data || r.data))
+    if (!student) {
+      setOptions(null);
+      return undefined;
+    }
+    let cancelled = false;
+    setOptions(null);
+    getAdminStudentSubscriptionOptions(student)
+        .then((r) => !cancelled && setOptions(r.data?.data || r.data))
         .catch((e) =>
-          toast.error(adminApiErrorMessage(e, "تعذر تحميل خيارات الاشتراك")),
+          !cancelled && toast.error(adminApiErrorMessage(e, "تعذر تحميل خيارات الاشتراك")),
         );
+    return () => {
+      cancelled = true;
+    };
   }, [student]);
   useEffect(() => {
-    if (item.subject && item.teacher && item.type)
-      getAvailableClassrooms({
+    if (!item.subject || !item.teacher || !item.type) {
+      setRooms([]);
+      return undefined;
+    }
+    let cancelled = false;
+    getAvailableClassrooms({
         subject: item.subject,
         teacher: item.teacher,
         type: item.type,
       })
         .then((r) =>
-          setRooms(
+          !cancelled && setRooms(
             apiList(r, ["classrooms", "results", "items"]).filter(
               (c) => !c.status || c.status === "active",
             ),
           ),
         )
-        .catch(() => toast.error("تعذر تحميل المجموعات"));
+        .catch(() => !cancelled && toast.error("تعذر تحميل المجموعات"));
+    return () => {
+      cancelled = true;
+    };
   }, [item.subject, item.teacher, item.type]);
   const subjects = apiList(options, ["subjects", "availableSubjects"]),
     teachers = apiList(options, ["teachers", "availableTeachers"]),
@@ -197,9 +213,11 @@ export default function AddSubscriptionPage() {
           className="mt-6 grid gap-4 rounded-2xl border bg-white p-5 sm:grid-cols-2"
         >
           <Field label="الطالب *">
-            <select
+            <AppSelect
               className={cls}
               value={student}
+              searchable
+              searchPlaceholder="ابحث باسم الطالب..."
               disabled={Boolean(legacySubscriptionId)}
               onChange={(e) => {
                 setStudent(e.target.value);
@@ -214,12 +232,15 @@ export default function AddSubscriptionPage() {
                   {nameOf(x.user) || nameOf(x)}
                 </option>
               ))}
-            </select>
+            </AppSelect>
           </Field>
           <Field label="المادة *">
-            <select
+            <AppSelect
               className={cls}
+              searchable
+              searchPlaceholder="ابحث باسم المادة..."
               disabled={!options}
+              disabledMessage="اختر الطالب أولًا"
               value={item.subject}
               onChange={(e) => set("subject", e.target.value)}
             >
@@ -229,22 +250,25 @@ export default function AddSubscriptionPage() {
                   {nameOf(x)}
                 </option>
               ))}
-            </select>
+            </AppSelect>
           </Field>
           <Field label="النوع *">
-            <select
+            <AppSelect
               className={cls}
               value={item.type}
               onChange={(e) => set("type", e.target.value)}
             >
               <option value="group">مجموعة</option>
               <option value="private">فردي</option>
-            </select>
+            </AppSelect>
           </Field>
           <Field label="المعلم *">
-            <select
+            <AppSelect
               className={cls}
+              searchable
+              searchPlaceholder="ابحث باسم المعلم..."
               disabled={!item.subject}
+              disabledMessage="اختر المادة أولًا"
               value={item.teacher}
               onChange={(e) => set("teacher", e.target.value)}
             >
@@ -254,12 +278,15 @@ export default function AddSubscriptionPage() {
                   {nameOf(x)}
                 </option>
               ))}
-            </select>
+            </AppSelect>
           </Field>
           <Field label="الباقة *">
-            <select
+            <AppSelect
               className={cls}
+              searchable
+              searchPlaceholder="ابحث باسم الباقة..."
               disabled={!item.subject}
+              disabledMessage="اختر المادة أولًا"
               value={item.package}
               onChange={(e) => set("package", e.target.value)}
             >
@@ -269,12 +296,15 @@ export default function AddSubscriptionPage() {
                   {nameOf(x)}
                 </option>
               ))}
-            </select>
+            </AppSelect>
           </Field>
           <Field label="المجموعة *">
-            <select
+            <AppSelect
               className={cls}
-              disabled={!item.teacher}
+              searchable
+              searchPlaceholder="ابحث باسم المجموعة..."
+              disabled={!item.subject || !item.teacher || !item.type}
+              disabledMessage={!item.subject ? "اختر المادة أولًا" : !item.teacher ? "اختر المعلم أولًا" : "اختر النوع أولًا"}
               value={item.classroom}
               onChange={(e) => set("classroom", e.target.value)}
             >
@@ -284,7 +314,7 @@ export default function AddSubscriptionPage() {
                   {nameOf(x)}
                 </option>
               ))}
-            </select>
+            </AppSelect>
           </Field>
           <Field label="الخصم">
             <input
