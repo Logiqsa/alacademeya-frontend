@@ -132,6 +132,7 @@ const subscriptionSummary = (subscription) => ({
     subject: localizedName(item.subject),
     package: localizedNames(item.packages?.length ? item.packages : item.package).join("، "),
     teacher: item.teacher?.user?.fullName || item.teacher?.fullName || "",
+    classroom: classroomSummary(item.classroom),
     totalSessions: item.totalSessions ?? 0,
     usedSessions: item.usedSessions ?? 0,
     remainingSessions: item.remainingSessions ?? 0,
@@ -545,6 +546,7 @@ const StudentPackagesModal = ({ user, onBack, onClose }) => {
                     <div className="mt-2 grid gap-2 text-xs text-[#475569] sm:grid-cols-2">
                       <span>الباقة: {item.package || "—"}</span>
                       <span>المعلم: {item.teacher || "—"}</span>
+                      <span>المجموعة: {item.classroom?.name || "لم يتم الإضافة بعد"}</span>
                       <span>الحصص: {item.usedSessions}/{item.totalSessions}</span>
                       <span>المتبقي: {item.remainingSessions}</span>
                     </div>
