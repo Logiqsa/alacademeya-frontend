@@ -38,6 +38,7 @@ const RETAINED_RECORD_LABELS = {
 const mapUserToSupervisor = (u) => ({
   id: u.id || u._id,
   name: u.fullName || u.username,
+  username: u.username,
   email: u.email,
   phone: u.phone,
   countryId: u.country?.id || u.country, // ⚠️ عدّل حسب شكل الحقل الراجع من الباك اند (object ولا id مباشرة)

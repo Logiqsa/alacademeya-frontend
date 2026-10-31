@@ -9,6 +9,10 @@ const source = fs.readFileSync(
   ),
   "utf8",
 );
+const supervisorsPage = fs.readFileSync(
+  new URL("../src/pages/admin/supervisors/SupervisorsPage.jsx", import.meta.url),
+  "utf8",
+);
 
 test("country dropdown is portaled outside the scrollable supervisor modal", () => {
   assert.match(source, /import \{ createPortal \} from "react-dom"/);
@@ -25,4 +29,5 @@ test("supervisor username is visible, editable and sent explicitly", () => {
   assert.match(source, /اسم المستخدم مستخدم بالفعل، اختر اسمًا آخر/);
   assert.match(source, /رقم الهاتف مستخدم بالفعل لحساب آخر/);
   assert.match(source, /البريد الإلكتروني مستخدم بالفعل لحساب آخر/);
+  assert.match(supervisorsPage, /username: u\.username/);
 });
