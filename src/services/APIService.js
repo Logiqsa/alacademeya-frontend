@@ -756,8 +756,10 @@ export const getTeacherMonthlyReport = (teacherId, month) =>
   API.get(`/teachers/${teacherId}/monthly-report`, { params: { month } });
 export const getMyTeacherDashboardSummary = () =>
   API.get("/teachers/me/dashboard-summary");
-export const getTeacherSessionList = (teacherId, status) =>
-  API.get(`/teachers/${teacherId}/sessions`, { params: { status } });
+export const getTeacherSessionList = (teacherId, status, month) =>
+  API.get(`/teachers/${teacherId}/sessions`, {
+    params: { status, ...(month ? { month } : {}) },
+  });
 export const updateTeacherProfile = (teacherId, payload) =>
   API.patch(`/teachers/${teacherId}`, payload);
 

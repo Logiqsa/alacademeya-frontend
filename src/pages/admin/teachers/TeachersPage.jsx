@@ -26,6 +26,7 @@ import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
   getTeachers,
   getTeacher,
+  getTeacherSessionList,
   getCurriculums,
   getCurriculumStages,
   getStageGrades,
@@ -53,6 +54,9 @@ const formatHours = (minutes = 0) =>
   `${new Intl.NumberFormat("ar-EG", {
     maximumFractionDigits: 1,
   }).format(Number(minutes || 0) / 60)} ساعة`;
+
+const formatSessionDuration = (minutes = 0) =>
+  minutes ? formatHours(minutes) : "لم تُعقد";
 
 const teacherName = (teacher) =>
   teacher.user?.fullName || teacher.fullName || teacher.name || "—";
@@ -174,6 +178,9 @@ const TeachersPage = () => {
   const [rejectingTeacher, setRejectingTeacher] = useState(false);
   const [restoringTeacher, setRestoringTeacher] = useState(false);
   const [deletingTeacher, setDeletingTeacher] = useState(false);
+  const [sessionDialog, setSessionDialog] = useState(null);
+  const [sessionDialogItems, setSessionDialogItems] = useState([]);
+  const [sessionDialogLoading, setSessionDialogLoading] = useState(false);
   const month = useMemo(() => currentMonth(), []);
 
   const loadTeachers = useCallback(async () => {
@@ -362,6 +369,24 @@ const TeachersPage = () => {
       setSelectedTeacher((current) => current?.id === teacher.id
         ? { ...current, academicLoading: false }
         : current);
+    }
+  };
+
+  const openSessionDialog = async (teacher, type) => {
+    setSessionDialog({ teacher, type });
+    setSessionDialogItems([]);
+    setSessionDialogLoading(true);
+    try {
+      const response = await getTeacherSessionList(
+        teacher.id,
+        type === "missed" ? "missed" : "completed",
+        month,
+      );
+      setSessionDialogItems(response.data?.data ?? response.data ?? []);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "تعذر تحميل تفاصيل الحصص");
+    } finally {
+      setSessionDialogLoading(false);
     }
   };
 
@@ -706,20 +731,19 @@ const TeachersPage = () => {
                         >
                           {teacher.phone}
                         </td>
-                        <td className="px-6 py-4 font-semibold text-[#123C91]">
-                          {formatHours(teacher.monthlyMinutes)}
+                        <td className="px-6 py-4">
+                          <button
+                            type="button"
+                            onClick={() => openSessionDialog(teacher, "hours")}
+                            className="font-semibold text-[#123C91] hover:underline"
+                          >
+                            {formatHours(teacher.monthlyMinutes)}
+                          </button>
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <button
                             type="button"
-                            onClick={() =>
-                              navigate(
-                                `/admin/teachers/${teacher.id}/sessions/completed`,
-                                {
-                                  state: { teacherName: teacher.name },
-                                },
-                              )
-                            }
+                            onClick={() => openSessionDialog(teacher, "completed")}
                             className="font-semibold text-[#123C91] hover:underline"
                           >
                             {teacher.completedSessions}
@@ -728,12 +752,7 @@ const TeachersPage = () => {
                         <td className="px-6 py-4 text-sm">
                           <button
                             type="button"
-                            onClick={() =>
-                              navigate(
-                                `/admin/teachers/${teacher.id}/sessions/missed`,
-                                { state: { teacherName: teacher.name } },
-                              )
-                            }
+                            onClick={() => openSessionDialog(teacher, "missed")}
                             className="font-semibold text-amber-700 hover:underline"
                           >
                             {teacher.missedSessions}
@@ -789,28 +808,31 @@ const TeachersPage = () => {
                     {teacher.email}
                   </p>
                   <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div className="rounded-lg bg-blue-50 p-3">
+                    <button
+                      type="button"
+                      onClick={() => openSessionDialog(teacher, "hours")}
+                      className="rounded-lg bg-blue-50 p-3 text-right"
+                    >
                       <p className="text-xs text-[#575F69]">الساعات الشهرية</p>
                       <p className="mt-1 font-semibold text-[#123C91]">
                         {formatHours(teacher.monthlyMinutes)}
                       </p>
-                    </div>
-                    <div className="rounded-lg bg-gray-50 p-3">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openSessionDialog(teacher, "completed")}
+                      className="rounded-lg bg-gray-50 p-3 text-right"
+                    >
                       <p className="text-xs text-[#575F69]">الحصص المكتملة</p>
                       <p className="mt-1 font-semibold text-[#1F2937]">
                         {teacher.completedSessions}
                       </p>
-                    </div>
+                    </button>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-3">
                     <button
                       type="button"
-                      onClick={() =>
-                        navigate(
-                          `/admin/teachers/${teacher.id}/sessions/missed`,
-                          { state: { teacherName: teacher.name } },
-                        )
-                      }
+                      onClick={() => openSessionDialog(teacher, "missed")}
                       className="rounded-lg bg-amber-50 p-3 text-right"
                     >
                       <p className="text-xs text-[#575F69]">الغياب</p>
@@ -1021,6 +1043,56 @@ const TeachersPage = () => {
                   محادثة على الموقع
                 </button>
               </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+        {sessionDialog && createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setSessionDialog(null);
+            }}
+          >
+            <div className="max-h-[82vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-7" dir="rtl">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#1F2937]">
+                    {sessionDialog.type === "missed"
+                      ? "الحصص التي لم تُعقد"
+                      : sessionDialog.type === "hours"
+                        ? "تفاصيل الساعات الشهرية"
+                        : "الحصص المكتملة"}
+                  </h2>
+                  <p className="mt-1 text-sm text-[#575F69]">
+                    {sessionDialog.teacher.name} — {month}
+                  </p>
+                </div>
+                <button type="button" onClick={() => setSessionDialog(null)} aria-label="إغلاق" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200">
+                  <X size={17} />
+                </button>
+              </div>
+              {sessionDialogLoading ? (
+                <div className="flex items-center justify-center gap-2 py-16 text-sm text-[#575F69]"><Loader2 size={18} className="animate-spin" /> جاري تحميل الحصص...</div>
+              ) : sessionDialogItems.length === 0 ? (
+                <p className="py-14 text-center text-sm text-[#575F69]">لا توجد حصص مطابقة خلال هذا الشهر.</p>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-[#E5E7EB]">
+                  <table className="w-full text-right">
+                    <thead className="bg-[#F8FAFC] text-xs text-[#575F69]"><tr><th className="px-4 py-3">الحصة</th><th className="px-4 py-3">المجموعة</th><th className="px-4 py-3">التاريخ</th><th className="px-4 py-3">المدة</th></tr></thead>
+                    <tbody className="divide-y divide-[#E5E7EB]">
+                      {sessionDialogItems.map((session) => (
+                        <tr key={session.id || session.eventId} className="odd:bg-white even:bg-[#F8FAFC]">
+                          <td className="px-4 py-3 text-sm font-medium text-[#1F2937]">{session.title}</td>
+                          <td className="px-4 py-3 text-sm text-[#575F69]">{session.classroomName}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-[#575F69]">{session.scheduledAt ? new Date(session.scheduledAt).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" }) : "—"}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-[#123C91]">{formatSessionDuration(session.duration)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>,
           document.body,

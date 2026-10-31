@@ -22,6 +22,7 @@ test("high-volume teacher and group screens use their scoped summary clients", (
   assert.match(sessions, /getTeacherSessionList/);
   assert.doesNotMatch(sessions, /getTeacherMissedSessions|getClassroomSessions/);
   assert.match(groups, /getClassroomEnrollmentOptions/);
+  assert.match(api, /month \? \{ month \} : \{\}/);
   const enrollmentModal = groups.slice(
     groups.indexOf("const AddStudentModal"),
     groups.indexOf("const AssignTeacherModal"),
