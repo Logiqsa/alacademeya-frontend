@@ -875,7 +875,7 @@ export const UserDetailsModal = ({
               {user.children?.length ? (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {user.children.map((child) => (
-                    <button key={child.id} type="button" onClick={() => onChildClick?.(child)} className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-[#123C91] hover:border-[#123C91] hover:bg-blue-100">
+                    <button key={child.id} type="button" onClick={() => onChildClick?.(child)} className="p-0 text-sm font-semibold text-[#123C91] transition-colors hover:text-[#0F327A] hover:underline">
                       {child.name}
                     </button>
                   ))}
