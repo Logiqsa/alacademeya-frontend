@@ -18,3 +18,7 @@ test("user actions put primary actions first and destructive actions last", () =
   assert.ok(menu.indexOf('key: "activate"') < menu.indexOf('key: "delete"'));
   assert.ok(menu.indexOf('key: "suspend"') < menu.indexOf('key: "delete"'));
 });
+
+test("student action menus exclude WhatsApp", () => {
+  assert.match(table, /!String\(user\.role \|\| ""\)\.startsWith\("طالب"\)/);
+});

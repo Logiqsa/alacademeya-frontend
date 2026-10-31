@@ -1001,15 +1001,16 @@ const ActionsMenu = ({
     );
   }
 
-  items.push(
-    {
-      key: "chat",
-      label: "محادثة الموقع",
-      Icon: MessageCircle,
-      onClick: () => onOpenChat?.(user),
-      tone: "text-[#123C91]",
-    },
-    {
+  items.push({
+    key: "chat",
+    label: "محادثة الموقع",
+    Icon: MessageCircle,
+    onClick: () => onOpenChat?.(user),
+    tone: "text-[#123C91]",
+  });
+
+  if (!String(user.role || "").startsWith("طالب")) {
+    items.push({
       key: "whatsapp",
       label: "واتساب",
       Icon: MessageCircle,
@@ -1019,8 +1020,8 @@ const ActionsMenu = ({
       },
       tone: user.phone ? "text-[#087A35]" : "text-gray-400",
       disabled: !user.phone,
-    },
-  );
+    });
+  }
 
   if (isSuspended) {
     items.push({

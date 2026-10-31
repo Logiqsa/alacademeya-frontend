@@ -13,6 +13,7 @@ import {
   Users,
   Trash2,
   X,
+  Eye,
   MoreVertical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -781,7 +782,7 @@ const TeachersPage = () => {
                               }}
                               className="grid size-8 place-items-center rounded-lg text-[#575F69] transition-colors hover:bg-[#EEF4FF] hover:text-[#123C91]"
                               aria-label={`إجراءات المعلم ${teacher.name}`}
-                              title="عرض التفاصيل والإجراءات"
+                            title="إجراءات المعلم"
                             >
                               <MoreVertical size={18} />
                             </button>
@@ -1062,21 +1063,56 @@ const TeachersPage = () => {
               onClick={() => setActionMenu(null)}
             />
             <div
-              className="fixed z-50 min-w-44 rounded-xl border border-[#D7E2F3] bg-white p-1.5 shadow-xl"
+              className="fixed z-50 min-w-52 overflow-hidden rounded-xl border border-[#D7E2F3] bg-white py-1.5 shadow-xl"
               style={{ top: actionMenu.top, left: actionMenu.left }}
               dir="rtl"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  const { teacher } = actionMenu;
-                  setActionMenu(null);
-                  void openTeacherDetails(teacher);
-                }}
-                className="w-full rounded-lg px-3 py-2.5 text-right text-sm font-semibold text-[#123C91] transition-colors hover:bg-[#EEF4FC]"
-              >
-                عرض التفاصيل والإجراءات
-              </button>
+              {[
+                {
+                  label: "عرض",
+                  Icon: Eye,
+                  onClick: () => void openTeacherDetails(actionMenu.teacher),
+                },
+                {
+                  label: "تفاصيل الساعات الشهرية",
+                  Icon: Clock3,
+                  onClick: () => void openSessionDialog(actionMenu.teacher, "hours"),
+                },
+                {
+                  label: "الحصص المكتملة",
+                  Icon: CheckCircle2,
+                  onClick: () => void openSessionDialog(actionMenu.teacher, "completed"),
+                },
+                {
+                  label: "الغياب",
+                  Icon: XCircle,
+                  onClick: () => void openSessionDialog(actionMenu.teacher, "missed"),
+                  tone: "text-orange-600",
+                },
+                {
+                  label: "محادثة الموقع",
+                  Icon: MessagesSquare,
+                  onClick: () =>
+                    navigate("/admin/messages", {
+                      state: { openUserId: actionMenu.teacher.userId },
+                    }),
+                  disabled: !actionMenu.teacher.userId,
+                },
+              ].map(({ label, Icon, onClick, tone = "text-[#123C91]", disabled }) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    setActionMenu(null);
+                    onClick();
+                  }}
+                  className={`flex w-full items-center gap-2 px-3.5 py-2.5 text-right text-sm font-medium transition-colors hover:bg-[#EEF4FC] disabled:cursor-not-allowed disabled:text-gray-400 ${tone}`}
+                >
+                  <Icon size={16} />
+                  {label}
+                </button>
+              ))}
             </div>
           </>,
           document.body,

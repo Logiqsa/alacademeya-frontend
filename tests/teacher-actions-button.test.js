@@ -7,12 +7,14 @@ const source = readFileSync(
   "utf8",
 );
 
-test("teacher rows expose the existing details and actions dialog from a three-dot button", () => {
+test("teacher rows expose teacher-specific actions from a three-dot menu", () => {
   assert.match(source, /MoreVertical/);
   assert.match(source, /aria-label=\{`إجراءات المعلم \$\{teacher\.name\}`\}/);
   assert.match(source, /setActionMenu/);
-  assert.match(source, /عرض التفاصيل والإجراءات/);
-  assert.match(source, /void openTeacherDetails\(teacher\)/);
+  assert.match(source, /تفاصيل الساعات الشهرية/);
+  assert.match(source, /الحصص المكتملة/);
+  assert.match(source, /محادثة الموقع/);
+  assert.match(source, /void openTeacherDetails\(actionMenu\.teacher\)/);
   assert.match(source, /selectedTeacher && createPortal/);
   assert.match(source, /document\.body/);
 });
