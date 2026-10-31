@@ -1,4 +1,5 @@
-import { Search, ChevronDown } from "lucide-react";
+import { Search } from "lucide-react";
+import AppSelect from "../../ui/AppSelect";
 
 const ROLE_OPTIONS = ["جميع المستخدمين", "طالب دورات", "محاضر دورات", "معلم", "طالب أكاديمي", "ولي أمر", "مشرف", "مشرف عام"];
 const UsersFilters = ({
@@ -40,7 +41,7 @@ const UsersFilters = ({
       </div>
 
       {!hideRoleFilter && <div className="relative w-full sm:w-55 lg:w-60" style={{ height: "48px" }}>
-        <select
+        <AppSelect
           value={filterRole}
           onChange={(e) => onFilterRoleChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
@@ -50,12 +51,11 @@ const UsersFilters = ({
               {opt}
             </option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>}
 
       <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
-        <select
+        <AppSelect
           value={filterStatus}
           onChange={(e) => onFilterStatusChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
@@ -65,13 +65,12 @@ const UsersFilters = ({
               {opt}
             </option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
 
       {isAcademicRole && (
         <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
-          <select
+          <AppSelect
             value={filterCurriculum}
             onChange={(e) => onFilterCurriculumChange?.(e.target.value)}
             className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
@@ -80,14 +79,13 @@ const UsersFilters = ({
             {curriculumOptions.map((curriculum) => (
               <option key={curriculum} value={curriculum}>{curriculum}</option>
             ))}
-          </select>
-          <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+          </AppSelect>
         </div>
       )}
 
       {isStudentRole && (
         <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
-          <select
+          <AppSelect
             value={filterStage}
             onChange={(e) => onFilterStageChange?.(e.target.value)}
             disabled={filterCurriculum === "جميع المناهج"}
@@ -97,14 +95,13 @@ const UsersFilters = ({
             {stageOptions.map((stage) => (
               <option key={stage} value={stage}>{stage}</option>
             ))}
-          </select>
-          <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+          </AppSelect>
         </div>
       )}
 
       {isAcademicRole && (
         <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
-          <select
+          <AppSelect
             value={filterGrade}
             onChange={(e) => onFilterGradeChange?.(e.target.value)}
             disabled={isStudentRole ? filterStage === "جميع المراحل" : filterCurriculum === "جميع المناهج"}
@@ -116,14 +113,13 @@ const UsersFilters = ({
                 {grade}
               </option>
             ))}
-          </select>
-          <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+          </AppSelect>
         </div>
       )}
 
       {isAcademicRole && (
           <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
-            <select
+            <AppSelect
               value={filterSubject}
               onChange={(e) => onFilterSubjectChange?.(e.target.value)}
               disabled={filterGrade === "جميع الصفوف"}
@@ -133,8 +129,7 @@ const UsersFilters = ({
               {subjectOptions.map((subject) => (
                 <option key={subject} value={subject}>{subject}</option>
               ))}
-            </select>
-            <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+            </AppSelect>
           </div>
       )}
     </div>
