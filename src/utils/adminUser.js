@@ -42,6 +42,7 @@ export const mapAdminUser = (u) => ({
   rawRole: u.role,
   capabilities: u.capabilities,
   country: u.country,
+  parent: u.parent || null,
   isVerified: u.isVerified,
   isDeleted: !!u.isDeleted,
   isActive: !!u.isActive,

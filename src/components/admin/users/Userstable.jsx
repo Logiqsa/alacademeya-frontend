@@ -555,6 +555,7 @@ export const UserDetailsModal = ({
   onToggleStatus,
   onDelete,
   onChildClick,
+  onParentClick,
   onBack,
 }) => {
   const navigate = useNavigate();
@@ -718,6 +719,20 @@ export const UserDetailsModal = ({
         {isStudent && (
           <div className="grid grid-cols-2 gap-2 mb-2">
             <DetailRow label="الصف" value={user.grade || "—"} />
+            <div className="rounded-xl bg-[#F9FAFA] px-4 py-3">
+              <p className="text-xs text-[#8C9198]">ولي الأمر</p>
+              {user.parent?.id ? (
+                <button
+                  type="button"
+                  onClick={() => onParentClick?.(user.parent)}
+                  className="mt-1 text-sm font-semibold text-[#123C91] transition-colors hover:text-[#0F327A] hover:underline"
+                >
+                  {user.parent.name}
+                </button>
+              ) : (
+                <p className="mt-1 text-sm font-medium text-[#1F2937]">لا يوجد ولي أمر مرتبط</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -1745,6 +1760,21 @@ const UsersTable = ({
             stage: child.stage?.name?.ar || child.stage?.name?.en || "—",
             grade: child.grade?.name?.ar || child.grade?.name?.en || "—",
             studentSubjects: (child.preferredSubjects || []).map((subject) => subject?.name?.ar || subject?.name?.en).filter(Boolean),
+          });
+        }}
+        onParentClick={(parent) => {
+          setDetailsParent(detailsUser);
+          handleView({
+            ...parent,
+            role: "ولي أمر",
+            status: parent.registrationStatus?.startsWith("pending")
+              ? "معلق"
+              : parent.isActive === false
+                ? "موقوف"
+                : "نشط",
+            joinDate: parent.createdAt
+              ? new Date(parent.createdAt).toLocaleDateString("en-CA")
+              : "—",
           });
         }}
         onBack={detailsParent ? () => {

@@ -22,6 +22,12 @@ test("parent children open as student details with a back action", () => {
   assert.match(table, /aria-label="الرجوع لولي الأمر"/);
 });
 
+test("student details open the linked parent with a back action", () => {
+  assert.match(table, /ولي الأمر/);
+  assert.match(table, /onParentClick\?\.\(user\.parent\)/);
+  assert.match(table, /onParentClick=\{\(parent\) =>/);
+});
+
 test("notification labels follow the account role", () => {
   assert.match(notifications, /roleDetailsLabel/);
   assert.match(notifications, /roleDetailsLabel\(loadingUserRole\)/);
