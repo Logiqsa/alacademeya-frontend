@@ -707,6 +707,8 @@ export const updateClassroomSubstituteTeacher = (id, substituteTeacher) =>
   API.patch(`/classrooms/${id}/substitute-teacher`, { substituteTeacher });
 export const getClassroomReplacementTeachers = (id) =>
   API.get(`/classrooms/${id}/replacement-teachers`);
+export const getClassroomDeletionSummary = (id) =>
+  API.get(`/classrooms/${id}/deletion-summary`);
 export const deleteClassroom = (id) => API.delete(`/classrooms/${id}`);
 export const getAvailableClassrooms = (params) =>
   // params: { teacher, subject, type }

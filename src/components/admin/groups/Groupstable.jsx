@@ -24,6 +24,7 @@ import {
   updateClassroomSubstituteTeacher,
   createSubscription,
   deleteClassroom,
+  getClassroomDeletionSummary,
 } from "../../../services/APIService";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -333,14 +334,42 @@ const ModalFooter = ({
 const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+
+  useEffect(() => {
+    if (!open || !group?.id) return undefined;
+
+    let active = true;
+    setSummary(null);
+    setConfirmed(false);
+    setError("");
+    setSummaryLoading(true);
+    getClassroomDeletionSummary(group.id)
+      .then((response) => {
+        if (active) setSummary(response?.data?.data || null);
+      })
+      .catch(() => {
+        if (active) setError("تعذر تحميل ملخص الحذف، حاول مرة أخرى.");
+      })
+      .finally(() => {
+        if (active) setSummaryLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [open, group?.id]);
 
   const handleClose = () => {
     setError("");
+    setConfirmed(false);
     onClose();
   };
 
   const handleDelete = async () => {
-    if (!group?.id || submitting) return;
+    if (!group?.id || submitting || !summary || !confirmed) return;
 
     setSubmitting(true);
     setError("");
@@ -375,6 +404,47 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
         </div>
       </div>
 
+      {summaryLoading ? (
+        <p className="mt-4 text-center text-sm text-[#667085]">جاري تجهيز ملخص الحذف...</p>
+      ) : summary ? (
+        <div className="mt-4 rounded-xl border border-[#FECACA] bg-white p-4">
+          <p className="text-sm font-semibold text-[#991B1B]">سيُحذف نهائيًا:</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#575F69] sm:grid-cols-3">
+            {[
+              ["طلاب سيفصلون", summary.studentsDetached],
+              ["جداول", summary.schedulesDeleted],
+              ["حصص", summary.sessionsDeleted],
+              ["سجلات حضور", summary.attendanceDeleted],
+              ["غياب معلمين", summary.teacherAbsencesDeleted],
+              ["واجبات", summary.assignmentsDeleted],
+              ["تسليمات واجبات", summary.submissionsDeleted],
+              ["تسجيلات حصص", summary.recordingsDeleted],
+              ["رسائل المجموعة", summary.messagesDeleted],
+            ].map(([label, count]) => (
+              <div key={label} className="rounded-lg bg-[#FFF7F7] px-3 py-2">
+                <span>{label}</span>
+                <strong className="mr-1.5 text-[#991B1B]">{count}</strong>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs leading-5 text-[#667085]">
+            الاشتراكات المالية المرتبطة ({summary.subscriptionsDetached}) ستُحفظ، لكن ستُفصل عن المجموعة.
+          </p>
+        </div>
+      ) : null}
+
+      {summary && (
+        <label className="mt-4 flex cursor-pointer items-start gap-2 rounded-lg bg-[#FFF7F7] p-3 text-sm text-[#991B1B]">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(event) => setConfirmed(event.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-red-600"
+          />
+          <span>أفهم أن هذه البيانات ستُحذف نهائيًا ولا يمكن استرجاعها.</span>
+        </label>
+      )}
+
       {error && (
         <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[13px] text-red-700">
           {error}
@@ -385,10 +455,10 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
         <button
           type="button"
           onClick={handleDelete}
-          disabled={submitting}
+          disabled={submitting || summaryLoading || !summary || !confirmed}
           className="flex-1 rounded-xl bg-red-600 py-3 text-[14px] font-medium !text-white hover:bg-red-700 disabled:opacity-60"
         >
-          {submitting ? "جارٍ الحذف..." : "تأكيد الحذف"}
+          {submitting ? "جارٍ الحذف..." : "حذف نهائي للمجموعة"}
         </button>
         <button
           type="button"
