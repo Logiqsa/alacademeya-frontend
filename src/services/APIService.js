@@ -711,7 +711,7 @@ export const getClassroomDeletionSummary = (id) =>
   API.get(`/classrooms/${id}/deletion-summary`);
 export const deleteClassroom = (id) => API.delete(`/classrooms/${id}`);
 export const getAvailableClassrooms = (params) =>
-  // params: { teacher, subject, type }
+  // params: { teacher, subject, type, student? } — student is required for private rooms
   API.get("/classrooms/available", { params });
 export const getClassroomSessions = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/sessions/`, { params });

@@ -80,6 +80,7 @@ export default function AddSubscriptionPage() {
     }
     let cancelled = false;
     getAvailableClassrooms({
+        student,
         subject: item.subject,
         teacher: item.teacher,
         type: item.type,
