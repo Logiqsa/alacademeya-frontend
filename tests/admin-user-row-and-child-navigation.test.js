@@ -33,6 +33,11 @@ test("students without email show their actual registration source", () => {
   assert.match(table, /لا يوجد بريد إلكتروني/);
 });
 
+test("account status badges use high-contrast colors", () => {
+  assert.match(table, /const strongMap/);
+  assert.match(table, /<Badge label=\{status\} type="green" strong \/>/);
+});
+
 test("notification labels follow the account role", () => {
   assert.match(notifications, /roleDetailsLabel/);
   assert.match(notifications, /roleDetailsLabel\(loadingUserRole\)/);

@@ -167,7 +167,7 @@ const teacherData = (profile) => {
   };
 };
 
-const Badge = ({ label, type }) => {
+const Badge = ({ label, type, strong = false }) => {
   const map = {
     green: "bg-[#00A63E26] text-[#00A63E]",
     blue: "bg-[#EAF4FF] text-[#123C91]",
@@ -175,11 +175,18 @@ const Badge = ({ label, type }) => {
     red: "bg-red-100 text-red-600",
     gray: "bg-gray-100 text-[#8C9198]",
   };
+  const strongMap = {
+    green: "bg-[#07883B] text-white",
+    blue: "bg-[#1D4ED8] text-white",
+    orange: "bg-[#D96600] text-white",
+    red: "bg-[#DC2626] text-white",
+    gray: "bg-[#475569] text-white",
+  };
 
   return (
     <span
       className={`inline-flex min-w-18 items-center justify-center px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
-        map[type] ?? map.gray
+        (strong ? strongMap : map)[type] ?? (strong ? strongMap.gray : map.gray)
       }`}
     >
       {label}
@@ -189,11 +196,11 @@ const Badge = ({ label, type }) => {
 
 const statusBadge = (status, missingProfileFields = []) => {
   let badge;
-  if (status === "نشط") badge = <Badge label={status} type="green" />;
-  else if (status === "معلق") badge = <Badge label={status} type="orange" />;
-  else if (status === "ملف غير مكتمل") badge = <Badge label={status} type="blue" />;
-  else if (status === "موقوف") badge = <Badge label={status} type="red" />;
-  else badge = <Badge label={status} type="gray" />;
+  if (status === "نشط") badge = <Badge label={status} type="green" strong />;
+  else if (status === "معلق") badge = <Badge label={status} type="orange" strong />;
+  else if (status === "ملف غير مكتمل") badge = <Badge label={status} type="blue" strong />;
+  else if (status === "موقوف") badge = <Badge label={status} type="red" strong />;
+  else badge = <Badge label={status} type="gray" strong />;
 
   if (status !== "ملف غير مكتمل" || !missingProfileFields.length) return badge;
 
