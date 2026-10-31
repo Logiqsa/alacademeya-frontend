@@ -94,6 +94,24 @@ const studentIds = (student) =>
       .map(String),
   );
 
+const studentParent = (student) => {
+  const user = student?.parent?.user;
+  const id = entityId(user);
+  if (!id) return null;
+
+  return {
+    id,
+    name: user.fullName || user.username || "—",
+    email: user.email,
+    username: user.username,
+    phone: user.phone,
+    country: user.country,
+    isActive: user.isActive,
+    registrationStatus: user.registrationStatus,
+    createdAt: user.createdAt,
+  };
+};
+
 const classroomSummary = (classroom) => {
   if (!classroom || typeof classroom !== "object") return null;
   const id = entityId(classroom);
@@ -1432,6 +1450,7 @@ const UsersTable = ({
                 ...current,
                 groups: uniqueGroups,
                 groupsLoading: false,
+                parent: current.parent || studentParent(studentProfile),
                 studentSubjects: current.studentSubjects?.length
                   ? current.studentSubjects
                   : profileSubjects,
