@@ -214,7 +214,7 @@ export default function AddSubscriptionPage() {
       <main dir="rtl" className="p-3 sm:p-6 font-['IBM_Plex_Sans_Arabic']">
         <div className="mx-auto max-w-5xl">
         <h1 className="text-2xl font-bold text-[#123C91]">
-          {legacySubscriptionId ? "استكمال بيانات الاشتراك" : "إنشاء اشتراك يدوي"}
+          {legacySubscriptionId ? "استكمال بيانات الاشتراك" : "إنشاء اشتراك"}
         </h1>
         <p className="mt-2 text-sm text-[#667085]">
           {legacySubscriptionId
