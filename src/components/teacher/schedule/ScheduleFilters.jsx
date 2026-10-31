@@ -1,4 +1,5 @@
-import { Search, ChevronDown } from 'lucide-react';
+import { Search } from 'lucide-react';
+import AppSelect from '../../ui/AppSelect';
 
 const ScheduleFilters = () => {
   return (
@@ -27,7 +28,7 @@ const ScheduleFilters = () => {
 
         {/* Group select */}
         <div className="relative w-full sm:w-56">
-          <select
+          <AppSelect
             className="
               w-full h-12
               appearance-none
@@ -43,11 +44,7 @@ const ScheduleFilters = () => {
             <option>الرياضيات A</option>
             <option>الرياضيات B</option>
             <option>الرياضيات C</option>
-          </select>
-          <ChevronDown
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none"
-            size={16}
-          />
+          </AppSelect>
         </div>
 
       </div>

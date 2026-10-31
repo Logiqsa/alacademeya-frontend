@@ -1,4 +1,5 @@
-import { Search, ChevronDown } from 'lucide-react';
+import { Search } from 'lucide-react';
+import AppSelect from '../../ui/AppSelect';
 
 const SubscriptionFilters = ({
   searchTerm,
@@ -27,7 +28,7 @@ const SubscriptionFilters = ({
       </div>
 
       {!hideStudentFilter && <div className="relative" style={{ width: '280px', height: '48px' }}>
-        <select
+        <AppSelect
           value={selectedStudent}
           onChange={(e) => onStudentChange(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
@@ -38,13 +39,12 @@ const SubscriptionFilters = ({
               {name}
             </option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
       }
 
       <div className="relative" style={{ width: '240px', height: '48px' }}>
-        <select
+        <AppSelect
           value={selectedStatus}
           onChange={(e) => onStatusChange(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
@@ -55,8 +55,7 @@ const SubscriptionFilters = ({
               {status}
             </option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
 
     </div>

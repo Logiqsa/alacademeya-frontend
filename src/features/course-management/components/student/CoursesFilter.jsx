@@ -1,4 +1,5 @@
-import { Search, ChevronDown } from "lucide-react";
+import { Search } from "lucide-react";
+import AppSelect from "../../../../components/ui/AppSelect";
 
 const SORT_OPTIONS = [
   { value: "newest", label: "الأحدث" },
@@ -43,7 +44,7 @@ export default function CoursesFilter({ onSearch = () => {}, onChange = () => {}
       </div>
 
       <div className="relative w-full sm:w-55 lg:w-70" style={{ height: "48px" }}>
-        <select
+        <AppSelect
           onChange={(e) => onChange({ sort: e.target.value })}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
         >
@@ -52,12 +53,11 @@ export default function CoursesFilter({ onSearch = () => {}, onChange = () => {}
               {opt.label}
             </option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
 
       <div className="relative w-full sm:w-47.5 lg:w-60" style={{ height: "48px" }}>
-        <select
+        <AppSelect
           onChange={(e) => onChange({ level: e.target.value })}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
         >
@@ -66,8 +66,7 @@ export default function CoursesFilter({ onSearch = () => {}, onChange = () => {}
               {opt.label}
             </option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
 
     </div>

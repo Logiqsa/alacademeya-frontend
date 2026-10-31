@@ -1,4 +1,5 @@
-import { Search, ChevronDown } from "lucide-react";
+import { Search } from "lucide-react";
+import AppSelect from "../../../components/ui/AppSelect";
 
 const STATUS_OPTIONS = ["جميع الحالات", "مكتمل", "قيد المراجعة"];
 const TIME_OPTIONS   = ["جميع الأوقات", "هذا الشهر", "الشهر الماضي", "آخر 3 أشهر"];
@@ -28,7 +29,7 @@ const CoursesFilter = ({
 
       {/* Status filter */}
       <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
-        <select
+        <AppSelect
           value={filterStatus}
           onChange={(e) => onFilterStatusChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
@@ -36,13 +37,12 @@ const CoursesFilter = ({
           {STATUS_OPTIONS.map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
 
       {/* Time filter */}
       <div className="relative w-full sm:w-55 lg:w-60" style={{ height: "48px" }}>
-        <select
+        <AppSelect
           value={filterTime}
           onChange={(e) => onFilterTimeChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
@@ -50,8 +50,7 @@ const CoursesFilter = ({
           {TIME_OPTIONS.map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
 
     </div>

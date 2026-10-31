@@ -1,4 +1,5 @@
-import { Search, ChevronDown } from 'lucide-react';
+import { Search } from 'lucide-react';
+import AppSelect from '../../ui/AppSelect';
 
 /**
  * ScheduleFilters
@@ -32,7 +33,7 @@ const ScheduleFilters = ({
       </div>
 
       <div className="relative" style={{ width: '280px', height: '48px' }}>
-        <select
+        <AppSelect
           value={studentId || ''}
           onChange={(e) => onStudentChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
@@ -41,12 +42,11 @@ const ScheduleFilters = ({
           {students.map((s) => (
             <option key={s.id} value={s.id}>{s.fullName}</option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
 
       <div className="relative" style={{ width: '240px', height: '48px' }}>
-        <select
+        <AppSelect
           value={subjectId || ''}
           onChange={(e) => onSubjectChange?.(e.target.value)}
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
@@ -55,8 +55,7 @@ const ScheduleFilters = ({
           {subjects.map((sub) => (
             <option key={sub.id} value={sub.id}>{sub.name}</option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
 
     </div>
