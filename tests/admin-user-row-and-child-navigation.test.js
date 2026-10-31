@@ -38,6 +38,13 @@ test("account status badges use high-contrast colors", () => {
   assert.match(table, /<Badge label=\{status\} type="green" strong \/>/);
 });
 
+test("student details load real subscriptions and expose their package details", () => {
+  assert.match(table, /لم يتم الاشتراك في باقة بعد/);
+  assert.match(table, /matchingSubscriptions\.map\(subscriptionSummary\)/);
+  assert.match(table, /const StudentPackagesModal/);
+  assert.match(table, /onPackagesClick/);
+});
+
 test("notification labels follow the account role", () => {
   assert.match(notifications, /roleDetailsLabel/);
   assert.match(notifications, /roleDetailsLabel\(loadingUserRole\)/);

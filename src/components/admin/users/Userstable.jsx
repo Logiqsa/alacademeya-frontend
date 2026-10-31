@@ -123,6 +123,21 @@ const classroomSummary = (classroom) => {
   };
 };
 
+const subscriptionSummary = (subscription) => ({
+  id: entityId(subscription),
+  status: subscription.status,
+  createdAt: subscription.createdAt,
+  items: (subscription.items || []).map((item) => ({
+    id: entityId(item),
+    subject: localizedName(item.subject),
+    package: localizedNames(item.packages?.length ? item.packages : item.package).join("، "),
+    teacher: item.teacher?.user?.fullName || item.teacher?.fullName || "",
+    totalSessions: item.totalSessions ?? 0,
+    usedSessions: item.usedSessions ?? 0,
+    remainingSessions: item.remainingSessions ?? 0,
+  })),
+});
+
 const fileUrl = (value) => {
   const raw =
     (typeof value === "string"
@@ -219,12 +234,12 @@ const statusBadge = (status, missingProfileFields = []) => {
 };
 
 const roleBadge = (role) => {
-  if (role === "محاضر دورات") return <Badge label={role} type="green" />;
-  if (role === "طالب دورات") return <Badge label={role} type="blue" />;
-  if (role === "معلم") return <Badge label={role} type="green" />;
-  if (role === "طالب أكاديمي") return <Badge label={role} type="blue" />;
-  if (role === "ولي أمر") return <Badge label={role} type="orange" />;
-  return <Badge label={role} type="gray" />;
+  if (role === "محاضر دورات") return <Badge label={role} type="green" strong />;
+  if (role === "طالب دورات") return <Badge label={role} type="blue" strong />;
+  if (role === "معلم") return <Badge label={role} type="green" strong />;
+  if (role === "طالب أكاديمي") return <Badge label={role} type="blue" strong />;
+  if (role === "ولي أمر") return <Badge label={role} type="orange" strong />;
+  return <Badge label={role} type="gray" strong />;
 };
 
 const retainedReferenceLabels = {
@@ -477,6 +492,73 @@ const DetailRow = ({ label, value }) => (
   </div>
 );
 
+const SubscriptionDetailRow = ({ subscriptionsLoading, subscriptions, onClick }) => {
+  const count = subscriptions?.length || 0;
+  const label = subscriptionsLoading
+    ? "جاري تحميل الباقات..."
+    : count
+      ? `${count} ${count === 1 ? "باقة مشترَك بها" : "باقات مشترَك بها"}`
+      : "لم يتم الاشتراك في باقة بعد";
+
+  return (
+    <div className="flex min-h-16 flex-col justify-center gap-1 rounded-xl bg-[#F9FAFA] px-4 py-3">
+      <span className="text-[12px] text-[#8C9198]">الباقات</span>
+      {count ? (
+        <button type="button" onClick={onClick} className="w-fit text-right text-sm font-semibold text-[#123C91] hover:underline">
+          {label}
+        </button>
+      ) : (
+        <span className="text-sm font-medium text-[#475569]">{label}</span>
+      )}
+    </div>
+  );
+};
+
+const StudentPackagesModal = ({ user, onBack, onClose }) => {
+  if (!user) return null;
+  const subscriptions = user.subscriptions || [];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-7" dir="rtl">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={onBack} aria-label="الرجوع لتفاصيل الطالب" className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EAF4FF] text-[#123C91] hover:bg-[#dbe7fc]"><ArrowRight size={16} /></button>
+            <span className="font-['Tajawal'] text-base font-semibold text-[#1F2937]">باقات {user.name}</span>
+          </div>
+          <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]" aria-label="إغلاق"><X size={15} /></button>
+        </div>
+        <div className="space-y-3">
+          {subscriptions.map((subscription, index) => (
+            <section key={subscription.id || index} className="rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-[#1F2937]">اشتراك {index + 1}</p>
+                  {subscription.createdAt && <p className="mt-1 text-xs text-[#667085]">تاريخ الاشتراك: {new Date(subscription.createdAt).toLocaleDateString("en-CA")}</p>}
+                </div>
+                <Badge label={readableStatus(subscription.status) || "غير محدد"} type={subscription.status === "active" ? "green" : subscription.status === "expired" ? "orange" : "gray"} strong />
+              </div>
+              <div className="space-y-2">
+                {subscription.items.map((item, itemIndex) => (
+                  <div key={item.id || itemIndex} className="rounded-xl border border-[#E5E7EB] bg-white p-3">
+                    <p className="font-semibold text-[#123C91]">{item.subject || "مادة غير محددة"}</p>
+                    <div className="mt-2 grid gap-2 text-xs text-[#475569] sm:grid-cols-2">
+                      <span>الباقة: {item.package || "—"}</span>
+                      <span>المعلم: {item.teacher || "—"}</span>
+                      <span>الحصص: {item.usedSessions}/{item.totalSessions}</span>
+                      <span>المتبقي: {item.remainingSessions}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TeacherTeachingSelections = ({ selections }) => {
   if (!Array.isArray(selections) || !selections.length) return null;
 
@@ -598,6 +680,7 @@ export const UserDetailsModal = ({
   onDelete,
   onChildClick,
   onParentClick,
+  onPackagesClick,
   onBack,
 }) => {
   const navigate = useNavigate();
@@ -754,7 +837,11 @@ export const UserDetailsModal = ({
         {isStudent && (
           <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             <DetailRow label="المرحلة" value={user.stage} />
-            <DetailRow label="الباقة" value={user.package} />
+            <SubscriptionDetailRow
+              subscriptionsLoading={user.subscriptionsLoading}
+              subscriptions={user.subscriptions}
+              onClick={onPackagesClick}
+            />
           </div>
         )}
 
@@ -1296,6 +1383,7 @@ const UsersTable = ({
 }) => {
   const [detailsUser, setDetailsUser] = useState(null);
   const [detailsParent, setDetailsParent] = useState(null);
+  const [packagesUser, setPackagesUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [retainedUser, setRetainedUser] = useState(null);
@@ -1356,7 +1444,7 @@ const UsersTable = ({
   const handleView = async (user) => {
     setDetailsUser(
       user.role === "طالب أكاديمي"
-        ? { ...user, groups: [], groupsLoading: true }
+        ? { ...user, groups: [], groupsLoading: true, subscriptions: [], subscriptionsLoading: true }
         : user,
     );
     setReportError("");
@@ -1471,6 +1559,8 @@ const UsersTable = ({
                 ...current,
                 groups: uniqueGroups,
                 groupsLoading: false,
+                subscriptions: matchingSubscriptions.map(subscriptionSummary),
+                subscriptionsLoading: false,
                 parent: current.parent || studentParent(studentProfile),
                 studentSubjects: current.studentSubjects?.length
                   ? current.studentSubjects
@@ -1481,7 +1571,7 @@ const UsersTable = ({
       } catch {
         setDetailsUser((current) =>
           current?.id === user.id
-            ? { ...current, groups: [], groupsLoading: false }
+            ? { ...current, groups: [], groupsLoading: false, subscriptions: [], subscriptionsLoading: false }
             : current,
         );
       }
@@ -1768,6 +1858,7 @@ const UsersTable = ({
         onClose={() => {
           setDetailsUser(null);
           setDetailsParent(null);
+          setPackagesUser(null);
           setReportError("");
         }}
         user={detailsUser}
@@ -1814,10 +1905,26 @@ const UsersTable = ({
               : "—",
           });
         }}
+        onPackagesClick={() => {
+          setPackagesUser(detailsUser);
+          setDetailsUser(null);
+        }}
         onBack={detailsParent ? () => {
           setDetailsUser(detailsParent);
           setDetailsParent(null);
         } : undefined}
+      />
+
+      <StudentPackagesModal
+        user={packagesUser}
+        onClose={() => {
+          setPackagesUser(null);
+          setDetailsParent(null);
+        }}
+        onBack={() => {
+          setDetailsUser(packagesUser);
+          setPackagesUser(null);
+        }}
       />
 
       <ConfirmDialog

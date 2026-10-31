@@ -16,6 +16,6 @@ test("supervisor roles are displayed as distinct badges on desktop and mobile", 
   assert.match(source, /return "مشرف عام"/);
   assert.match(source, /return "مشرف"/);
   assert.equal(source.match(/<RoleBadge role=\{s\.role\} \/>/g)?.length, 2);
-  assert.match(source, /bg-\[#F3E8FF\]/);
-  assert.match(source, /bg-\[#EAF4FF\]/);
+  assert.match(source, /bg-\[#6B21A8\] text-white/);
+  assert.match(source, /bg-\[#1D4ED8\] text-white/);
 });

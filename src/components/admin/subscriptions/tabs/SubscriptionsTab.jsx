@@ -9,16 +9,16 @@ const PAGE_SIZE = 6;
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
   const map = {
-    active: "bg-[#00A63E26] text-[#00A63E]",
-    expired: "bg-[#FF8A0026] text-[#FF8A00]",
-    suspended: "bg-red-100 text-red-500",
-    incomplete: "bg-amber-100 text-amber-700",
+    active: "bg-[#07883B] text-white",
+    expired: "bg-[#D96600] text-white",
+    suspended: "bg-[#DC2626] text-white",
+    incomplete: "bg-[#1D4ED8] text-white",
   };
   const label =
     { active: "نشط", expired: "منتهي", suspended: "موقوف", incomplete: "بيانات غير مكتملة" }[status] ?? status;
   return (
     <span
-      className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${map[status] ?? "bg-gray-100 text-gray-500"}`}
+      className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${map[status] ?? "bg-[#475569] text-white"}`}
     >
       {label}
     </span>

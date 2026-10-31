@@ -9,10 +9,10 @@ const StatusBadge = ({ status }) => {
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
         isIncomplete
-          ? "bg-blue-100 text-[#123C91]"
+          ? "bg-[#1D4ED8] text-white"
           : isActive
-            ? "bg-green-100 text-green-800"
-            : "bg-red-100 text-red-800"
+            ? "bg-[#07883B] text-white"
+            : "bg-[#DC2626] text-white"
       }`}
     >
       {status}
@@ -33,13 +33,13 @@ const RoleBadge = ({ role }) => {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${
         isSuperAdmin
-          ? "bg-[#F3E8FF] text-[#6B21A8] ring-[#E9D5FF]"
-          : "bg-[#EAF4FF] text-[#123C91] ring-[#CFE0FA]"
+          ? "bg-[#6B21A8] text-white ring-[#6B21A8]"
+          : "bg-[#1D4ED8] text-white ring-[#1D4ED8]"
       }`}
     >
       <span
         className={`h-1.5 w-1.5 rounded-full ${
-          isSuperAdmin ? "bg-[#7E22CE]" : "bg-[#1D4ED8]"
+          "bg-white/80"
         }`}
       />
       {roleLabel(role)}

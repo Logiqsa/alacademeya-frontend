@@ -129,11 +129,11 @@ const resolveStudentGrade = (student) =>
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type }) => {
   const map = {
-    green: "bg-[#00A63E26] text-[#00A63E]",
-    blue: "bg-[#EAF4FF] text-[#123C91]",
-    orange: "bg-[#FF8A0026] text-[#FF8A00]",
-    red: "bg-red-100 text-red-500",
-    gray: "bg-gray-100 text-[#8C9198]",
+    green: "bg-[#07883B] text-white",
+    blue: "bg-[#1D4ED8] text-white",
+    orange: "bg-[#D96600] text-white",
+    red: "bg-[#DC2626] text-white",
+    gray: "bg-[#475569] text-white",
   };
   return (
     <span
