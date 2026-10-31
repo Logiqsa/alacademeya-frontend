@@ -444,6 +444,17 @@ const UserCell = ({ name, avatarUrl, onClick }) => (
   </button>
 );
 
+const EmailCell = ({ user }) =>
+  user.email ? (
+    <span dir="ltr">{user.email}</span>
+  ) : (
+    <span className="text-xs text-[#8C9198]">
+      {user.parent?.id
+        ? "تم التسجيل عبر ولي الأمر (بدون بريد)"
+        : "لا يوجد بريد إلكتروني"}
+    </span>
+  );
+
 const DetailRow = ({ label, value }) => (
   <div className="flex min-h-16 flex-col justify-center gap-1 rounded-xl bg-[#F9FAFA] px-4 py-3">
     <span className="text-[12px] text-[#8C9198]">{label}</span>
@@ -1246,11 +1257,8 @@ const MobileCard = ({
       <div className="flex items-center justify-between py-2">
         <span className="text-xs text-[#8C9198]">البريد الإلكتروني</span>
 
-        <span
-          className="text-[13px] text-[#575F69] truncate max-w-[55%]"
-          dir="ltr"
-        >
-          {u.email}
+        <span className="max-w-[55%] truncate text-[13px] text-[#575F69]">
+          <EmailCell user={u} />
         </span>
       </div>
 
@@ -1698,11 +1706,8 @@ const UsersTable = ({
                         onClick={() => handleView(user)}
                       />
                     </td>
-                    <td
-                      className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap"
-                      dir="ltr"
-                    >
-                      {user.email}
+                    <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
+                      <EmailCell user={user} />
                     </td>
 
                     <td className="px-5 py-3.5">

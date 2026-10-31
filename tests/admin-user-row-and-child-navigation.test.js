@@ -28,6 +28,11 @@ test("student details open the linked parent with a back action", () => {
   assert.match(table, /onParentClick=\{\(parent\) =>/);
 });
 
+test("students without email show their actual registration source", () => {
+  assert.match(table, /تم التسجيل عبر ولي الأمر \(بدون بريد\)/);
+  assert.match(table, /لا يوجد بريد إلكتروني/);
+});
+
 test("notification labels follow the account role", () => {
   assert.match(notifications, /roleDetailsLabel/);
   assert.match(notifications, /roleDetailsLabel\(loadingUserRole\)/);
