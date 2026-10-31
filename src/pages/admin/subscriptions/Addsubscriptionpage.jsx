@@ -49,6 +49,7 @@ export default function AddSubscriptionPage() {
     [student, setStudent] = useState(query.get("studentId") || "");
   const [options, setOptions] = useState(null),
     [item, setItem] = useState(blank),
+    [pricingMode, setPricingMode] = useState("package"),
     [rooms, setRooms] = useState([]),
     [busy, setBusy] = useState(false),
     [done, setDone] = useState(false);
@@ -122,6 +123,10 @@ export default function AddSubscriptionPage() {
             ? { discount: 0 }
             : {}),
     }));
+  };
+  const selectPricingMode = (mode) => {
+    setPricingMode(mode);
+    setItem((current) => ({ ...current, discount: 0 }));
   };
   const submit = async (e) => {
     e.preventDefault();
@@ -232,6 +237,7 @@ export default function AddSubscriptionPage() {
                 setStudent(e.target.value);
                 setOptions(null);
                 setItem(blank);
+                setPricingMode("package");
                 setRooms([]);
               }}
             >
@@ -309,6 +315,9 @@ export default function AddSubscriptionPage() {
                 </option>
               ))}
             </AppSelect>
+            <p className="mt-2 text-xs leading-5 text-[#667085]">
+              الباقة تحدد عدد الحصص والسعر الأساسي للاشتراك.
+            </p>
           </Field>
           <Field label="المجموعة *">
             <AppSelect
@@ -329,7 +338,37 @@ export default function AddSubscriptionPage() {
               ))}
             </AppSelect>
           </Field>
-          <Field label="الخصم (قيمة من سعر الباقة، وليست نسبة)">
+          <Field label="طريقة التسعير *">
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#F8FAFC] p-1.5">
+              {[
+                ["package", "من الباقة", "السعر المعتمد للباقة"],
+                ["manual", "سعر خاص يدوي", "خصم نقدي يحدده الأدمن"],
+              ].map(([value, label, description]) => (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={!item.package}
+                  onClick={() => selectPricingMode(value)}
+                  className={`rounded-lg px-3 py-2 text-right text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    pricingMode === value
+                      ? "bg-[#123C91] font-semibold text-white shadow-sm"
+                      : "text-[#475467] hover:bg-white"
+                  }`}
+                >
+                  <span className="block">{label}</span>
+                  <span className={`mt-0.5 block text-xs ${pricingMode === value ? "text-white/80" : "text-[#667085]"}`}>
+                    {description}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {!item.package ? (
+              <p className="mt-2 text-xs text-[#667085]">اختر الباقة أولًا.</p>
+            ) : pricingMode === "package" ? (
+              <p className="mt-2 text-xs text-[#667085]">السعر المعتمد للباقة: {packagePrice}</p>
+            ) : null}
+          </Field>
+          {pricingMode === "manual" && <Field label="الخصم النقدي من سعر الباقة">
             <input
               className={cls}
               type="number"
@@ -352,7 +391,7 @@ export default function AddSubscriptionPage() {
                 ? "اختر الباقة أولًا لمعرفة الحد الأقصى للخصم."
                 : `سعر الباقة: ${packagePrice} · السعر بعد الخصم: ${finalPrice}`}
             </p>
-          </Field>
+          </Field>}
           <div className="flex items-end gap-3">
             <button
               disabled={busy}
