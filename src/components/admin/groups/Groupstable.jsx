@@ -428,7 +428,7 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
             ))}
           </div>
           <p className="mt-3 text-xs leading-5 text-[#667085]">
-            الاشتراكات المالية المرتبطة ({summary.subscriptionsDetached}) ستُحفظ، لكن ستُفصل عن المجموعة.
+            الاشتراكات المالية المرتبطة ({summary.subscriptionsDetached}) ستُحفظ، لكن ستُفصل عن المجموعة والمعلم.
           </p>
         </div>
       ) : null}

@@ -44,6 +44,7 @@ test("student details load real subscriptions and expose their package details",
   assert.match(table, /const StudentPackagesModal/);
   assert.match(table, /onPackagesClick/);
   assert.match(table, /لم يتم الإضافة بعد/);
+  assert.match(table, /\/admin\/groups\/\$\{item\.classroom\.id\}\/lessons/);
 });
 
 test("notification labels follow the account role", () => {

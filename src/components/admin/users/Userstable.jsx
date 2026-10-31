@@ -516,6 +516,7 @@ const SubscriptionDetailRow = ({ subscriptionsLoading, subscriptions, onClick })
 };
 
 const StudentPackagesModal = ({ user, onBack, onClose }) => {
+  const navigate = useNavigate();
   if (!user) return null;
   const subscriptions = user.subscriptions || [];
 
@@ -546,7 +547,20 @@ const StudentPackagesModal = ({ user, onBack, onClose }) => {
                     <div className="mt-2 grid gap-2 text-xs text-[#475569] sm:grid-cols-2">
                       <span>الباقة: {item.package || "—"}</span>
                       <span>المعلم: {item.teacher || "—"}</span>
-                      <span>المجموعة: {item.classroom?.name || "لم يتم الإضافة بعد"}</span>
+                      <span>
+                        المجموعة: {item.classroom?.id ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onClose();
+                              navigate(`/admin/groups/${item.classroom.id}/lessons`);
+                            }}
+                            className="font-semibold text-[#123C91] hover:underline"
+                          >
+                            {item.classroom.name}
+                          </button>
+                        ) : "لم يتم الإضافة بعد"}
+                      </span>
                       <span>الحصص: {item.usedSessions}/{item.totalSessions}</span>
                       <span>المتبقي: {item.remainingSessions}</span>
                     </div>
