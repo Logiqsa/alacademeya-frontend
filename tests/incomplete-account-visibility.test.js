@@ -20,6 +20,11 @@ test("account-specific admin pages label incomplete profiles without hiding them
   assert.match(notifications, /role="status"/);
   assert.match(notifications, /phone: notificationData\.phone/);
   assert.match(notifications, /email: notificationData\.email/);
+  assert.match(
+    notifications,
+    /!isUserDetailsNotification\(n\) && getNotificationTarget\(n, "admin"\)/,
+  );
+  assert.match(notifications, /if \(!notification\.isRead\) await toggleRead\(notification\);/);
 });
 
 test("user status filters follow the selected user type", async () => {

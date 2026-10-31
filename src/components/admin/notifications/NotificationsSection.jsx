@@ -927,8 +927,7 @@ const NotificationsSection = ({
                 isRead={n.isRead}
                 onToggleRead={() => toggleRead(n)}
                 onOpen={
-                  isUserDetailsNotification(n) ||
-                  getNotificationTarget(n, "admin")
+                  !isUserDetailsNotification(n) && getNotificationTarget(n, "admin")
                     ? () => handleOpen(n)
                     : undefined
                 }
