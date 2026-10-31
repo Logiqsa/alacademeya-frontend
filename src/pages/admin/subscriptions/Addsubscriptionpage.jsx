@@ -219,6 +219,7 @@ export default function AddSubscriptionPage() {
               value={student}
               searchable
               searchPlaceholder="ابحث باسم الطالب..."
+              emptyMessage="لا يوجد طلاب"
               disabled={Boolean(legacySubscriptionId)}
               onChange={(e) => {
                 setStudent(e.target.value);
@@ -240,6 +241,7 @@ export default function AddSubscriptionPage() {
               className={cls}
               searchable
               searchPlaceholder="ابحث باسم المادة..."
+              emptyMessage="لا توجد مواد متاحة لهذا الطالب"
               disabled={!options}
               disabledMessage="اختر الطالب أولًا"
               value={item.subject}
@@ -268,6 +270,7 @@ export default function AddSubscriptionPage() {
               className={cls}
               searchable
               searchPlaceholder="ابحث باسم المعلم..."
+              emptyMessage="لا يوجد معلمون لهذه المادة"
               disabled={!item.subject}
               disabledMessage="اختر المادة أولًا"
               value={item.teacher}
@@ -286,6 +289,7 @@ export default function AddSubscriptionPage() {
               className={cls}
               searchable
               searchPlaceholder="ابحث باسم الباقة..."
+              emptyMessage="لا توجد باقات لهذه المادة"
               disabled={!item.subject}
               disabledMessage="اختر المادة أولًا"
               value={item.package}
@@ -304,6 +308,7 @@ export default function AddSubscriptionPage() {
               className={cls}
               searchable
               searchPlaceholder="ابحث باسم المجموعة..."
+              emptyMessage="لا توجد مجموعات مطابقة"
               disabled={!item.subject || !item.teacher || !item.type}
               disabledMessage={!item.subject ? "اختر المادة أولًا" : !item.teacher ? "اختر المعلم أولًا" : "اختر النوع أولًا"}
               value={item.classroom}

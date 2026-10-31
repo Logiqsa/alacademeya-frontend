@@ -30,6 +30,7 @@ export default function AppSelect({
   disabledMessage = "يرجى اختيار القائمة السابقة أولًا",
   searchable = false,
   searchPlaceholder = "ابحث...",
+  emptyMessage = "لا توجد خيارات متاحة",
   name,
   dir = "rtl",
   ...props
@@ -37,6 +38,7 @@ export default function AppSelect({
   const options = useMemo(() => optionsFromChildren(children), [children]);
   const currentValue = String(value ?? defaultValue ?? "");
   const selected = options.find((option) => option.value === currentValue) || options[0];
+  const hasChoices = options.some((option) => option.value && !option.disabled);
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState(null);
   const [search, setSearch] = useState("");
@@ -73,9 +75,13 @@ export default function AppSelect({
     setOpen(false);
   };
 
-  const visibleOptions = options.filter((option) =>
-    optionLabel(option).toLocaleLowerCase("ar").includes(search.trim().toLocaleLowerCase("ar")),
-  );
+  const visibleOptions = hasChoices
+    ? options.filter((option) =>
+        option.value === ""
+          ? !search.trim()
+          : optionLabel(option).toLocaleLowerCase("ar").includes(search.trim().toLocaleLowerCase("ar")),
+      )
+    : [];
 
   const move = (direction) => {
     const enabled = options.filter((option) => !option.disabled);
@@ -127,7 +133,7 @@ export default function AppSelect({
           disabled ? "!cursor-not-allowed !border-[#CBD5E1] !bg-[#EEF2F6] !text-[#98A2B3] !opacity-100" : ""
         }`}
       >
-        <span className="min-w-0 flex-1 truncate">{disabled ? disabledMessage : selected ? optionLabel(selected) : "—"}</span>
+        <span className="min-w-0 flex-1 truncate">{disabled ? disabledMessage : hasChoices ? selected ? optionLabel(selected) : "—" : emptyMessage}</span>
         {disabled ? <LockKeyhole size={15} className="shrink-0" /> : <ChevronDown size={16} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />}
       </button>
       {open && position && createPortal(
@@ -138,7 +144,7 @@ export default function AppSelect({
           className="fixed z-[2000] max-h-64 overflow-y-auto rounded-xl border border-[#D7E2F3] bg-white p-1.5 shadow-[0_12px_28px_rgba(16,24,40,0.14)]"
           style={position}
         >
-          {searchable && (
+          {searchable && hasChoices && (
             <div className="sticky top-0 z-10 bg-white pb-1.5">
               <div className="relative">
                 <Search size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#667085]" />
@@ -174,7 +180,9 @@ export default function AppSelect({
             );
           })}
           {!visibleOptions.length && (
-            <p className="px-3 py-2 text-center text-sm text-[#667085]">لا توجد نتائج مطابقة</p>
+            <p className="px-3 py-2 text-center text-sm text-[#667085]">
+              {hasChoices ? "لا توجد نتائج مطابقة" : emptyMessage}
+            </p>
           )}
         </div>,
         document.body,
