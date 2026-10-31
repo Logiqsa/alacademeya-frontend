@@ -448,7 +448,13 @@ const EmailCell = ({ user }) =>
   user.email ? (
     <span dir="ltr">{user.email}</span>
   ) : (
-    <span className="text-xs text-[#8C9198]">
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+        user.parent?.id
+          ? "bg-[#FFF1D6] text-[#9A5B00]"
+          : "bg-[#F1F5F9] text-[#475569]"
+      }`}
+    >
       {user.parent?.id
         ? "تم التسجيل عبر ولي الأمر (بدون بريد)"
         : "لا يوجد بريد إلكتروني"}
