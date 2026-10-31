@@ -105,6 +105,10 @@ export default function AddSubscriptionPage() {
     item.subject && Array.isArray(selectedSubject?.packages)
       ? selectedSubject.packages
       : allPackages;
+  const selectedPackage = packages.find((x) => idOf(x) === item.package);
+  const packagePrice = Number(selectedPackage?.price) || 0;
+  const discountValue = Math.min(Math.max(Number(item.discount) || 0, 0), packagePrice);
+  const finalPrice = packagePrice - discountValue;
   const set = (key, value) => {
     if (["subject", "teacher", "type"].includes(key)) setRooms([]);
     setItem((x) => ({
@@ -114,7 +118,9 @@ export default function AddSubscriptionPage() {
         ? { teacher: "", package: "", classroom: "" }
         : ["teacher", "type"].includes(key)
           ? { classroom: "" }
-          : {}),
+          : key === "package"
+            ? { discount: 0 }
+            : {}),
     }));
   };
   const submit = async (e) => {
@@ -323,14 +329,29 @@ export default function AddSubscriptionPage() {
               ))}
             </AppSelect>
           </Field>
-          <Field label="الخصم">
+          <Field label="الخصم (قيمة من سعر الباقة، وليست نسبة)">
             <input
               className={cls}
               type="number"
               min="0"
+              max={packagePrice || undefined}
+              disabled={!item.package}
+              title={!item.package ? "اختر الباقة أولًا" : undefined}
               value={item.discount}
-              onChange={(e) => set("discount", e.target.value)}
+              onChange={(e) =>
+                set(
+                  "discount",
+                  e.target.value === ""
+                    ? ""
+                    : Math.min(Number(e.target.value), packagePrice),
+                )
+              }
             />
+            <p className="mt-2 text-xs leading-5 text-[#667085]">
+              {!item.package
+                ? "اختر الباقة أولًا لمعرفة الحد الأقصى للخصم."
+                : `سعر الباقة: ${packagePrice} · السعر بعد الخصم: ${finalPrice}`}
+            </p>
           </Field>
           <div className="flex items-end gap-3">
             <button
