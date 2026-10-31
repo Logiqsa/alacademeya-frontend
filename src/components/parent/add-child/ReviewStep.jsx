@@ -79,7 +79,7 @@ const ReviewStep = ({
     try {
       const payload = {
         fullName: data.fullName.trim(),
-        email: data.email.trim().toLowerCase(),
+        email: data.email?.trim().toLowerCase() || undefined,
         phone: data.phone?.trim(),
         birthDate: data.birthDate
           ? new Date(data.birthDate).toISOString().split('T')[0]

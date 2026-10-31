@@ -152,9 +152,7 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
   const validate = () => {
     const next = {};
     if (!data.fullName?.trim()) next.fullName = "الاسم الكامل مطلوب";
-    if (!data.email?.trim()) {
-      next.email = "البريد الإلكتروني مطلوب";
-    } else if (!/^\S+@\S+\.\S+$/.test(data.email.trim())) {
+    if (data.email?.trim() && !/^\S+@\S+\.\S+$/.test(data.email.trim())) {
       next.email = "أدخل بريدًا إلكترونيًا صحيحًا";
     }
     if (!startDate) next.birthDate = "تاريخ الميلاد مطلوب";
@@ -209,7 +207,7 @@ const PersonalInfoStep = ({ onNext, data, onChange }) => {
         {/* البريد الإلكتروني */}
         <div className="sm:col-span-2">
           <label className="block font-['Tajawal'] font-medium text-[15px] sm:text-[17px] text-right text-[#1F2937] pb-1 w-fit">
-            البريد الإلكتروني
+            البريد الإلكتروني (اختياري)
           </label>
           <input
             type="email"
