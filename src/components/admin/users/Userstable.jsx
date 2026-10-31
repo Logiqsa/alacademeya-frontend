@@ -417,7 +417,10 @@ const UserCell = ({ name, avatarUrl, onClick }) => (
     className="flex items-center gap-2.5 text-left transition-colors hover:text-[#123C91]"
   >
     <Avatar name={name} avatarUrl={avatarUrl} size={8} />
-    <span className="text-sm font-medium text-[#1A1A1A] font-['Tajawal']">
+    <span
+      className="text-right text-sm font-medium text-[#1A1A1A] font-['Tajawal']"
+      dir="auto"
+    >
       {name}
     </span>
   </button>

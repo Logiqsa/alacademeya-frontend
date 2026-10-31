@@ -17,6 +17,15 @@ test("mapped admin users preserve the backend role for permission actions", () =
   assert.equal(mapped.rawRole, "user");
 });
 
+test("mapped admin users trim legacy display-name whitespace", () => {
+  const mapped = mapAdminUser({
+    _id: "user-2",
+    fullName: "  مصطفى السيد  ",
+    isActive: true,
+  });
+  assert.equal(mapped.name, "مصطفى السيد");
+});
+
 test("admin user table keeps account type out of its desktop columns", () => {
   const table = readFileSync(
     new URL("../src/components/admin/users/Userstable.jsx", import.meta.url),

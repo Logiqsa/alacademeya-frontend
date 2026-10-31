@@ -33,7 +33,7 @@ export const statusOf = (u) => {
 // نفس بيانات المستخدم وبنفس التسميات العربية.
 export const mapAdminUser = (u) => ({
   id: u.id || u._id,
-  name: u.fullName || u.name || "—",
+  name: String(u.fullName || u.name || "—").trim() || "—",
   username: u.username,
   email: u.email,
   phone: u.phone,
