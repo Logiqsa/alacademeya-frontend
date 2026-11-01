@@ -9,6 +9,7 @@ import {
   getMyProfile,
   getExchangeRates,
   getStudentSubscriptionOptions,
+  validateDiscount,
 } from "../../services/APIService";
 
 const CURRENCY_META = {
@@ -40,6 +41,7 @@ const StudentPackagesPage = () => {
   const [expandedSubject, setExpandedSubject] = useState("");
   const [currency, setCurrency] = useState(state?.currency || "");
   const [discountCode, setDiscountCode] = useState(state?.discountCode || "");
+  const [discountPreview, setDiscountPreview] = useState({ discount: null, error: "" });
   const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
   const isParentFlow = Boolean(state?.parentFlow || routeStudentId);
@@ -202,6 +204,51 @@ const StudentPackagesPage = () => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })} ${selectedCurrency?.symbol || currency}`;
+  const discountAmount = useMemo(() => {
+    const discount = discountPreview.discount;
+    if (!discount || !finalPrice) return 0;
+    const value = Number(discount.value) || 0;
+    return discount.type === "percentage"
+      ? Math.min(finalPrice, (finalPrice * value) / 100)
+      : Math.min(finalPrice, value / exchangeRate);
+  }, [discountPreview.discount, exchangeRate, finalPrice]);
+  const priceAfterDiscount = Math.max(0, finalPrice - discountAmount);
+  const formatPrice = (value) => `${value.toLocaleString("ar-EG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })} ${selectedCurrency?.symbol || currency}`;
+
+  useEffect(() => {
+    const code = discountCode.trim();
+    if (!code) {
+      setDiscountPreview({ discount: null, error: "" });
+      return undefined;
+    }
+
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await validateDiscount({ code });
+        const discount = response.data?.data?.discount || response.data?.discount;
+        if (active) setDiscountPreview({ discount, error: "" });
+      } catch (error) {
+        if (!active) return;
+        const code = error.response?.data?.code;
+        const messages = {
+          INVALID_DISCOUNT_CODE: "كود الخصم غير صحيح.",
+          DISCOUNT_IS_INACTIVE: "كود الخصم غير مفعّل حالياً.",
+          DISCOUNT_EXPIRED: "انتهت صلاحية كود الخصم.",
+          DISCOUNT_USAGE_LIMIT_REACHED: "اكتمل الحد المسموح لاستخدام كود الخصم.",
+        };
+        setDiscountPreview({ discount: null, error: messages[code] || "تعذر التحقق من كود الخصم." });
+      }
+    }, 400);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [discountCode]);
   const removeSubject = (id) => {
     const subjectId = String(id);
     setSelectedSubjectIds((current) =>
@@ -486,7 +533,7 @@ const StudentPackagesPage = () => {
             <div className="mt-5 flex items-center justify-between rounded-xl border border-[#BFD0EC] bg-[#F4F7FC] px-4 py-4">
               <div>
                 <p className="text-sm font-semibold text-[#1F2937]">
-                  السعر النهائي
+                  {discountPreview.discount ? "السعر قبل الخصم" : "السعر النهائي"}
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
                   إجمالي {selectedCount} {selectedCount === 1 ? "مادة" : "مواد"}
@@ -497,10 +544,32 @@ const StudentPackagesPage = () => {
               </strong>
             </div>
           )}
-          {!loading && selectedCount > 0 && <DiscountCodeField value={discountCode} onChange={setDiscountCode} />}
+          {!loading && selectedCount > 0 && (
+            <DiscountCodeField
+              value={discountCode}
+              onChange={(value) => {
+                setDiscountCode(value);
+                setDiscountPreview({ discount: null, error: "" });
+              }}
+            />
+          )}
+          {discountPreview.error && (
+            <p className="mt-2 text-sm font-medium text-[#C4320A]">{discountPreview.error}</p>
+          )}
+          {discountPreview.discount && (
+            <div className="mt-3 rounded-xl border border-[#A6F4C5] bg-[#ECFDF3] px-4 py-3">
+              <p className="text-sm font-semibold text-[#067647]">
+                تم قبول كود الخصم: {discountPreview.discount.code}
+              </p>
+              <div className="mt-2 flex items-center justify-between gap-3 text-sm">
+                <span className="text-[#475467]">قيمة الخصم: {formatPrice(discountAmount)}</span>
+                <strong className="text-[#067647]" dir="ltr">النهائي: {formatPrice(priceAfterDiscount)}</strong>
+              </div>
+            </div>
+          )}
 
           <button
-            disabled={loading || !selectedCount || !currency}
+            disabled={loading || !selectedCount || !currency || Boolean(discountPreview.error)}
             onClick={handleNext}
             className="w-full h-12 mt-5 rounded-lg bg-[#123C91] text-white font-medium disabled:opacity-60"
           >
