@@ -250,6 +250,12 @@ const SubscriptionDetailsPage = () => {
                       label="الخصم"
                       value={formatMoney(pricing.discount, currency)}
                     />
+                    {(item.discountCode || item.discountCodes?.length) && (
+                      <Detail
+                        label="كود الخصم"
+                        value={item.discountCode || item.discountCodes.join("، ")}
+                      />
+                    )}
                     <Detail
                       label="السعر النهائي"
                       value={formatMoney(pricing.finalPrice, currency)}

@@ -590,33 +590,38 @@ export const renewSubscription = (id, payload) =>
 // ─── Student subscription orders ─────────────────────────────────────────────
 // Prices and totals are intentionally never accepted here. The backend is the
 // authoritative source for all monetary values.
-export const createSubscriptionOrder = (items, studentId, currency) =>
+export const createSubscriptionOrder = (items, studentId, currency, discountCode) =>
   API.post("/subscription-orders", {
     items,
     ...(studentId ? { student: studentId } : {}),
     ...(currency ? { currency } : {}),
+    ...(discountCode?.trim() ? { discountCode: discountCode.trim() } : {}),
   });
 export const createRenewalSubscriptionOrder = (
   sourceSubscription,
   items,
   currency,
+  discountCode,
 ) =>
   API.post("/subscription-orders", {
     orderType: "renewal",
     sourceSubscription,
     items,
     ...(currency ? { currency } : {}),
+    ...(discountCode?.trim() ? { discountCode: discountCode.trim() } : {}),
   });
 export const createAddSubjectSubscriptionOrder = (
   sourceSubscription,
   items,
   currency,
+  discountCode,
 ) =>
   API.post("/subscription-orders", {
     orderType: "add_subject",
     sourceSubscription,
     items,
     ...(currency ? { currency } : {}),
+    ...(discountCode?.trim() ? { discountCode: discountCode.trim() } : {}),
   });
 export const getSubscriptionOrder = (id) =>
   API.get(`/subscription-orders/${id}`);

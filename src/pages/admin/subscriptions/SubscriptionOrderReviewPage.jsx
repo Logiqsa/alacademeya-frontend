@@ -232,6 +232,18 @@ const SubscriptionOrderReviewPage = () => {
                     {formatMoney(item.finalPrice, order.currency)}
                   </strong>
                 </div>
+                {order.discountCode && (
+                  <p className="mb-4 text-sm font-medium text-[#087F3F]">
+                    كود الخصم المطبق: {order.discountCode}
+                  </p>
+                )}
+                <p className="mb-4 text-sm text-[#667085]">
+                  السعر قبل الخصم: {formatMoney(item.originalPrice, order.currency)}
+                  {Number(item.discount) > 0 && (
+                    <> · الخصم: {formatMoney(item.discount, order.currency)}</>
+                  )}
+                  {" · "}السعر النهائي: {formatMoney(item.finalPrice, order.currency)}
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <label className="text-sm">
                     نوع الاشتراك

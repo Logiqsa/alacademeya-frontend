@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import ParentLayout from "../../components/parent/layout/ParentLayout";
 import StudentLayout from "../../components/student/layout/StudentLayout";
 import CurrencySelector from "../../components/subscription/CurrencySelector";
+import DiscountCodeField from "../../components/subscription/DiscountCodeField";
 import {
   createRenewalSubscriptionOrder,
   getExchangeRates,
@@ -34,6 +35,10 @@ const STATUS_LABELS = {
 };
 
 const ERROR_MESSAGES = {
+  INVALID_DISCOUNT_CODE: "كود الخصم غير صحيح.",
+  DISCOUNT_IS_INACTIVE: "كود الخصم غير مفعّل حالياً.",
+  DISCOUNT_EXPIRED: "انتهت صلاحية كود الخصم.",
+  DISCOUNT_USAGE_LIMIT_REACHED: "اكتمل الحد المسموح لاستخدام كود الخصم.",
   SOURCE_SUBSCRIPTION_REQUIRED: "بيانات الاشتراك المراد تجديده غير مكتملة.",
   SUBSCRIPTION_NOT_FOUND: "الاشتراك المطلوب غير موجود.",
   ACTION_DENIED: "لا تملك صلاحية تجديد هذا الاشتراك.",
@@ -64,6 +69,7 @@ const RenewalPage = ({ role }) => {
   const [order, setOrder] = useState(null);
   const [currencies, setCurrencies] = useState([]);
   const [currency, setCurrency] = useState("");
+  const [discountCode, setDiscountCode] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -136,6 +142,7 @@ const RenewalPage = ({ role }) => {
         id,
         selectedItems,
         currency,
+        discountCode,
       );
       const createdOrder = responseData(response);
       setOrder(createdOrder);
@@ -375,6 +382,7 @@ const RenewalPage = ({ role }) => {
                     value={currency}
                     onChange={setCurrency}
                   />
+                  <DiscountCodeField value={discountCode} onChange={setDiscountCode} disabled={creating} />
                   <button
                     type="button"
                     disabled={creating || !selectedItems.length || !currency}

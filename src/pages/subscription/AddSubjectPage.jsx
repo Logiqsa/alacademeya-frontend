@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import ParentLayout from "../../components/parent/layout/ParentLayout";
 import StudentLayout from "../../components/student/layout/StudentLayout";
 import CurrencySelector from "../../components/subscription/CurrencySelector";
+import DiscountCodeField from "../../components/subscription/DiscountCodeField";
 import {
   createAddSubjectSubscriptionOrder,
   getAllSubjects,
@@ -34,6 +35,10 @@ const nameOf = (value) => {
 const money = (value) => `${Number(value || 0).toLocaleString("ar-EG")} ج.م`;
 
 const ERROR_MESSAGES = {
+  INVALID_DISCOUNT_CODE: "كود الخصم غير صحيح.",
+  DISCOUNT_IS_INACTIVE: "كود الخصم غير مفعّل حالياً.",
+  DISCOUNT_EXPIRED: "انتهت صلاحية كود الخصم.",
+  DISCOUNT_USAGE_LIMIT_REACHED: "اكتمل الحد المسموح لاستخدام كود الخصم.",
   SOURCE_SUBSCRIPTION_REQUIRED: "بيانات الاشتراك الحالي غير مكتملة.",
   SUBSCRIPTION_NOT_FOUND: "الاشتراك الحالي غير موجود.",
   ACTION_DENIED: "لا تملك صلاحية تعديل هذا الاشتراك.",
@@ -62,6 +67,7 @@ const AddSubjectPage = ({ role }) => {
   const [order, setOrder] = useState(null);
   const [currencies, setCurrencies] = useState([]);
   const [currency, setCurrency] = useState("");
+  const [discountCode, setDiscountCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -218,6 +224,7 @@ const AddSubjectPage = ({ role }) => {
         sourceSubscriptionId,
         selectedItems,
         currency,
+        discountCode,
       );
       const createdOrder = responseData(response);
       setOrder(createdOrder);
@@ -419,6 +426,7 @@ const AddSubjectPage = ({ role }) => {
                     value={currency}
                     onChange={setCurrency}
                   />
+                  <DiscountCodeField value={discountCode} onChange={setDiscountCode} disabled={creating} />
                   <button
                     type="button"
                     disabled={creating || !selectedItems.length || !currency}

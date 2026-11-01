@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { Check, ChevronDown, X } from "lucide-react";
 import logo from "../../assets/icons/logo.svg";
 import AuthLayout from "../../components/auth/AuthLayout";
+import DiscountCodeField from "../../components/subscription/DiscountCodeField";
 import {
   getMyProfile,
   getExchangeRates,
@@ -38,6 +39,7 @@ const StudentPackagesPage = () => {
   const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
   const [expandedSubject, setExpandedSubject] = useState("");
   const [currency, setCurrency] = useState(state?.currency || "");
+  const [discountCode, setDiscountCode] = useState(state?.discountCode || "");
   const [currencies, setCurrencies] = useState([]);
   const [loading, setLoading] = useState(true);
   const isParentFlow = Boolean(state?.parentFlow || routeStudentId);
@@ -237,6 +239,7 @@ const StudentPackagesPage = () => {
         studentId: state?.studentId || routeStudentId,
         orderItems: items,
         currency,
+        discountCode,
       },
     });
   };
@@ -494,6 +497,7 @@ const StudentPackagesPage = () => {
               </strong>
             </div>
           )}
+          {!loading && selectedCount > 0 && <DiscountCodeField value={discountCode} onChange={setDiscountCode} />}
 
           <button
             disabled={loading || !selectedCount || !currency}

@@ -9,8 +9,20 @@ import {
   createSubscriptionOrder,
   startSubscriptionOrderCheckout,
 } from "../../services/APIService";
-import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
 import { hasApiErrorCode } from "../../services/apiError";
+import { formatEgpEquivalent, formatMoney } from "../../utils/currencyDisplay";
+
+const ORDER_ERROR_MESSAGES = {
+  INVALID_DISCOUNT_CODE: "كود الخصم غير صحيح.",
+  DISCOUNT_IS_INACTIVE: "كود الخصم غير مفعّل حالياً.",
+  DISCOUNT_EXPIRED: "انتهت صلاحية كود الخصم.",
+  DISCOUNT_USAGE_LIMIT_REACHED: "اكتمل الحد المسموح لاستخدام كود الخصم.",
+};
+
+const orderErrorMessage = (error, fallback) => {
+  const body = error.response?.data;
+  return ORDER_ERROR_MESSAGES[body?.code] || ORDER_ERROR_MESSAGES[body?.message] || body?.message || fallback;
+};
 
 const responseData = (response) => response?.data?.data ?? response?.data;
 const isExistingProfileError = (error) => {
@@ -59,6 +71,7 @@ const StudentOrderSummaryPage = () => {
           })),
           state?.studentId,
           state?.currency,
+          state?.discountCode,
         );
         const created = responseData(response);
         if (!active) return;
@@ -69,7 +82,7 @@ const StudentOrderSummaryPage = () => {
           const message =
             error.response?.status === 404
               ? "خدمة إنشاء طلب الاشتراك غير متاحة من الخادم حالياً"
-              : error.response?.data?.message || "تعذر إنشاء طلب الاشتراك";
+              : orderErrorMessage(error, "تعذر إنشاء طلب الاشتراك");
           toast.error(message);
         }
       } finally {
@@ -95,7 +108,7 @@ const StudentOrderSummaryPage = () => {
       if (error.response?.status === 409) {
         navigate(`/subscription-orders/${order.id}/status`, { replace: true });
       } else {
-        toast.error(error.response?.data?.message || "تعذر بدء عملية الدفع");
+        toast.error(orderErrorMessage(error, "تعذر بدء عملية الدفع"));
       }
       setCheckoutLoading(false);
     }
@@ -203,6 +216,7 @@ const StudentOrderSummaryPage = () => {
                   </div>
                 ))}
               </div>
+              {order.discountCode && <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">تم تطبيق كود الخصم: {order.discountCode}</p>}
               <div className="flex justify-between border border-gray-200 rounded-xl p-4 mt-5 text-lg font-bold">
                 <span>الإجمالي</span>
                 <strong className="text-[#123C91]">
