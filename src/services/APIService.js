@@ -747,6 +747,7 @@ export const deleteClassroomSchedule = (classroomId) =>
 // Students (Global / Admin)
 // ──────────────────────────────────────────────────────────────────────────────
 export const getAllStudents = (params) => API.get("/students", { params });
+export const getStudentParentOptions = () => API.get("/students/parent-options");
 export const createStudent = (payload) => API.post("/students", payload);
 export const getStudent = (studentId) => API.get(`/students/${studentId}`);
 export const updateStudentProfile = (studentId, payload) =>

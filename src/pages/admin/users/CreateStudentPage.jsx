@@ -11,6 +11,7 @@ import {
   getCountries,
   getCurriculums,
   getCurriculumStages,
+  getStudentParentOptions,
   getStageGrades,
 } from "../../../services/APIService";
 import { adminApiErrorMessage, apiList, idOf, nameOf } from "../../../utils/adminSubscription";
@@ -18,7 +19,7 @@ import { adminApiErrorMessage, apiList, idOf, nameOf } from "../../../utils/admi
 const emptyForm = {
   fullName: "", username: "", email: "", phone: "", password: "",
   passwordConfirm: "", countryCode: "", curriculum: "", stage: "", grade: "",
-  studyLanguage: "", birthDate: "", preferredSubjects: [],
+  studyLanguage: "", birthDate: "", parent: "", preferredSubjects: [],
 };
 
 const Field = ({ label, required, error, children }) => (
@@ -39,14 +40,16 @@ export default function CreateStudentPage() {
   const [stages, setStages] = useState([]);
   const [grades, setGrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [parents, setParents] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState(null);
 
   useEffect(() => {
-    Promise.all([getCountries(), getCurriculums()]).then(([countryRes, curriculumRes]) => {
+    Promise.all([getCountries(), getCurriculums(), getStudentParentOptions()]).then(([countryRes, curriculumRes, parentRes]) => {
       setCountries(apiList(countryRes, ["countries"]));
       setCurriculums(apiList(curriculumRes, ["curriculums"]));
+      setParents(apiList(parentRes, ["parents"]));
     }).catch(() => toast.error("تعذر تحميل بيانات النموذج"));
   }, []);
 
@@ -128,6 +131,7 @@ export default function CreateStudentPage() {
         <div className="mb-3 border-b border-gray-100 pb-2"><h2 className="font-bold text-[#1F2937]">بيانات الحساب</h2><p className="mt-0.5 text-xs text-[#8C9198]">البيانات الأساسية وبيانات تسجيل الدخول</p></div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[["fullName","الاسم الكامل","text"],["username","اسم المستخدم","text"],["email","البريد الإلكتروني","email"],["phone","رقم الهاتف","tel"],["password","كلمة المرور","password"],["passwordConfirm","تأكيد كلمة المرور","password"]].map(([key,label,type]) => <Field key={key} label={label} required={["fullName","username","password","passwordConfirm"].includes(key)} error={errors[key]}><input className={inputClass} type={type} value={form[key]} onChange={(e) => change(key,e.target.value)} /></Field>)}
+          <Field label="ولي الأمر" error={errors.parent}><AppSelect className={inputClass} value={form.parent} onChange={(e) => change("parent", e.target.value)} searchable searchPlaceholder="ابحث باسم ولي الأمر أو بريده..."><option value="">بدون ولي أمر</option>{parents.map((parent) => <option key={idOf(parent)} value={idOf(parent)}>{[parent.fullName, parent.email || parent.phone].filter(Boolean).join(" — ")}</option>)}</AppSelect></Field>
         </div>
       </div>
       <div className="rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
