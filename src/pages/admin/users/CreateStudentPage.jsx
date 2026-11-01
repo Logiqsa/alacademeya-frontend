@@ -15,6 +15,7 @@ import {
   getStageGrades,
 } from "../../../services/APIService";
 import { adminApiErrorMessage, apiList, idOf, nameOf } from "../../../utils/adminSubscription";
+import { getArabicCountryName } from "../../../utils/countryName";
 
 const emptyForm = {
   fullName: "", username: "", email: "", phone: "", password: "",
@@ -137,7 +138,7 @@ export default function CreateStudentPage() {
       <div className="rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-3 border-b border-gray-100 pb-2"><h2 className="font-bold text-[#1F2937]">البيانات الدراسية</h2><p className="mt-0.5 text-xs text-[#8C9198]">حدد المنهج والمرحلة والصف بشكل مستقل عن دولة الإقامة</p></div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="دولة الإقامة" required error={errors.countryCode}><AppSelect className={inputClass} value={form.countryCode} onChange={(e) => change("countryCode",e.target.value)}><option value="">اختر دولة الإقامة</option>{countries.map((c)=><option key={idOf(c)} value={c.code || c.countryCode}>{nameOf(c)}</option>)}</AppSelect></Field>
+          <Field label="دولة الإقامة" required error={errors.countryCode}><AppSelect className={inputClass} value={form.countryCode} onChange={(e) => change("countryCode",e.target.value)}><option value="">اختر دولة الإقامة</option>{countries.map((c)=><option key={idOf(c)} value={c.code || c.countryCode}>{[c.flag, getArabicCountryName(c)].filter(Boolean).join(" ")}</option>)}</AppSelect></Field>
           <Field label="المنهج" required error={errors.curriculum}><AppSelect className={inputClass} value={form.curriculum} onChange={(e)=>selectCurriculum(e.target.value)}><option value="">اختر المنهج</option>{curriculums.map((c)=><option key={idOf(c)} value={idOf(c)}>{nameOf(c)}</option>)}</AppSelect></Field>
           <Field label="المرحلة" required error={errors.stage}><AppSelect className={inputClass} value={form.stage} onChange={(e)=>selectStage(e.target.value)} disabled={!form.curriculum} disabledMessage="اختر المنهج أولًا"><option value="">اختر المرحلة</option>{stages.map((s)=><option key={idOf(s)} value={idOf(s)}>{nameOf(s)}</option>)}</AppSelect></Field>
           <Field label="الصف" required error={errors.grade}><AppSelect className={inputClass} value={form.grade} onChange={(e)=>selectGrade(e.target.value)} disabled={!form.stage} disabledMessage="اختر المرحلة أولًا"><option value="">اختر الصف</option>{grades.map((g)=><option key={idOf(g)} value={idOf(g)}>{nameOf(g)}</option>)}</AppSelect></Field>

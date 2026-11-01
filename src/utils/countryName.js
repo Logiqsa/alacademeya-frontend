@@ -1,10 +1,24 @@
+const arabicRegionName = (code) => {
+  if (!code || typeof Intl === "undefined" || !Intl.DisplayNames) return "";
+
+  try {
+    return new Intl.DisplayNames(["ar"], { type: "region" }).of(
+      String(code).toUpperCase(),
+    ) || "";
+  } catch {
+    return "";
+  }
+};
+
 export const getArabicCountryName = (country) => {
   if (!country) return "";
   if (typeof country === "string") return country;
+
   return (
     country.nameAr ||
     country.arabicName ||
     country.name?.ar ||
+    arabicRegionName(country.code || country.countryCode) ||
     (typeof country.name === "string" ? country.name : "") ||
     country.name?.en ||
     country.englishName ||
