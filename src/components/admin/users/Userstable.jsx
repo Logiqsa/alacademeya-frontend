@@ -123,6 +123,13 @@ const classroomSummary = (classroom) => {
   };
 };
 
+const canApproveRegistration = (user) =>
+  ["طالب أكاديمي", "معلم"].includes(user?.role) &&
+  user?.registrationStatus === "pending-approval" &&
+  user?.isVerified === true &&
+  user?.isActive !== false &&
+  user?.profileStatus === "pending";
+
 const subscriptionSummary = (subscription) => ({
   id: entityId(subscription),
   status: subscription.status,
@@ -706,6 +713,7 @@ export const UserDetailsModal = ({
   const isTeacher = user.role === "معلم";
   const isParent = user.role === "ولي أمر";
   const isStudent = user.role === "طالب أكاديمي";
+  const approvalEligible = canApproveRegistration(user);
   const userWhatsappUrl = whatsappUrl(user.phone);
 
   return (
@@ -805,7 +813,7 @@ export const UserDetailsModal = ({
             </button>
           )}
 
-          {user.status === "معلق" && onApprove && (
+          {approvalEligible && onApprove && (
             <button
               type="button"
               onClick={() => onApprove?.(user)}
@@ -1125,10 +1133,11 @@ const ActionsMenu = ({
 
   const isSuspended = user.status === "موقوف";
   const isPending = user.status === "معلق";
+  const approvalEligible = canApproveRegistration(user);
 
   const items = [];
 
-  if (isPending) {
+  if (approvalEligible) {
     items.push({
       key: "approve",
       label: "قبول الطلب",
