@@ -39,6 +39,7 @@ import {
   endSession,
   updateClassroomSession,
   updateClassroom,
+  removeClassroomStudent,
 } from "../../../services/APIService"; // عدّل المسار حسب مكان ملفك
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
@@ -681,6 +682,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     setSelectedPerson({
       ...student,
       id: user.id || user._id || student.id || student._id,
+      studentId: student.id || student._id,
       name: user.fullName || student.fullName || student.name || "طالب",
       email: user.email,
       phone: user.phone,
@@ -697,6 +699,23 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       grade: resolveName(student.grade?.name || student.grade),
       package: student.groupPackage || "لا توجد باقة فعالة",
     });
+  };
+
+  const handleRemoveStudentFromGroup = async (student) => {
+    const studentId = student.studentId || student.id || student._id;
+    if (!studentId) return;
+    if (!window.confirm("سيتم إلغاء اشتراك الطالب في هذه المجموعة وإخراجه من محادثتها. هل تريد المتابعة؟")) return;
+
+    try {
+      await removeClassroomStudent(groupId, studentId);
+      setSelectedPerson(null);
+      setToastMessage("تمت إزالة الطالب من المجموعة وإلغاء اشتراكه فيها");
+      setShowToast(true);
+      await fetchData();
+      window.setTimeout(() => setShowToast(false), 4000);
+    } catch (removeError) {
+      setError(removeError.response?.data?.message || "تعذرت إزالة الطالب من المجموعة");
+    }
   };
 
   const closeEndModal = () => {
@@ -1087,6 +1106,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         open={Boolean(selectedPerson)}
         onClose={() => setSelectedPerson(null)}
         user={selectedPerson}
+        onRemoveFromGroup={isAdmin ? handleRemoveStudentFromGroup : undefined}
       />
       {showSubstituteModal && (
         <SubstituteTeacherModal

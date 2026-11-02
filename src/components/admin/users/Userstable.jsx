@@ -31,6 +31,7 @@ import {
   getClassroomStudents,
   getClassrooms,
   getTeacher,
+  cancelSubscription,
 } from "../../../services/APIService";
 import { resolveApiEndpoint } from "../../../services/apiUrl";
 const getCurrentMonth = () => {
@@ -523,10 +524,23 @@ const SubscriptionDetailRow = ({ subscriptionsLoading, subscriptions, onClick })
   );
 };
 
-const StudentPackagesModal = ({ user, onBack, onClose }) => {
+const StudentPackagesModal = ({ user, onBack, onClose, onCancelled }) => {
   const navigate = useNavigate();
+  const [cancellingId, setCancellingId] = useState(null);
   if (!user) return null;
   const subscriptions = user.subscriptions || [];
+
+  const cancel = async (subscription) => {
+    if (!window.confirm("سيتم إلغاء الاشتراك وإخراج الطالب من مجموعاته المرتبطة به. هل تريد المتابعة؟")) return;
+    const subscriptionId = subscription.id || subscription._id;
+    setCancellingId(subscriptionId);
+    try {
+      await cancelSubscription(subscriptionId);
+      onCancelled?.(subscriptionId);
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(event) => event.target === event.currentTarget && onClose()}>
@@ -575,6 +589,16 @@ const StudentPackagesModal = ({ user, onBack, onClose }) => {
                   </div>
                 ))}
               </div>
+              {subscription.status === "active" && (
+                <button
+                  type="button"
+                  disabled={cancellingId === (subscription.id || subscription._id)}
+                  onClick={() => cancel(subscription)}
+                  className="mt-3 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
+                >
+                  {cancellingId === (subscription.id || subscription._id) ? "جارٍ الإلغاء..." : "إلغاء الاشتراك وإخراج الطالب من المجموعة"}
+                </button>
+              )}
             </section>
           ))}
         </div>
@@ -706,6 +730,7 @@ export const UserDetailsModal = ({
   onParentClick,
   onPackagesClick,
   onBack,
+  onRemoveFromGroup,
 }) => {
   const navigate = useNavigate();
 
@@ -713,7 +738,7 @@ export const UserDetailsModal = ({
 
   const isTeacher = user.role === "معلم";
   const isParent = user.role === "ولي أمر";
-  const isStudent = user.role === "طالب أكاديمي";
+  const isStudent = ["طالب أكاديمي", "طالب"].includes(user.role);
   const approvalEligible = canApproveRegistration(user);
   const userWhatsappUrl = whatsappUrl(user.phone);
 
@@ -849,6 +874,17 @@ export const UserDetailsModal = ({
             >
               <Trash2 size={18} />
               حذف المستخدم
+            </button>
+          )}
+
+          {isStudent && onRemoveFromGroup && (
+            <button
+              type="button"
+              onClick={() => onRemoveFromGroup(user)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
+            >
+              <Trash2 size={18} />
+              إزالة الطالب من المجموعة
             </button>
           )}
         </div>
@@ -1950,6 +1986,11 @@ const UsersTable = ({
         onBack={() => {
           setDetailsUser(packagesUser);
           setPackagesUser(null);
+        }}
+        onCancelled={() => {
+          const user = packagesUser;
+          setPackagesUser(null);
+          if (user) handleView({ ...user, role: "طالب أكاديمي" });
         }}
       />
 

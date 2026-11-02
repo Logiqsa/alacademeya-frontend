@@ -586,6 +586,7 @@ export const getSubscriptionRenewOptions = (id) =>
   API.get(`/subscriptions/${id}/renew-options`);
 export const renewSubscription = (id, payload) =>
   API.post(`/subscriptions/${id}/renew`, payload);
+export const cancelSubscription = (id) => API.patch(`/subscriptions/${id}/cancel`);
 
 // ─── Student subscription orders ─────────────────────────────────────────────
 // Prices and totals are intentionally never accepted here. The backend is the
@@ -724,6 +725,8 @@ export const getClassroomStudents = (classroomId, params) =>
   API.get(`/classrooms/${classroomId}/students/`, { params });
 export const getClassroomEnrollmentOptions = (classroomId) =>
   API.get(`/classrooms/${classroomId}/enrollment-options`);
+export const removeClassroomStudent = (classroomId, studentId) =>
+  API.delete(`/classrooms/${classroomId}/students/${studentId}`);
 
 // ─── Classroom Schedule ────────────────────────────────────────────────────────
 export const getMonthlySchedule = ({ year, month } = {}) =>
