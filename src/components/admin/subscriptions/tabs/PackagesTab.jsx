@@ -624,7 +624,12 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
                     <td className="px-5 py-4 font-semibold text-[#123C91]">
                       {Number(pkg.price || 0).toLocaleString("ar-EG")} جنيه
                     </td>
-                    <td className="px-5 py-4">{pkg.sessions} حصة</td>
+                    <td className="px-5 py-4">
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap" dir="rtl">
+                        <span dir="ltr">{Number(pkg.sessions || 0).toLocaleString("ar-EG")}</span>
+                        <span>حصة</span>
+                      </span>
+                    </td>
                     <td className="px-5 py-4 text-[#6B7280]">
                       {pkg.createdAt
                         ? new Date(pkg.createdAt).toLocaleDateString("ar-EG")
