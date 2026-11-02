@@ -79,53 +79,6 @@ const studentIdentityIds = (student) =>
 
 // ⚠️ افتراض: الطالب فيه حقل "stage" و"grade" مباشر أو جوه object فيه name/ar/en —
 // لسه محتاج تأكيد من بوستمان/Network tab لشكل الـ student object الراجع من getAllStudents()
-const resolveStageName = (s) => {
-  const stage =
-    s?.stage ??
-    s?.stageId ??
-    s?.user?.stage ??
-    s?.profile?.stage ??
-    s?.studentProfile?.stage;
-  if (!stage) return null;
-  if (typeof stage === "string") return stage;
-  const nested = stage.name ?? stage;
-  const resolved = resolveName(nested);
-  return resolved !== "--" ? resolved : null;
-};
-
-const resolveGradeName = (s) => {
-  const grade =
-    s?.grade ??
-    s?.gradeId ??
-    s?.user?.grade ??
-    s?.profile?.grade ??
-    s?.studentProfile?.grade;
-  if (!grade) return null;
-  if (typeof grade === "string") return grade;
-  const nested = grade.name ?? grade;
-  const resolved = resolveName(nested);
-  return resolved !== "--" ? resolved : null;
-};
-
-const resolveStudentStage = (student) =>
-  student?.stage ??
-  student?.stageId ??
-  student?.user?.stage ??
-  student?.profile?.stage ??
-  student?.studentProfile?.stage ??
-  student?.grade?.stage ??
-  student?.profile?.grade?.stage ??
-  student?.studentProfile?.grade?.stage ??
-  null;
-
-const resolveStudentGrade = (student) =>
-  student?.grade ??
-  student?.gradeId ??
-  student?.user?.grade ??
-  student?.profile?.grade ??
-  student?.studentProfile?.grade ??
-  null;
-
 // ─── Badge Helper ─────────────────────────────────────────────────────────────
 const Badge = ({ label, type }) => {
   const map = {
@@ -478,8 +431,6 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
   const [students, setStudents] = useState([]);
   const [classroomStudentIds, setClassroomStudentIds] = useState(new Set());
   const [packages, setPackages] = useState([]);
-  const [stages, setStages] = useState([]);
-  const [grades, setGrades] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedPackage, setSelectedPackage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -488,18 +439,12 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
 
   // فلاتر البحث
   const [search, setSearch] = useState("");
-  const [stageFilter, setStageFilter] = useState("");
-  const [gradeFilter, setGradeFilter] = useState("");
 
   useEffect(() => {
     if (!open || !group) return;
     setSelectedStudent("");
     setSelectedPackage("");
     setSearch("");
-    setStageFilter("");
-    setGradeFilter("");
-    setStages([]);
-    setGrades([]);
     setError(null);
     setLoading(true);
 
@@ -517,8 +462,6 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         setStudents((data.students || []).filter((student) => resolveStudentId(student)));
         setClassroomStudentIds(new Set((data.enrolledStudentIds || []).map(String)));
         setPackages(data.packages || []);
-        setGrades(data.grades || []);
-        setStages(data.stages || []);
       } catch {
         if (!cancelled) {
           setError("حصل خطأ أثناء تحميل البيانات");
@@ -535,42 +478,6 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
     };
   }, [open, group]);
 
-  const stageOptions = useMemo(
-    () =>
-      stages
-        .map((stage) => ({
-          value: resolveEntityId(stage) || resolveName(stage?.name ?? stage),
-          label: resolveName(stage?.name ?? stage),
-        }))
-        .filter((option) => option.value && option.label !== "--"),
-    [stages],
-  );
-
-  const gradeOptions = useMemo(() => {
-    const options = grades
-      .filter((grade) => {
-        if (!stageFilter) return true;
-        const stage = grade?.stage;
-        const stageValue =
-          resolveEntityId(stage) || resolveName(stage?.name ?? stage);
-        return String(stageValue) === String(stageFilter);
-      })
-      .map((grade) => ({
-        value: resolveEntityId(grade) || resolveName(grade?.name ?? grade),
-        label: resolveName(grade?.name ?? grade),
-      }))
-      .filter((option) => option.value && option.label !== "--");
-
-    return Array.from(
-      new Map(options.map((option) => [String(option.value), option])).values(),
-    );
-  }, [grades, stageFilter]);
-
-  const handleStageChange = (stageId) => {
-    setStageFilter(stageId);
-    setGradeFilter("");
-  };
-
   const filteredStudents = useMemo(() => {
     const q = search.trim().toLowerCase();
     return students.filter((s) => {
@@ -579,26 +486,9 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
       );
       const matchesSearch =
         !q || resolvePersonName(s).toLowerCase().includes(q);
-      const studentGrade = resolveStudentGrade(s);
-      const gradeRecord = grades.find(
-        (grade) =>
-          String(resolveEntityId(grade)) ===
-          String(resolveEntityId(studentGrade) || studentGrade || ""),
-      );
-      const studentStage = resolveStudentStage(s) || gradeRecord?.stage;
-      const matchesStage =
-        !stageFilter ||
-        String(resolveEntityId(studentStage) || resolveStageName(s)) ===
-          String(stageFilter);
-      const matchesGrade =
-        !gradeFilter ||
-        String(resolveEntityId(studentGrade) || resolveGradeName(s)) ===
-          String(gradeFilter);
-      return (
-        !isAlreadyInClassroom && matchesSearch && matchesStage && matchesGrade
-      );
+      return !isAlreadyInClassroom && matchesSearch;
     });
-  }, [students, classroomStudentIds, grades, search, stageFilter, gradeFilter]);
+  }, [students, classroomStudentIds, search]);
 
   const handleSubmit = async () => {
     if (!selectedStudent) {
@@ -642,24 +532,6 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
 
   return (
     <Modal open={open} onClose={onClose} title="إضافة طالب للمجموعة">
-      <SelectField
-        label="المرحلة"
-        placeholder="كل المراحل"
-        options={stageOptions}
-        value={stageFilter}
-        onChange={handleStageChange}
-        disabled={loading}
-        allowClear
-      />
-      <SelectField
-        label="الصف"
-        placeholder="كل الصفوف"
-        options={gradeOptions}
-        value={gradeFilter}
-        onChange={setGradeFilter}
-        disabled={loading}
-        allowClear
-      />
       <StudentCombobox
         label="الطالب"
         search={search}
