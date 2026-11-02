@@ -7,7 +7,6 @@ import {
   MoreVertical,
   Users,
   X,
-  ChevronDown,
   ClipboardList,
   BookOpen,
   Search,
@@ -17,6 +16,7 @@ import {
   AlertTriangle,
   CalendarClock,
 } from "lucide-react";
+import AppSelect from "../../ui/AppSelect";
 import {
   getClassroomReplacementTeachers,
   getClassroomEnrollmentOptions,
@@ -120,27 +120,20 @@ const SelectField = ({
     <label className="block font-['Tajawal'] font-medium text-[14px] text-right text-[#1F2937] pb-1">
       {label}
     </label>
-    <div className="relative">
-      <select
-        value={value ?? ""}
-        onChange={(e) => onChange?.(e.target.value)}
-        disabled={disabled}
-        className="w-full h-11 px-4 border border-[#E5E5E5] rounded-lg bg-[#F9FAFA] font-['IBM_Plex_Sans_Arabic'] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#123C91] appearance-none text-right text-[#1F2937] disabled:opacity-60"
-      >
-        <option value="" disabled={!allowClear}>
-          {placeholder}
-        </option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={14}
-        className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]"
-      />
-    </div>
+    <AppSelect
+      className="h-11 w-full rounded-xl border border-[#D0D5DD] bg-white px-3 font-['IBM_Plex_Sans_Arabic'] text-[13px] text-[#344054] outline-none transition focus:border-[#123C91] focus:ring-2 focus:ring-[#123C91]/10"
+      value={value ?? ""}
+      onChange={(event) => onChange?.(event.target.value)}
+      disabled={disabled}
+      searchable={options.length > 8}
+      searchPlaceholder={`ابحث عن ${label}...`}
+      emptyMessage="لا توجد خيارات متاحة"
+    >
+      <option value="" disabled={!allowClear}>{placeholder}</option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>{option.label}</option>
+      ))}
+    </AppSelect>
   </div>
 );
 
