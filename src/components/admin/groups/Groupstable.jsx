@@ -430,6 +430,7 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
 export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
   const [students, setStudents] = useState([]);
   const [classroomStudentIds, setClassroomStudentIds] = useState(new Set());
+  const [subscribedStudents, setSubscribedStudents] = useState([]);
   const [packages, setPackages] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedPackage, setSelectedPackage] = useState("");
@@ -445,6 +446,7 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
     setSelectedStudent("");
     setSelectedPackage("");
     setSearch("");
+    setSubscribedStudents([]);
     setError(null);
     setLoading(true);
 
@@ -461,6 +463,7 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         if (cancelled) return;
         setStudents((data.students || []).filter((student) => resolveStudentId(student)));
         setClassroomStudentIds(new Set((data.enrolledStudentIds || []).map(String)));
+        setSubscribedStudents(data.subscribedStudents || []);
         setPackages(data.packages || []);
       } catch {
         if (!cancelled) {
@@ -480,15 +483,41 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
 
   const filteredStudents = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const subscribedStudentIds = new Set(subscribedStudents.map((item) => String(item.studentId)));
     return students.filter((s) => {
       const isAlreadyInClassroom = studentIdentityIds(s).some((id) =>
         classroomStudentIds.has(id),
       );
+      const hasActiveSubscription = studentIdentityIds(s).some((id) =>
+        subscribedStudentIds.has(id),
+      );
       const matchesSearch =
         !q || resolvePersonName(s).toLowerCase().includes(q);
-      return !isAlreadyInClassroom && matchesSearch;
+      return !isAlreadyInClassroom && !hasActiveSubscription && matchesSearch;
     });
-  }, [students, classroomStudentIds, search]);
+  }, [students, classroomStudentIds, subscribedStudents, search]);
+
+  const subscribedStudentDetails = useMemo(
+    () => subscribedStudents.map((item) => ({
+      ...item,
+      name: resolvePersonName(students.find((student) =>
+        studentIdentityIds(student).includes(String(item.studentId)),
+      )),
+    })),
+    [students, subscribedStudents],
+  );
+
+  const subscriptionNotice = useMemo(() => {
+    const currentGroupId = String(group?.id || "");
+    const inThisGroup = subscribedStudentDetails.filter(
+      (item) => String(item.classroomId || "") === currentGroupId,
+    );
+    const inAnotherGroup = subscribedStudentDetails.filter(
+      (item) => String(item.classroomId || "") !== currentGroupId,
+    );
+
+    return { inThisGroup, inAnotherGroup };
+  }, [group?.id, subscribedStudentDetails]);
 
   const handleSubmit = async () => {
     if (!selectedStudent) {
@@ -550,6 +579,20 @@ export const AddStudentModal = ({ open, onClose, group, onChanged }) => {
         disabled={loading}
         emptyLabel="لا يوجد طلاب مطابقين"
       />
+      {subscribedStudentDetails.length > 0 && (
+        <div className="-mt-1 mb-3 space-y-1 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+          {subscriptionNotice.inThisGroup.length > 0 && (
+            <p>
+              مضافون بالفعل للمجموعة: {subscriptionNotice.inThisGroup.map((item) => `${item.name} (متبقي ${item.remainingSessions} حصة)`).join("، ")}.
+            </p>
+          )}
+          {subscriptionNotice.inAnotherGroup.length > 0 && (
+            <p>
+              لا يمكن إضافة {subscriptionNotice.inAnotherGroup.map((item) => `${item.name} (${item.classroomName} — متبقي ${item.remainingSessions} حصة)`).join("، ")} لأن لديهم اشتراكًا نشطًا في هذه المادة.
+            </p>
+          )}
+        </div>
+      )}
       <SelectField
         label="الباقة"
         placeholder={loading ? "جاري التحميل..." : "اختر الباقة"}
