@@ -221,6 +221,7 @@ const statusBadge = (status, missingProfileFields = []) => {
   let badge;
   if (status === "نشط") badge = <Badge label={status} type="green" strong />;
   else if (status === "معلق") badge = <Badge label={status} type="orange" strong />;
+  else if (status === "لم يتم تأكيد الحساب") badge = <Badge label={status} type="orange" strong />;
   else if (status === "ملف غير مكتمل") badge = <Badge label={status} type="blue" strong />;
   else if (status === "موقوف") badge = <Badge label={status} type="red" strong />;
   else badge = <Badge label={status} type="gray" strong />;
@@ -1132,7 +1133,7 @@ const ActionsMenu = ({
   const menuRef = useRef(null);
 
   const isSuspended = user.status === "موقوف";
-  const isPending = user.status === "معلق";
+  const isPending = ["معلق", "لم يتم تأكيد الحساب"].includes(user.status);
   const approvalEligible = canApproveRegistration(user);
 
   const items = [];

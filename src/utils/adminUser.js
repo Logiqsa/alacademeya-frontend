@@ -23,6 +23,7 @@ export const adminAccountTypeLabel = (user = {}) => {
 
 export const statusOf = (u) => {
   if (u.isDeleted) return "محذوف";
+  if (u.registrationStatus === "pending-verification") return "لم يتم تأكيد الحساب";
   if (u.registrationStatus?.startsWith("pending")) return "معلق";
   if (!u.isActive) return "موقوف";
   return "نشط";
