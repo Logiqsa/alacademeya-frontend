@@ -20,6 +20,9 @@ const SEGMENT_LABELS = {
   notifications: "الإشعارات",
   subscription: "الاشتراك",
   subscriptions: "الاشتراكات",
+  packages: "الباقات",
+  "discount-codes": "أكواد الخصم",
+  orders: "الاشتراكات",
   messages: "الرسائل",
   settings: "الإعدادات",
 
@@ -101,7 +104,7 @@ const HIDDEN_PARAM_KEYS = new Set([
 // مش موجود في الـ Routes، فبيقع في الـ fallback ويرجّع لـ "/".
 // المفتاح هنا = المسار اللي اتبني تلقائيًا (accumulated path)، والقيمة = المسار الصح.
 const PATH_OVERRIDES = {
-  "/admin/subscriptions": "/admin/subscription",
+  "/admin/subscriptions": "/admin/subscription/orders",
   "/teacher/assignments": "/teacher/tasks",
 };
 

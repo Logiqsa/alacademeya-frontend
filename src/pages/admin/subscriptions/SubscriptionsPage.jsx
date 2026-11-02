@@ -1,5 +1,5 @@
-import { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import PackagesTab from "../../../components/admin/subscriptions/tabs/PackagesTab";
 import DiscountCodesTab from "../../../components/admin/subscriptions/tabs/DiscountCodesTab";
 import SubscriptionsTab from "../../../components/admin/subscriptions/tabs/SubscriptionsTab";
@@ -8,26 +8,29 @@ import Breadcrumbs from "../../shared/Breadcrumbs";
 import { AuthContext } from "../../../context/AuthContext";
 
 const TABS = [
-  { key: "packages", label: "الباقات" },
-  { key: "discounts", label: "أكواد الخصم" },
-  { key: "subscriptions", label: "الاشتراكات" },
+  { key: "packages", path: "packages", label: "الباقات" },
+  { key: "discounts", path: "discount-codes", label: "أكواد الخصم" },
+  { key: "subscriptions", path: "orders", label: "الاشتراكات" },
 ];
 
 const SubscriptionsPage = () => {
   const navigate = useNavigate();
+  const { tab: tabPath } = useParams();
   const { user } = useContext(AuthContext);
   const isSuperAdmin = user?.role === "super-admin";
   const visibleTabs = isSuperAdmin
     ? TABS
     : TABS.filter((tab) => tab.key !== "packages");
-  const [activeTab, setActiveTab] = useState(() =>
-    user?.role === "super-admin" ? "packages" : "discounts",
-  );
   const [showAddPackage, setShowAddPackage] = useState(false);
   const [showAddDiscount, setShowAddDiscount] = useState(false);
-  const currentTab = visibleTabs.some((tab) => tab.key === activeTab)
-    ? activeTab
-    : visibleTabs[0].key;
+  const selectedTab = visibleTabs.find((tab) => tab.path === tabPath);
+  const currentTab = selectedTab?.key || visibleTabs[0]?.key;
+
+  useEffect(() => {
+    if (user?.role && !selectedTab && visibleTabs[0]) {
+      navigate(`/admin/subscription/${visibleTabs[0].path}`, { replace: true });
+    }
+  }, [navigate, selectedTab, user?.role, visibleTabs]);
 
   const tabBtnLabel = {
     packages: "إضافة باقة",
@@ -87,7 +90,7 @@ const SubscriptionsPage = () => {
           {visibleTabs.map((t) => (
             <button
               key={t.key}
-              onClick={() => setActiveTab(t.key)}
+              onClick={() => navigate(`/admin/subscription/${t.path}`)}
               className={`flex-1 sm:flex-none px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
                 currentTab === t.key
                   ? "bg-white text-[#123C91] shadow-sm"

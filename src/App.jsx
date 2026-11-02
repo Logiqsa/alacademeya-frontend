@@ -926,8 +926,17 @@ function App() {
           <Route
             path="/admin/subscription"
             element={
-              user ? <SubscriptionsPage /> : <Navigate to="/login" replace />
+              user ? (
+                <Navigate
+                  to={`/admin/subscription/${user?.role === "super-admin" ? "packages" : "discount-codes"}`}
+                  replace
+                />
+              ) : <Navigate to="/login" replace />
             }
+          />
+          <Route
+            path="/admin/subscription/:tab"
+            element={user ? <SubscriptionsPage /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/admin/subscriptions/requests"
