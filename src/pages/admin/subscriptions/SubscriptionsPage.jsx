@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { CreditCard, Package, TicketPercent } from "lucide-react";
 import PackagesTab from "../../../components/admin/subscriptions/tabs/PackagesTab";
 import DiscountCodesTab from "../../../components/admin/subscriptions/tabs/DiscountCodesTab";
 import SubscriptionsTab from "../../../components/admin/subscriptions/tabs/SubscriptionsTab";
@@ -8,9 +9,9 @@ import Breadcrumbs from "../../shared/Breadcrumbs";
 import { AuthContext } from "../../../context/AuthContext";
 
 const TABS = [
-  { key: "packages", path: "packages", label: "الباقات" },
-  { key: "discounts", path: "discount-codes", label: "أكواد الخصم" },
-  { key: "subscriptions", path: "orders", label: "الاشتراكات" },
+  { key: "subscriptions", path: "orders", label: "الاشتراكات", icon: CreditCard },
+  { key: "packages", path: "packages", label: "الباقات", icon: Package },
+  { key: "discounts", path: "discount-codes", label: "أكواد الخصم", icon: TicketPercent },
 ];
 
 const SubscriptionsPage = () => {
@@ -56,7 +57,7 @@ const SubscriptionsPage = () => {
               إدارة الاشتراكات
             </h2>
             <p className="text-[#575F69] text-[13px] sm:text-[14px] mt-0.5">
-              الباقات ورموز الخصم والاشتراكات
+              متابعة الاشتراكات والباقات وأكواد الخصم
             </p>
           </div>
 
@@ -86,17 +87,18 @@ const SubscriptionsPage = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-0.5 bg-[#F3F4F6] rounded-xl p-1 w-full sm:w-fit mb-5 sm:mb-6 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 rounded-2xl border border-[#E4E7EC] bg-white p-1.5 shadow-sm w-full sm:w-fit mb-5 sm:mb-6 overflow-x-auto no-scrollbar">
           {visibleTabs.map((t) => (
             <button
               key={t.key}
               onClick={() => navigate(`/admin/subscription/${t.path}`)}
-              className={`flex-1 sm:flex-none px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
+              className={`flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-all whitespace-nowrap ${
                 currentTab === t.key
-                  ? "bg-white text-[#123C91] shadow-sm"
-                  : "text-[#6B7280] hover:text-[#374151]"
+                  ? "bg-[#123C91] text-white shadow-sm"
+                  : "text-[#667085] hover:bg-[#F5F8FF] hover:text-[#123C91]"
               }`}
             >
+              <t.icon size={16} strokeWidth={2.25} />
               {t.label}
             </button>
           ))}

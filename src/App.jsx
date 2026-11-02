@@ -928,7 +928,7 @@ function App() {
             element={
               user ? (
                 <Navigate
-                  to={`/admin/subscription/${user?.role === "super-admin" ? "packages" : "discount-codes"}`}
+                  to="/admin/subscription/orders"
                   replace
                 />
               ) : <Navigate to="/login" replace />
