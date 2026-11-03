@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Eye, Loader2, RefreshCw, FilePenLine, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { cancelSubscription, getAllSubscriptions } from "../../../../services/APIService";
+import { cancelSubscription, deleteOrphanSubscription, getAllSubscriptions } from "../../../../services/APIService";
 import EntityProfileModal from "../../users/EntityProfileModal";
 import Paginationn from "../../../teacher/groups/students/Paginationn";
 import { getSavedPageSize } from "../../../../utils/tablePagination";
@@ -94,7 +94,8 @@ const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick, onCancel, can
 const flattenSubscriptions = (subscriptions) => {
   const rows = [];
   for (const sub of subscriptions) {
-    const studentName = sub.student?.user?.fullName ?? "--";
+    const isOrphan = !sub.student;
+    const studentName = sub.student?.user?.fullName ?? (isOrphan ? "طالب محذوف" : "--");
     if (!sub.items?.length) {
       rows.push({
         rowId: sub.id || sub._id,
@@ -102,6 +103,7 @@ const flattenSubscriptions = (subscriptions) => {
         studentId: sub.student?.id || sub.student?._id,
         student: studentName,
         studentEntity: sub.student,
+        isOrphan,
         subject: "غير متاحة",
         package: "غير متاحة",
         discount: "--",
@@ -138,6 +140,7 @@ const flattenSubscriptions = (subscriptions) => {
         subscriptionId: sub.id || sub._id,
         student: studentName,
         studentEntity: sub.student,
+        isOrphan,
         subject: item.subject?.name?.ar ?? item.subject?.name?.en ?? "--",
         package: item.package?.name ?? "--",
         discount: item.discount ? `${item.discount} جنيه` : "--",
@@ -163,7 +166,7 @@ const SubscriptionsTab = () => {
   const [error, setError] = useState("");
   const [profileStudent, setProfileStudent] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
-  const [cancelTargetId, setCancelTargetId] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null);
 
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
@@ -200,17 +203,18 @@ const SubscriptionsTab = () => {
   const currentPage = Math.min(page, totalPages);
   const paged = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const handleCancelSubscription = async (subscriptionId) => {
-    if (!subscriptionId) return;
+  const handleCancelSubscription = async () => {
+    if (!cancelTarget) return;
+    const { id: subscriptionId, isOrphan } = cancelTarget;
     setCancellingId(subscriptionId);
     try {
-      await cancelSubscription(subscriptionId);
+      await (isOrphan ? deleteOrphanSubscription(subscriptionId) : cancelSubscription(subscriptionId));
       setSubscriptions((current) => current.filter((subscription) => String(subscription.id || subscription._id) !== String(subscriptionId)));
     } catch (requestError) {
       setError(requestError?.response?.data?.message || "تعذر إلغاء الاشتراك");
     } finally {
       setCancellingId(null);
-      setCancelTargetId(null);
+      setCancelTarget(null);
     }
   };
 
@@ -289,8 +293,8 @@ const SubscriptionsTab = () => {
                   }
                   onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
                   onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
-                  onStudentClick={() => setProfileStudent(s.studentEntity)}
-                  onCancel={s.subscriptionStatus !== "cancelled" ? () => setCancelTargetId(s.subscriptionId) : undefined}
+                  onStudentClick={() => s.studentEntity && setProfileStudent(s.studentEntity)}
+                  onCancel={(s.isOrphan || s.subscriptionStatus !== "cancelled") ? () => setCancelTarget({ id: s.subscriptionId, isOrphan: s.isOrphan }) : undefined}
                   cancelling={cancellingId === s.subscriptionId}
                 />
               ))}
@@ -329,8 +333,9 @@ const SubscriptionsTab = () => {
                       <td className="px-5 py-3.5 font-['Tajawal'] font-semibold text-[15px] text-[#1F2937] whitespace-nowrap">
                         <button
                           type="button"
-                          onClick={() => setProfileStudent(s.studentEntity)}
-                          className="text-[#123C91] hover:underline"
+                          onClick={() => s.studentEntity && setProfileStudent(s.studentEntity)}
+                          disabled={!s.studentEntity}
+                          className="text-[#123C91] hover:underline disabled:cursor-default disabled:text-[#64748B] disabled:no-underline"
                         >
                           {s.student}
                         </button>
@@ -359,7 +364,7 @@ const SubscriptionsTab = () => {
                           onView={() =>
                             navigate(`/admin/subscriptions/${s.subscriptionId}`)
                           }
-                          onCancel={s.subscriptionStatus !== "cancelled" ? () => setCancelTargetId(s.subscriptionId) : undefined}
+                          onCancel={(s.isOrphan || s.subscriptionStatus !== "cancelled") ? () => setCancelTarget({ id: s.subscriptionId, isOrphan: s.isOrphan }) : undefined}
                           cancelling={cancellingId === s.subscriptionId}
                         />
                       </td>
@@ -377,12 +382,12 @@ const SubscriptionsTab = () => {
         onClose={() => setProfileStudent(null)}
       />
       <ConfirmDialog
-        open={Boolean(cancelTargetId)}
-        onClose={() => !cancellingId && setCancelTargetId(null)}
-        onConfirm={() => handleCancelSubscription(cancelTargetId)}
-        title="إلغاء الاشتراك"
-        message="سيتم إلغاء الاشتراك وإخراج الطالب من المجموعة والشات الخاص بها. هل تريد المتابعة؟"
-        confirmLabel="إلغاء الاشتراك"
+        open={Boolean(cancelTarget)}
+        onClose={() => !cancellingId && setCancelTarget(null)}
+        onConfirm={handleCancelSubscription}
+        title={cancelTarget?.isOrphan ? "حذف اشتراك لطالب محذوف" : "إلغاء الاشتراك"}
+        message={cancelTarget?.isOrphan ? "هذا الاشتراك يخص طالبًا حُذف سابقًا. سيتم حذف الاشتراك وبيانات مواده نهائيًا مع الاحتفاظ بسجل المدفوعات." : "سيتم إلغاء الاشتراك وإخراج الطالب من المجموعة والشات الخاص بها. هل تريد المتابعة؟"}
+        confirmLabel={cancelTarget?.isOrphan ? "حذف نهائيًا" : "إلغاء الاشتراك"}
         danger
         loading={Boolean(cancellingId)}
       />

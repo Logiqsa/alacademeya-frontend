@@ -587,6 +587,7 @@ export const getSubscriptionRenewOptions = (id) =>
 export const renewSubscription = (id, payload) =>
   API.post(`/subscriptions/${id}/renew`, payload);
 export const cancelSubscription = (id) => API.patch(`/subscriptions/${id}/cancel`);
+export const deleteOrphanSubscription = (id) => API.delete(`/subscriptions/${id}`);
 
 // ─── Student subscription orders ─────────────────────────────────────────────
 // Prices and totals are intentionally never accepted here. The backend is the
