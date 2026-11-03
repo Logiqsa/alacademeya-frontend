@@ -6,6 +6,7 @@ import EntityProfileModal from "../../users/EntityProfileModal";
 import Paginationn from "../../../teacher/groups/students/Paginationn";
 import { getSavedPageSize } from "../../../../utils/tablePagination";
 import AppSelect from "../../../ui/AppSelect";
+import ConfirmDialog from "../../supervisors/Confirmdialog";
 
 const PAGE_SIZE = 10;
 
@@ -162,6 +163,7 @@ const SubscriptionsTab = () => {
   const [error, setError] = useState("");
   const [profileStudent, setProfileStudent] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
+  const [cancelTargetId, setCancelTargetId] = useState(null);
 
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
@@ -199,7 +201,7 @@ const SubscriptionsTab = () => {
   const paged = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleCancelSubscription = async (subscriptionId) => {
-    if (!window.confirm("سيتم إلغاء الاشتراك وإخراج الطالب من المجموعة والشات الخاص بها. هل تريد المتابعة؟")) return;
+    if (!subscriptionId) return;
     setCancellingId(subscriptionId);
     try {
       await cancelSubscription(subscriptionId);
@@ -208,6 +210,7 @@ const SubscriptionsTab = () => {
       setError(requestError?.response?.data?.message || "تعذر إلغاء الاشتراك");
     } finally {
       setCancellingId(null);
+      setCancelTargetId(null);
     }
   };
 
@@ -287,7 +290,7 @@ const SubscriptionsTab = () => {
                   onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
                   onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
                   onStudentClick={() => setProfileStudent(s.studentEntity)}
-                  onCancel={s.subscriptionStatus !== "cancelled" ? () => handleCancelSubscription(s.subscriptionId) : undefined}
+                  onCancel={s.subscriptionStatus !== "cancelled" ? () => setCancelTargetId(s.subscriptionId) : undefined}
                   cancelling={cancellingId === s.subscriptionId}
                 />
               ))}
@@ -356,7 +359,7 @@ const SubscriptionsTab = () => {
                           onView={() =>
                             navigate(`/admin/subscriptions/${s.subscriptionId}`)
                           }
-                          onCancel={s.subscriptionStatus !== "cancelled" ? () => handleCancelSubscription(s.subscriptionId) : undefined}
+                          onCancel={s.subscriptionStatus !== "cancelled" ? () => setCancelTargetId(s.subscriptionId) : undefined}
                           cancelling={cancellingId === s.subscriptionId}
                         />
                       </td>
@@ -372,6 +375,16 @@ const SubscriptionsTab = () => {
         entity={profileStudent}
         role="student"
         onClose={() => setProfileStudent(null)}
+      />
+      <ConfirmDialog
+        open={Boolean(cancelTargetId)}
+        onClose={() => !cancellingId && setCancelTargetId(null)}
+        onConfirm={() => handleCancelSubscription(cancelTargetId)}
+        title="إلغاء الاشتراك"
+        message="سيتم إلغاء الاشتراك وإخراج الطالب من المجموعة والشات الخاص بها. هل تريد المتابعة؟"
+        confirmLabel="إلغاء الاشتراك"
+        danger
+        loading={Boolean(cancellingId)}
       />
     </div>
   );

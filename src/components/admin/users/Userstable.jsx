@@ -527,18 +527,20 @@ const SubscriptionDetailRow = ({ subscriptionsLoading, subscriptions, onClick })
 const StudentPackagesModal = ({ user, onBack, onClose, onCancelled }) => {
   const navigate = useNavigate();
   const [cancellingId, setCancellingId] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null);
   if (!user) return null;
   const subscriptions = user.subscriptions || [];
 
   const cancel = async (subscription) => {
-    if (!window.confirm("سيتم إلغاء الاشتراك وإخراج الطالب من مجموعاته المرتبطة به. هل تريد المتابعة؟")) return;
     const subscriptionId = subscription.id || subscription._id;
+    if (!subscriptionId) return;
     setCancellingId(subscriptionId);
     try {
       await cancelSubscription(subscriptionId);
       onCancelled?.(subscriptionId);
     } finally {
       setCancellingId(null);
+      setCancelTarget(null);
     }
   };
 
@@ -593,7 +595,7 @@ const StudentPackagesModal = ({ user, onBack, onClose, onCancelled }) => {
                 <button
                   type="button"
                   disabled={cancellingId === (subscription.id || subscription._id)}
-                  onClick={() => cancel(subscription)}
+                  onClick={() => setCancelTarget(subscription)}
                   className="mt-3 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
                 >
                   {cancellingId === (subscription.id || subscription._id) ? "جارٍ الإلغاء..." : "إلغاء الاشتراك وإخراج الطالب من المجموعة"}
@@ -603,6 +605,16 @@ const StudentPackagesModal = ({ user, onBack, onClose, onCancelled }) => {
           ))}
         </div>
       </div>
+      <ConfirmDialog
+        open={Boolean(cancelTarget)}
+        onClose={() => !cancellingId && setCancelTarget(null)}
+        onConfirm={() => cancel(cancelTarget)}
+        title="إلغاء الاشتراك"
+        message="سيتم إلغاء الاشتراك وإخراج الطالب من مجموعاته المرتبطة به. هل تريد المتابعة؟"
+        confirmLabel="إلغاء الاشتراك"
+        danger
+        loading={Boolean(cancellingId)}
+      />
     </div>
   );
 };

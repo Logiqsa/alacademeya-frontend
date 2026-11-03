@@ -44,6 +44,7 @@ import {
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import LoadingState from "../../../components/shared/LoadingState";
 import { AuthContext } from "../../../context/AuthContext";
+import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -151,6 +152,8 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const [editGroupError, setEditGroupError] = useState("");
   const [savingGroup, setSavingGroup] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
+  const [removeStudentTarget, setRemoveStudentTarget] = useState(null);
+  const [removingStudent, setRemovingStudent] = useState(false);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -704,7 +707,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const handleRemoveStudentFromGroup = async (student) => {
     const studentId = student.studentId || student.id || student._id;
     if (!studentId) return;
-    if (!window.confirm("سيتم إلغاء اشتراك الطالب في هذه المجموعة وإخراجه من محادثتها. هل تريد المتابعة؟")) return;
+    setRemovingStudent(true);
 
     try {
       await removeClassroomStudent(groupId, studentId);
@@ -715,6 +718,9 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       window.setTimeout(() => setShowToast(false), 4000);
     } catch (removeError) {
       setError(removeError.response?.data?.message || "تعذرت إزالة الطالب من المجموعة");
+    } finally {
+      setRemovingStudent(false);
+      setRemoveStudentTarget(null);
     }
   };
 
@@ -1106,7 +1112,17 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         open={Boolean(selectedPerson)}
         onClose={() => setSelectedPerson(null)}
         user={selectedPerson}
-        onRemoveFromGroup={isAdmin ? handleRemoveStudentFromGroup : undefined}
+        onRemoveFromGroup={isAdmin ? setRemoveStudentTarget : undefined}
+      />
+      <ConfirmDialog
+        open={Boolean(removeStudentTarget)}
+        onClose={() => !removingStudent && setRemoveStudentTarget(null)}
+        onConfirm={() => handleRemoveStudentFromGroup(removeStudentTarget)}
+        title="إزالة الطالب من المجموعة"
+        message="سيتم إلغاء اشتراك الطالب في هذه المجموعة وإخراجه من محادثتها. هل تريد المتابعة؟"
+        confirmLabel="إزالة الطالب"
+        danger
+        loading={removingStudent}
       />
       {showSubstituteModal && (
         <SubstituteTeacherModal

@@ -125,7 +125,7 @@ export default function CreateStudentPage() {
       <p className="mt-2 text-sm text-gray-600">{created.name}</p>
       <div className="mt-6 flex justify-center gap-3">
         <button className="rounded-xl bg-[#123C91] px-5 py-2.5 text-white" onClick={() => navigate(`/admin/subscriptions/add?studentId=${created.studentId}`)}>إنشاء اشتراك</button>
-        <button className="rounded-xl border px-5 py-2.5" onClick={() => navigate("/admin/users")}>تم</button>
+        <button className="rounded-xl border px-5 py-2.5" onClick={() => navigate("/admin/students")}>تم</button>
       </div>
     </div> : <form onSubmit={submit} className="mt-3 space-y-3">
       <div className="rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
