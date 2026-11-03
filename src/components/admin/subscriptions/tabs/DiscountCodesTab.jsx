@@ -2,12 +2,8 @@ import {
   useState,
   useEffect,
   useCallback,
-  useRef,
-  useLayoutEffect,
 } from "react";
-import { createPortal } from "react-dom";
 import {
-  MoreVertical,
   X,
   ChevronDown,
   ChevronRight,
@@ -205,132 +201,22 @@ const ConfirmDialog = ({
   );
 };
 
-// ─── Row Actions ──────────────────────────────────────────────────────────────
-// Rendered through a portal into document.body and positioned with
-// `position: fixed`, computed from the trigger button's bounding rect — this
-// is what stops it from being clipped by `overflow-x-auto` on the table, or by
-// the mobile card list's scroll container.
-//
-// Responsive handling added:
-//  - horizontal position is clamped so the menu never overflows past either
-//    edge of the viewport (important on narrow phone screens where a button
-//    near the left edge would otherwise push the menu off-screen)
-//  - if there isn't enough room below the button (e.g. the last row/card on a
-//    short mobile screen), the menu opens upward instead of getting clipped
-//    by the bottom of the viewport
-const MENU_WIDTH = 160; // matches w-40
-const MENU_HEIGHT_ESTIMATE = 96; // ~2 items
-
 const RowActions = ({ discount, busy, onToggleActive, onDeleteRequest }) => {
-  const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0, openUpward: false });
-  const btnRef = useRef(null);
-  const menuRef = useRef(null);
-
-  const computeCoords = useCallback(() => {
-    const rect = btnRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUpward = spaceBelow < MENU_HEIGHT_ESTIMATE + 12;
-
-    // Anchor to the button's right edge (menu reads RTL), then clamp so it
-    // never runs off either side of the viewport.
-    let left = rect.right - MENU_WIDTH;
-    left = Math.max(8, Math.min(left, window.innerWidth - MENU_WIDTH - 8));
-
-    const top = openUpward ? rect.top - 6 : rect.bottom + 6;
-
-    setCoords({ top, left, openUpward });
-  }, []);
-
-  useLayoutEffect(() => {
-    if (open) computeCoords();
-  }, [open, computeCoords]);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target) &&
-        btnRef.current &&
-        !btnRef.current.contains(e.target)
-      ) {
-        setOpen(false);
-      }
-    };
-    const reposition = () => computeCoords();
-    document.addEventListener("mousedown", close);
-    // capture=true so this also fires for scrolls inside the table's
-    // overflow-x-auto container, not just window-level scrolls
-    window.addEventListener("scroll", reposition, true);
-    window.addEventListener("resize", reposition);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      window.removeEventListener("scroll", reposition, true);
-      window.removeEventListener("resize", reposition);
-    };
-  }, [open, computeCoords]);
-
   return (
-    <>
+    <div className="flex items-center justify-end gap-1">
       <button
-        ref={btnRef}
-        onClick={() => setOpen((p) => !p)}
+        type="button"
+        onClick={() => onToggleActive(discount)}
         disabled={busy}
-        className="p-2.5 sm:p-2 rounded-lg text-[#575F69] hover:bg-gray-100 hover:text-[#123C91] transition-colors disabled:opacity-40"
+        title={discount.isActive ? "إيقاف الكود" : "تفعيل الكود"}
+        className="rounded-lg p-2 text-[#B45309] transition-colors hover:bg-amber-50 disabled:opacity-40"
       >
         {busy ? (
           <Loader2 size={17} className="animate-spin" />
-        ) : (
-          <MoreVertical size={17} />
-        )}
+        ) : discount.isActive ? <PauseCircle size={17} /> : <PlayCircle size={17} />}
       </button>
-      {open &&
-        createPortal(
-          <ul
-            ref={menuRef}
-            dir="rtl"
-            style={{
-              position: "fixed",
-              top: coords.openUpward ? undefined : coords.top,
-              bottom: coords.openUpward
-                ? window.innerHeight - coords.top
-                : undefined,
-              left: coords.left,
-              width: MENU_WIDTH,
-            }}
-            className="z-[70] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden py-1"
-          >
-            <li
-              onClick={() => {
-                setOpen(false);
-                onToggleActive(discount);
-              }}
-              className="px-4 py-3 sm:py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 active:bg-gray-100 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E8821C] flex items-center gap-2 justify-end"
-            >
-              {discount.isActive ? "إيقاف" : "تفعيل"}
-              {discount.isActive ? (
-                <PauseCircle size={14} />
-              ) : (
-                <PlayCircle size={14} />
-              )}
-            </li>
-            <li
-              onClick={() => {
-                setOpen(false);
-                onDeleteRequest(discount);
-              }}
-              className="px-4 py-3 sm:py-2.5 text-[13px] cursor-pointer hover:bg-gray-50 active:bg-gray-100 font-['IBM_Plex_Sans_Arabic'] text-right text-[#E0394C] flex items-center gap-2 justify-end"
-            >
-              حذف
-              <Trash2 size={14} />
-            </li>
-          </ul>,
-          document.body,
-        )}
-    </>
+      <button type="button" onClick={() => onDeleteRequest(discount)} disabled={busy} title="حذف كود الخصم" aria-label="حذف كود الخصم" className="p-2 disabled:opacity-40"><Trash2 size={17} /></button>
+    </div>
   );
 };
 
@@ -743,7 +629,7 @@ const DiscountCodesTab = ({ showAdd, onCloseAdd, onOpenAdd }) => {
               <table className="w-full text-right" style={{ minWidth: 720 }}>
                 <thead className="bg-[#F9FAFA] border-b border-gray-100">
                   <tr>
-                    {["الكود", "الخصم", "الاستخدامات", "الحالة", ""].map(
+                    {["الكود", "الخصم", "الاستخدامات", "الحالة", "الإجراءات"].map(
                       (h, i) => (
                         <th
                           key={i}

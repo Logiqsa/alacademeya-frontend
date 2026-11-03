@@ -301,6 +301,8 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
   const [packages, setPackages] = useState([]);
   const [curriculums, setCurriculums] = useState([]);
   const [selectedCurriculum, setSelectedCurriculum] = useState("all");
+  const [grades, setGrades] = useState([]);
+  const [selectedGrade, setSelectedGrade] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
@@ -350,6 +352,18 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
     void loadInitialPackages();
   }, []);
 
+  useEffect(() => {
+    if (selectedCurriculum === "all" || selectedCurriculum === "unassigned") {
+      setGrades([]);
+      return;
+    }
+    let active = true;
+    getAllGrades({ curriculum: selectedCurriculum })
+      .then((response) => active && setGrades(extractList(response, ["grades", "results", "items"])))
+      .catch(() => active && setGrades([]));
+    return () => { active = false; };
+  }, [selectedCurriculum]);
+
   const unassignedCount = useMemo(
     () => packages.filter((pkg) => !entityId(pkg.curriculum)).length,
     [packages],
@@ -382,7 +396,14 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
                 String(entityId(pkg.curriculum)) === String(selectedCurriculum),
             );
 
-    return filteredByCurriculum
+    const filteredByGrade = selectedGrade === "all"
+      ? filteredByCurriculum
+      : filteredByCurriculum.filter((pkg) => {
+          const packageGrades = (pkg.grades || []).map(entityId).filter(Boolean);
+          return !packageGrades.length || packageGrades.some((gradeId) => String(gradeId) === String(selectedGrade));
+        });
+
+    return filteredByGrade
       .filter((pkg) => {
         if (!query) return true;
         const curriculumName =
@@ -400,7 +421,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
         const bDate = new Date(b.createdAt || 0).getTime();
         return (Number.isNaN(bDate) ? 0 : bDate) - (Number.isNaN(aDate) ? 0 : aDate);
       });
-  }, [curriculumNamesById, packages, searchQuery, selectedCurriculum]);
+  }, [curriculumNamesById, packages, searchQuery, selectedCurriculum, selectedGrade]);
   const totalPages = Math.max(1, Math.ceil(visiblePackages.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const paginatedPackages = visiblePackages.slice(
@@ -527,6 +548,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
             type="button"
             onClick={() => {
               setSelectedCurriculum("all");
+              setSelectedGrade("all");
               setPage(1);
             }}
             className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${selectedCurriculum === "all" ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-200 bg-white text-[#575F69] hover:border-[#123C91]"}`}
@@ -542,6 +564,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
                 type="button"
                 onClick={() => {
                   setSelectedCurriculum(curriculumId);
+                  setSelectedGrade("all");
                   setPage(1);
                 }}
                 className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${active ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-200 bg-white text-[#575F69] hover:border-[#123C91]"}`}
@@ -555,6 +578,7 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
               type="button"
               onClick={() => {
                 setSelectedCurriculum("unassigned");
+                setSelectedGrade("all");
                 setPage(1);
               }}
               className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${selectedCurriculum === "unassigned" ? "border-amber-600 bg-amber-600 text-white" : "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-500"}`}
@@ -563,6 +587,16 @@ const PackagesTab = ({ showAdd, onCloseAdd }) => {
             </button>
           )}
           </div>
+          {selectedCurriculum !== "all" && selectedCurriculum !== "unassigned" && (
+            <div className="mb-5 flex gap-2 overflow-x-auto pb-2" dir="rtl" aria-label="تصفية الباقات حسب الصف">
+              <button type="button" onClick={() => { setSelectedGrade("all"); setPage(1); }} className={`shrink-0 rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${selectedGrade === "all" ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-200 bg-white text-[#575F69] hover:border-[#123C91]"}`}>كل الصفوف</button>
+              {grades.map((grade) => {
+                const gradeId = entityId(grade);
+                const active = String(selectedGrade) === String(gradeId);
+                return <button key={gradeId} type="button" onClick={() => { setSelectedGrade(gradeId); setPage(1); }} className={`shrink-0 rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${active ? "border-[#123C91] bg-[#123C91] text-white" : "border-gray-200 bg-white text-[#575F69] hover:border-[#123C91]"}`}>{entityName(grade)}</button>;
+              })}
+            </div>
+          )}
         </>
       )}
 

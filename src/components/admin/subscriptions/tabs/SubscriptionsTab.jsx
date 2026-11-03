@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Eye, ChevronRight, ChevronLeft, Loader2, RefreshCw, FilePenLine } from "lucide-react";
+import { Eye, Loader2, RefreshCw, FilePenLine, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getAllSubscriptions } from "../../../../services/APIService"; // ⚠️ عدّل المسار حسب مكان api.js عندك
+import { cancelSubscription, getAllSubscriptions } from "../../../../services/APIService";
 import EntityProfileModal from "../../users/EntityProfileModal";
+import Paginationn from "../../../teacher/groups/students/Paginationn";
+import { getSavedPageSize } from "../../../../utils/tablePagination";
+import AppSelect from "../../../ui/AppSelect";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 10;
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
@@ -26,13 +29,13 @@ const StatusBadge = ({ status }) => {
 };
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
-const RowActions = ({ onView, onRenew, canRenew, onComplete }) => (<div className="flex items-center gap-1"><button
+const RowActions = ({ onView, onRenew, canRenew, onComplete, onCancel, cancelling }) => (<div className="flex items-center gap-1"><button
     onClick={onView}
     className="p-2 rounded-lg text-[#575F69] hover:bg-[#EAF4FF] hover:text-[#123C91] transition-colors"
     title="عرض التفاصيل"
   >
     <Eye size={17} />
-  </button>{canRenew && <button onClick={onRenew} className="p-2 rounded-lg text-[#123C91] hover:bg-[#EAF4FF]" title="تجديد يدوي"><RefreshCw size={17}/></button>}{onComplete && <button onClick={onComplete} className="p-2 rounded-lg text-amber-700 hover:bg-amber-50" title="استكمال بيانات الاشتراك"><FilePenLine size={17}/></button>}</div>);
+  </button>{canRenew && <button onClick={onRenew} className="p-2 rounded-lg text-[#123C91] hover:bg-[#EAF4FF]" title="تجديد يدوي"><RefreshCw size={17}/></button>}{onComplete && <button onClick={onComplete} className="p-2 rounded-lg text-amber-700 hover:bg-amber-50" title="استكمال بيانات الاشتراك"><FilePenLine size={17}/></button>}{onCancel && <button onClick={onCancel} disabled={cancelling} className="p-2 disabled:opacity-50" title="حذف الاشتراك وإخراج الطالب من المجموعة" aria-label="حذف الاشتراك وإخراج الطالب من المجموعة">{cancelling ? <Loader2 size={17} className="animate-spin" /> : <Trash2 size={17} />}</button>}</div>);
 
 const valueOrDash = (value) => (value == null || value === "" ? "--" : value);
 
@@ -44,46 +47,8 @@ const sessionValue = (...values) => {
 
 const sessionDisplay = (value) => (value == null ? "--" : `${value} حصة`);
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
-const Pagination = ({ page, total, totalPages, onChange }) => (
-  <div
-    className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1"
-    dir="rtl"
-  >
-    <span className="text-[13px] text-[#575F69] text-center sm:text-right">
-      عرض {Math.min(PAGE_SIZE, total - (page - 1) * PAGE_SIZE)} من أصل {total}{" "}
-      اشتراك
-    </span>
-    <div className="flex items-center gap-1 flex-wrap justify-center">
-      <button
-        onClick={() => onChange(page - 1)}
-        disabled={page === 1}
-        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#575F69] disabled:opacity-40 hover:bg-gray-50 shrink-0"
-      >
-        <ChevronRight size={16} />
-      </button>
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-        <button
-          key={p}
-          onClick={() => onChange(p)}
-          className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-medium transition-colors shrink-0 ${p === page ? "bg-[#123C91] text-white [&_svg]:text-white" : "border border-gray-200 text-[#575F69] hover:bg-gray-50"}`}
-        >
-          {p}
-        </button>
-      ))}
-      <button
-        onClick={() => onChange(page + 1)}
-        disabled={page === totalPages}
-        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-[#575F69] disabled:opacity-40 hover:bg-gray-50 shrink-0"
-      >
-        <ChevronLeft size={16} />
-      </button>
-    </div>
-  </div>
-);
-
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
-const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick }) => (
+const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick, onCancel, cancelling }) => (
   <div className="p-4 flex flex-col gap-2.5">
     <div className="flex items-start justify-between gap-2">
       <button
@@ -93,7 +58,7 @@ const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick }) => (
       >
         {s.student}
       </button>
-      <RowActions onView={onView} onRenew={onRenew} onComplete={onComplete} canRenew={s.status === "active" && !s.incomplete} />
+      <RowActions onView={onView} onRenew={onRenew} onComplete={onComplete} onCancel={onCancel} cancelling={cancelling} canRenew={s.status === "active" && !s.incomplete} />
     </div>
     <div className="flex items-center justify-between text-[13px]">
       <span className="text-[#9CA3AF]">المادة</span>
@@ -142,6 +107,7 @@ const flattenSubscriptions = (subscriptions) => {
         usedSessions: "--",
         remainingSessions: "--",
         status: "incomplete",
+        subscriptionStatus: sub.status,
         incomplete: true,
       });
       continue;
@@ -177,6 +143,7 @@ const flattenSubscriptions = (subscriptions) => {
         usedSessions: sessionDisplay(usedSessions),
         remainingSessions: sessionDisplay(remainingSessions),
         status: item.status ?? sub.status,
+        subscriptionStatus: sub.status,
       });
     }
   }
@@ -187,10 +154,14 @@ const flattenSubscriptions = (subscriptions) => {
 const SubscriptionsTab = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileStudent, setProfileStudent] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
 
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
@@ -214,8 +185,31 @@ const SubscriptionsTab = () => {
     () => flattenSubscriptions(subscriptions),
     [subscriptions],
   );
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const paged = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filteredRows = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase("ar");
+    return rows.filter((row) => {
+      const matchesStatus = statusFilter === "all" || row.status === statusFilter;
+      const matchesSearch = !query || [row.student, row.subject, row.package]
+        .some((value) => String(value || "").toLocaleLowerCase("ar").includes(query));
+      return matchesStatus && matchesSearch;
+    });
+  }, [rows, searchQuery, statusFilter]);
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const handleCancelSubscription = async (subscriptionId) => {
+    if (!window.confirm("سيتم إلغاء الاشتراك وإخراج الطالب من المجموعة والشات الخاص بها. هل تريد المتابعة؟")) return;
+    setCancellingId(subscriptionId);
+    try {
+      await cancelSubscription(subscriptionId);
+      setSubscriptions((current) => current.filter((subscription) => String(subscription.id || subscription._id) !== String(subscriptionId)));
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || "تعذر إلغاء الاشتراك");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -242,12 +236,30 @@ const SubscriptionsTab = () => {
 
   return (
     <div className="w-full max-w-full">
-      {rows.length > 0 && (
-        <Pagination
-          page={page}
-          total={rows.length}
+      {rows.length > 0 && <div className="mb-4 grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_220px]" dir="rtl">
+        <div className="relative">
+          <Search size={17} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
+          <input value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setPage(1); }} placeholder="ابحث باسم الطالب أو المادة أو الباقة..." className="h-11 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pr-10 pl-3 text-sm outline-none focus:border-[#123C91]" />
+        </div>
+        <AppSelect value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm">
+          <option value="all">كل الحالات</option>
+          <option value="active">نشط</option>
+          <option value="expired">منتهي</option>
+          <option value="suspended">موقوف</option>
+          <option value="incomplete">بيانات غير مكتملة</option>
+        </AppSelect>
+      </div>}
+
+      {filteredRows.length > 0 && (
+        <Paginationn
+          page={currentPage}
           totalPages={totalPages}
           onChange={setPage}
+          totalItems={filteredRows.length}
+          displayedCount={paged.length}
+          unitLabel="اشتراك"
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
         />
       )}
 
@@ -255,10 +267,10 @@ const SubscriptionsTab = () => {
         className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
         dir="rtl"
       >
-        {rows.length === 0 ? (
+        {filteredRows.length === 0 ? (
           <div className="py-14 px-4 text-center">
             <p className="text-[14px] text-[#9CA3AF]">
-              لا توجد اشتراكات حالياً
+              {rows.length ? "لا توجد اشتراكات مطابقة للفلاتر" : "لا توجد اشتراكات حالياً"}
             </p>
           </div>
         ) : (
@@ -275,6 +287,8 @@ const SubscriptionsTab = () => {
                   onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
                   onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
                   onStudentClick={() => setProfileStudent(s.studentEntity)}
+                  onCancel={s.subscriptionStatus !== "cancelled" ? () => handleCancelSubscription(s.subscriptionId) : undefined}
+                  cancelling={cancellingId === s.subscriptionId}
                 />
               ))}
             </div>
@@ -342,6 +356,8 @@ const SubscriptionsTab = () => {
                           onView={() =>
                             navigate(`/admin/subscriptions/${s.subscriptionId}`)
                           }
+                          onCancel={s.subscriptionStatus !== "cancelled" ? () => handleCancelSubscription(s.subscriptionId) : undefined}
+                          cancelling={cancellingId === s.subscriptionId}
                         />
                       </td>
                     </tr>
