@@ -47,6 +47,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
     {
       label: "المستخدمون",
       items: [
+        { title: "جميع المستخدمين", icon: UsersRound, path: "/admin/users" },
         {
           title: "المشرفين",
           icon: ShieldCheck,

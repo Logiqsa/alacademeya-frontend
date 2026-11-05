@@ -828,7 +828,7 @@ function App() {
           />
           <Route
             path="/admin/users"
-            element={<Navigate to="/admin/learners" replace />}
+            element={user ? <UsersPage key="all-users" /> : <Navigate to="/login" replace />}
           />
           <Route path="/admin/learners" element={user ? <UsersPage key="learners" fixedRole="طالب دورات" title="طلاب الدورات" description="إدارة حسابات طلاب الدورات المسجلين في المنصة." /> : <Navigate to="/login" replace />} />
           <Route path="/admin/instructors" element={user ? <UsersPage key="instructors" fixedRole="محاضر دورات" title="محاضرو الدورات" description="إدارة حسابات محاضري الدورات وملفاتهم على سوق الدورات." /> : <Navigate to="/login" replace />} />
