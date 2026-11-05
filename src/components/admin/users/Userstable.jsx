@@ -1803,12 +1803,13 @@ const UsersTable = ({
           <div className="overflow-x-auto">
             <table
               className="w-full table-fixed text-right"
-              style={{ minWidth: "760px" }}
+              style={{ minWidth: "880px" }}
             >
               <colgroup>
-                <col className="w-[24%]" />
-                <col className="w-[30%]" />
-                <col className="w-[16%]" />
+                <col className="w-[20%]" />
+                <col className="w-[22%]" />
+                <col className="w-[14%]" />
+                <col className="w-[14%]" />
                 <col className="w-[18%]" />
                 <col className="w-[12%]" />
               </colgroup>
@@ -1817,6 +1818,7 @@ const UsersTable = ({
                   {[
                     { label: "المستخدم", sortKey: "name" },
                     { label: "البريد الإلكتروني" },
+                    { label: "نوع الحساب", sortKey: "role" },
                     { label: "الحالة", sortKey: "status" },
                     { label: "تاريخ الانضمام", sortKey: "joinDate" },
                     { label: "الإجراءات" },
@@ -1885,6 +1887,10 @@ const UsersTable = ({
                     </td>
                     <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
                       <EmailCell user={user} />
+                    </td>
+
+                    <td className="px-5 py-3.5">
+                      {roleBadge(user.role)}
                     </td>
 
                     <td className="px-5 py-3.5">
