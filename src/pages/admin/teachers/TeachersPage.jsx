@@ -21,6 +21,7 @@ import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import { EmailVerificationBadge } from "../../../components/admin/users/Userstable";
 import Pagination from "../../../components/teacher/groups/students/Paginationn";
 import { getSavedPageSize } from "../../../utils/tablePagination";
 import Breadcrumbs from "../../shared/Breadcrumbs";
@@ -213,6 +214,7 @@ const TeachersPage = () => {
             name: teacherName(teacher),
             email: teacherEmail(teacher),
             phone: teacherPhone(teacher),
+            isVerified: teacher.user?.isVerified,
             monthlyMinutes: summary.totalTeachingMinutes ?? 0,
             completedSessions: summary.completedSessions ?? 0,
             missedSessions: summary.missedSessions ?? 0,
@@ -894,6 +896,11 @@ const TeachersPage = () => {
                 <p className="mt-1 text-sm text-[#8C9198]" dir="ltr">
                   {selectedTeacher.email}
                 </p>
+                <div className="mt-3">
+                  <EmailVerificationBadge
+                    isVerified={selectedTeacher.isVerified}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

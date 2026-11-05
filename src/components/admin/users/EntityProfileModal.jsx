@@ -11,7 +11,10 @@ import toast from "react-hot-toast";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { teacherLanguageLabel } from "../../../utils/teacherLanguage";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
-import { UserDetailsModal } from "./Userstable";
+import {
+  EmailVerificationBadge,
+  UserDetailsModal,
+} from "./Userstable";
 import { confirmToast } from "../../../utils/confirmToast";
 import {
   getAllSubscriptions,
@@ -360,6 +363,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           email: user.email,
           phone: user.phone,
           username: user.username,
+          isVerified: user.isVerified,
           role: "طالب أكاديمي",
           status: studentStatus,
           joinDate: user.createdAt
@@ -407,6 +411,9 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           <p className="mt-1 text-sm text-[#8C9198]" dir="ltr">
             {user.email || "—"}
           </p>
+          <div className="mt-3">
+            <EmailVerificationBadge isVerified={user.isVerified} />
+          </div>
         </div>
         {canApprove && (
           <button

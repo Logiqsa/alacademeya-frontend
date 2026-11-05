@@ -690,6 +690,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       email: user.email,
       phone: user.phone,
       username: user.username,
+      isVerified: user.isVerified,
       role: "طالب",
       status: user.isActive === false ? "موقوف" : "نشط",
       joinDate:

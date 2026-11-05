@@ -108,6 +108,7 @@ const studentParent = (student) => {
     phone: user.phone,
     country: user.country,
     isActive: user.isActive,
+    isVerified: user.isVerified,
     registrationStatus: user.registrationStatus,
     createdAt: user.createdAt,
   };
@@ -216,6 +217,16 @@ const Badge = ({ label, type, strong = false }) => {
       {label}
     </span>
   );
+};
+
+export const EmailVerificationBadge = ({ isVerified }) => {
+  if (isVerified === true) {
+    return <Badge label="البريد مؤكد" type="green" strong />;
+  }
+  if (isVerified === false) {
+    return <Badge label="البريد غير مؤكد" type="orange" strong />;
+  }
+  return <Badge label="حالة البريد غير متاحة" type="gray" strong />;
 };
 
 const statusBadge = (status, missingProfileFields = []) => {
@@ -751,6 +762,7 @@ export const UserDetailsModal = ({
   const isTeacher = user.role === "معلم";
   const isParent = user.role === "ولي أمر";
   const isStudent = ["طالب أكاديمي", "طالب"].includes(user.role);
+  const showEmailVerification = !["مشرف", "مشرف عام"].includes(user.role);
   const approvalEligible = canApproveRegistration(user);
   const userWhatsappUrl = whatsappUrl(user.phone);
 
@@ -800,9 +812,12 @@ export const UserDetailsModal = ({
             {user.email}
           </p>
 
-          <div className="flex items-center gap-2 mt-1">
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
             {statusBadge(user.status, user.missingProfileFields)}
             {roleBadge(user.role)}
+            {showEmailVerification && (
+              <EmailVerificationBadge isVerified={user.isVerified} />
+            )}
           </div>
         </div>
         <a
@@ -1958,6 +1973,7 @@ const UsersTable = ({
             email: child.email,
             phone: child.phone,
             username: child.username,
+            isVerified: child.isVerified,
             role: "طالب أكاديمي",
             status: child.registrationStatus?.startsWith("pending")
               ? "معلق"
