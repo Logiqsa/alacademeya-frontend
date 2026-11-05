@@ -763,6 +763,10 @@ export const UserDetailsModal = ({
   const isParent = user.role === "ولي أمر";
   const isStudent = ["طالب أكاديمي", "طالب"].includes(user.role);
   const showEmailVerification = !["مشرف", "مشرف عام"].includes(user.role);
+  const displayedStatus =
+    showEmailVerification && user.isVerified === false
+      ? "لم يتم تأكيد الحساب"
+      : user.status;
   const approvalEligible = canApproveRegistration(user);
   const userWhatsappUrl = whatsappUrl(user.phone);
 
@@ -813,7 +817,7 @@ export const UserDetailsModal = ({
           </p>
 
           <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
-            {statusBadge(user.status, user.missingProfileFields)}
+            {statusBadge(displayedStatus, user.missingProfileFields)}
             {roleBadge(user.role)}
             {showEmailVerification && (
               <EmailVerificationBadge isVerified={user.isVerified} />

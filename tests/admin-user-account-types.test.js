@@ -53,3 +53,14 @@ test("admin user table keeps account type out of its desktop columns", () => {
   );
   assert.doesNotMatch(table, /label: "النوع"/);
 });
+
+test("user popup prioritizes unverified email over profile completeness", () => {
+  const table = readFileSync(
+    new URL("../src/components/admin/users/Userstable.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    table,
+    /user\.isVerified === false[\s\S]*?"لم يتم تأكيد الحساب"[\s\S]*?statusBadge\(displayedStatus/,
+  );
+});

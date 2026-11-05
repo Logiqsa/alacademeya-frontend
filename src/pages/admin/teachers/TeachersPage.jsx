@@ -223,7 +223,9 @@ const TeachersPage = () => {
             gradeIds: listIds(teacher.grades ?? teacher.grade),
             curriculumIds: listIds(teacher.curriculums ?? teacher.curriculum),
             status:
-              isProfileIncomplete
+              teacher.user?.isVerified === false
+                ? "لم يتم تأكيد الحساب"
+                : isProfileIncomplete
                 ? "الملف غير مكتمل"
                 : teacher.status === "approved"
                 ? "مقبول"
