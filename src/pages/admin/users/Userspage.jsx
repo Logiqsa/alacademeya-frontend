@@ -527,15 +527,13 @@ const UsersPage = ({
     currentPage * pageSize,
   );
 
-  // ⚠️ الأرقام دي بتحسب من كل اليوزرز اللي جم من السيرفر (visibleUsers) مش
-  // من الصفحة المعروضة بس، وكل رول بياخد عدّاده الصح
+  // الأرقام تحسب من كل الحسابات غير المحذوفة، وليس من الصفحة المعروضة فقط.
   const stats = {
     parents: visibleUsers.filter((u) => u.role === "ولي أمر").length,
-    admins: visibleUsers.filter((u) => u.role === "مشرف عام").length,
-    supervisors: visibleUsers.filter((u) => u.role === "مشرف").length,
     teachers: visibleUsers.filter((u) => u.role === "معلم").length,
-    students: visibleUsers.filter((u) => u.role === "طالب أكاديمي").length,
-    total: visibleUsers.length,
+    academicStudents: visibleUsers.filter((u) => u.role === "طالب أكاديمي").length,
+    courseStudents: visibleUsers.filter((u) => u.role === "طالب دورات").length,
+    instructors: visibleUsers.filter((u) => u.role === "محاضر دورات").length,
   };
 
   const handleView = (id) => navigate(`/admin/users/${id}`);

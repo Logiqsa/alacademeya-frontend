@@ -1,15 +1,22 @@
-import { Users, GraduationCap, UserCog, Layers } from "lucide-react";
+import { Users, GraduationCap, UserCog, BookOpenCheck, Presentation } from "lucide-react";
 
-const UsersStatsBar = ({ parents = 0, teachers = 0, students = 0, total = 0 }) => {
+const UsersStatsBar = ({
+  parents = 0,
+  teachers = 0,
+  academicStudents = 0,
+  courseStudents = 0,
+  instructors = 0,
+}) => {
   const stats = [
     { label: "أولياء الأمور", value: parents, color: "text-orange-500", bg: "bg-orange-50", icon: UserCog },
-    { label: "إجمالي المعلمين", value: teachers, color: "text-teal-600", bg: "bg-teal-50", icon: Users },
-    { label: "إجمالي الطلاب", value: students, color: "text-green-600", bg: "bg-green-50", icon: GraduationCap },
-    { label: "إجمالي المستخدمين", value: total, color: "text-[#123C91]", bg: "bg-[#EAF4FF]", icon: Layers },
-  ];
+    { label: "المعلمون", value: teachers, color: "text-teal-600", bg: "bg-teal-50", icon: Users },
+    { label: "الطلاب الأكاديميون", value: academicStudents, color: "text-green-600", bg: "bg-green-50", icon: GraduationCap },
+    { label: "طلاب الدورات", value: courseStudents, color: "text-blue-600", bg: "bg-blue-50", icon: BookOpenCheck },
+    { label: "محاضرو الدورات", value: instructors, color: "text-violet-600", bg: "bg-violet-50", icon: Presentation },
+  ].filter((stat) => stat.value > 0);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" dir="rtl">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5" dir="rtl">
       {stats.map((s) => {
         const Icon = s.icon;
         return (
