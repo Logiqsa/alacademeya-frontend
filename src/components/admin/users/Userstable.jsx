@@ -1975,9 +1975,11 @@ const UsersTable = ({
             username: child.username,
             isVerified: child.isVerified,
             role: "طالب أكاديمي",
-            status: child.registrationStatus?.startsWith("pending")
-              ? "معلق"
-              : child.isActive === false ? "موقوف" : "نشط",
+            status: child.isVerified === false
+              ? "لم يتم تأكيد الحساب"
+              : child.registrationStatus?.startsWith("pending")
+                ? "معلق"
+                : child.isActive === false ? "موقوف" : "نشط",
             joinDate: child.createdAt
               ? new Date(child.createdAt).toLocaleDateString("en-CA")
               : "—",
@@ -1991,11 +1993,13 @@ const UsersTable = ({
           handleView({
             ...parent,
             role: "ولي أمر",
-            status: parent.registrationStatus?.startsWith("pending")
-              ? "معلق"
-              : parent.isActive === false
-                ? "موقوف"
-                : "نشط",
+            status: parent.isVerified === false
+              ? "لم يتم تأكيد الحساب"
+              : parent.registrationStatus?.startsWith("pending")
+                ? "معلق"
+                : parent.isActive === false
+                  ? "موقوف"
+                  : "نشط",
             joinDate: parent.createdAt
               ? new Date(parent.createdAt).toLocaleDateString("en-CA")
               : "—",

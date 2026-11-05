@@ -127,6 +127,13 @@ const getMissingStudentProfileFields = (user, student) => {
   return missing;
 };
 
+const incompleteProfileStatus = (mapped, incomplete = true) =>
+  mapped.status === "لم يتم تأكيد الحساب"
+    ? mapped.status
+    : incomplete
+      ? "ملف غير مكتمل"
+      : mapped.status;
+
 const UsersPage = ({
   fixedRole = "",
   title = "إدارة المستخدمين",
@@ -269,9 +276,10 @@ const UsersPage = ({
                 );
                 return {
                   ...mapped,
-                  status: isTeacherProfileIncomplete(rawUser, teacher)
-                    ? "ملف غير مكتمل"
-                    : mapped.status,
+                  status: incompleteProfileStatus(
+                    mapped,
+                    isTeacherProfileIncomplete(rawUser, teacher),
+                  ),
                   profileStatus: teacher.status,
                   teacherGrades: grades,
                   teacherSubjects: subjects,
@@ -284,7 +292,7 @@ const UsersPage = ({
               if (mapped.rawRole === "teacher") {
                 return {
                   ...mapped,
-                  status: "ملف غير مكتمل",
+                  status: incompleteProfileStatus(mapped),
                   teacherGrades: [],
                   teacherSubjects: [],
                   teacherCurriculums: [],
@@ -296,7 +304,7 @@ const UsersPage = ({
               if (mapped.rawRole === "student" && !student) {
                 return {
                   ...mapped,
-                  status: "ملف غير مكتمل",
+                  status: incompleteProfileStatus(mapped),
                   missingProfileFields: getMissingStudentProfileFields(
                     rawUser,
                     student,
@@ -306,12 +314,15 @@ const UsersPage = ({
                 };
               }
               if (hasIncompleteRegistration(rawUser)) {
-                return { ...mapped, status: "ملف غير مكتمل" };
+                return {
+                  ...mapped,
+                  status: incompleteProfileStatus(mapped),
+                };
               }
               return student
                 ? {
                     ...mapped,
-                    status: mapped.status === "معلق"
+                    status: ["معلق", "لم يتم تأكيد الحساب"].includes(mapped.status)
                       ? mapped.status
                       : isStudentProfileIncomplete(rawUser, student)
                       ? "ملف غير مكتمل"

@@ -26,6 +26,26 @@ test("mapped admin users trim legacy display-name whitespace", () => {
   assert.equal(mapped.name, "مصطفى السيد");
 });
 
+test("unverified ordinary accounts show the email verification status", () => {
+  const mapped = mapAdminUser({
+    _id: "user-3",
+    role: "teacher",
+    isActive: true,
+    isVerified: false,
+  });
+  assert.equal(mapped.status, "لم يتم تأكيد الحساب");
+});
+
+test("admin verification state does not replace its account status", () => {
+  const mapped = mapAdminUser({
+    _id: "admin-1",
+    role: "admin",
+    isActive: true,
+    isVerified: false,
+  });
+  assert.equal(mapped.status, "نشط");
+});
+
 test("admin user table keeps account type out of its desktop columns", () => {
   const table = readFileSync(
     new URL("../src/components/admin/users/Userstable.jsx", import.meta.url),
