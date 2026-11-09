@@ -10,7 +10,14 @@ import {
   resetPassword,
 } from "../../services/APIService";
 const OTP_LENGTH = 6;
-const TIMER_START = 60;
+const RESEND_COOLDOWN_SECONDS = 60;
+const OTP_VALIDITY_SECONDS = 10 * 60;
+
+const formatCountdown = (totalSeconds) => {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+};
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -22,7 +29,8 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(new Array(OTP_LENGTH).fill(""));
   const [resetToken, setResetToken] = useState("");
-  const [timer, setTimer] = useState(TIMER_START);
+  const [resendTimer, setResendTimer] = useState(RESEND_COOLDOWN_SECONDS);
+  const [expiryTimer, setExpiryTimer] = useState(OTP_VALIDITY_SECONDS);
 
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -34,21 +42,15 @@ export default function ForgotPassword() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
-  // ---- modal countdown, same behaviour as RegisterForm ----
+  // Keep resend cooldown separate from the actual server-side OTP validity.
   useEffect(() => {
-    if (!showResetModal) return;
-    if (timer <= 0) return;
+    if (!showResetModal || modalStep !== "otp") return;
     const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
+      setResendTimer((prev) => Math.max(0, prev - 1));
+      setExpiryTimer((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(interval);
-  }, [showResetModal, timer]);
+  }, [showResetModal, modalStep]);
 
   // ---- Step 1: send code to email ----
   const handleSendEmail = async (e) => {
@@ -65,7 +67,8 @@ export default function ForgotPassword() {
       setPassword("");
       setPasswordConfirm("");
       setResetToken("");
-      setTimer(TIMER_START);
+      setResendTimer(RESEND_COOLDOWN_SECONDS);
+      setExpiryTimer(OTP_VALIDITY_SECONDS);
       setModalStep("otp");
       setShowResetModal(true);
     } catch (err) {
@@ -113,6 +116,10 @@ export default function ForgotPassword() {
   // /auth/verifyResetCode شغال فعلاً على السيرفر (اتأكد من Postman)،
   // فبنتحقق من الكود هنا فعليًا قبل ما نسمح للمستخدم يدخل الباسورد الجديدة.
   const handleOtpNext = async () => {
+    if (expiryTimer <= 0) {
+      toast.error("انتهت صلاحية الكود. اطلب كودًا جديدًا ثم استخدم أحدث رسالة.");
+      return;
+    }
     const code = otp.join("").trim();
     if (code.length !== OTP_LENGTH) {
       toast.error("يرجى إدخال رمز التحقق كاملاً");
@@ -181,10 +188,11 @@ export default function ForgotPassword() {
     setResendLoading(true);
     try {
       await forgotPassword(email);
-      toast.success("تم إعادة إرسال الكود. تحقق من مجلد Spam إذا لم تجده.");
+      toast.success("تم إرسال كود جديد. استخدم أحدث رسالة فقط.");
       setOtp(new Array(OTP_LENGTH).fill(""));
       setResetToken("");
-      setTimer(TIMER_START);
+      setResendTimer(RESEND_COOLDOWN_SECONDS);
+      setExpiryTimer(OTP_VALIDITY_SECONDS);
     } catch (err) {
       toast.error(err.response?.data?.message || "حدث خطأ أثناء إعادة الإرسال");
     } finally {
@@ -269,6 +277,18 @@ export default function ForgotPassword() {
                     إذا لم تجد الرسالة، تحقق من مجلد البريد غير المرغوب فيه
                     (Spam).
                   </p>
+                  <div
+                    dir="rtl"
+                    className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-[14px] font-medium text-[#123C91]"
+                  >
+                    <p>
+                      الوقت المتبقي لصلاحية أحدث كود: {formatCountdown(expiryTimer)}
+                    </p>
+                    <p className="mt-1 text-[12px] text-[#4B5563]">
+                      عند إعادة الإرسال يُلغى الكود السابق، لذلك استخدم أحدث
+                      رسالة فقط.
+                    </p>
+                  </div>
 
                   <div
                     dir="ltr"
@@ -291,9 +311,9 @@ export default function ForgotPassword() {
                   </div>
 
                   <div className="mb-4">
-                    {timer > 0 ? (
-                      <p className="font-bold text-[20px] text-center text-[#123C91]">
-                        {timer} ثانية
+                    {resendTimer > 0 ? (
+                      <p className="text-[14px] font-medium text-center text-[#4B5563]">
+                        يمكنك إعادة الإرسال بعد {resendTimer} ثانية
                       </p>
                     ) : (
                       <button
@@ -320,10 +340,14 @@ export default function ForgotPassword() {
                     <button
                       type="button"
                       onClick={handleOtpNext}
-                      disabled={verifyLoading}
+                      disabled={verifyLoading || expiryTimer <= 0}
                       className="w-full md:w-77 h-14 rounded-lg bg-[#123C91] text-white [&_svg]:text-white transition-opacity disabled:opacity-70"
                     >
-                      {verifyLoading ? "جاري التحقق..." : "التالي"}
+                      {verifyLoading
+                        ? "جاري التحقق..."
+                        : expiryTimer <= 0
+                          ? "انتهت صلاحية الكود"
+                          : "التالي"}
                     </button>
                   </div>
                 </>
