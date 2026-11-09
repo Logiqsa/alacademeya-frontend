@@ -31,6 +31,8 @@ export default function ForgotPassword() {
   const [resetToken, setResetToken] = useState("");
   const [resendTimer, setResendTimer] = useState(RESEND_COOLDOWN_SECONDS);
   const [expiryTimer, setExpiryTimer] = useState(OTP_VALIDITY_SECONDS);
+  const [resendAvailableAt, setResendAvailableAt] = useState(null);
+  const [otpExpiresAt, setOtpExpiresAt] = useState(null);
 
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -42,15 +44,50 @@ export default function ForgotPassword() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
-  // Keep resend cooldown separate from the actual server-side OTP validity.
+  const startOtpTimers = () => {
+    const now = Date.now();
+    setResendAvailableAt(now + RESEND_COOLDOWN_SECONDS * 1000);
+    setOtpExpiresAt(now + OTP_VALIDITY_SECONDS * 1000);
+    setResendTimer(RESEND_COOLDOWN_SECONDS);
+    setExpiryTimer(OTP_VALIDITY_SECONDS);
+  };
+
+  // Derive the counters from absolute deadlines. Browsers throttle intervals
+  // in background tabs, but the displayed time remains correct on return.
   useEffect(() => {
-    if (!showResetModal || modalStep !== "otp") return;
-    const interval = setInterval(() => {
-      setResendTimer((prev) => Math.max(0, prev - 1));
-      setExpiryTimer((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [showResetModal, modalStep]);
+    if (
+      !showResetModal ||
+      modalStep !== "otp" ||
+      !resendAvailableAt ||
+      !otpExpiresAt
+    ) {
+      return undefined;
+    }
+
+    const syncTimers = () => {
+      const now = Date.now();
+      setResendTimer(
+        Math.max(0, Math.ceil((resendAvailableAt - now) / 1000)),
+      );
+      setExpiryTimer(Math.max(0, Math.ceil((otpExpiresAt - now) / 1000)));
+    };
+
+    syncTimers();
+    const interval = setInterval(syncTimers, 1000);
+    document.addEventListener("visibilitychange", syncTimers);
+    window.addEventListener("focus", syncTimers);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", syncTimers);
+      window.removeEventListener("focus", syncTimers);
+    };
+  }, [
+    showResetModal,
+    modalStep,
+    resendAvailableAt,
+    otpExpiresAt,
+  ]);
 
   // ---- Step 1: send code to email ----
   const handleSendEmail = async (e) => {
@@ -67,8 +104,7 @@ export default function ForgotPassword() {
       setPassword("");
       setPasswordConfirm("");
       setResetToken("");
-      setResendTimer(RESEND_COOLDOWN_SECONDS);
-      setExpiryTimer(OTP_VALIDITY_SECONDS);
+      startOtpTimers();
       setModalStep("otp");
       setShowResetModal(true);
     } catch (err) {
@@ -116,7 +152,7 @@ export default function ForgotPassword() {
   // /auth/verifyResetCode شغال فعلاً على السيرفر (اتأكد من Postman)،
   // فبنتحقق من الكود هنا فعليًا قبل ما نسمح للمستخدم يدخل الباسورد الجديدة.
   const handleOtpNext = async () => {
-    if (expiryTimer <= 0) {
+    if (!otpExpiresAt || Date.now() >= otpExpiresAt) {
       toast.error("انتهت صلاحية الكود. اطلب كودًا جديدًا ثم استخدم أحدث رسالة.");
       return;
     }
@@ -191,8 +227,7 @@ export default function ForgotPassword() {
       toast.success("تم إرسال كود جديد. استخدم أحدث رسالة فقط.");
       setOtp(new Array(OTP_LENGTH).fill(""));
       setResetToken("");
-      setResendTimer(RESEND_COOLDOWN_SECONDS);
-      setExpiryTimer(OTP_VALIDITY_SECONDS);
+      startOtpTimers();
     } catch (err) {
       toast.error(err.response?.data?.message || "حدث خطأ أثناء إعادة الإرسال");
     } finally {
