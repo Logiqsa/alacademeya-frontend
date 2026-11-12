@@ -385,7 +385,7 @@ const CreateGroupPages = () => {
     setSaving(true);
     setSubmitError(null);
     try {
-      await createClassroom({
+      const response = await createClassroom({
         name: data.name,
         curriculum: data.curriculum,
         stage: data.stage,
@@ -397,6 +397,10 @@ const CreateGroupPages = () => {
         description: data.description || "",
         meetingLink: data.meetingLink.trim(),
       });
+
+      if (!response.data?.success || !response.data?.data?.id) {
+        throw new Error("لم يؤكد الخادم حفظ المجموعة");
+      }
       navigate("/admin/groups");
     } catch (err) {
       console.error(err);
@@ -405,7 +409,11 @@ const CreateGroupPages = () => {
       if (Object.keys(fieldErrors).length) {
         setErrors((prev) => ({ ...prev, ...fieldErrors }));
       }
-      setSubmitError(getSubmitErrorMessage(responseData, fieldErrors));
+      setSubmitError(
+        responseData
+          ? getSubmitErrorMessage(responseData, fieldErrors)
+          : err.message || "حدث خطأ أثناء إنشاء المجموعة",
+      );
     } finally {
       setSaving(false);
     }

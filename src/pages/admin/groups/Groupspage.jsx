@@ -68,7 +68,11 @@ const GroupsPage = () => {
     try {
       // نجيب الـ lookups والـ classrooms مع بعض
       const [classroomsRes, curriculumsRes, subjectsRes, gradesRes, teachersRes] = await Promise.all([
-        getClassrooms({ type: "group" }),
+        // Both public and private teaching groups are Classroom records.  The
+        // old `type=group` filter silently hid every group created with the
+        // "خاص" option.  Fetch the complete admin collection here because
+        // this page applies its filters and pagination locally.
+        getClassrooms({ page: 1, limit: 1000 }),
         getCurriculums(),
         getAllSubjects(),
         getAllGrades(),
