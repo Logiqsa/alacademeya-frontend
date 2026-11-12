@@ -17,6 +17,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import AppSelect from "../../ui/AppSelect";
+import EntityProfileModal from "../users/EntityProfileModal";
 import {
   getClassroomReplacementTeachers,
   getClassroomEnrollmentOptions,
@@ -48,9 +49,6 @@ const resolvePersonId = (p) =>
   p?._id ||
   p?.user?.id ||
   p?.user?._id;
-
-const resolveEntityId = (value) =>
-  typeof value === "string" ? value : value?.id || value?._id || "";
 
 // The subscriptions API expects the Student document id, not the nested User id.
 const resolveStudentId = (student) =>
@@ -937,6 +935,17 @@ const GroupTable = ({
 }) => {
   const navigate = useNavigate();
   const [modal, setModal] = useState(null);
+  const [profileTeacher, setProfileTeacher] = useState(null);
+
+  const openTeacherProfile = (group) => {
+    if (!group.teacherId) return;
+    setProfileTeacher({
+      id: group.teacherId,
+      profileId: group.teacherId,
+      fullName: group.teacher,
+      name: group.teacher,
+    });
+  };
 
   const handleOpenAttendance = (groupId) => {
     if (onOpenAttendance) {
@@ -1048,7 +1057,20 @@ const GroupTable = ({
                         {g.name}
                       </button>
                     </td>
-                    {[g.teacher, g.subject, g.stage, g.grade].map((v, i) => (
+                    <td className="px-4 lg:px-6 py-3 lg:py-4 text-[14px] whitespace-nowrap">
+                      {g.teacherId ? (
+                        <button
+                          type="button"
+                          onClick={() => openTeacherProfile(g)}
+                          className="font-medium text-[#123C91] transition-colors hover:underline"
+                        >
+                          {g.teacher ?? "--"}
+                        </button>
+                      ) : (
+                        <span className="text-[#575F69]">{g.teacher ?? "--"}</span>
+                      )}
+                    </td>
+                    {[g.subject, g.stage, g.grade].map((v, i) => (
                       <td
                         key={i}
                         className="px-4 lg:px-6 py-3 lg:py-4 text-[#575F69] text-[14px] whitespace-nowrap"
@@ -1107,7 +1129,19 @@ const GroupTable = ({
                 {statusBadge(g.status)}
               </div>
               <div className="space-y-0.5">
-                <MobileField label="المعلم">{g.teacher ?? "--"}</MobileField>
+                <MobileField label="المعلم">
+                  {g.teacherId ? (
+                    <button
+                      type="button"
+                      onClick={() => openTeacherProfile(g)}
+                      className="font-medium text-[#123C91] hover:underline"
+                    >
+                      {g.teacher ?? "--"}
+                    </button>
+                  ) : (
+                    g.teacher ?? "--"
+                  )}
+                </MobileField>
                 <MobileField label="المادة">{g.subject}</MobileField>
                 <MobileField label="المرحلة">{g.stage}</MobileField>
                 <MobileField label="الصف">{g.grade}</MobileField>
@@ -1137,6 +1171,11 @@ const GroupTable = ({
         onClose={closeModal}
         group={modal?.group}
         onChanged={onChanged}
+      />
+      <EntityProfileModal
+        entity={profileTeacher}
+        role="teacher"
+        onClose={() => setProfileTeacher(null)}
       />
       <DeleteGroupModal
         open={modal?.type === "delete"}
