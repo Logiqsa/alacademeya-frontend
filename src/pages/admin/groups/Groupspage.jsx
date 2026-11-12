@@ -52,6 +52,7 @@ const GroupsPage = () => {
   const [search, setSearch] = useState("");
   const [filterSubject, setFilterSubject] = useState("جميع المواد");
   const [filterStatus, setFilterStatus] = useState("جميع الحالات");
+  const [filterType, setFilterType] = useState("جميع الأنواع");
   const [filterCurriculum, setFilterCurriculum] = useState("جميع المناهج");
   const [filterStage, setFilterStage] = useState("جميع المراحل");
   const [filterGrade, setFilterGrade] = useState("جميع الصفوف");
@@ -281,6 +282,11 @@ const GroupsPage = () => {
       filterSubject === "جميع المواد" || group.subject === filterSubject;
     const matchesStatus =
       filterStatus === "جميع الحالات" || group.status === filterStatus;
+    const matchesType =
+      filterType === "جميع الأنواع" ||
+      (filterType === "خاص"
+        ? group.classroomType === "private"
+        : group.classroomType === "group");
     const matchesStage =
       filterStage === "جميع المراحل" || group.stage === filterStage;
     const matchesCurriculum =
@@ -294,6 +300,7 @@ const GroupsPage = () => {
       matchesCurriculum &&
       matchesSubject &&
       matchesStatus &&
+      matchesType &&
       matchesStage &&
       matchesGrade
     );
@@ -358,6 +365,11 @@ const GroupsPage = () => {
             statusOptions={statusOptions}
             onFilterStatusChange={(v) => {
               setFilterStatus(v);
+              setPage(1);
+            }}
+            filterType={filterType}
+            onFilterTypeChange={(value) => {
+              setFilterType(value);
               setPage(1);
             }}
             filterCurriculum={filterCurriculum}

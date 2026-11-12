@@ -10,6 +10,9 @@ const GroupsFilters = ({
   filterStatus,
   statusOptions = ["جميع الحالات"],
   onFilterStatusChange,
+  filterType,
+  typeOptions = ["جميع الأنواع", "مجموعة", "خاص"],
+  onFilterTypeChange,
   filterCurriculum,
   curriculumOptions = ["جميع المناهج"],
   onFilterCurriculumChange,
@@ -40,6 +43,20 @@ const GroupsFilters = ({
           className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
         >
           {curriculumOptions.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </AppSelect>
+      </div>
+
+      <div className="relative w-full sm:w-47.5 lg:w-55" style={{ height: "48px" }}>
+        <AppSelect
+          value={filterType}
+          onChange={(e) => onFilterTypeChange?.(e.target.value)}
+          className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91]"
+        >
+          {typeOptions.map((opt) => (
             <option key={opt} value={opt}>
               {opt}
             </option>
