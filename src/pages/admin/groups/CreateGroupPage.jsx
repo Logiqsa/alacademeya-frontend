@@ -33,6 +33,51 @@ const nameOf = (value) => {
 const normalizedName = (value) =>
   nameOf(value).trim().toLocaleLowerCase("ar");
 
+const API_FIELD_LABELS = {
+  name: "اسم المجموعة",
+  curriculum: "المنهج",
+  stage: "المرحلة الدراسية",
+  grade: "الصف الدراسي",
+  subject: "المادة",
+  teacher: "المعلم",
+  type: "نوع الخدمة",
+  capacity: "عدد الطلاب",
+  meetingLink: "رابط المجموعة التعليمية",
+};
+
+const getApiFieldErrors = (responseData) => {
+  const apiErrors = responseData?.errors;
+  if (!apiErrors || typeof apiErrors !== "object" || Array.isArray(apiErrors)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(apiErrors).map(([field, message]) => [
+      field,
+      Array.isArray(message) ? message.join("، ") : String(message),
+    ]),
+  );
+};
+
+const getSubmitErrorMessage = (responseData, fieldErrors) => {
+  const firstFieldError = Object.entries(fieldErrors)[0];
+  if (firstFieldError) {
+    const [field, message] = firstFieldError;
+    return `${API_FIELD_LABELS[field] || field}: ${message}`;
+  }
+
+  return responseData?.message || "حدث خطأ أثناء إنشاء المجموعة";
+};
+
+const isValidMeetingUrl = (value) => {
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
+};
+
 /* ------------------------------------------------------------------ */
 /* Static Data                                                          */
 /* ------------------------------------------------------------------ */
@@ -250,6 +295,10 @@ const CreateGroupPages = () => {
     setData((prev) => {
       const next = { ...prev, [field]: value };
 
+      if (field === "serviceType" && value === "private") {
+        next.capacity = 1;
+      }
+
       if (field === "curriculum") {
         next.stage = "";
         next.grade = "";
@@ -272,6 +321,7 @@ const CreateGroupPages = () => {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
+    setSubmitError(null);
 
     if (field === "curriculum") {
       setStages([]);
@@ -310,7 +360,20 @@ const CreateGroupPages = () => {
     if (!data.teacher) next.teacher = "المعلم مطلوب";
     if (!data.name?.trim()) next.name = "اسم المجموعة مطلوب";
     if (!data.serviceType) next.serviceType = "نوع الخدمة مطلوب";
-    if (!data.capacity) next.capacity = "عدد الطلاب مطلوب";
+    const capacity = Number(data.capacity);
+    if (!data.capacity) {
+      next.capacity = "عدد الطلاب مطلوب";
+    } else if (!Number.isInteger(capacity) || capacity < 1) {
+      next.capacity = "عدد الطلاب يجب أن يكون رقمًا صحيحًا لا يقل عن 1";
+    } else if (data.serviceType === "private" && capacity !== 1) {
+      next.capacity = "المجموعة الخاصة مخصصة لطالب واحد فقط";
+    }
+    const meetingLink = data.meetingLink?.trim();
+    if (!meetingLink) {
+      next.meetingLink = "رابط المجموعة التعليمية مطلوب";
+    } else if (!isValidMeetingUrl(meetingLink)) {
+      next.meetingLink = "أدخل رابطًا صحيحًا يبدأ بـ https:// أو http://";
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -329,18 +392,20 @@ const CreateGroupPages = () => {
         grade: data.grade,
         subject: data.subject,
         teacher: data.teacher,
-        type: "group",
-        serviceType: data.serviceType,
+        type: data.serviceType === "private" ? "private" : "group",
         capacity: Number(data.capacity),
         description: data.description || "",
-        meetingLink: data.meetingLink || "",
+        meetingLink: data.meetingLink.trim(),
       });
       navigate("/admin/groups");
     } catch (err) {
       console.error(err);
-      setSubmitError(
-        err.response?.data?.message || "حدث خطأ أثناء إنشاء المجموعة",
-      );
+      const responseData = err.response?.data;
+      const fieldErrors = getApiFieldErrors(responseData);
+      if (Object.keys(fieldErrors).length) {
+        setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      }
+      setSubmitError(getSubmitErrorMessage(responseData, fieldErrors));
     } finally {
       setSaving(false);
     }
@@ -499,7 +564,9 @@ const CreateGroupPages = () => {
             value={data.meetingLink || ""}
             onChange={(v) => handleField("meetingLink", v)}
             placeholder="https://zoom.us/12548"
+            type="url"
             icon={<LinkIcon size={16} />}
+            error={errors.meetingLink}
           />
 
           {submitError && (
