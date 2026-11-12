@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Video } from "lucide-react";
 import AdminLayout from "../../components/admin/layout/AdminLayout";
 import ParentLayout from "../../components/parent/layout/ParentLayout";
 import LessonFiles from "../../components/teacher/groups/lessons/LessonFiles";
@@ -79,6 +80,11 @@ const sessionStatusOf = (session) => {
     }
   );
 };
+
+const isLiveSession = (session) =>
+  ["live", "active"].includes(
+    String(session?.status || "").toLowerCase(),
+  );
 
 // بعض الـ APIs بترجع student كـ object كامل، وبعضها بيرجعه id نص بس — بنغطي الحالتين
 const resolveStudentId = (student) =>
@@ -176,7 +182,7 @@ const SessionDetailsPage = ({ role }) => {
       )}
       <div className="mx-auto max-w-7xl space-y-5 p-2" dir="rtl">
     {loading ? <p className="py-16 text-center text-[#575F69]">جاري تحميل تفاصيل الحصة...</p> : error || !data ? <p className="py-16 text-center text-red-500">{error}</p> : <>
-      <div className="rounded-2xl border bg-white p-5"><div className="flex items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold text-[#123C91]">{data.session.title}</h1><p className="mt-2 text-base font-bold text-[#575F69]">{nameOf(data.classroom.name)} • {new Date(data.session.scheduledDate).toLocaleString("ar-EG", { hour12: true })}</p></div><span className={`rounded-lg px-3 py-1 text-sm ${sessionStatusOf(data.session).className}`}>{sessionStatusOf(data.session).label}</span></div>{data.session.description && <p className="mt-4 text-sm text-[#575F69]">{data.session.description}</p>}</div>
+      <div className="rounded-2xl border bg-white p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold text-[#123C91]">{data.session.title}</h1><p className="mt-2 text-base font-bold text-[#575F69]">{nameOf(data.classroom.name)} • {new Date(data.session.scheduledDate).toLocaleString("ar-EG", { hour12: true })}</p></div><div className="flex flex-wrap items-center gap-2"><span className={`rounded-lg px-3 py-1 text-sm ${sessionStatusOf(data.session).className}`}>{sessionStatusOf(data.session).label}</span>{role === "admin" && isLiveSession(data.session) && (data.session.meetingLink || data.classroom.meetingLink) && <a href={data.session.meetingLink || data.classroom.meetingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#123C91] px-4 py-2 text-sm font-semibold text-white [&_svg]:text-white hover:bg-[#0f3278] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#123C91] focus-visible:ring-offset-2"><Video size={17} />دخول الحصة</a>}</div></div>{data.session.description && <p className="mt-4 text-sm text-[#575F69]">{data.session.description}</p>}{role === "admin" && isLiveSession(data.session) && !(data.session.meetingLink || data.classroom.meetingLink) && <p className="mt-4 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-sm text-orange-700">الحصة تُعقد الآن، لكن لم يتم تسجيل رابط دخول لها.</p>}</div>
       {role === "admin" && <LessonStats {...data.attendanceStats} />}
       <LessonFiles files={data.session.attachments || []} />
       <LessonAssignments assignments={data.assignments} />
