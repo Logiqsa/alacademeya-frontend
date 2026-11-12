@@ -281,6 +281,7 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [summaryRequestKey, setSummaryRequestKey] = useState(0);
 
   useEffect(() => {
     if (!open || !group?.id) return undefined;
@@ -294,8 +295,16 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
       .then((response) => {
         if (active) setSummary(response?.data?.data || null);
       })
-      .catch(() => {
-        if (active) setError("تعذر تحميل ملخص الحذف، حاول مرة أخرى.");
+      .catch((err) => {
+        if (!active) return;
+        const serverMessage = err.response?.data?.message;
+        setError(
+          serverMessage === "CLASSROOM_NOT_FOUND"
+            ? "هذه المجموعة لم تعد موجودة. حدّث الصفحة وحاول مرة أخرى."
+            : serverMessage === "ONLY_GROUP_CLASSROOMS_CAN_BE_DELETED"
+              ? "تعذر حذف هذا النوع من المجموعات بالإصدار الحالي. حدّث الصفحة ثم حاول مجددًا."
+              : serverMessage || "تعذر تحميل ملخص الحذف. تحقق من الاتصال ثم أعد المحاولة.",
+        );
       })
       .finally(() => {
         if (active) setSummaryLoading(false);
@@ -304,7 +313,7 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
     return () => {
       active = false;
     };
-  }, [open, group?.id]);
+  }, [open, group?.id, summaryRequestKey]);
 
   const handleClose = () => {
     setError("");
@@ -390,9 +399,18 @@ const DeleteGroupModal = ({ open, onClose, group, onChanged }) => {
       )}
 
       {error && (
-        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[13px] text-red-700">
-          {error}
-        </p>
+        <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[13px] text-red-700">
+          <p>{error}</p>
+          {!summary && !summaryLoading && (
+            <button
+              type="button"
+              onClick={() => setSummaryRequestKey((key) => key + 1)}
+              className="mt-2 font-semibold text-red-800 underline underline-offset-2"
+            >
+              إعادة تحميل ملخص الحذف
+            </button>
+          )}
+        </div>
       )}
 
       <div className="mt-5 flex gap-3">
