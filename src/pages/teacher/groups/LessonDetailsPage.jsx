@@ -111,7 +111,12 @@ const PageHeader = ({ lesson, onOpenAttendance, onLifecycle, onOpenChat, lifecyc
 
     <div className="flex items-center gap-2 flex-wrap">
       {lesson.rawStatus !== "completed" && (
-        <button onClick={onLifecycle} disabled={lifecycleLoading} className={`h-10 px-4 rounded-lg text-white text-sm font-medium flex items-center gap-2 ${lesson.rawStatus === "live" ? "bg-red-600" : "bg-green-700 hover:bg-green-800"}`}>
+        <button
+          onClick={onLifecycle}
+          disabled={lifecycleLoading || (lesson.rawStatus !== "live" && !lesson.lessonUrl)}
+          title={lesson.rawStatus !== "live" && !lesson.lessonUrl ? "أضف رابط الاجتماع إلى المجموعة أولًا" : undefined}
+          className={`h-10 px-4 rounded-lg text-white text-sm font-medium flex items-center gap-2 disabled:cursor-not-allowed disabled:bg-gray-400 ${lesson.rawStatus === "live" ? "bg-red-600" : "bg-green-700 hover:bg-green-800"}`}
+        >
           {lifecycleLoading ? <Loader2 size={16} className="animate-spin" /> : lesson.rawStatus === "live" ? <Square size={15} /> : <Play size={16} />}
           {lesson.rawStatus === "live" ? "إنهاء الحصة" : "بدء الحصة"}
         </button>

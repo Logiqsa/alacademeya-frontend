@@ -63,6 +63,24 @@ const resolveName = (val) =>
 
 const isMongoId = (value) => /^[a-f\d]{24}$/i.test(String(value || ""));
 
+const isValidMeetingUrl = (value) => {
+  try {
+    return ["http:", "https:"].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+};
+
+const liveDurationLabel = (startedAt, now) => {
+  const startedAtMs = new Date(startedAt).getTime();
+  if (!Number.isFinite(startedAtMs)) return "جارية الآن";
+
+  const elapsedMinutes = Math.max(0, Math.floor((now - startedAtMs) / 60000));
+  return elapsedMinutes < 1
+    ? "أقل من دقيقة (جارية)"
+    : `${elapsedMinutes} دقيقة (جارية)`;
+};
+
 const resolveAcademicName = (field, primaryClassroom, fallbackClassroom) => {
   const references = [
     primaryClassroom?.[field],
@@ -155,6 +173,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   const [removeStudentTarget, setRemoveStudentTarget] = useState(null);
   const [removingStudent, setRemovingStudent] = useState(false);
   const [lessons, setLessons] = useState([]);
+  const [liveClock, setLiveClock] = useState(() => Date.now());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hasSchedule, setHasSchedule] = useState(false);
@@ -317,6 +336,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         substituteTeacherId,
         substituteTeacher: substituteTeacherName,
         capacity: classroomData.capacity,
+        meetingLink: classroomData.meetingLink || "",
       });
       const profileOrUserId = teacherId || routedGroupTeacherId;
       if (nestedTeacherName) setGroupTeacher(nestedTeacherName);
@@ -560,6 +580,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
             typeof s.duration === "number"
               ? `${s.duration} دقيقة`
               : (s.duration ?? "--"),
+          startedAt: s.startedAt || s.startAt || null,
           attendance,
           absence,
           status: isPostponed
@@ -600,7 +621,24 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
     return () => window.clearTimeout(timer);
   }, [fetchData]);
 
-  const filtered = lessons.filter(
+  useEffect(() => {
+    if (!lessons.some((lesson) => lesson.rawStatus === "live")) return undefined;
+
+    setLiveClock(Date.now());
+    const timer = window.setInterval(() => setLiveClock(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, [lessons]);
+
+  const lessonsWithLiveDuration = lessons.map((lesson) =>
+    lesson.rawStatus === "live"
+      ? {
+          ...lesson,
+          duration: liveDurationLabel(lesson.startedAt, liveClock),
+        }
+      : lesson,
+  );
+
+  const filtered = lessonsWithLiveDuration.filter(
     (l) =>
       l.title.includes(search) &&
       (filterStatus === "جميع الحالات" || l.status === filterStatus),
@@ -626,7 +664,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
         groupDetails?.capacity === undefined || groupDetails?.capacity === null
           ? ""
           : String(groupDetails.capacity),
-      meetingLink: "",
+      meetingLink: groupDetails?.meetingLink || "",
     });
     setEditGroupError("");
     setShowEditGroupModal(true);
@@ -646,9 +684,17 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
       return;
     }
 
-    const payload = { name, capacity };
     const meetingLink = editGroupData.meetingLink.trim();
-    if (meetingLink) payload.meetingLink = meetingLink;
+    if (!meetingLink) {
+      setEditGroupError("رابط الاجتماع مطلوب ولا يمكن تشغيل الحصص بدونه");
+      return;
+    }
+    if (!isValidMeetingUrl(meetingLink)) {
+      setEditGroupError("أدخل رابط اجتماع صحيحًا يبدأ بـ https:// أو http://");
+      return;
+    }
+
+    const payload = { name, capacity, meetingLink };
 
     setSavingGroup(true);
     setEditGroupError("");
@@ -1212,7 +1258,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
 
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-[#1F2937]">
-                  رابط الاجتماع الجديد (اختياري)
+                  رابط الاجتماع
                 </span>
                 <input
                   type="url"
@@ -1223,7 +1269,8 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
                       meetingLink: event.target.value,
                     }))
                   }
-                  placeholder="اتركه فارغًا للاحتفاظ بالرابط الحالي"
+                  placeholder="https://zoom.us/..."
+                  required
                   className="h-12 w-full rounded-lg border border-[#D7DEE8] px-4 outline-none placeholder:text-[#9CA3AF] focus:border-[#123C91] focus:ring-2 focus:ring-[#123C91]/15"
                 />
               </label>

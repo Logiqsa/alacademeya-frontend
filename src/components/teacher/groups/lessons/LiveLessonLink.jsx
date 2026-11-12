@@ -4,7 +4,9 @@ import toast from "react-hot-toast";
 const LiveLessonLink = ({ lessonUrl, status }) => {
   const isLive = status === "live";
   const stateText =
-    status === "completed"
+    !lessonUrl && status !== "completed"
+      ? "لا يوجد رابط لقاء محفوظ لهذه المجموعة. أضف الرابط قبل بدء الحصة."
+      : status === "completed"
       ? "الحصة منتهية"
       : status === "missed"
         ? "بدأت الحصة متأخرة"
