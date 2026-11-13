@@ -15,6 +15,7 @@ import {
   ArrowDown,
   ArrowUpDown,
   CreditCard,
+  UserPlus,
   ArrowRight,
   ChevronDown,
   LoaderCircle,
@@ -127,7 +128,7 @@ const classroomSummary = (classroom) => {
   };
 };
 
-const StudentGroupEnrollment = ({ user, onAdded }) => {
+const StudentGroupEnrollment = ({ open, user, onAdded, onClose }) => {
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [packages, setPackages] = useState([]);
@@ -140,6 +141,7 @@ const StudentGroupEnrollment = ({ user, onAdded }) => {
   useEffect(() => {
     let cancelled = false;
     const loadGroups = async () => {
+      if (!open) return;
       if (!user?.gradeId) {
         setGroups([]);
         setLoading(false);
@@ -171,7 +173,7 @@ const StudentGroupEnrollment = ({ user, onAdded }) => {
     return () => {
       cancelled = true;
     };
-  }, [user?.gradeId, user?.groups]);
+  }, [open, user?.gradeId, user?.groups]);
 
   useEffect(() => {
     let cancelled = false;
@@ -222,6 +224,7 @@ const StudentGroupEnrollment = ({ user, onAdded }) => {
       onAdded?.(classroomSummary(selectedGroup));
       setSelectedGroupId("");
       setSelectedPackageId("");
+      onClose?.();
     } catch (err) {
       setError(err.response?.data?.message || "تعذر إضافة الطالب إلى المجموعة.");
     } finally {
@@ -229,10 +232,34 @@ const StudentGroupEnrollment = ({ user, onAdded }) => {
     }
   };
 
-  return (
-    <div className="mb-3 rounded-xl border border-[#D7E2F3] bg-white p-4">
-      <p className="mb-3 text-sm font-semibold text-[#1F2937]">إضافة الطالب إلى مجموعة</p>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose?.();
+      }}
+    >
+      <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl" dir="rtl">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-[#1F2937]">إضافة الطالب إلى مجموعة</h3>
+            <p className="mt-1 text-xs text-[#8C9198]">تظهر المجموعات المتاحة لنفس صف الطالب فقط.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label="إغلاق"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+          >
+            <X size={17} />
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          <label className="text-sm font-medium text-[#374151]">
+            المجموعة
         <select
           value={selectedGroupId}
           onChange={(event) => {
@@ -244,38 +271,54 @@ const StudentGroupEnrollment = ({ user, onAdded }) => {
             setError("");
           }}
           disabled={loading || submitting}
-          className="rounded-xl border border-[#D7E2F3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#123C91]"
+          className="mt-2 w-full rounded-xl border border-[#D7E2F3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#123C91]"
         >
           <option value="">{loading ? "جاري تحميل المجموعات..." : "اختر مجموعة من نفس الصف"}</option>
           {groups.map((group) => (
             <option key={entityId(group)} value={entityId(group)}>{localizedName(group.name)}</option>
           ))}
         </select>
+          </label>
+          <label className="text-sm font-medium text-[#374151]">
+            الباقة
         <select
           value={selectedPackageId}
           onChange={(event) => setSelectedPackageId(event.target.value)}
           disabled={!selectedGroupId || packagesLoading || submitting}
-          className="rounded-xl border border-[#D7E2F3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#123C91]"
+          className="mt-2 w-full rounded-xl border border-[#D7E2F3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#123C91]"
         >
           <option value="">{packagesLoading ? "جاري تحميل الباقات..." : "اختر الباقة"}</option>
           {packages.map((item) => (
             <option key={entityId(item)} value={entityId(item)}>{localizedName(item.name)}</option>
           ))}
         </select>
-      </div>
+          </label>
+        </div>
       {!loading && groups.length === 0 && !error && (
         <p className="mt-2 text-xs text-[#8C9198]">لا توجد مجموعات متاحة لنفس صف الطالب.</p>
       )}
       {error && <p className="mt-2 text-xs font-medium text-red-600">{error}</p>}
-      <button
-        type="button"
-        onClick={handleAdd}
-        disabled={!selectedGroupId || !selectedPackageId || submitting}
-        className="mt-3 rounded-xl bg-[#123C91] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {submitting ? "جاري الإضافة..." : "إضافة إلى المجموعة"}
-      </button>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-xl border border-[#D7E2F3] px-4 py-2.5 text-sm font-semibold text-[#374151] hover:bg-[#F9FAFB]"
+          >
+            إلغاء
+          </button>
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={!selectedGroupId || !selectedPackageId || submitting}
+            className="rounded-xl bg-[#123C91] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {submitting ? "جاري الإضافة..." : "إضافة إلى المجموعة"}
+          </button>
+        </div>
+      </div>
     </div>
+    , document.body,
   );
 };
 
@@ -911,6 +954,7 @@ export const UserDetailsModal = ({
   onGroupAdded,
 }) => {
   const navigate = useNavigate();
+  const [groupEnrollmentOpen, setGroupEnrollmentOpen] = useState(false);
 
   if (!open || !user) return null;
 
@@ -1025,6 +1069,17 @@ export const UserDetailsModal = ({
             </button>
           )}
 
+          {isStudent && user.studentId && !user.groupsLoading && (
+            <button
+              type="button"
+              onClick={() => setGroupEnrollmentOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#123C91] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0f3280]"
+            >
+              <UserPlus size={18} />
+              إضافة إلى مجموعة
+            </button>
+          )}
+
           {approvalEligible && onApprove && (
             <button
               type="button"
@@ -1113,9 +1168,8 @@ export const UserDetailsModal = ({
         )}
 
         {isStudent && (
-          <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="mb-2 grid grid-cols-1 gap-2">
             <DetailRow label="المنهج" value={listNames(user.studentCurriculums) || "—"} />
-            <DetailRow label="المرحلة" value={user.stage || "—"} />
           </div>
         )}
 
@@ -1155,10 +1209,6 @@ export const UserDetailsModal = ({
           </div>
         )}
 
-        {isStudent && !user.groupsLoading && user.studentId && (
-          <StudentGroupEnrollment user={user} onAdded={onGroupAdded} />
-        )}
-
         {isStudent &&
           !user.groupsLoading &&
           !user.groups?.length && (
@@ -1184,6 +1234,13 @@ export const UserDetailsModal = ({
               )}
             </div>
           )}
+
+        <StudentGroupEnrollment
+          open={groupEnrollmentOpen}
+          user={user}
+          onAdded={onGroupAdded}
+          onClose={() => setGroupEnrollmentOpen(false)}
+        />
 
         {isTeacher && (
           <>
