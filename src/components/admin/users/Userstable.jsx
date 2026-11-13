@@ -29,8 +29,10 @@ import {
   getAllStudents,
   getAllSubscriptions,
   getClassroomStudents,
+  getClassroomEnrollmentOptions,
   getClassrooms,
   getTeacher,
+  createSubscription,
   cancelSubscription,
 } from "../../../services/APIService";
 import { resolveApiEndpoint } from "../../../services/apiUrl";
@@ -123,6 +125,158 @@ const classroomSummary = (classroom) => {
     name: localizedName(classroom.name) || "مجموعة بدون اسم",
     status: classroom.status,
   };
+};
+
+const StudentGroupEnrollment = ({ user, onAdded }) => {
+  const [groups, setGroups] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [packages, setPackages] = useState([]);
+  const [selectedPackageId, setSelectedPackageId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [packagesLoading, setPackagesLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadGroups = async () => {
+      if (!user?.gradeId) {
+        setGroups([]);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError("");
+      try {
+        const response = await getClassrooms({
+          grade: user.gradeId,
+          type: "group",
+          status: "active",
+          page: 1,
+          limit: 1000,
+        });
+        if (cancelled) return;
+        const currentGroupIds = new Set((user.groups || []).map((group) => String(group.id)));
+        const matchingGroups = extractApiList(response, ["classrooms", "results", "items"])
+          .filter((group) => String(entityId(group?.grade)) === String(user.gradeId))
+          .filter((group) => !currentGroupIds.has(String(entityId(group))));
+        setGroups(matchingGroups);
+      } catch {
+        if (!cancelled) setError("تعذر تحميل مجموعات الصف.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    loadGroups();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.gradeId, user?.groups]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!selectedGroupId) return undefined;
+    getClassroomEnrollmentOptions(selectedGroupId)
+      .then((response) => {
+        if (cancelled) return;
+        const data = response?.data?.data ?? response?.data ?? {};
+        setPackages(Array.isArray(data.packages) ? data.packages : []);
+      })
+      .catch(() => {
+        if (!cancelled) setError("تعذر تحميل باقات المجموعة.");
+      })
+      .finally(() => {
+        if (!cancelled) setPackagesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedGroupId]);
+
+  const selectedGroup = groups.find((group) => String(entityId(group)) === selectedGroupId);
+  const handleAdd = async () => {
+    if (!selectedGroup || !selectedPackageId) {
+      setError("اختر المجموعة والباقة أولًا.");
+      return;
+    }
+    const subjectId = entityId(selectedGroup.subject);
+    const teacherId = entityId(selectedGroup.teacher);
+    if (!user.studentId || !subjectId || !teacherId) {
+      setError("بيانات الطالب أو المجموعة غير مكتملة.");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      await createSubscription({
+        student: user.studentId,
+        items: [{
+          subject: subjectId,
+          teacher: teacherId,
+          classroom: entityId(selectedGroup),
+          package: selectedPackageId,
+          type: selectedGroup.type || "group",
+          discount: 0,
+        }],
+      });
+      onAdded?.(classroomSummary(selectedGroup));
+      setSelectedGroupId("");
+      setSelectedPackageId("");
+    } catch (err) {
+      setError(err.response?.data?.message || "تعذر إضافة الطالب إلى المجموعة.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="mb-3 rounded-xl border border-[#D7E2F3] bg-white p-4">
+      <p className="mb-3 text-sm font-semibold text-[#1F2937]">إضافة الطالب إلى مجموعة</p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <select
+          value={selectedGroupId}
+          onChange={(event) => {
+            const nextGroupId = event.target.value;
+            setSelectedGroupId(nextGroupId);
+            setPackages([]);
+            setSelectedPackageId("");
+            setPackagesLoading(Boolean(nextGroupId));
+            setError("");
+          }}
+          disabled={loading || submitting}
+          className="rounded-xl border border-[#D7E2F3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#123C91]"
+        >
+          <option value="">{loading ? "جاري تحميل المجموعات..." : "اختر مجموعة من نفس الصف"}</option>
+          {groups.map((group) => (
+            <option key={entityId(group)} value={entityId(group)}>{localizedName(group.name)}</option>
+          ))}
+        </select>
+        <select
+          value={selectedPackageId}
+          onChange={(event) => setSelectedPackageId(event.target.value)}
+          disabled={!selectedGroupId || packagesLoading || submitting}
+          className="rounded-xl border border-[#D7E2F3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#123C91]"
+        >
+          <option value="">{packagesLoading ? "جاري تحميل الباقات..." : "اختر الباقة"}</option>
+          {packages.map((item) => (
+            <option key={entityId(item)} value={entityId(item)}>{localizedName(item.name)}</option>
+          ))}
+        </select>
+      </div>
+      {!loading && groups.length === 0 && !error && (
+        <p className="mt-2 text-xs text-[#8C9198]">لا توجد مجموعات متاحة لنفس صف الطالب.</p>
+      )}
+      {error && <p className="mt-2 text-xs font-medium text-red-600">{error}</p>}
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={!selectedGroupId || !selectedPackageId || submitting}
+        className="mt-3 rounded-xl bg-[#123C91] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {submitting ? "جاري الإضافة..." : "إضافة إلى المجموعة"}
+      </button>
+    </div>
+  );
 };
 
 const canApproveRegistration = (user) =>
@@ -754,6 +908,7 @@ export const UserDetailsModal = ({
   onPackagesClick,
   onBack,
   onRemoveFromGroup,
+  onGroupAdded,
 }) => {
   const navigate = useNavigate();
 
@@ -957,6 +1112,13 @@ export const UserDetailsModal = ({
           </div>
         )}
 
+        {isStudent && (
+          <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <DetailRow label="المنهج" value={listNames(user.studentCurriculums) || "—"} />
+            <DetailRow label="المرحلة" value={user.stage || "—"} />
+          </div>
+        )}
+
         {isStudent && (user.groupsLoading || Array.isArray(user.groups)) && (
           <div className="mb-3 rounded-xl border border-[#E5E7EB] bg-[#F9FAFA] p-4">
             <p className="mb-3 text-sm font-semibold text-[#1F2937]">
@@ -991,6 +1153,10 @@ export const UserDetailsModal = ({
               </p>
             )}
           </div>
+        )}
+
+        {isStudent && !user.groupsLoading && user.studentId && (
+          <StudentGroupEnrollment user={user} onAdded={onGroupAdded} />
         )}
 
         {isStudent &&
@@ -1655,6 +1821,11 @@ const UsersTable = ({
                 subscriptions: matchingSubscriptions.map(subscriptionSummary),
                 subscriptionsLoading: false,
                 parent: current.parent || studentParent(studentProfile),
+                studentId: profileId,
+                gradeId: entityId(studentProfile?.grade),
+                stageId: entityId(studentProfile?.stage),
+                curriculumId: entityId(studentProfile?.curriculum),
+                studentCurriculums: localizedNames(studentProfile?.curriculum),
                 studentSubjects: current.studentSubjects?.length
                   ? current.studentSubjects
                   : profileSubjects,
@@ -2017,6 +2188,18 @@ const UsersTable = ({
           setDetailsUser(detailsParent);
           setDetailsParent(null);
         } : undefined}
+        onGroupAdded={(group) => {
+          if (!group) return;
+          setDetailsUser((current) => current
+            ? {
+                ...current,
+                groups: [
+                  ...(current.groups || []).filter((item) => String(item.id) !== String(group.id)),
+                  group,
+                ],
+              }
+            : current);
+        }}
       />
 
       <StudentPackagesModal
