@@ -322,6 +322,94 @@ const StudentGroupEnrollment = ({ open, user, onAdded, onClose }) => {
   );
 };
 
+const StudentProfileCompletionModal = ({ open, user, onClose, onSave }) => {
+  const [birthDate, setBirthDate] = useState("");
+  const [ignoredFields, setIgnoredFields] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  if (!open || !user) return null;
+
+  const missing = user.missingProfileFields || [];
+  const optionalFields = [
+    missing.includes("تاريخ الميلاد") && { key: "birthDate", label: "تاريخ الميلاد" },
+    missing.includes("المواد المفضلة") && { key: "preferredSubjects", label: "المواد المفضلة" },
+  ].filter(Boolean);
+  const requiredFields = missing.filter((field) => !["تاريخ الميلاد", "المواد المفضلة"].includes(field));
+
+  const handleSubmit = async () => {
+    const waived = new Set(user.profileCompletionWaivedFields || []);
+    ignoredFields.forEach((field) => waived.add(field));
+    if (birthDate) waived.delete("birthDate");
+    if (!birthDate && !ignoredFields.length) {
+      setError("أدخل تاريخ الميلاد أو اختر البيانات التي تريد تجاهلها.");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    const payload = { profileCompletionWaivedFields: [...waived] };
+    if (birthDate) payload.birthDate = birthDate;
+    const saved = await onSave?.(user, payload);
+    setSubmitting(false);
+    if (saved) {
+      setBirthDate("");
+      setIgnoredFields([]);
+      onClose?.();
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" onClick={(event) => {
+      if (event.target === event.currentTarget && !submitting) onClose?.();
+    }}>
+      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl" dir="rtl">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-[#1F2937]">استكمال بيانات الطالب</h3>
+            <p className="mt-1 text-xs text-[#8C9198]">{user.name}</p>
+          </div>
+          <button type="button" onClick={onClose} disabled={submitting} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600">
+            <X size={17} />
+          </button>
+        </div>
+
+        {missing.includes("تاريخ الميلاد") && (
+          <label className="block text-sm font-medium text-[#374151]">
+            تاريخ الميلاد
+            <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="mt-2 w-full rounded-xl border border-[#D7E2F3] px-3 py-2.5 outline-none focus:border-[#123C91]" />
+          </label>
+        )}
+
+        {optionalFields.length > 0 && (
+          <div className="mt-4 rounded-xl bg-[#F8FAFD] p-3">
+            <p className="mb-2 text-sm font-semibold text-[#374151]">تجاهل البيانات غير المؤثرة</p>
+            {optionalFields.map((field) => (
+              <label key={field.key} className="flex items-center gap-2 py-1 text-sm text-[#575F69]">
+                <input type="checkbox" checked={ignoredFields.includes(field.key)} onChange={(event) => setIgnoredFields((current) => event.target.checked ? [...current, field.key] : current.filter((key) => key !== field.key))} />
+                تجاهل {field.label}
+              </label>
+            ))}
+          </div>
+        )}
+
+        {requiredFields.length > 0 && (
+          <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+            لا يمكن تجاهل: {requiredFields.join("، ")} لأنها تؤثر على المجموعات والاشتراكات.
+          </p>
+        )}
+        {error && <p className="mt-3 text-xs font-medium text-red-600">{error}</p>}
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} disabled={submitting} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700">إلغاء</button>
+          <button type="button" onClick={handleSubmit} disabled={submitting} className="rounded-xl bg-[#123C91] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            {submitting ? "جاري الحفظ..." : "حفظ"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+};
+
 const canApproveRegistration = (user) =>
   ["طالب أكاديمي", "معلم"].includes(user?.role) &&
   user?.registrationStatus === "pending-approval" &&
@@ -1410,6 +1498,7 @@ const ActionsMenu = ({
   onToggleStatus,
   onDelete,
   onOpenChat,
+  onCompleteProfile,
 }) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -1444,6 +1533,16 @@ const ActionsMenu = ({
     Icon: Eye,
     onClick: () => onView?.(user),
   });
+
+  if (user.role === "طالب أكاديمي" && user.status === "ملف غير مكتمل" && user.studentId) {
+    items.push({
+      key: "complete-profile",
+      label: "استكمال البيانات",
+      Icon: FileText,
+      onClick: () => onCompleteProfile?.(user),
+      tone: "text-[#123C91]",
+    });
+  }
 
   if (user.role === "طالب أكاديمي" && user.studentId) {
     items.push(
@@ -1631,6 +1730,7 @@ const MobileCard = ({
   onToggleStatus,
   onDelete,
   onOpenChat,
+  onCompleteProfile,
 }) => (
   <div
     role="button"
@@ -1661,6 +1761,7 @@ const MobileCard = ({
         onToggleStatus={onToggleStatus}
         onDelete={onDelete}
         onOpenChat={onOpenChat}
+        onCompleteProfile={onCompleteProfile}
       />
     </div>
 
@@ -1694,11 +1795,13 @@ const UsersTable = ({
   onDelete,
   onAnonymizeRetainedUser,
   onGetDeletionReferenceDetails,
+  onCompleteStudentProfile,
   sort,
   onSort,
 }) => {
   const [detailsUser, setDetailsUser] = useState(null);
   const [detailsParent, setDetailsParent] = useState(null);
+  const [profileCompletionUser, setProfileCompletionUser] = useState(null);
   const [packagesUser, setPackagesUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
@@ -2156,6 +2259,7 @@ const UsersTable = ({
                         onToggleStatus={handleToggleStatus}
                         onDelete={handleDelete}
                         onOpenChat={handleOpenChat}
+                        onCompleteProfile={setProfileCompletionUser}
                       />
                     </td>
                   </tr>
@@ -2175,6 +2279,7 @@ const UsersTable = ({
               onToggleStatus={handleToggleStatus}
               onDelete={handleDelete}
               onOpenChat={handleOpenChat}
+              onCompleteProfile={setProfileCompletionUser}
             />
           ))}
         </div>
@@ -2257,6 +2362,13 @@ const UsersTable = ({
               }
             : current);
         }}
+      />
+
+      <StudentProfileCompletionModal
+        open={Boolean(profileCompletionUser)}
+        user={profileCompletionUser}
+        onClose={() => setProfileCompletionUser(null)}
+        onSave={onCompleteStudentProfile}
       />
 
       <StudentPackagesModal

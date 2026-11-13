@@ -19,6 +19,7 @@ import {
   getUser,
   getTeachers,
   updateUser,
+  updateStudentProfile,
 } from "../../../services/APIService";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import { normalizePhoneSearch } from "../../../utils/phone";
@@ -88,13 +89,14 @@ const isStudentProfileIncomplete = (user, student) => {
 
   const studentType = student.studentType || user.studentType || "school";
   if (studentType !== "school") return false;
+  const waived = new Set(student.profileCompletionWaivedFields || []);
 
   return (
     !student.curriculum ||
     !student.stage ||
     !student.grade ||
-    !student.birthDate ||
-    !hasValues(student.preferredSubjects)
+    (!student.birthDate && !waived.has("birthDate")) ||
+    (!hasValues(student.preferredSubjects) && !waived.has("preferredSubjects"))
   );
 };
 
@@ -111,13 +113,14 @@ const getMissingStudentProfileFields = (user, student) => {
 
   const missing = [];
   const studentType = student.studentType || user.studentType || "school";
+  const waived = new Set(student.profileCompletionWaivedFields || []);
 
   if (studentType === "school") {
     if (!student.curriculum) missing.push("المنهج الدراسي");
     if (!student.stage) missing.push("المرحلة الدراسية");
     if (!student.grade) missing.push("الصف الدراسي");
-    if (!student.birthDate) missing.push("تاريخ الميلاد");
-    if (!hasValues(student.preferredSubjects)) missing.push("المواد المفضلة");
+    if (!student.birthDate && !waived.has("birthDate")) missing.push("تاريخ الميلاد");
+    if (!hasValues(student.preferredSubjects) && !waived.has("preferredSubjects")) missing.push("المواد المفضلة");
   }
 
   if (hasIncompleteRegistration(user) || hasIncompleteRegistration(student)) {
@@ -333,6 +336,8 @@ const UsersPage = ({
                     ),
                     studentId: student.id || student._id,
                     profileStatus: student.status,
+                    profileCompletionWaivedFields:
+                      student.profileCompletionWaivedFields || [],
                     grade:
                       student.grade?.name?.ar ||
                       student.grade?.name?.en ||
@@ -664,6 +669,18 @@ const UsersPage = ({
     }
   };
 
+  const handleCompleteStudentProfile = async (user, payload) => {
+    try {
+      await updateStudentProfile(user.studentId, payload);
+      toast.success("تم تحديث بيانات الطالب");
+      await fetchUsers();
+      return true;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "تعذر تحديث بيانات الطالب");
+      return false;
+    }
+  };
+
   return (
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
@@ -788,6 +805,7 @@ const UsersPage = ({
               onDelete={handleDelete}
               onAnonymizeRetainedUser={handleAnonymizeRetainedUser}
               onGetDeletionReferenceDetails={handleGetDeletionReferenceDetails}
+              onCompleteStudentProfile={handleCompleteStudentProfile}
               sort={sort}
               onSort={handleSort}
             />
