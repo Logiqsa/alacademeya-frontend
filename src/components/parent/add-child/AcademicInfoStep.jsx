@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import {
   getCurriculums,
@@ -64,7 +64,7 @@ const LANGUAGES = [
   { id: "fr", name: "الفرنسية" },
 ];
 
-const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
+const AcademicInfoStep = ({ onNext, onBack, data, onChange }) => {
   const [allCurriculums, setAllCurriculums] = useState([]);
   const [stages, setStages] = useState([]);
   const [grades, setGrades] = useState([]);
@@ -88,21 +88,6 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
       .catch(console.error)
       .finally(() => setLoadingCurriculums(false));
   }, []);
-
-  const curriculums = useMemo(() => {
-    if (!countryId) return [];
-    const filtered = allCurriculums.filter((c) => {
-      if (c.country) {
-        return (
-          c.country === countryId ||
-          c.country?._id === countryId ||
-          c.country?.id === countryId
-        );
-      }
-      return true;
-    });
-    return filtered.length > 0 ? filtered : allCurriculums;
-  }, [allCurriculums, countryId]);
 
   const loadStages = (curriculumId) => {
     setLoadingStages(true);
@@ -216,14 +201,10 @@ const AcademicInfoStep = ({ onNext, onBack, data, onChange, countryId }) => {
         label="المنهج الدراسي"
         value={data.curriculum || ""}
         onChange={(v) => handleSelect("curriculum", v)}
-        options={curriculums}
-        placeholder={
-          !countryId
-            ? "اختر الدولة أولاً من الخطوة السابقة"
-            : "اختر المنهج الدراسي"
-        }
+        options={allCurriculums}
+        placeholder="اختر المنهج الدراسي"
         loading={loadingCurriculums}
-        disabled={!countryId || loadingCurriculums}
+        disabled={loadingCurriculums}
         error={errors.curriculum}
       />
 

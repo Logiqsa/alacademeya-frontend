@@ -5,6 +5,7 @@ import { getUser, updateUser, deleteUser as deleteUserApi } from "../../../servi
 import { mapAdminUser } from "../../../utils/adminUser";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
 import { UserDetailsModal } from "../users/Userstable";
+import LinkifiedText from "../../messages/LinkifiedText";
 
 export default function ChatBox({
   conversation,
@@ -308,9 +309,7 @@ export default function ChatBox({
                   >
                     {m.senderName || (isMe ? "أنت" : conversation.name)}
                   </p>
-                  <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed font-['IBM_Plex_Sans_Arabic'] sm:text-sm">
-                    {m.text}
-                  </p>
+                  <LinkifiedText text={m.text} className="whitespace-pre-wrap break-words text-[13px] leading-relaxed font-['IBM_Plex_Sans_Arabic'] sm:text-sm" />
                   <div className={`mt-1 flex items-center gap-1 ${isMe ? "justify-end" : "justify-start"}`}>
                     <span className={`text-[10px] sm:text-[11px] ${isMe ? "text-blue-200" : "text-gray-400"}`}>
                       {m.time}

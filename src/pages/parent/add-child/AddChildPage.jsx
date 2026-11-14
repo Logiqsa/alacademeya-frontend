@@ -74,8 +74,6 @@ const AddChildPage = () => {
     });
   };
 
-  const countryId = formData.country?.id;
-
   useEffect(() => {
     getCountries()
       .then((res) => {
@@ -88,8 +86,7 @@ const AddChildPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!countryId) return;
-    getCurriculums(countryId)
+    getCurriculums()
       .then((res) => {
         const list = res.data?.data || res.data || [];
         setCurriculumsMap(
@@ -97,7 +94,7 @@ const AddChildPage = () => {
         );
       })
       .catch(() => {});
-  }, [countryId]);
+  }, []);
 
   useEffect(() => {
     if (!formData.curriculum) return;
@@ -167,7 +164,6 @@ const AddChildPage = () => {
             <AcademicInfoStep
               data={formData}
               onChange={handleChange}
-              countryId={countryId}
               onNext={() => setCurrentStep(3)}
               onBack={() => setCurrentStep(1)}
             />

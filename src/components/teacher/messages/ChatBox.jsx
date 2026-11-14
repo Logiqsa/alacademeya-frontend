@@ -4,6 +4,7 @@ import {
   MoreVertical, Pencil, Trash2, X, Check, MessageCircle
 } from "lucide-react";
 import { editMessage, deleteMessage } from "../../../api/chatApi"; // ⚠️ عدّل المسار
+import LinkifiedText from "../../messages/LinkifiedText";
 
 export default function ChatBox({ conversation, onSend, onBack, isSinglePane = false }) {
   const [text, setText] = useState("");
@@ -223,7 +224,7 @@ export default function ChatBox({ conversation, onSend, onBack, isSinglePane = f
                         </button>
                       </div>
                     ) : (
-                      <p className="wrap-break-word text-sm leading-relaxed md:text-[15px]">{m.text}</p>
+                      <LinkifiedText text={m.text} className="wrap-break-word whitespace-pre-wrap text-sm leading-relaxed md:text-[15px]" />
                     )}
 
                     <div className={`mt-1 flex items-center gap-1 ${isMe ? "justify-start" : "justify-end"}`}>

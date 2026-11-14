@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { ArrowRight, Trash2, Eye } from "lucide-react";
+import LinkifiedText from "../../messages/LinkifiedText";
 
 const bubbleStyle = (sender) => {
   if (sender === "teacher") return "rounded-tr-sm bg-[#123C91] text-white [&_svg]:text-white ml-auto";
@@ -79,9 +80,7 @@ export default function MonitorBox({ conversation, onBack }) {
               </span>
 
               <div className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 sm:max-w-[72%] sm:px-4 sm:py-3 ${bubbleStyle(m.sender)}`}>
-                <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed font-['IBM_Plex_Sans_Arabic'] sm:text-sm">
-                  {m.text}
-                </p>
+                <LinkifiedText text={m.text} className="whitespace-pre-wrap break-words text-[13px] leading-relaxed font-['IBM_Plex_Sans_Arabic'] sm:text-sm" />
                 <div className={`mt-1 flex items-center gap-1 ${timeStyle(m.sender)}`}>
                   <span className="text-[10px] sm:text-[11px]">{m.time}</span>
                 </div>
