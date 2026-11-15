@@ -1,4 +1,5 @@
 import { getUsers } from "../services/APIService.js";
+import { getArabicCountryName } from "./countryName.js";
 
 // ⚠️ "مشرف" = admin (صلاحيات محدودة)، "مشرف عام" = super-admin (صلاحيات كاملة)
 export const ROLE_MAP = {
@@ -49,6 +50,10 @@ export const mapAdminUser = (u) => ({
   rawRole: u.role,
   capabilities: u.capabilities,
   country: u.country,
+  countryName:
+    u.country && typeof u.country === "object"
+      ? getArabicCountryName(u.country)
+      : "",
   parent: u.parent || null,
   isVerified: u.isVerified,
   isDeleted: !!u.isDeleted,

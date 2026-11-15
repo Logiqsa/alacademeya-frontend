@@ -1056,6 +1056,11 @@ export const UserDetailsModal = ({
       : user.status;
   const approvalEligible = canApproveRegistration(user);
   const userWhatsappUrl = whatsappUrl(user.phone);
+  const countryName =
+    user.countryName ||
+    (user.country && typeof user.country === "object"
+      ? getArabicCountryName(user.country)
+      : "");
 
   return (
     <div
@@ -1222,6 +1227,7 @@ export const UserDetailsModal = ({
           <DetailRow label="تاريخ الانضمام" value={user.joinDate} />
           <DetailRow label="رقم الهاتف" value={user.phone} />
           <DetailRow label="اسم المستخدم" value={user.username} />
+          {countryName && <DetailRow label="الدولة" value={countryName} />}
         </div>
 
         {isStudent && (
@@ -1337,7 +1343,6 @@ export const UserDetailsModal = ({
                 label="سنوات الخبرة"
                 value={user.experienceYears ?? user.experience}
               />
-              <DetailRow label="الدولة" value={user.countryName} />
               <DetailRow
                 label="لغة التدريس"
                 value={teacherLanguageLabel(user.language)}
@@ -2310,6 +2315,11 @@ const UsersTable = ({
             email: child.email,
             phone: child.phone,
             username: child.username,
+            country: child.country,
+            countryName:
+              child.country && typeof child.country === "object"
+                ? getArabicCountryName(child.country)
+                : "",
             isVerified: child.isVerified,
             role: "طالب أكاديمي",
             status: child.isVerified === false

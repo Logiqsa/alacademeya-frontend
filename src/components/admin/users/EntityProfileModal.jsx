@@ -16,6 +16,7 @@ import {
   UserDetailsModal,
 } from "./Userstable";
 import { confirmToast } from "../../../utils/confirmToast";
+import { getArabicCountryName } from "../../../utils/countryName";
 import {
   getAllSubscriptions,
   getClassroomStudents,
@@ -306,6 +307,11 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
     user.fullName || entity.fullName || text(user.name || entity.name);
   const teacherFileUrls = isTeacher ? getTeacherFileUrls(entity) : [];
   const currentUserId = user.id || user._id;
+  const country = user.country ?? entity.country;
+  const countryName =
+    country && typeof country === "object"
+      ? getArabicCountryName(country)
+      : "";
   const registrationStatus = String(
     user.registrationStatus || user.registration_status || "",
   ).toLowerCase();
@@ -363,6 +369,8 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           email: user.email,
           phone: user.phone,
           username: user.username,
+          country,
+          countryName,
           isVerified: user.isVerified,
           role: "طالب أكاديمي",
           status: studentStatus,
@@ -433,6 +441,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Detail label="رقم الهاتف" value={user.phone} />
           <Detail label="اسم المستخدم" value={user.username} />
+          {countryName && <Detail label="الدولة" value={countryName} />}
           {isTeacher ? (
             <>
               <Detail label="حالة المعلم" value={entity.status} />
@@ -453,10 +462,6 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
               />
               <Detail label="الصف" value={text(entity.grade)} />
               <Detail label="المنهج" value={text(entity.curriculum)} />
-              <Detail
-                label="الدولة"
-                value={text(user.country ?? entity.country)}
-              />
             </>
           )}
         </div>
