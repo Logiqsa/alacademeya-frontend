@@ -1056,6 +1056,9 @@ export const UserDetailsModal = ({
       : user.status;
   const approvalEligible = canApproveRegistration(user);
   const userWhatsappUrl = whatsappUrl(user.phone);
+  const studentCurriculumLabel = localizedNames(
+    user.studentCurriculums,
+  ).join("، ");
   const countryName =
     user.countryName ||
     (user.country && typeof user.country === "object"
@@ -1263,7 +1266,15 @@ export const UserDetailsModal = ({
 
         {isStudent && (
           <div className="mb-2 grid grid-cols-1 gap-2">
-            <DetailRow label="المنهج" value={listNames(user.studentCurriculums) || "—"} />
+            <DetailRow
+              label="المنهج"
+              value={
+                studentCurriculumLabel ||
+                (user.studentProfileLoading
+                  ? "جاري تحميل المنهج..."
+                  : "غير محدد")
+              }
+            />
           </div>
         )}
 
@@ -1868,7 +1879,14 @@ const UsersTable = ({
   const handleView = async (user) => {
     setDetailsUser(
       user.role === "طالب أكاديمي"
-        ? { ...user, groups: [], groupsLoading: true, subscriptions: [], subscriptionsLoading: true }
+        ? {
+            ...user,
+            studentProfileLoading: true,
+            groups: [],
+            groupsLoading: true,
+            subscriptions: [],
+            subscriptionsLoading: true,
+          }
         : user,
     );
     setReportError("");
@@ -1896,6 +1914,24 @@ const UsersTable = ({
         const identities = studentIds(studentProfile);
         identities.add(String(user.id));
         identities.add(String(profileId));
+
+        setDetailsUser((current) =>
+          current?.id === user.id
+            ? {
+                ...current,
+                studentProfileLoading: false,
+                parent: current.parent || studentParent(studentProfile),
+                studentId: profileId,
+                gradeId: entityId(studentProfile?.grade),
+                stageId: entityId(studentProfile?.stage),
+                curriculumId: entityId(studentProfile?.curriculum),
+                studentCurriculums: localizedNames(studentProfile?.curriculum),
+                studentSubjects: current.studentSubjects?.length
+                  ? current.studentSubjects
+                  : profileSubjects,
+              }
+            : current,
+        );
 
         const [subscriptionsResult, classroomsResult] =
           await Promise.allSettled([
@@ -1985,22 +2021,20 @@ const UsersTable = ({
                 groupsLoading: false,
                 subscriptions: matchingSubscriptions.map(subscriptionSummary),
                 subscriptionsLoading: false,
-                parent: current.parent || studentParent(studentProfile),
-                studentId: profileId,
-                gradeId: entityId(studentProfile?.grade),
-                stageId: entityId(studentProfile?.stage),
-                curriculumId: entityId(studentProfile?.curriculum),
-                studentCurriculums: localizedNames(studentProfile?.curriculum),
-                studentSubjects: current.studentSubjects?.length
-                  ? current.studentSubjects
-                  : profileSubjects,
               }
             : current,
         );
       } catch {
         setDetailsUser((current) =>
           current?.id === user.id
-            ? { ...current, groups: [], groupsLoading: false, subscriptions: [], subscriptionsLoading: false }
+            ? {
+                ...current,
+                studentProfileLoading: false,
+                groups: [],
+                groupsLoading: false,
+                subscriptions: [],
+                subscriptionsLoading: false,
+              }
             : current,
         );
       }
