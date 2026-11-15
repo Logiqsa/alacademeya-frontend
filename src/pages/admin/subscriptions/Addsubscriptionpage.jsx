@@ -60,11 +60,9 @@ export default function AddSubscriptionPage() {
   }, []);
   useEffect(() => {
     if (!student) {
-      setOptions(null);
       return undefined;
     }
     let cancelled = false;
-    setOptions(null);
     getAdminStudentSubscriptionOptions(student)
         .then((r) => !cancelled && setOptions(r.data?.data || r.data))
         .catch((e) =>
@@ -76,7 +74,6 @@ export default function AddSubscriptionPage() {
   }, [student]);
   useEffect(() => {
     if (!item.subject || !item.teacher || !item.type) {
-      setRooms([]);
       return undefined;
     }
     let cancelled = false;
@@ -97,11 +94,13 @@ export default function AddSubscriptionPage() {
     return () => {
       cancelled = true;
     };
-  }, [item.subject, item.teacher, item.type]);
+  }, [student, item.subject, item.teacher, item.type]);
   const subjects = apiList(options, ["subjects", "availableSubjects"]),
-    teachers = apiList(options, ["teachers", "availableTeachers"]),
     allPackages = apiList(options, ["packages", "availablePackages"]);
   const selectedSubject = subjects.find((x) => idOf(x) === item.subject);
+  const teachers = Array.isArray(selectedSubject?.teachers)
+    ? selectedSubject.teachers
+    : [];
   const packages =
     item.subject && Array.isArray(selectedSubject?.packages)
       ? selectedSubject.packages

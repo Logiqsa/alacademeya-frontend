@@ -20,3 +20,11 @@ test("known backend validation codes are localized", () => {
   const error = { response: { data: { code: "TEACHER_DOES_NOT_SUPPORT_SUBJECT" } } };
   assert.match(adminApiErrorMessage(error), /المعلم/);
 });
+
+test("manual subscription reads teachers from the selected subject", async () => {
+  const source = await import("node:fs/promises").then(({ readFile }) =>
+    readFile(new URL("../src/pages/admin/subscriptions/Addsubscriptionpage.jsx", import.meta.url), "utf8"),
+  );
+  assert.match(source, /selectedSubject\?\.teachers/);
+  assert.doesNotMatch(source, /apiList\(options, \["teachers"/);
+});

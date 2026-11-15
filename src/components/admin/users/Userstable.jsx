@@ -161,6 +161,13 @@ const StudentGroupEnrollment = ({ open, user, onAdded, onClose }) => {
         const currentGroupIds = new Set((user.groups || []).map((group) => String(group.id)));
         const matchingGroups = extractApiList(response, ["classrooms", "results", "items"])
           .filter((group) => String(entityId(group?.grade)) === String(user.gradeId))
+          .filter((group) => {
+            const studentsCount = Array.isArray(group.students)
+              ? group.students.length
+              : Number(group.studentsCount) || 0;
+            const capacity = Number(group.capacity) || 20;
+            return studentsCount < capacity;
+          })
           .filter((group) => !currentGroupIds.has(String(entityId(group))));
         setGroups(matchingGroups);
       } catch {

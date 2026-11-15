@@ -12,6 +12,8 @@ const ERROR_MESSAGES = {
   INVALID_DISCOUNT: "قيمة الخصم غير صالحة",
   INVALID_FINAL_PRICE: "السعر النهائي غير صالح",
   INVALID_TOTAL_SESSIONS: "عدد الجلسات غير صالح",
+  STUDENT_ALREADY_HAS_ACTIVE_SUBSCRIPTION:
+    "الطالب لديه اشتراك نشط بالفعل في هذه المادة",
   USERNAME_ALREADY_EXISTS: "اسم المستخدم مستخدم بالفعل",
   EMAIL_ALREADY_EXISTS: "البريد الإلكتروني مستخدم بالفعل",
   PHONE_ALREADY_EXISTS: "رقم الهاتف مستخدم بالفعل",
