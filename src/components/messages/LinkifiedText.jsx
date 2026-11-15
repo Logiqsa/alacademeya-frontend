@@ -24,7 +24,7 @@ export default function LinkifiedText({ text, className = "" }) {
           href={linkTarget(url)}
           target="_blank"
           rel="noopener noreferrer"
-          className="break-all underline decoration-current underline-offset-2 hover:opacity-80"
+          className="break-all font-semibold underline decoration-2 decoration-current underline-offset-4 transition-opacity hover:opacity-75"
         >
           {url}
         </a>
