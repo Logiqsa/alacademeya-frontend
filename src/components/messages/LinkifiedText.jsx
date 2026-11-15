@@ -25,6 +25,11 @@ export default function LinkifiedText({ text, className = "" }) {
           target="_blank"
           rel="noopener noreferrer"
           className="break-all font-semibold underline decoration-2 decoration-current underline-offset-4 transition-opacity hover:opacity-75"
+          style={{
+            textDecorationLine: "underline",
+            textDecorationThickness: "2px",
+            textUnderlineOffset: "4px",
+          }}
         >
           {url}
         </a>
