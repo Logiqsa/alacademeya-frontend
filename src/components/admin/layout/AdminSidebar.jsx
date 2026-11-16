@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import {
   LayoutDashboard,
@@ -92,7 +92,12 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
     {
       label: "المالية",
       items: [
-        { title: "الاشتراكات", icon: CreditCard, path: "/admin/subscription" },
+        {
+          title: "الاشتراكات",
+          icon: CreditCard,
+          path: "/admin/subscription",
+          activePaths: ["/admin/subscriptions"],
+        },
         { title: "المدفوعات", icon: ReceiptText, path: "/admin/payments" },
         {
           title: "رواتب المعلمين",
@@ -121,6 +126,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
 
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const handleLogout = () => {
     navigate("/", { replace: true });
@@ -197,12 +203,17 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
               .filter((item) => !item.superAdminOnly || user?.role === "super-admin")
               .map((item) => {
               const Icon = item.icon;
+              const resourceIsActive = (item.activePaths || []).some(
+                (path) => pathname === path || pathname.startsWith(`${path}/`),
+              );
               return (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   end={item.end || item.path.endsWith("-dashboard")}
-                  className={({ isActive }) => `
+                  className={({ isActive }) => {
+                    const selected = isActive || resourceIsActive;
+                    return `
                 flex
                 items-center
                 ${isOpen ? "gap-2 px-3 justify-start" : "justify-center"}
@@ -214,18 +225,19 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
                 font-medium
                 text-[15px]
                 ${
-                  isActive
+                  selected
                     ? "bg-[#FFFFFF] text-primary border-r-4 border-[#12C6B0] shadow-sm"
                     : "text-white hover:bg-white/10"
                 }
-              `}
+              `;
+                  }}
                 >
                   {({ isActive }) => (
                     <>
                       <span className="relative shrink-0">
                         <Icon
                           size={20}
-                          className={isActive ? "text-[#123C91]" : "text-white"}
+                          className={isActive || resourceIsActive ? "text-[#123C91]" : "text-white"}
                         />
                         {((item.path === "/admin/messages" &&
                           unread.messages) ||
