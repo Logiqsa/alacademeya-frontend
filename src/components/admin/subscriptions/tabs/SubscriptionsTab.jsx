@@ -272,7 +272,6 @@ const SubscriptionsTab = () => {
           <option value="all">كل طرق الاشتراك</option>
           <option value="admin">يدوي</option>
           <option value="payment">بوابة الدفع</option>
-          <option value="legacy">قديم</option>
         </AppSelect>
       </div>}
 
