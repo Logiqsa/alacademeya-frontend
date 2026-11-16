@@ -8,11 +8,17 @@ import {
   Inbox,
   Loader2,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import EntityProfileModal from "../../../components/admin/users/EntityProfileModal";
-import { getPendingSubscriptionOrders } from "../../../services/APIService";
+import {
+  getPendingSubscriptionOrders,
+  rejectSubscriptionOrder,
+} from "../../../services/APIService";
+import { confirmToast } from "../../../utils/confirmToast";
 import {
   formatEgpEquivalent,
   formatMoney,
@@ -32,6 +38,7 @@ const SubscriptionRequestsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileStudent, setProfileStudent] = useState(null);
+  const [rejectingId, setRejectingId] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,6 +63,36 @@ const SubscriptionRequestsPage = () => {
   }, [load]);
 
   const totalPages = pagination?.totalPages || pagination?.pages || 1;
+
+  const rejectOrder = async (order) => {
+    const orderId = order.id || order._id;
+    const confirmed = await confirmToast({
+      title: "تجاهل طلب الاشتراك",
+      message:
+        "سيُزال الطلب من قائمة الانتظار مع الاحتفاظ بسجل الدفع للمراجعة المالية. هل تريد المتابعة؟",
+      confirmLabel: "تجاهل الطلب",
+      danger: true,
+    });
+    if (!confirmed) return;
+
+    setRejectingId(orderId);
+    try {
+      await rejectSubscriptionOrder(orderId, "تم تجاهل الطلب بواسطة الإدارة");
+      setOrders((current) =>
+        current.filter((item) => (item.id || item._id) !== orderId),
+      );
+      setPagination((current) =>
+        current?.total
+          ? { ...current, total: Math.max(0, current.total - 1) }
+          : current,
+      );
+      toast.success("تم تجاهل الطلب");
+    } catch (requestError) {
+      toast.error(requestError.response?.data?.message || "تعذر تجاهل الطلب");
+    } finally {
+      setRejectingId("");
+    }
+  };
 
   return (
     <AdminLayout>
@@ -121,81 +158,100 @@ const SubscriptionRequestsPage = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-2xl border border-[#DCE3EE] bg-white shadow-sm">
-              <table className="w-full min-w-[760px] text-right">
-                <thead className="border-b border-[#E5EAF2] bg-[#F7F9FC] text-xs font-semibold text-[#667085]">
-                  <tr>
-                    <th className="p-4">الطالب</th>
-                    <th className="p-4">المواد</th>
-                    <th className="p-4">الإجمالي</th>
-                    <th className="p-4">تاريخ الدفع</th>
-                    <th className="p-4">الحالة</th>
-                    <th className="p-4">الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {orders.map((order) => (
-                    <tr
-                      key={order.id || order._id}
-                      className="transition odd:bg-white even:bg-[#FAFBFD] hover:bg-[#F2F6FF]"
-                    >
-                      <td className="p-4 font-medium">
-                        <button
-                          type="button"
-                          onClick={() => setProfileStudent(order.student)}
-                          className="text-[#123C91] hover:underline"
-                        >
-                          {name(order.student)}
-                        </button>
-                      </td>
-                      <td className="p-4 text-sm text-gray-600">
-                        {(order.items || [])
-                          .map(
-                            (item) =>
-                              item.subject?.name?.ar ||
-                              item.subject?.name?.en ||
-                              item.subjectName ||
-                              "مادة",
-                          )
-                          .join("، ")}
-                      </td>
-                      <td className="p-4 font-semibold text-[#123C91]">
-                        <span className="block">
-                          {formatMoney(order.totalAmount, order.currency)}
-                        </span>
-                        {formatEgpEquivalent(order.totalAmount, order) && (
-                          <small className="block font-normal text-gray-500">
-                            يعادل{" "}
-                            {formatEgpEquivalent(order.totalAmount, order)}
-                          </small>
-                        )}
-                      </td>
-                      <td className="p-4 text-sm text-gray-600">
-                        {date(order.paidAt)}
-                      </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                          بانتظار الإدارة
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <button
-                          onClick={() =>
-                            navigate(
-                              `/admin/subscription-orders/${order.id || order._id}`,
-                            )
-                          }
-                          className="inline-flex items-center gap-2 rounded-lg bg-[#EAF2FF] px-3 py-2 text-sm font-semibold text-[#123C91] hover:bg-[#DCE9FF]"
-                        >
-                          <Eye size={16} />
-                          مراجعة وتعيين
-                        </button>
-                      </td>
+            <div className="overflow-hidden rounded-2xl border border-[#DCE3EE] bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[900px] table-fixed text-right">
+                  <thead className="border-b border-[#E5EAF2] bg-[#F7F9FC] text-xs font-semibold text-[#667085]">
+                    <tr>
+                      <th className="w-[19%] px-5 py-4">الطالب</th>
+                      <th className="w-[29%] px-5 py-4">المواد</th>
+                      <th className="w-[13%] px-4 py-4">الإجمالي</th>
+                      <th className="w-[12%] px-4 py-4">تاريخ الدفع</th>
+                      <th className="w-[12%] px-4 py-4">الحالة</th>
+                      <th className="w-[15%] px-4 py-4 text-center">
+                        الإجراءات
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[#E8EDF4]">
+                    {orders.map((order) => (
+                      <tr
+                        key={order.id || order._id}
+                        className="transition odd:bg-white even:bg-[#FBFCFE] hover:bg-[#F5F8FD]"
+                      >
+                        <td className="px-5 py-5 align-top font-medium">
+                          <button
+                            type="button"
+                            onClick={() => setProfileStudent(order.student)}
+                            className="font-semibold leading-6 text-[#123C91] hover:underline"
+                          >
+                            {name(order.student)}
+                          </button>
+                        </td>
+                        <td className="px-5 py-5 align-top text-sm leading-6 text-[#475467]">
+                          {(order.items || [])
+                            .map(
+                              (item) =>
+                                item.subject?.name?.ar ||
+                                item.subject?.name?.en ||
+                                item.subjectName ||
+                                "مادة",
+                            )
+                            .join("، ")}
+                        </td>
+                        <td className="px-4 py-5 align-top font-semibold text-[#123C91]">
+                          <span className="block">
+                            {formatMoney(order.totalAmount, order.currency)}
+                          </span>
+                          {formatEgpEquivalent(order.totalAmount, order) && (
+                            <small className="block font-normal text-gray-500">
+                              يعادل{" "}
+                              {formatEgpEquivalent(order.totalAmount, order)}
+                            </small>
+                          )}
+                        </td>
+                        <td className="px-4 py-5 align-top text-sm text-[#667085]">
+                          {date(order.paidAt)}
+                        </td>
+                        <td className="px-4 py-5 align-top">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                            بانتظار الإدارة
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() =>
+                                navigate(
+                                  `/admin/subscription-orders/${order.id || order._id}`,
+                                )
+                              }
+                              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#123C91] px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-[#0E327B]"
+                            >
+                              <Eye size={15} />
+                              مراجعة
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => rejectOrder(order)}
+                              disabled={Boolean(rejectingId)}
+                              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {rejectingId === (order.id || order._id) ? (
+                                <Loader2 size={15} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={15} />
+                              )}
+                              تجاهل
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-3 mt-5">
