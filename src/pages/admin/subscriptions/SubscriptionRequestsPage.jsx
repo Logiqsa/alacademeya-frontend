@@ -168,7 +168,7 @@ const SubscriptionRequestsPage = () => {
                       <th className="w-[13%] px-4 py-4">الإجمالي</th>
                       <th className="w-[12%] px-4 py-4">تاريخ الدفع</th>
                       <th className="w-[12%] px-4 py-4">الحالة</th>
-                      <th className="w-[15%] px-4 py-4 text-center">
+                      <th className="w-[11%] px-4 py-4 text-center">
                         الإجراءات
                       </th>
                     </tr>
@@ -183,7 +183,7 @@ const SubscriptionRequestsPage = () => {
                           <button
                             type="button"
                             onClick={() => setProfileStudent(order.student)}
-                            className="font-semibold leading-6 text-[#123C91] hover:underline"
+                            className="block w-full text-right font-semibold leading-6 text-[#123C91] hover:underline"
                           >
                             {name(order.student)}
                           </button>
@@ -222,28 +222,31 @@ const SubscriptionRequestsPage = () => {
                         <td className="px-4 py-4 align-top">
                           <div className="flex items-center justify-center gap-2">
                             <button
+                              type="button"
                               onClick={() =>
                                 navigate(
                                   `/admin/subscription-orders/${order.id || order._id}`,
                                 )
                               }
-                              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#123C91] px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-[#0E327B]"
+                              className="inline-flex size-10 items-center justify-center rounded-xl bg-[#123C91] text-white shadow-sm transition hover:bg-[#0E327B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#123C91]"
+                              title="مراجعة الطلب وتعيينه"
+                              aria-label="مراجعة الطلب وتعيينه"
                             >
-                              <Eye size={15} />
-                              مراجعة
+                              <Eye size={17} />
                             </button>
                             <button
                               type="button"
                               onClick={() => rejectOrder(order)}
                               disabled={Boolean(rejectingId)}
-                              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex size-10 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                              title="تجاهل الطلب"
+                              aria-label="تجاهل الطلب"
                             >
                               {rejectingId === (order.id || order._id) ? (
                                 <Loader2 size={15} className="animate-spin" />
                               ) : (
                                 <Trash2 size={15} />
                               )}
-                              تجاهل
                             </button>
                           </div>
                         </td>
