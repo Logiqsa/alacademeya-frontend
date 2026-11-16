@@ -165,6 +165,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   const [approving, setApproving] = useState(false);
   const [approvedUserId, setApprovedUserId] = useState("");
   const [studentGroups, setStudentGroups] = useState([]);
+  const [studentSubscriptions, setStudentSubscriptions] = useState([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [teacherDetails, setTeacherDetails] = useState(null);
   const [teacherDetailsLoading, setTeacherDetailsLoading] = useState(false);
@@ -226,6 +227,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
                   "items",
                 ])
               : [];
+          setStudentSubscriptions(subscriptions);
           const subscribedClassrooms = subscriptions.flatMap((subscription) =>
             (subscription.items || [])
               .map((item) => classroomGroup(item.classroom))
@@ -334,6 +336,18 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   const registrationStatus = String(
     user.registrationStatus || user.registration_status || "",
   ).toLowerCase();
+  const subscriptionParent = studentSubscriptions.find(
+    (subscription) => subscription?.parent,
+  )?.parent;
+  const parentProfile = profileEntity.parent || subscriptionParent;
+  const parentUser = parentProfile?.user || parentProfile;
+  const normalizedParent = parentProfile
+    ? {
+        ...parentProfile,
+        id: parentProfile.id || parentProfile._id,
+        name: parentUser?.fullName || parentProfile.fullName || "ولي الأمر",
+      }
+    : null;
   const canApprove =
     !isTeacher &&
     String(approvedUserId) !== String(currentUserId) &&
@@ -398,7 +412,11 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
             : "—",
           stage: text(profileEntity.stage ?? profileEntity.academicLevel),
           grade: text(profileEntity.grade),
+          curriculum: text(profileEntity.curriculum),
           package: text(profileEntity.package),
+          parent: normalizedParent,
+          subscriptions: studentSubscriptions,
+          subscriptionsLoading: groupsLoading,
           studentSubjects: names(
             profileEntity.preferredSubjects ?? profileEntity.subjects ?? profileEntity.subject,
           ),
