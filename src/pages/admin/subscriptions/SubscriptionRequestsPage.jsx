@@ -14,11 +14,11 @@ import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import EntityProfileModal from "../../../components/admin/users/EntityProfileModal";
+import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 import {
   getPendingSubscriptionOrders,
   rejectSubscriptionOrder,
 } from "../../../services/APIService";
-import { confirmToast } from "../../../utils/confirmToast";
 import {
   formatEgpEquivalent,
   formatMoney,
@@ -39,6 +39,7 @@ const SubscriptionRequestsPage = () => {
   const [error, setError] = useState("");
   const [profileStudent, setProfileStudent] = useState(null);
   const [rejectingId, setRejectingId] = useState("");
+  const [orderToReject, setOrderToReject] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,15 +67,6 @@ const SubscriptionRequestsPage = () => {
 
   const rejectOrder = async (order) => {
     const orderId = order.id || order._id;
-    const confirmed = await confirmToast({
-      title: "تجاهل طلب الاشتراك",
-      message:
-        "سيُزال الطلب من قائمة الانتظار مع الاحتفاظ بسجل الدفع للمراجعة المالية. هل تريد المتابعة؟",
-      confirmLabel: "تجاهل الطلب",
-      danger: true,
-    });
-    if (!confirmed) return;
-
     setRejectingId(orderId);
     try {
       await rejectSubscriptionOrder(orderId, "تم تجاهل الطلب بواسطة الإدارة");
@@ -87,6 +79,7 @@ const SubscriptionRequestsPage = () => {
           : current,
       );
       toast.success("تم تجاهل الطلب");
+      setOrderToReject(null);
     } catch (requestError) {
       toast.error(requestError.response?.data?.message || "تعذر تجاهل الطلب");
     } finally {
@@ -236,7 +229,7 @@ const SubscriptionRequestsPage = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => rejectOrder(order)}
+                              onClick={() => setOrderToReject(order)}
                               disabled={Boolean(rejectingId)}
                               className="inline-flex size-10 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 transition hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                               title="تجاهل الطلب"
@@ -284,6 +277,16 @@ const SubscriptionRequestsPage = () => {
         entity={profileStudent}
         role="student"
         onClose={() => setProfileStudent(null)}
+      />
+      <ConfirmDialog
+        open={Boolean(orderToReject)}
+        title="تجاهل طلب الاشتراك"
+        message="سيُزال الطلب من قائمة الانتظار مع الاحتفاظ بسجل الدفع للمراجعة المالية. هل تريد المتابعة؟"
+        confirmLabel="تجاهل الطلب"
+        danger
+        loading={Boolean(rejectingId)}
+        onConfirm={() => orderToReject && rejectOrder(orderToReject)}
+        onClose={() => !rejectingId && setOrderToReject(null)}
       />
     </AdminLayout>
   );

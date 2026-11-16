@@ -12,10 +12,7 @@ import toast from "react-hot-toast";
 import { getTeacherFileUrls } from "../../../utils/teacherCv";
 import { teacherLanguageLabel } from "../../../utils/teacherLanguage";
 import { approveRegistrationRequest } from "../../../utils/approveRegistrationRequest";
-import {
-  EmailVerificationBadge,
-  UserDetailsModal,
-} from "./Userstable";
+import { EmailVerificationBadge, UserDetailsModal } from "./Userstable";
 import { confirmToast } from "../../../utils/confirmToast";
 import { getArabicCountryName } from "../../../utils/countryName";
 import {
@@ -67,7 +64,9 @@ const Detail = ({ label, value }) => (
 );
 
 const entityId = (value) =>
-  String(typeof value === "object" ? value?._id || value?.id || "" : value || "");
+  String(
+    typeof value === "object" ? value?._id || value?.id || "" : value || "",
+  );
 const belongsTo = (item, parent, keys) => {
   const parentId = entityId(parent);
   return keys.some((key) => entityId(item?.[key]) === parentId);
@@ -79,88 +78,170 @@ const TeacherAcademicBoxes = ({ teacher }) => {
     : [];
 
   if (teachingSelections.length) {
-    return <div className="mt-4 space-y-3">
-      <p className="text-sm font-semibold text-[#1F2937]">المناهج وبيانات التدريس</p>
-      {teachingSelections.map((selection, index) => <div key={entityId(selection.curriculum) || index} className="rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-xs font-bold text-white">{index + 1}</span>
-          <div>
-            <p className="text-[11px] text-gray-500">المنهج الدراسي</p>
-            <p className="text-sm font-bold text-[#123C91]">{text(selection.curriculum)}</p>
-          </div>
-        </div>
-        <div className="space-y-3 border-r-2 border-[#CAD8EF] pr-3">
-          {selection.stages?.map((stage, stageIndex) => <div key={entityId(stage.stage) || stageIndex}>
-            <p className="mb-2 text-xs font-semibold text-gray-700">المرحلة: {text(stage.stage)}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {stage.grades?.map((grade, gradeIndex) => <div key={entityId(grade.grade) || gradeIndex} className="rounded-xl border border-gray-200 bg-white p-3">
-                <p className="text-xs font-semibold text-gray-800">{text(grade.grade)}</p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {grade.subjects?.length ? grade.subjects.map((subject, subjectIndex) => <span key={entityId(subject) || subjectIndex} className="rounded-lg bg-[#EAF0FB] px-2.5 py-1 text-xs text-[#123C91]">
-                    {text(subject)}
-                  </span>) : <span className="text-xs text-gray-400">لا توجد مواد</span>}
-                </div>
-              </div>)}
+    return (
+      <div className="mt-4 space-y-3">
+        <p className="text-sm font-semibold text-[#1F2937]">
+          المناهج وبيانات التدريس
+        </p>
+        {teachingSelections.map((selection, index) => (
+          <div
+            key={entityId(selection.curriculum) || index}
+            className="rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-4"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-xs font-bold text-white">
+                {index + 1}
+              </span>
+              <div>
+                <p className="text-[11px] text-gray-500">المنهج الدراسي</p>
+                <p className="text-sm font-bold text-[#123C91]">
+                  {text(selection.curriculum)}
+                </p>
+              </div>
             </div>
-          </div>)}
-        </div>
-      </div>)}
-    </div>;
+            <div className="space-y-3 border-r-2 border-[#CAD8EF] pr-3">
+              {selection.stages?.map((stage, stageIndex) => (
+                <div key={entityId(stage.stage) || stageIndex}>
+                  <p className="mb-2 text-xs font-semibold text-gray-700">
+                    المرحلة: {text(stage.stage)}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {stage.grades?.map((grade, gradeIndex) => (
+                      <div
+                        key={entityId(grade.grade) || gradeIndex}
+                        className="rounded-xl border border-gray-200 bg-white p-3"
+                      >
+                        <p className="text-xs font-semibold text-gray-800">
+                          {text(grade.grade)}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {grade.subjects?.length ? (
+                            grade.subjects.map((subject, subjectIndex) => (
+                              <span
+                                key={entityId(subject) || subjectIndex}
+                                className="rounded-lg bg-[#EAF0FB] px-2.5 py-1 text-xs text-[#123C91]"
+                              >
+                                {text(subject)}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-gray-400">
+                              لا توجد مواد
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   const curricula = Array.isArray(teacher.curriculums)
     ? teacher.curriculums
-    : teacher.curriculum ? [teacher.curriculum] : [];
+    : teacher.curriculum
+      ? [teacher.curriculum]
+      : [];
   const grades = Array.isArray(teacher.grades)
     ? teacher.grades
-    : teacher.grade ? [teacher.grade] : [];
+    : teacher.grade
+      ? [teacher.grade]
+      : [];
   const subjects = Array.isArray(teacher.subjects)
     ? teacher.subjects
-    : teacher.subject ? [teacher.subject] : [];
+    : teacher.subject
+      ? [teacher.subject]
+      : [];
 
   if (!curricula.length) return null;
 
-  return <div className="mt-4 space-y-3">
-    <p className="text-sm font-semibold text-[#1F2937]">المناهج والصفوف والمواد</p>
-    {curricula.map((curriculum, index) => {
-      const curriculumGrades = grades.filter((grade) =>
-        belongsTo(grade, curriculum, ["curriculum", "curriculumId"]));
-      const visibleGrades = curriculumGrades.length || curricula.length > 1
-        ? curriculumGrades
-        : grades;
-      const curriculumSubjects = subjects.filter((subject) =>
-        belongsTo(subject, curriculum, ["curriculum", "curriculumId"]));
+  return (
+    <div className="mt-4 space-y-3">
+      <p className="text-sm font-semibold text-[#1F2937]">
+        المناهج والصفوف والمواد
+      </p>
+      {curricula.map((curriculum, index) => {
+        const curriculumGrades = grades.filter((grade) =>
+          belongsTo(grade, curriculum, ["curriculum", "curriculumId"]),
+        );
+        const visibleGrades =
+          curriculumGrades.length || curricula.length > 1
+            ? curriculumGrades
+            : grades;
+        const curriculumSubjects = subjects.filter((subject) =>
+          belongsTo(subject, curriculum, ["curriculum", "curriculumId"]),
+        );
 
-      return <div key={entityId(curriculum) || index} className="rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-xs font-bold text-white">{index + 1}</span>
-          <div>
-            <p className="text-[11px] text-gray-500">المنهج الدراسي</p>
-            <p className="text-sm font-bold text-[#123C91]">{text(curriculum)}</p>
-          </div>
-        </div>
-        <div className="space-y-2 border-r-2 border-[#CAD8EF] pr-3">
-          {visibleGrades.length ? visibleGrades.map((grade) => {
-            const gradeSubjects = subjects.filter((subject) =>
-              belongsTo(subject, grade, ["grade", "gradeId"]));
-            const visibleSubjects = gradeSubjects.length
-              ? gradeSubjects
-              : visibleGrades.length === 1
-                ? curriculumSubjects
-                : [];
-            return <div key={entityId(grade)} className="rounded-xl border border-gray-200 bg-white p-3">
-              <p className="text-xs font-semibold text-gray-800">{text(grade)}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {visibleSubjects.length ? visibleSubjects.map((subject) => <span key={entityId(subject)} className="rounded-lg bg-[#EAF0FB] px-2.5 py-1 text-xs text-[#123C91]">
-                  {text(subject)}
-                </span>) : <span className="text-xs text-gray-400">لا توجد مواد مرتبطة بهذا الصف</span>}
+        return (
+          <div
+            key={entityId(curriculum) || index}
+            className="rounded-2xl border border-[#D7E2F3] bg-[#F8FAFD] p-4"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#123C91] text-xs font-bold text-white">
+                {index + 1}
+              </span>
+              <div>
+                <p className="text-[11px] text-gray-500">المنهج الدراسي</p>
+                <p className="text-sm font-bold text-[#123C91]">
+                  {text(curriculum)}
+                </p>
               </div>
-            </div>;
-          }) : <p className="text-xs text-gray-400">لا توجد صفوف مسجلة لهذا المنهج</p>}
-        </div>
-      </div>;
-    })}
-  </div>;
+            </div>
+            <div className="space-y-2 border-r-2 border-[#CAD8EF] pr-3">
+              {visibleGrades.length ? (
+                visibleGrades.map((grade) => {
+                  const gradeSubjects = subjects.filter((subject) =>
+                    belongsTo(subject, grade, ["grade", "gradeId"]),
+                  );
+                  const visibleSubjects = gradeSubjects.length
+                    ? gradeSubjects
+                    : visibleGrades.length === 1
+                      ? curriculumSubjects
+                      : [];
+                  return (
+                    <div
+                      key={entityId(grade)}
+                      className="rounded-xl border border-gray-200 bg-white p-3"
+                    >
+                      <p className="text-xs font-semibold text-gray-800">
+                        {text(grade)}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {visibleSubjects.length ? (
+                          visibleSubjects.map((subject) => (
+                            <span
+                              key={entityId(subject)}
+                              className="rounded-lg bg-[#EAF0FB] px-2.5 py-1 text-xs text-[#123C91]"
+                            >
+                              {text(subject)}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400">
+                            لا توجد مواد مرتبطة بهذا الصف
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-xs text-gray-400">
+                  لا توجد صفوف مسجلة لهذا المنهج
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 const EntityProfileModal = ({ entity, role = "student", onClose }) => {
@@ -182,22 +263,37 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
     setStudentDetails(null);
     Promise.allSettled([
       getStudent(studentProfileId),
-      getAllStudents({ user: entity?.user?.id || entity?.user?._id, page: 1, limit: 100 }),
+      getAllStudents({
+        user: entity?.user?.id || entity?.user?._id,
+        page: 1,
+        limit: 100,
+      }),
     ])
       .then(([studentResult, listResult]) => {
         if (!active) return;
-        const direct = studentResult.status === "fulfilled"
-          ? studentResult.value?.data?.data ?? studentResult.value?.data
-          : null;
-        const listed = listResult.status === "fulfilled"
-          ? extractList(listResult.value, ["students", "results", "items"])
-              .find((student) => entityId(student) === String(studentProfileId))
-          : null;
+        const direct =
+          studentResult.status === "fulfilled"
+            ? (studentResult.value?.data?.data ?? studentResult.value?.data)
+            : null;
+        const listed =
+          listResult.status === "fulfilled"
+            ? extractList(listResult.value, [
+                "students",
+                "results",
+                "items",
+              ]).find(
+                (student) => entityId(student) === String(studentProfileId),
+              )
+            : null;
         const details = listed || direct;
-        setStudentDetails(details && typeof details === "object" ? details : null);
+        setStudentDetails(
+          details && typeof details === "object" ? details : null,
+        );
       })
       .catch(() => active && setStudentDetails(null));
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [entity, isTeacher, studentProfileId]);
 
   useEffect(() => {
@@ -210,12 +306,19 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
     getTeacher(teacherId)
       .then((response) => {
         if (!active) return;
-        const details = response?.data?.data?.teacher ?? response?.data?.data ?? response?.data;
-        setTeacherDetails(details && typeof details === "object" ? details : null);
+        const details =
+          response?.data?.data?.teacher ??
+          response?.data?.data ??
+          response?.data;
+        setTeacherDetails(
+          details && typeof details === "object" ? details : null,
+        );
       })
       .catch(() => active && setTeacherDetails(null))
       .finally(() => active && setTeacherDetailsLoading(false));
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [entity, isTeacher]);
 
   useEffect(() => {
@@ -338,14 +441,14 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
       ? profileEntity.user
       : profileEntity;
   const name =
-    user.fullName || profileEntity.fullName || text(user.name || profileEntity.name);
+    user.fullName ||
+    profileEntity.fullName ||
+    text(user.name || profileEntity.name);
   const teacherFileUrls = isTeacher ? getTeacherFileUrls(entity) : [];
   const currentUserId = user.id || user._id;
   const country = user.country ?? profileEntity.country;
   const countryName =
-    country && typeof country === "object"
-      ? getArabicCountryName(country)
-      : "";
+    country && typeof country === "object" ? getArabicCountryName(country) : "";
   const registrationStatus = String(
     user.registrationStatus || user.registration_status || "",
   ).toLowerCase();
@@ -426,12 +529,20 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           stage: text(profileEntity.stage ?? profileEntity.academicLevel),
           grade: text(profileEntity.grade),
           curriculum: text(profileEntity.curriculum),
+          studentCurriculums: Array.isArray(profileEntity.curriculum)
+            ? profileEntity.curriculum
+            : profileEntity.curriculum
+              ? [profileEntity.curriculum]
+              : [],
+          studentProfileLoading: !studentDetails,
           package: text(profileEntity.package),
           parent: normalizedParent,
           subscriptions: studentSubscriptions,
           subscriptionsLoading: groupsLoading,
           studentSubjects: names(
-            profileEntity.preferredSubjects ?? profileEntity.subjects ?? profileEntity.subject,
+            profileEntity.preferredSubjects ??
+              profileEntity.subjects ??
+              profileEntity.subject,
           ),
           groups: studentGroups,
           groupsLoading,
@@ -439,7 +550,9 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
         onApprove={canApprove && !approving ? approveStudent : undefined}
         onOpenChat={(selectedUser) => {
           onClose?.();
-          navigate("/admin/messages", { state: { openUserId: selectedUser.id } });
+          navigate("/admin/messages", {
+            state: { openUserId: selectedUser.id },
+          });
         }}
       />
     );
@@ -519,9 +632,15 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
             </>
           )}
         </div>
-        {isTeacher && (teacherDetailsLoading
-          ? <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-gray-50 p-5 text-sm text-[#123C91]"><Loader2 size={18} className="animate-spin" /> جاري تحميل البيانات الأكاديمية للمعلم...</div>
-          : <TeacherAcademicBoxes teacher={{ ...entity, ...teacherDetails }} />)}
+        {isTeacher &&
+          (teacherDetailsLoading ? (
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-gray-50 p-5 text-sm text-[#123C91]">
+              <Loader2 size={18} className="animate-spin" /> جاري تحميل البيانات
+              الأكاديمية للمعلم...
+            </div>
+          ) : (
+            <TeacherAcademicBoxes teacher={{ ...entity, ...teacherDetails }} />
+          ))}
         {isTeacher && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {teacherFileUrls.length ? (
