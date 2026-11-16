@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { AlertCircle, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  BookOpenCheck,
+  CheckCircle,
+  Loader2,
+  ReceiptText,
+  UserRound,
+} from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
+import AppSelect from "../../../components/ui/AppSelect";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
   approveSubscriptionOrder,
@@ -180,26 +189,33 @@ const SubscriptionOrderReviewPage = () => {
   return (
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
-      <section dir="rtl" className="p-2 sm:p-4 max-w-5xl mx-auto">
+      <section dir="rtl" className="mx-auto max-w-6xl p-3 sm:p-6">
         <button
           onClick={() => navigate("/admin/subscriptions/requests")}
-          className="flex items-center gap-2 text-sm text-gray-600 mb-4"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[#475467] transition hover:text-[#123C91]"
         >
           <ArrowRight size={16} />
           العودة للطلبات
         </button>
-        <div className="bg-white border rounded-2xl p-5 mb-5">
-          <div className="flex flex-wrap justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-semibold text-[#123C91]">
-                مراجعة طلب الاشتراك
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                الطالب: {localName(order.student)}
-              </p>
+        <div className="mb-6 rounded-2xl border border-[#DCE6F5] bg-gradient-to-l from-[#F2F6FF] to-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#123C91] text-white shadow-sm">
+                <BookOpenCheck size={21} />
+              </span>
+              <div>
+                <h1 className="text-xl font-bold text-[#123C91] sm:text-2xl">
+                  مراجعة طلب الاشتراك
+                </h1>
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-[#667085]">
+                  <UserRound size={15} /> الطالب: {localName(order.student)}
+                </p>
+              </div>
             </div>
-            <div className="text-left">
-              <p className="text-sm text-gray-500">الإجمالي المؤكد</p>
+            <div className="min-w-44 rounded-xl border border-[#D7E2F3] bg-white px-4 py-3 text-right shadow-sm sm:text-left">
+              <p className="flex items-center gap-1.5 text-sm text-gray-500 sm:justify-end">
+                <ReceiptText size={15} /> الإجمالي المؤكد
+              </p>
               <strong className="block text-xl text-[#123C91]">
                 {formatMoney(order.totalAmount, order.currency)}
               </strong>
@@ -217,55 +233,63 @@ const SubscriptionOrderReviewPage = () => {
             const itemId = idOf(item);
             const assignment = assignments[itemId] || {};
             return (
-              <article key={itemId} className="bg-white border rounded-2xl p-5">
-                <div className="flex flex-wrap justify-between gap-3 mb-5">
+              <article
+                key={itemId}
+                className="rounded-2xl border border-[#DCE3EE] bg-white p-5 shadow-sm sm:p-6"
+              >
+                <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-[#EEF1F5] pb-4">
                   <div>
-                    <h2 className="font-semibold">
+                    <h2 className="text-lg font-bold text-[#1D2939]">
                       {localName(item.subject) || item.subjectName}
                     </h2>
-                    <p className="text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-gray-500">
                       {localName(item.package) || item.packageName} ·{" "}
                       {item.sessions} حصة
                     </p>
                   </div>
-                  <strong className="text-[#123C91]">
+                  <strong className="rounded-xl bg-[#EEF4FF] px-3 py-2 text-[#123C91]">
                     {formatMoney(item.finalPrice, order.currency)}
                   </strong>
                 </div>
                 {order.discountCode && (
-                  <p className="mb-4 text-sm font-medium text-[#087F3F]">
+                  <p className="mb-4 inline-flex rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-[#087F3F]">
                     كود الخصم المطبق: {order.discountCode}
                   </p>
                 )}
-                <p className="mb-4 text-sm text-[#667085]">
-                  السعر قبل الخصم: {formatMoney(item.originalPrice, order.currency)}
+                <p className="mb-5 rounded-xl bg-[#F8FAFC] px-4 py-3 text-sm leading-6 text-[#667085]">
+                  السعر قبل الخصم:{" "}
+                  {formatMoney(item.originalPrice, order.currency)}
                   {Number(item.discount) > 0 && (
                     <> · الخصم: {formatMoney(item.discount, order.currency)}</>
                   )}
-                  {" · "}السعر النهائي: {formatMoney(item.finalPrice, order.currency)}
+                  {" · "}السعر النهائي:{" "}
+                  {formatMoney(item.finalPrice, order.currency)}
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <label className="text-sm">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <label className="text-sm font-semibold text-[#344054]">
                     نوع الاشتراك
-                    <select
+                    <AppSelect
                       value={assignment.type || "group"}
                       onChange={(event) =>
                         loadClassrooms(item, { type: event.target.value })
                       }
-                      className="block w-full h-11 border rounded-lg px-3 mt-2"
+                      className="mt-2 h-12 w-full rounded-xl border border-[#D0D5DD] bg-white px-3 font-normal shadow-sm outline-none transition hover:border-[#98A2B3]"
                     >
                       <option value="group">مجموعة</option>
                       <option value="private">فردي</option>
-                    </select>
+                    </AppSelect>
                   </label>
-                  <label className="text-sm">
+                  <label className="text-sm font-semibold text-[#344054]">
                     المعلم
-                    <select
+                    <AppSelect
                       value={assignment.teacher || ""}
                       onChange={(event) =>
                         loadClassrooms(item, { teacher: event.target.value })
                       }
-                      className="block w-full h-11 border rounded-lg px-3 mt-2"
+                      searchable
+                      searchPlaceholder="ابحث باسم المعلم..."
+                      emptyMessage="لا يوجد معلمون متاحون"
+                      className="mt-2 h-12 w-full rounded-xl border border-[#D0D5DD] bg-white px-3 font-normal shadow-sm outline-none transition hover:border-[#98A2B3]"
                     >
                       <option value="">اختر المعلم</option>
                       {(teachersByItem[itemId] || []).map((teacher) => (
@@ -273,19 +297,23 @@ const SubscriptionOrderReviewPage = () => {
                           {localName(teacher)}
                         </option>
                       ))}
-                    </select>
+                    </AppSelect>
                   </label>
-                  <label className="text-sm">
+                  <label className="text-sm font-semibold text-[#344054]">
                     الفصل
-                    <select
+                    <AppSelect
                       disabled={!assignment.teacher}
+                      disabledMessage="اختر المعلم أولًا"
                       value={assignment.classroom || ""}
                       onChange={(event) =>
                         updateAssignment(itemId, {
                           classroom: event.target.value,
                         })
                       }
-                      className="block w-full h-11 border rounded-lg px-3 mt-2 disabled:bg-gray-100"
+                      searchable
+                      searchPlaceholder="ابحث باسم الفصل..."
+                      emptyMessage="لا توجد فصول مطابقة"
+                      className="mt-2 h-12 w-full rounded-xl border border-[#D0D5DD] bg-white px-3 font-normal shadow-sm outline-none transition hover:border-[#98A2B3]"
                     >
                       <option value="">اختر الفصل</option>
                       {(classroomsByItem[itemId] || []).map((classroom) => (
@@ -293,7 +321,7 @@ const SubscriptionOrderReviewPage = () => {
                           {localName(classroom)}
                         </option>
                       ))}
-                    </select>
+                    </AppSelect>
                   </label>
                 </div>
               </article>
@@ -303,7 +331,7 @@ const SubscriptionOrderReviewPage = () => {
         <button
           disabled={!complete || approving}
           onClick={approve}
-          className="w-full sm:w-auto mt-6 px-7 h-12 rounded-xl bg-[#123C91] text-white disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#123C91] px-7 font-semibold text-white shadow-md shadow-[#123C91]/15 transition hover:bg-[#0E327B] disabled:cursor-not-allowed disabled:bg-[#8FA6D3] disabled:shadow-none sm:w-auto"
         >
           {approving ? (
             <Loader2 className="animate-spin" size={18} />
