@@ -2192,6 +2192,7 @@ const UsersTable = ({
     handleView(autoOpenUser);
   }, [autoOpenUser]);
 
+
   if (users.length === 0) {
     return (
       <div

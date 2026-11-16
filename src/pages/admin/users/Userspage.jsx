@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useContext } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
@@ -144,12 +144,10 @@ const UsersPage = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const { user: currentUser } = useContext(AuthContext);
   const currentRole = currentUser?.role;
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const requestedStudentId = searchParams.get("openStudent") || "";
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState(fixedRole || "جميع المستخدمين");
@@ -164,19 +162,6 @@ const UsersPage = ({
     key: "lastLogin",
     direction: "desc",
   });
-  const autoOpenUser = users.find(
-    (candidate) =>
-      String(candidate.studentId || "") === requestedStudentId ||
-      String(candidate.id || "") === requestedStudentId,
-  );
-
-  useEffect(() => {
-    if (!requestedStudentId || !autoOpenUser) return undefined;
-    const timer = window.setTimeout(() => {
-      navigate(location.pathname, { replace: true });
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [autoOpenUser, location.pathname, navigate, requestedStudentId]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -815,7 +800,6 @@ const UsersPage = ({
             <UsersTable
               key={`${fixedRole}:${location.pathname}`}
               users={paginatedUsers}
-              autoOpenUser={autoOpenUser}
               onView={handleView}
               onEdit={handleEdit}
               onApprove={handleApprove}

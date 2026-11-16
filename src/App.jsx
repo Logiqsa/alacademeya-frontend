@@ -89,10 +89,10 @@ const reloadLatestApp = async () => {
 };
 
 class LazyRouteBoundary extends Component {
-  state = { failed: false };
+  state = { failed: false, error: null };
 
-  static getDerivedStateFromError() {
-    return { failed: true };
+  static getDerivedStateFromError(error) {
+    return { failed: true, error };
   }
 
   componentDidCatch(error) {
@@ -108,14 +108,29 @@ class LazyRouteBoundary extends Component {
 
   render() {
     if (this.state.failed) {
+      const errorDetails = [
+        `URL: ${window.location.href}`,
+        `Name: ${this.state.error?.name || "UnknownError"}`,
+        `Message: ${this.state.error?.message || "No error message"}`,
+        this.state.error?.stack ? `Stack:\n${this.state.error.stack}` : "",
+      ].filter(Boolean).join("\n\n");
       return (
         <main className="grid min-h-[60vh] place-items-center bg-[#F5F7FB] px-4 text-center" dir="rtl">
-          <div>
+          <div className="w-full max-w-3xl py-10">
             <h1 className="text-xl font-bold text-[#123C91]">تعذر تحميل الصفحة</h1>
-            <p className="mt-2 text-sm text-[#667085]">قد يكون هناك إصدار جديد من المنصة. أعد تحميل الصفحة للمتابعة.</p>
-            <button type="button" onClick={reloadLatestApp} className="mt-5 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white">
-              إعادة تحميل الصفحة
-            </button>
+            <p className="mt-2 text-sm text-[#667085]">انسخ تفاصيل الخطأ التالية لإظهار السبب الحقيقي بدل إعادة المحاولة بدون تشخيص.</p>
+            <pre className="mt-5 max-h-72 overflow-auto whitespace-pre-wrap rounded-xl border border-red-200 bg-red-50 p-4 text-left text-xs leading-5 text-red-800" dir="ltr">{errorDetails}</pre>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <button type="button" onClick={() => navigator.clipboard?.writeText(errorDetails)} className="rounded-xl border border-[#123C91] bg-white px-5 py-2.5 text-sm font-bold text-[#123C91]">
+                نسخ تفاصيل الخطأ
+              </button>
+              <button type="button" onClick={reloadLatestApp} className="rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white">
+                تنظيف الكاش وإعادة التحميل
+              </button>
+              <button type="button" onClick={() => window.location.assign("/admin-dashboard")} className="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-bold text-gray-700">
+                العودة للوحة التحكم
+              </button>
+            </div>
           </div>
         </main>
       );
