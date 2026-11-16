@@ -336,7 +336,12 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   const registrationStatus = String(
     user.registrationStatus || user.registration_status || "",
   ).toLowerCase();
-  const subscriptionParent = studentSubscriptions.find(
+  const effectiveSubscriptions = studentSubscriptions.length
+    ? studentSubscriptions
+    : entity?.subscriptionSnapshot
+      ? [entity.subscriptionSnapshot]
+      : [];
+  const subscriptionParent = effectiveSubscriptions.find(
     (subscription) => subscription?.parent,
   )?.parent;
   const parentProfile = profileEntity.parent || subscriptionParent;
@@ -415,7 +420,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           curriculum: text(profileEntity.curriculum),
           package: text(profileEntity.package),
           parent: normalizedParent,
-          subscriptions: studentSubscriptions,
+          subscriptions: effectiveSubscriptions,
           subscriptionsLoading: groupsLoading,
           studentSubjects: names(
             profileEntity.preferredSubjects ?? profileEntity.subjects ?? profileEntity.subject,
