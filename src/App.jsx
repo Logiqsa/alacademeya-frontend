@@ -74,6 +74,20 @@ const isStaleLazyChunkError = (error) => {
   );
 };
 
+const reloadLatestApp = async () => {
+  try {
+    const registrations = await navigator.serviceWorker?.getRegistrations?.();
+    await Promise.all((registrations || []).map((registration) => registration.unregister()));
+    const cacheKeys = await window.caches?.keys?.();
+    await Promise.all((cacheKeys || []).map((key) => window.caches.delete(key)));
+  } catch {
+    // A cache cleanup failure must not prevent the recovery reload.
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("__app_reload", Date.now().toString());
+  window.location.replace(url.toString());
+};
+
 class LazyRouteBoundary extends Component {
   state = { failed: false };
 
@@ -89,7 +103,7 @@ class LazyRouteBoundary extends Component {
     if (Date.now() - lastReload < 15_000) return;
 
     window.sessionStorage.setItem(reloadKey, String(Date.now()));
-    window.location.reload();
+    reloadLatestApp();
   }
 
   render() {
@@ -99,7 +113,7 @@ class LazyRouteBoundary extends Component {
           <div>
             <h1 className="text-xl font-bold text-[#123C91]">تعذر تحميل الصفحة</h1>
             <p className="mt-2 text-sm text-[#667085]">قد يكون هناك إصدار جديد من المنصة. أعد تحميل الصفحة للمتابعة.</p>
-            <button type="button" onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white">
+            <button type="button" onClick={reloadLatestApp} className="mt-5 rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white">
               إعادة تحميل الصفحة
             </button>
           </div>
