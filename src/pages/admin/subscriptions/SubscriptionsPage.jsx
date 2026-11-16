@@ -7,6 +7,7 @@ import SubscriptionsTab from "../../../components/admin/subscriptions/tabs/Subsc
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import { AuthContext } from "../../../context/AuthContext";
+import { getPendingSubscriptionOrders } from "../../../services/APIService";
 
 const TABS = [
   { key: "subscriptions", path: "orders", label: "الاشتراكات", icon: CreditCard },
@@ -24,6 +25,7 @@ const SubscriptionsPage = () => {
     : TABS.filter((tab) => tab.key !== "packages");
   const [showAddPackage, setShowAddPackage] = useState(false);
   const [showAddDiscount, setShowAddDiscount] = useState(false);
+  const [hasPendingRequests, setHasPendingRequests] = useState(false);
   const selectedTab = visibleTabs.find((tab) => tab.path === tabPath);
   const currentTab = selectedTab?.key || visibleTabs[0]?.key;
 
@@ -32,6 +34,19 @@ const SubscriptionsPage = () => {
       navigate(`/admin/subscription/${visibleTabs[0].path}`, { replace: true });
     }
   }, [navigate, selectedTab, user?.role, visibleTabs]);
+
+  useEffect(() => {
+    let active = true;
+    getPendingSubscriptionOrders({ page: 1, limit: 1 })
+      .then((response) => {
+        if (!active) return;
+        const data = response.data?.data || [];
+        const total = response.data?.pagination?.total ?? response.data?.results;
+        setHasPendingRequests(Number(total) > 0 || data.length > 0);
+      })
+      .catch(() => active && setHasPendingRequests(false));
+    return () => { active = false; };
+  }, []);
 
   const tabBtnLabel = {
     packages: "إضافة باقة",
@@ -65,9 +80,15 @@ const SubscriptionsPage = () => {
             <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
               <button
                 onClick={() => navigate("/admin/subscriptions/requests")}
-                className="flex-1 sm:flex-none px-5 py-2.5 border border-[#E5E7EB] text-[#374151] rounded-xl font-medium text-[14px] hover:bg-gray-50 active:bg-gray-100 transition-colors whitespace-nowrap"
+                className="relative flex-1 sm:flex-none px-5 py-2.5 border border-[#E5E7EB] text-[#374151] rounded-xl font-medium text-[14px] hover:bg-gray-50 active:bg-gray-100 transition-colors whitespace-nowrap"
               >
                 طلبات الاشتراك
+                {hasPendingRequests && (
+                  <span
+                    className="absolute -left-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-red-500"
+                    aria-label="توجد طلبات اشتراك بانتظار المراجعة"
+                  />
+                )}
               </button>
               <button
                 onClick={() => navigate("/admin/subscriptions/add")}

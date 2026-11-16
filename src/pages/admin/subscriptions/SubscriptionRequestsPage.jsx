@@ -101,7 +101,7 @@ const SubscriptionRequestsPage = () => {
                     <th className="p-4">الإجمالي</th>
                     <th className="p-4">تاريخ الدفع</th>
                     <th className="p-4">الحالة</th>
-                    <th className="p-4"></th>
+                    <th className="p-4">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -156,10 +156,10 @@ const SubscriptionRequestsPage = () => {
                               `/admin/subscription-orders/${order.id || order._id}`,
                             )
                           }
-                          className="inline-flex items-center gap-2 text-[#123C91] text-sm"
+                          className="inline-flex items-center gap-2 rounded-lg bg-[#EAF2FF] px-3 py-2 text-sm font-semibold text-[#123C91] hover:bg-[#DCE9FF]"
                         >
                           <Eye size={16} />
-                          مراجعة
+                          مراجعة وتعيين
                         </button>
                       </td>
                     </tr>
