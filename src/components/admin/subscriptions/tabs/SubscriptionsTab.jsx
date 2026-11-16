@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Eye, Loader2, FilePenLine, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { cancelSubscription, deleteOrphanSubscription, getAllSubscriptions } from "../../../../services/APIService";
+import { cancelSubscription, deleteOrphanSubscription, getAllSubscriptions, getStudent } from "../../../../services/APIService";
 import Paginationn from "../../../teacher/groups/students/Paginationn";
 import { getSavedPageSize } from "../../../../utils/tablePagination";
 import AppSelect from "../../../ui/AppSelect";
 import ConfirmDialog from "../../supervisors/Confirmdialog";
+import UsersTable from "../../users/Userstable";
 
 const PAGE_SIZE = 10;
 
@@ -177,6 +178,7 @@ const SubscriptionsTab = () => {
   const [error, setError] = useState("");
   const [cancellingId, setCancellingId] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [profileStudent, setProfileStudent] = useState(null);
 
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
@@ -226,6 +228,34 @@ const SubscriptionsTab = () => {
     } finally {
       setCancellingId(null);
       setCancelTarget(null);
+    }
+  };
+
+  const openStudentProfile = async (studentId) => {
+    if (!studentId) return;
+    try {
+      const response = await getStudent(studentId);
+      const profile = response.data?.data || response.data;
+      const account = profile?.user || {};
+      setProfileStudent({
+        id: account.id || account._id,
+        studentId: profile.id || profile._id || studentId,
+        name: account.fullName || "طالب",
+        email: account.email,
+        phone: account.phone,
+        username: account.username,
+        country: account.country,
+        isVerified: account.isVerified,
+        isActive: account.isActive,
+        registrationStatus: account.registrationStatus,
+        role: "طالب أكاديمي",
+        status: account.isActive === false ? "موقوف" : "نشط",
+        joinDate: account.createdAt
+          ? new Date(account.createdAt).toLocaleDateString("ar-EG")
+          : "—",
+      });
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || "تعذر تحميل بيانات الطالب");
     }
   };
 
@@ -309,7 +339,7 @@ const SubscriptionsTab = () => {
                     navigate(`/admin/subscriptions/${s.subscriptionId}`)
                   }
                   onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
-                  onStudentClick={() => s.studentId && navigate(`/admin/students?openStudent=${encodeURIComponent(s.studentId)}`)}
+                  onStudentClick={() => openStudentProfile(s.studentId)}
                   onCancel={(s.isOrphan || s.subscriptionStatus !== "cancelled") ? () => setCancelTarget({ id: s.subscriptionId, isOrphan: s.isOrphan }) : undefined}
                   cancelling={cancellingId === s.subscriptionId}
                 />
@@ -364,7 +394,7 @@ const SubscriptionsTab = () => {
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            if (s.studentId) navigate(`/admin/students?openStudent=${encodeURIComponent(s.studentId)}`);
+                            openStudentProfile(s.studentId);
                           }}
                           disabled={!s.studentEntity}
                           className="text-[#123C91] hover:underline disabled:cursor-default disabled:text-[#64748B] disabled:no-underline"
@@ -411,6 +441,14 @@ const SubscriptionsTab = () => {
           </>
         )}
       </div>
+      {profileStudent && (
+        <UsersTable
+          users={[profileStudent]}
+          autoOpenUser={profileStudent}
+          modalOnly
+          onModalClose={() => setProfileStudent(null)}
+        />
+      )}
       <ConfirmDialog
         open={Boolean(cancelTarget)}
         onClose={() => !cancellingId && setCancelTarget(null)}

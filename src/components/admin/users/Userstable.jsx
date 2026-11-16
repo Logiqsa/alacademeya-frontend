@@ -1814,6 +1814,8 @@ const MobileCard = ({
 const UsersTable = ({
   users = [],
   autoOpenUser,
+  modalOnly = false,
+  onModalClose,
   onApprove,
   onToggleStatus,
   onDelete,
@@ -2203,7 +2205,7 @@ const UsersTable = ({
 
   return (
     <>
-      <div dir="rtl" className="w-full">
+      <div dir="rtl" className={modalOnly ? "hidden" : "w-full"}>
         <div className="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table
@@ -2347,6 +2349,7 @@ const UsersTable = ({
           setDetailsParent(null);
           setPackagesUser(null);
           setReportError("");
+          onModalClose?.();
         }}
         user={detailsUser}
         academicLoading={academicLoading}
