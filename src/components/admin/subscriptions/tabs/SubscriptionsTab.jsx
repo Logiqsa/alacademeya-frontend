@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Eye, Loader2, FilePenLine, Search, Trash2 } from "lucide-react";
+import { Eye, Loader2, FilePenLine, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { cancelSubscription, deleteOrphanSubscription, getAllSubscriptions, getStudent } from "../../../../services/APIService";
+import { getAllSubscriptions, getStudent } from "../../../../services/APIService";
 import Paginationn from "../../../teacher/groups/students/Paginationn";
 import { getSavedPageSize } from "../../../../utils/tablePagination";
 import AppSelect from "../../../ui/AppSelect";
-import ConfirmDialog from "../../supervisors/Confirmdialog";
 import UsersTable from "../../users/Userstable";
 
 const PAGE_SIZE = 10;
@@ -31,13 +30,13 @@ const StatusBadge = ({ status }) => {
 };
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
-const RowActions = ({ onView, onComplete, onCancel, cancelling }) => (<div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}><button
+const RowActions = ({ onView, onComplete }) => (<div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}><button
     onClick={onView}
     className="p-2 rounded-lg text-[#575F69] hover:bg-[#EAF4FF] hover:text-[#123C91] transition-colors"
     title="عرض التفاصيل"
   >
     <Eye size={17} />
-  </button>{onComplete && <button onClick={onComplete} className="p-2 rounded-lg text-amber-700 hover:bg-amber-50" title="استكمال بيانات الاشتراك"><FilePenLine size={17}/></button>}{onCancel && <button onClick={onCancel} disabled={cancelling} className="p-2 disabled:opacity-50" title="حذف الاشتراك وإخراج الطالب من المجموعة" aria-label="حذف الاشتراك وإخراج الطالب من المجموعة">{cancelling ? <Loader2 size={17} className="animate-spin" /> : <Trash2 size={17} />}</button>}</div>);
+  </button>{onComplete && <button onClick={onComplete} className="p-2 rounded-lg text-amber-700 hover:bg-amber-50" title="استكمال بيانات الاشتراك"><FilePenLine size={17}/></button>}</div>);
 
 const valueOrDash = (value) => (value == null || value === "" ? "--" : value);
 
@@ -176,8 +175,6 @@ const SubscriptionsTab = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [cancellingId, setCancellingId] = useState(null);
-  const [cancelTarget, setCancelTarget] = useState(null);
   const [profileStudent, setProfileStudent] = useState(null);
 
   const fetchSubscriptions = useCallback(async () => {
@@ -215,21 +212,6 @@ const SubscriptionsTab = () => {
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const paged = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
-  const handleCancelSubscription = async () => {
-    if (!cancelTarget) return;
-    const { id: subscriptionId, isOrphan } = cancelTarget;
-    setCancellingId(subscriptionId);
-    try {
-      await (isOrphan ? deleteOrphanSubscription(subscriptionId) : cancelSubscription(subscriptionId));
-      setSubscriptions((current) => current.filter((subscription) => String(subscription.id || subscription._id) !== String(subscriptionId)));
-    } catch (requestError) {
-      setError(requestError?.response?.data?.message || "تعذر إلغاء الاشتراك");
-    } finally {
-      setCancellingId(null);
-      setCancelTarget(null);
-    }
-  };
 
   const openStudentProfile = async (studentId) => {
     if (!studentId) return;
@@ -429,8 +411,6 @@ const SubscriptionsTab = () => {
                           onView={() =>
                             navigate(`/admin/subscriptions/${s.subscriptionId}`)
                           }
-                          onCancel={(s.isOrphan || s.subscriptionStatus !== "cancelled") ? () => setCancelTarget({ id: s.subscriptionId, isOrphan: s.isOrphan }) : undefined}
-                          cancelling={cancellingId === s.subscriptionId}
                         />
                       </td>
                     </tr>
@@ -449,16 +429,6 @@ const SubscriptionsTab = () => {
           onModalClose={() => setProfileStudent(null)}
         />
       )}
-      <ConfirmDialog
-        open={Boolean(cancelTarget)}
-        onClose={() => !cancellingId && setCancelTarget(null)}
-        onConfirm={handleCancelSubscription}
-        title={cancelTarget?.isOrphan ? "حذف اشتراك لطالب محذوف" : "إلغاء الاشتراك"}
-        message={cancelTarget?.isOrphan ? "هذا الاشتراك يخص طالبًا حُذف سابقًا. سيتم حذف الاشتراك وبيانات مواده نهائيًا مع الاحتفاظ بسجل المدفوعات." : "سيتم إلغاء الاشتراك وإخراج الطالب من المجموعة والشات الخاص بها. هل تريد المتابعة؟"}
-        confirmLabel={cancelTarget?.isOrphan ? "حذف نهائيًا" : "إلغاء الاشتراك"}
-        danger
-        loading={Boolean(cancellingId)}
-      />
     </div>
   );
 };

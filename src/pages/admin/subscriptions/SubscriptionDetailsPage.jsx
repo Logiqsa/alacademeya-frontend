@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowRight, AlertCircle, Loader2, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
-import { getPackage, getSubscription } from "../../../services/APIService";
+import { cancelSubscription, deleteOrphanSubscription, getPackage, getSubscription } from "../../../services/APIService";
+import ConfirmDialog from "../../../components/admin/supervisors/Confirmdialog";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import {
   currencyCodeOf,
@@ -85,6 +87,8 @@ const SubscriptionDetailsPage = () => {
   const [packagesById, setPackagesById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     const fetchSubscription = async () => {
@@ -168,6 +172,21 @@ const SubscriptionDetailsPage = () => {
 
   const items = subscription.items || subscription.subjectSubscriptions || [];
   const currency = currencyCodeOf(subscription);
+  const isOrphan = !subscription.student;
+
+  const cancelCurrentSubscription = async () => {
+    setCancelling(true);
+    try {
+      await (isOrphan ? deleteOrphanSubscription(id) : cancelSubscription(id));
+      toast.success(isOrphan ? "تم حذف الاشتراك" : "تم إلغاء الاشتراك");
+      navigate("/admin/subscription/orders");
+    } catch (requestError) {
+      toast.error(requestError?.response?.data?.message || "تعذر إلغاء الاشتراك");
+    } finally {
+      setCancelling(false);
+      setCancelOpen(false);
+    }
+  };
 
   return (
     <AdminLayout>
@@ -193,11 +212,19 @@ const SubscriptionDetailsPage = () => {
             الرجوع
           </button>
         </div>
-        {subscription.status === "active" && (
-          <div className="mb-4 flex justify-end">
-            <button onClick={() => navigate(`/admin/subscriptions/${id}/renew`)} className="rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">
-              تجديد الاشتراك يدويًا
-            </button>
+        {(subscription.status === "active" || subscription.status !== "cancelled" || isOrphan) && (
+          <div className="mb-4 flex flex-wrap justify-end gap-3">
+            {subscription.status === "active" && (
+              <button onClick={() => navigate(`/admin/subscriptions/${id}/renew`)} className="rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-medium text-white">
+                تجديد الاشتراك يدويًا
+              </button>
+            )}
+            {(isOrphan || subscription.status !== "cancelled") && (
+              <button onClick={() => setCancelOpen(true)} className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100">
+                <Trash2 size={17} />
+                {isOrphan ? "حذف الاشتراك" : "إلغاء الاشتراك"}
+              </button>
+            )}
           </div>
         )}
 
@@ -314,6 +341,16 @@ const SubscriptionDetailsPage = () => {
           )}
         </div>
       </div>
+      <ConfirmDialog
+        open={cancelOpen}
+        onClose={() => !cancelling && setCancelOpen(false)}
+        onConfirm={cancelCurrentSubscription}
+        title={isOrphan ? "حذف اشتراك لطالب محذوف" : "إلغاء الاشتراك"}
+        message={isOrphan ? "سيتم حذف الاشتراك وبيانات مواده نهائيًا مع الاحتفاظ بسجل المدفوعات." : "سيتم إلغاء الاشتراك وإخراج الطالب من المجموعة والشات الخاص بها. هل تريد المتابعة؟"}
+        confirmLabel={isOrphan ? "حذف نهائيًا" : "إلغاء الاشتراك"}
+        danger
+        loading={cancelling}
+      />
     </AdminLayout>
   );
 };
