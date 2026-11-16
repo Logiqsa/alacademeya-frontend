@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CheckCircle2,
   FileText,
@@ -19,6 +20,7 @@ import { confirmToast } from "../../../utils/confirmToast";
 import { getArabicCountryName } from "../../../utils/countryName";
 import {
   getAllSubscriptions,
+  getAllStudents,
   getClassroomStudents,
   getClassrooms,
   getStudent,
@@ -170,6 +172,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   const [teacherDetails, setTeacherDetails] = useState(null);
   const [teacherDetailsLoading, setTeacherDetailsLoading] = useState(false);
   const [studentDetails, setStudentDetails] = useState(null);
+  const navigate = useNavigate();
   const isTeacher = role === "teacher";
   const studentProfileId = entity?.id || entity?._id;
 
@@ -177,10 +180,20 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
     if (!entity || isTeacher || !studentProfileId) return undefined;
     let active = true;
     setStudentDetails(null);
-    getStudent(studentProfileId)
-      .then((response) => {
+    Promise.allSettled([
+      getStudent(studentProfileId),
+      getAllStudents({ user: entity?.user?.id || entity?.user?._id, page: 1, limit: 100 }),
+    ])
+      .then(([studentResult, listResult]) => {
         if (!active) return;
-        const details = response?.data?.data ?? response?.data;
+        const direct = studentResult.status === "fulfilled"
+          ? studentResult.value?.data?.data ?? studentResult.value?.data
+          : null;
+        const listed = listResult.status === "fulfilled"
+          ? extractList(listResult.value, ["students", "results", "items"])
+              .find((student) => entityId(student) === String(studentProfileId))
+          : null;
+        const details = listed || direct;
         setStudentDetails(details && typeof details === "object" ? details : null);
       })
       .catch(() => active && setStudentDetails(null));
@@ -336,12 +349,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   const registrationStatus = String(
     user.registrationStatus || user.registration_status || "",
   ).toLowerCase();
-  const effectiveSubscriptions = studentSubscriptions.length
-    ? studentSubscriptions
-    : entity?.subscriptionSnapshot
-      ? [entity.subscriptionSnapshot]
-      : [];
-  const subscriptionParent = effectiveSubscriptions.find(
+  const subscriptionParent = studentSubscriptions.find(
     (subscription) => subscription?.parent,
   )?.parent;
   const parentProfile = profileEntity.parent || subscriptionParent;
@@ -420,7 +428,7 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           curriculum: text(profileEntity.curriculum),
           package: text(profileEntity.package),
           parent: normalizedParent,
-          subscriptions: effectiveSubscriptions,
+          subscriptions: studentSubscriptions,
           subscriptionsLoading: groupsLoading,
           studentSubjects: names(
             profileEntity.preferredSubjects ?? profileEntity.subjects ?? profileEntity.subject,
@@ -429,6 +437,10 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           groupsLoading,
         }}
         onApprove={canApprove && !approving ? approveStudent : undefined}
+        onOpenChat={(selectedUser) => {
+          onClose?.();
+          navigate("/admin/messages", { state: { openUserId: selectedUser.id } });
+        }}
       />
     );
   }

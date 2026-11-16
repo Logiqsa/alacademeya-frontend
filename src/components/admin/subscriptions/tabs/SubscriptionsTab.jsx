@@ -111,7 +111,6 @@ const flattenSubscriptions = (subscriptions) => {
         studentId: sub.student?.id || sub.student?._id,
         student: studentName,
         studentEntity: sub.student,
-        subscriptionSnapshot: sub,
         isOrphan,
         subject: "غير متاحة",
         package: "غير متاحة",
@@ -150,7 +149,6 @@ const flattenSubscriptions = (subscriptions) => {
         subscriptionId: sub.id || sub._id,
         student: studentName,
         studentEntity: sub.student,
-        subscriptionSnapshot: sub,
         isOrphan,
         subject: item.subject?.name?.ar ?? item.subject?.name?.en ?? "--",
         package: item.package?.name ?? "--",
@@ -312,10 +310,7 @@ const SubscriptionsTab = () => {
                     navigate(`/admin/subscriptions/${s.subscriptionId}`)
                   }
                   onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
-                  onStudentClick={() => s.studentEntity && setProfileStudent({
-                    ...s.studentEntity,
-                    subscriptionSnapshot: s.subscriptionSnapshot,
-                  })}
+                  onStudentClick={() => s.studentEntity && setProfileStudent(s.studentEntity)}
                   onCancel={(s.isOrphan || s.subscriptionStatus !== "cancelled") ? () => setCancelTarget({ id: s.subscriptionId, isOrphan: s.isOrphan }) : undefined}
                   cancelling={cancellingId === s.subscriptionId}
                 />
@@ -356,10 +351,7 @@ const SubscriptionsTab = () => {
                       <td className="px-5 py-3.5 font-['Tajawal'] font-semibold text-[15px] text-[#1F2937] whitespace-nowrap">
                         <button
                           type="button"
-                          onClick={() => s.studentEntity && setProfileStudent({
-                            ...s.studentEntity,
-                            subscriptionSnapshot: s.subscriptionSnapshot,
-                          })}
+                          onClick={() => s.studentEntity && setProfileStudent(s.studentEntity)}
                           disabled={!s.studentEntity}
                           className="text-[#123C91] hover:underline disabled:cursor-default disabled:text-[#64748B] disabled:no-underline"
                         >
