@@ -55,7 +55,7 @@ const academicName = (value) =>
   value?.name?.ar || value?.name?.en || value?.name || value?.ar || value?.en || "—";
 
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
-const SubCard = ({ s, onView, onComplete, onStudentClick, onCancel, cancelling }) => (
+const SubCard = ({ s, onView, onComplete, onStudentClick }) => (
   <div className="p-4 flex flex-col gap-2.5">
     <div className="flex items-start justify-between gap-2">
       <button
@@ -65,7 +65,7 @@ const SubCard = ({ s, onView, onComplete, onStudentClick, onCancel, cancelling }
       >
         {s.student}
       </button>
-      <RowActions onView={onView} onComplete={onComplete} onCancel={onCancel} cancelling={cancelling} />
+      <RowActions onView={onView} onComplete={onComplete} />
     </div>
     <div className="flex items-center justify-between text-[13px]">
       <span className="text-[#9CA3AF]">المادة</span>
@@ -333,8 +333,6 @@ const SubscriptionsTab = () => {
                   }
                   onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
                   onStudentClick={() => openStudentProfile(s.studentId)}
-                  onCancel={(s.isOrphan || s.subscriptionStatus !== "cancelled") ? () => setCancelTarget({ id: s.subscriptionId, isOrphan: s.isOrphan }) : undefined}
-                  cancelling={cancellingId === s.subscriptionId}
                 />
               ))}
             </div>
