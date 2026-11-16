@@ -1,4 +1,11 @@
-import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Children,
+  isValidElement,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, LockKeyhole, Search } from "lucide-react";
 
@@ -6,11 +13,13 @@ const optionsFromChildren = (children) =>
   Children.toArray(children).flatMap((child) => {
     if (!isValidElement(child)) return [];
     if (child.type === "option") {
-      return [{
-        value: String(child.props.value ?? ""),
-        label: child.props.children,
-        disabled: Boolean(child.props.disabled),
-      }];
+      return [
+        {
+          value: String(child.props.value ?? ""),
+          label: child.props.children,
+          disabled: Boolean(child.props.disabled),
+        },
+      ];
     }
     return optionsFromChildren(child.props.children);
   });
@@ -37,7 +46,8 @@ export default function AppSelect({
 }) {
   const options = useMemo(() => optionsFromChildren(children), [children]);
   const currentValue = String(value ?? defaultValue ?? "");
-  const selected = options.find((option) => option.value === currentValue) || options[0];
+  const selected =
+    options.find((option) => option.value === currentValue) || options[0];
   const hasChoices = options.some((option) => option.value && !option.disabled);
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState(null);
@@ -48,14 +58,33 @@ export default function AppSelect({
   const updatePosition = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setPosition({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+    const gap = 6;
+    const menuHeight = Math.min(256, 58 + options.length * 42);
+    const availableBelow = window.innerHeight - rect.bottom - gap;
+    const availableAbove = rect.top - gap;
+    const openAbove =
+      availableBelow < menuHeight && availableAbove > availableBelow;
+
+    setPosition({
+      top: openAbove ? undefined : rect.bottom + gap,
+      bottom: openAbove ? window.innerHeight - rect.top + gap : undefined,
+      left: rect.left,
+      width: rect.width,
+      maxHeight: Math.max(
+        120,
+        Math.min(256, openAbove ? availableAbove : availableBelow),
+      ),
+    });
   };
 
   useEffect(() => {
     if (!open) return undefined;
     updatePosition();
     const closeOnOutside = (event) => {
-      if (!triggerRef.current?.contains(event.target) && !menuRef.current?.contains(event.target)) {
+      if (
+        !triggerRef.current?.contains(event.target) &&
+        !menuRef.current?.contains(event.target)
+      ) {
         setOpen(false);
       }
     };
@@ -71,7 +100,10 @@ export default function AppSelect({
 
   const choose = (nextValue) => {
     if (nextValue === currentValue) return setOpen(false);
-    onChange?.({ target: { value: nextValue, name }, currentTarget: { value: nextValue, name } });
+    onChange?.({
+      target: { value: nextValue, name },
+      currentTarget: { value: nextValue, name },
+    });
     setOpen(false);
   };
 
@@ -79,13 +111,18 @@ export default function AppSelect({
     ? options.filter((option) =>
         option.value === ""
           ? !search.trim()
-          : optionLabel(option).toLocaleLowerCase("ar").includes(search.trim().toLocaleLowerCase("ar")),
+          : optionLabel(option)
+              .toLocaleLowerCase("ar")
+              .includes(search.trim().toLocaleLowerCase("ar")),
       )
     : [];
 
   const move = (direction) => {
     const enabled = options.filter((option) => !option.disabled);
-    const index = Math.max(0, enabled.findIndex((option) => option.value === currentValue));
+    const index = Math.max(
+      0,
+      enabled.findIndex((option) => option.value === currentValue),
+    );
     const next = enabled[(index + direction + enabled.length) % enabled.length];
     if (next) choose(next.value);
   };
@@ -124,69 +161,94 @@ export default function AppSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         title={disabled ? disabledMessage : props.title}
-        onClick={() => !disabled && setOpen((current) => {
-          if (!current) setSearch("");
-          return !current;
-        })}
+        onClick={() =>
+          !disabled &&
+          setOpen((current) => {
+            if (!current) setSearch("");
+            return !current;
+          })
+        }
         onKeyDown={onKeyDown}
         className={`${className} flex items-center justify-between gap-2 text-right ${
-          disabled ? "!cursor-not-allowed !border-[#CBD5E1] !bg-[#EEF2F6] !text-[#98A2B3] !opacity-100" : ""
+          disabled
+            ? "!cursor-not-allowed !border-[#CBD5E1] !bg-[#EEF2F6] !text-[#98A2B3] !opacity-100"
+            : ""
         }`}
       >
-        <span className="min-w-0 flex-1 truncate">{disabled ? disabledMessage : hasChoices ? selected ? optionLabel(selected) : "—" : emptyMessage}</span>
-        {disabled ? <LockKeyhole size={15} className="shrink-0" /> : <ChevronDown size={16} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />}
+        <span className="min-w-0 flex-1 truncate">
+          {disabled
+            ? disabledMessage
+            : hasChoices
+              ? selected
+                ? optionLabel(selected)
+                : "—"
+              : emptyMessage}
+        </span>
+        {disabled ? (
+          <LockKeyhole size={15} className="shrink-0" />
+        ) : (
+          <ChevronDown
+            size={16}
+            className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        )}
       </button>
-      {open && position && createPortal(
-        <div
-          ref={menuRef}
-          role="listbox"
-          dir={dir}
-          className="fixed z-[2000] max-h-64 overflow-y-auto rounded-xl border border-[#D7E2F3] bg-white p-1.5 shadow-[0_12px_28px_rgba(16,24,40,0.14)]"
-          style={position}
-        >
-          {searchable && hasChoices && (
-            <div className="sticky top-0 z-10 bg-white pb-1.5">
-              <div className="relative">
-                <Search size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#667085]" />
-              <input
-                autoFocus
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                onKeyDown={(event) => event.stopPropagation()}
-                placeholder={searchPlaceholder}
-                className="h-9 w-full rounded-lg border border-[#D0D5DD] bg-[#F8FAFC] py-1 pr-9 pl-3 text-right text-sm outline-none transition focus:border-[#123C91] focus:bg-white focus:ring-2 focus:ring-[#123C91]/10"
-              />
+      {open &&
+        position &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="listbox"
+            dir={dir}
+            className="fixed z-[2000] overflow-y-auto rounded-xl border border-[#D7E2F3] bg-white p-1.5 shadow-[0_12px_28px_rgba(16,24,40,0.14)]"
+            style={position}
+          >
+            {searchable && hasChoices && (
+              <div className="sticky top-0 z-10 bg-white pb-1.5">
+                <div className="relative">
+                  <Search
+                    size={15}
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#667085]"
+                  />
+                  <input
+                    autoFocus
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    placeholder={searchPlaceholder}
+                    className="h-9 w-full rounded-lg border border-[#D0D5DD] bg-[#F8FAFC] py-1 pr-9 pl-3 text-right text-sm outline-none transition focus:border-[#123C91] focus:bg-white focus:ring-2 focus:ring-[#123C91]/10"
+                  />
+                </div>
               </div>
-            </div>
-          )}
-          {visibleOptions.map((option) => {
-            const active = option.value === currentValue;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={active}
-                disabled={option.disabled}
-                onClick={() => choose(option.value)}
-                className={`flex w-full items-center rounded-lg px-3 py-2.5 text-right text-sm transition-colors ${
-                  active
-                    ? "bg-[#123C91] font-semibold text-white"
-                    : "text-[#344054] hover:bg-[#EAF1FF] hover:text-[#123C91]"
-                } disabled:cursor-not-allowed disabled:text-[#98A2B3]`}
-              >
-                {optionLabel(option)}
-              </button>
-            );
-          })}
-          {!visibleOptions.length && (
-            <p className="px-3 py-2 text-center text-sm text-[#667085]">
-              {hasChoices ? "لا توجد نتائج مطابقة" : emptyMessage}
-            </p>
-          )}
-        </div>,
-        document.body,
-      )}
+            )}
+            {visibleOptions.map((option) => {
+              const active = option.value === currentValue;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  disabled={option.disabled}
+                  onClick={() => choose(option.value)}
+                  className={`flex w-full items-center rounded-lg px-3 py-2.5 text-right text-sm transition-colors ${
+                    active
+                      ? "bg-[#123C91] font-semibold text-white"
+                      : "text-[#344054] hover:bg-[#EAF1FF] hover:text-[#123C91]"
+                  } disabled:cursor-not-allowed disabled:text-[#98A2B3]`}
+                >
+                  {optionLabel(option)}
+                </button>
+              );
+            })}
+            {!visibleOptions.length && (
+              <p className="px-3 py-2 text-center text-sm text-[#667085]">
+                {hasChoices ? "لا توجد نتائج مطابقة" : emptyMessage}
+              </p>
+            )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
