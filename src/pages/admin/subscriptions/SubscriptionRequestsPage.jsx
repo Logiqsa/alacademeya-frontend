@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, Eye, Inbox, Loader2, RefreshCw } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  Clock3,
+  Eye,
+  Inbox,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 import AdminLayout from "../../../components/admin/layout/AdminLayout";
 import Breadcrumbs from "../../shared/Breadcrumbs";
 import EntityProfileModal from "../../../components/admin/users/EntityProfileModal";
@@ -52,23 +60,44 @@ const SubscriptionRequestsPage = () => {
   return (
     <AdminLayout>
       <Breadcrumbs homeTo="/admin-dashboard" />
-      <section dir="rtl" className="p-2 sm:p-4">
-        <div className="flex items-start justify-between gap-3 mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-[#123C91]">
-              طلبات الاشتراك المدفوعة
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              راجع الطلبات التي أكد Whop دفعها وعيّن المدرس والفصل لكل مادة
-            </p>
+      <section dir="rtl" className="mx-auto max-w-7xl p-3 sm:p-6">
+        <div className="mb-6 rounded-2xl border border-[#DCE6F5] bg-gradient-to-l from-[#F2F6FF] to-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#123C91] text-white shadow-sm">
+                <Clock3 size={21} />
+              </span>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-semibold text-[#123C91]">
+                  طلبات الاشتراك المدفوعة
+                </h1>
+                <p className="mt-1 text-sm leading-6 text-gray-500">
+                  راجع الطلبات التي أكد Whop دفعها وعيّن المدرس والفصل لكل مادة
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <span className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+                {pagination?.total ?? orders.length} طلب معلق
+              </span>
+              <button
+                onClick={load}
+                disabled={loading}
+                className="flex size-10 items-center justify-center rounded-xl border border-[#D7E2F3] bg-white text-[#123C91] shadow-sm hover:bg-[#F4F7FC] disabled:opacity-50"
+                aria-label="تحديث"
+              >
+                <RefreshCw
+                  size={17}
+                  className={loading ? "animate-spin" : ""}
+                />
+              </button>
+            </div>
           </div>
           <button
-            onClick={load}
-            disabled={loading}
-            className="p-2.5 rounded-xl border border-gray-200 bg-white text-[#123C91] disabled:opacity-50"
-            aria-label="تحديث"
+            onClick={() => navigate("/admin/subscription/orders")}
+            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#475467] hover:text-[#123C91]"
           >
-            <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
+            <ArrowRight size={16} /> العودة للاشتراكات
           </button>
         </div>
 
@@ -92,9 +121,9 @@ const SubscriptionRequestsPage = () => {
           </div>
         ) : (
           <>
-            <div className="bg-white border border-gray-200 rounded-2xl overflow-x-auto">
+            <div className="overflow-x-auto rounded-2xl border border-[#DCE3EE] bg-white shadow-sm">
               <table className="w-full min-w-[760px] text-right">
-                <thead className="bg-gray-50 text-xs text-gray-500">
+                <thead className="border-b border-[#E5EAF2] bg-[#F7F9FC] text-xs font-semibold text-[#667085]">
                   <tr>
                     <th className="p-4">الطالب</th>
                     <th className="p-4">المواد</th>
@@ -108,7 +137,7 @@ const SubscriptionRequestsPage = () => {
                   {orders.map((order) => (
                     <tr
                       key={order.id || order._id}
-                      className="hover:bg-gray-50"
+                      className="transition odd:bg-white even:bg-[#FAFBFD] hover:bg-[#F2F6FF]"
                     >
                       <td className="p-4 font-medium">
                         <button
@@ -145,7 +174,8 @@ const SubscriptionRequestsPage = () => {
                         {date(order.paidAt)}
                       </td>
                       <td className="p-4">
-                        <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                           بانتظار الإدارة
                         </span>
                       </td>
