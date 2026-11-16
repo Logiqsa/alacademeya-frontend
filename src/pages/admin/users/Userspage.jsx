@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import Paginationn from "../../../components/teacher/groups/students/Paginationn";
@@ -143,10 +143,12 @@ const UsersPage = ({
   description = "إدارة جميع حسابات المنصة.",
 }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user: currentUser } = useContext(AuthContext);
   const currentRole = currentUser?.role;
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const requestedStudentId = searchParams.get("openStudent") || "";
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState(fixedRole || "جميع المستخدمين");
@@ -798,6 +800,11 @@ const UsersPage = ({
           ) : (
             <UsersTable
               users={paginatedUsers}
+              autoOpenUser={users.find(
+                (candidate) =>
+                  String(candidate.studentId || "") === requestedStudentId ||
+                  String(candidate.id || "") === requestedStudentId,
+              )}
               onView={handleView}
               onEdit={handleEdit}
               onApprove={handleApprove}

@@ -1813,6 +1813,7 @@ const MobileCard = ({
 
 const UsersTable = ({
   users = [],
+  autoOpenUser,
   onApprove,
   onToggleStatus,
   onDelete,
@@ -1842,6 +1843,7 @@ const UsersTable = ({
   const [reportLoading, setReportLoading] = useState(false);
   const [academicLoading, setAcademicLoading] = useState(false);
   const [reportError, setReportError] = useState("");
+  const autoOpenedUserRef = useRef("");
 
   const navigate = useNavigate();
   const retainedAccountIsTeacher = retainedUser?.user?.role === "معلم";
@@ -2180,6 +2182,13 @@ const UsersTable = ({
       setSuspendUser(user);
     }
   };
+
+  useEffect(() => {
+    const key = autoOpenUser?.studentId || autoOpenUser?.id;
+    if (!key || autoOpenedUserRef.current === String(key)) return;
+    autoOpenedUserRef.current = String(key);
+    handleView(autoOpenUser);
+  }, [autoOpenUser]);
 
   if (users.length === 0) {
     return (

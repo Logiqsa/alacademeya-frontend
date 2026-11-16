@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Eye, Loader2, FilePenLine, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cancelSubscription, deleteOrphanSubscription, getAllSubscriptions } from "../../../../services/APIService";
-import EntityProfileModal from "../../users/EntityProfileModal";
 import Paginationn from "../../../teacher/groups/students/Paginationn";
 import { getSavedPageSize } from "../../../../utils/tablePagination";
 import AppSelect from "../../../ui/AppSelect";
@@ -147,6 +146,7 @@ const flattenSubscriptions = (subscriptions) => {
       rows.push({
         rowId: item.id ?? item._id ?? `${sub.id || sub._id}-${index}`,
         subscriptionId: sub.id || sub._id,
+        studentId: sub.student?.id || sub.student?._id,
         student: studentName,
         studentEntity: sub.student,
         isOrphan,
@@ -175,7 +175,6 @@ const SubscriptionsTab = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [profileStudent, setProfileStudent] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
 
@@ -310,7 +309,7 @@ const SubscriptionsTab = () => {
                     navigate(`/admin/subscriptions/${s.subscriptionId}`)
                   }
                   onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
-                  onStudentClick={() => s.studentEntity && setProfileStudent(s.studentEntity)}
+                  onStudentClick={() => s.studentId && navigate(`/admin/students?openStudent=${encodeURIComponent(s.studentId)}`)}
                   onCancel={(s.isOrphan || s.subscriptionStatus !== "cancelled") ? () => setCancelTarget({ id: s.subscriptionId, isOrphan: s.isOrphan }) : undefined}
                   cancelling={cancellingId === s.subscriptionId}
                 />
@@ -351,7 +350,7 @@ const SubscriptionsTab = () => {
                       <td className="px-5 py-3.5 font-['Tajawal'] font-semibold text-[15px] text-[#1F2937] whitespace-nowrap">
                         <button
                           type="button"
-                          onClick={() => s.studentEntity && setProfileStudent(s.studentEntity)}
+                          onClick={() => s.studentId && navigate(`/admin/students?openStudent=${encodeURIComponent(s.studentId)}`)}
                           disabled={!s.studentEntity}
                           className="text-[#123C91] hover:underline disabled:cursor-default disabled:text-[#64748B] disabled:no-underline"
                         >
@@ -397,11 +396,6 @@ const SubscriptionsTab = () => {
           </>
         )}
       </div>
-      <EntityProfileModal
-        entity={profileStudent}
-        role="student"
-        onClose={() => setProfileStudent(null)}
-      />
       <ConfirmDialog
         open={Boolean(cancelTarget)}
         onClose={() => !cancellingId && setCancelTarget(null)}
