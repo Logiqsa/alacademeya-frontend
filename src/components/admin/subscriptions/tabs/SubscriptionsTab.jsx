@@ -51,6 +51,9 @@ const sessionDisplay = (value) => (value == null ? "--" : `${value} حصة`);
 const sourceLabel = (source) =>
   ({ admin: "يدوي", payment: "بوابة الدفع", legacy: "قديم" })[source] || "--";
 
+const academicName = (value) =>
+  value?.name?.ar || value?.name?.en || value?.name || value?.ar || value?.en || "—";
+
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
 const SubCard = ({ s, onView, onComplete, onStudentClick, onCancel, cancelling }) => (
   <div className="p-4 flex flex-col gap-2.5">
@@ -232,6 +235,14 @@ const SubscriptionsTab = () => {
         registrationStatus: account.registrationStatus,
         role: "طالب أكاديمي",
         status: account.isActive === false ? "موقوف" : "نشط",
+        stage: academicName(profile.stage),
+        grade: academicName(profile.grade),
+        studentCurriculums: profile.curriculum
+          ? [academicName(profile.curriculum)]
+          : [],
+        studentSubjects: (profile.preferredSubjects || [])
+          .map(academicName)
+          .filter((name) => name && name !== "—"),
         joinDate: account.createdAt
           ? new Date(account.createdAt).toLocaleDateString("ar-EG")
           : "—",
