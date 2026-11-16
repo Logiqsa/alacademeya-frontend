@@ -30,7 +30,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
-const RowActions = ({ onView, onComplete, onCancel, cancelling }) => (<div className="flex items-center gap-1"><button
+const RowActions = ({ onView, onComplete, onCancel, cancelling }) => (<div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}><button
     onClick={onView}
     className="p-2 rounded-lg text-[#575F69] hover:bg-[#EAF4FF] hover:text-[#123C91] transition-colors"
     title="عرض التفاصيل"
@@ -345,12 +345,16 @@ const SubscriptionsTab = () => {
                   {paged.map((s) => (
                     <tr
                       key={s.rowId}
-                      className="hover:bg-gray-50/70 transition-colors"
+                      onClick={() => navigate(`/admin/subscriptions/${s.subscriptionId}`)}
+                      className="cursor-pointer hover:bg-gray-50/70 transition-colors"
                     >
                       <td className="px-5 py-3.5 font-['Tajawal'] font-semibold text-[15px] text-[#1F2937] whitespace-nowrap">
                         <button
                           type="button"
-                          onClick={() => s.studentId && navigate(`/admin/students?openStudent=${encodeURIComponent(s.studentId)}`)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (s.studentId) navigate(`/admin/students?openStudent=${encodeURIComponent(s.studentId)}`);
+                          }}
                           disabled={!s.studentEntity}
                           className="text-[#123C91] hover:underline disabled:cursor-default disabled:text-[#64748B] disabled:no-underline"
                         >
