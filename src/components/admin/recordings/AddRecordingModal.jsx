@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CloudUpload, Loader2, X } from "lucide-react";
 import { createRecording, getClassroomSessions } from "../../../services/APIService";
+import AppSelect from "../../ui/AppSelect";
 
 const AddRecordingModal = ({ open, onClose, groups = [], onSuccess }) => {
   const inputRef = useRef(null);
@@ -48,8 +49,37 @@ const AddRecordingModal = ({ open, onClose, groups = [], onSuccess }) => {
     <div className="mb-5 flex justify-between"><h3 className="text-lg font-semibold">إضافة تسجيل جديد</h3><button onClick={onClose}><X /></button></div>
     <div className="space-y-4">
       <input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} placeholder="عنوان التسجيل" className="h-12 w-full rounded-lg border px-4" />
-      <select value={form.classroom} onChange={(e) => { setSessions([]); setForm((p) => ({ ...p, classroom: e.target.value, session: "" })); }} className="h-12 w-full rounded-lg border px-4"><option value="">اختر المجموعة</option>{groups.map((g) => <option key={g.id || g._id} value={g.id || g._id}>{g.name}</option>)}</select>
-      <select value={form.session} onChange={(e) => setForm((p) => ({ ...p, session: e.target.value }))} disabled={!form.classroom} className="h-12 w-full rounded-lg border px-4"><option value="">اختر الحصة</option>{sessions.map((s) => <option key={s.id || s._id} value={s.id || s._id}>{s.title}</option>)}</select>
+      <AppSelect
+        value={form.classroom}
+        onChange={(e) => {
+          setSessions([]);
+          setForm((p) => ({ ...p, classroom: e.target.value, session: "" }));
+        }}
+        searchable
+        searchPlaceholder="ابحث باسم المجموعة..."
+        emptyMessage="لا توجد مجموعات متاحة"
+        className="h-12 w-full rounded-lg border px-4"
+      >
+        <option value="">اختر المجموعة</option>
+        {groups.map((g) => (
+          <option key={g.id || g._id} value={g.id || g._id}>{g.name}</option>
+        ))}
+      </AppSelect>
+      <AppSelect
+        value={form.session}
+        onChange={(e) => setForm((p) => ({ ...p, session: e.target.value }))}
+        disabled={!form.classroom}
+        disabledMessage="اختر المجموعة أولًا"
+        searchable
+        searchPlaceholder="ابحث باسم الحصة..."
+        emptyMessage="لا توجد حصص متاحة لهذه المجموعة"
+        className="h-12 w-full rounded-lg border px-4"
+      >
+        <option value="">اختر الحصة</option>
+        {sessions.map((s) => (
+          <option key={s.id || s._id} value={s.id || s._id}>{s.title}</option>
+        ))}
+      </AppSelect>
       <button type="button" onClick={() => inputRef.current?.click()} className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed py-8 text-[#575F69]"><CloudUpload />{form.file?.name || "اختر ملف الفيديو (حتى 500 MB)"}</button>
       <input ref={inputRef} type="file" accept=".mp4,.mov,.mkv,.avi,video/*" className="hidden" onChange={(e) => setForm((p) => ({ ...p, file: e.target.files?.[0] || null }))} />
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Eye, Loader2, RefreshCw, FilePenLine, Search, Trash2 } from "lucide-react";
+import { Eye, Loader2, FilePenLine, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cancelSubscription, deleteOrphanSubscription, getAllSubscriptions } from "../../../../services/APIService";
 import EntityProfileModal from "../../users/EntityProfileModal";
@@ -16,10 +16,11 @@ const StatusBadge = ({ status }) => {
     active: "bg-[#07883B] text-white",
     expired: "bg-[#D96600] text-white",
     suspended: "bg-[#DC2626] text-white",
+    cancelled: "bg-[#475569] text-white",
     incomplete: "bg-[#1D4ED8] text-white",
   };
   const label =
-    { active: "نشط", expired: "منتهي", suspended: "موقوف", incomplete: "بيانات غير مكتملة" }[status] ?? status;
+    { active: "نشط", expired: "منتهي", suspended: "موقوف", cancelled: "ملغي", incomplete: "بيانات غير مكتملة" }[status] ?? status;
   return (
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${map[status] ?? "bg-[#475569] text-white"}`}
@@ -30,13 +31,13 @@ const StatusBadge = ({ status }) => {
 };
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
-const RowActions = ({ onView, onRenew, canRenew, onComplete, onCancel, cancelling }) => (<div className="flex items-center gap-1"><button
+const RowActions = ({ onView, onComplete, onCancel, cancelling }) => (<div className="flex items-center gap-1"><button
     onClick={onView}
     className="p-2 rounded-lg text-[#575F69] hover:bg-[#EAF4FF] hover:text-[#123C91] transition-colors"
     title="عرض التفاصيل"
   >
     <Eye size={17} />
-  </button>{canRenew && <button onClick={onRenew} className="p-2 rounded-lg text-[#123C91] hover:bg-[#EAF4FF]" title="تجديد يدوي"><RefreshCw size={17}/></button>}{onComplete && <button onClick={onComplete} className="p-2 rounded-lg text-amber-700 hover:bg-amber-50" title="استكمال بيانات الاشتراك"><FilePenLine size={17}/></button>}{onCancel && <button onClick={onCancel} disabled={cancelling} className="p-2 disabled:opacity-50" title="حذف الاشتراك وإخراج الطالب من المجموعة" aria-label="حذف الاشتراك وإخراج الطالب من المجموعة">{cancelling ? <Loader2 size={17} className="animate-spin" /> : <Trash2 size={17} />}</button>}</div>);
+  </button>{onComplete && <button onClick={onComplete} className="p-2 rounded-lg text-amber-700 hover:bg-amber-50" title="استكمال بيانات الاشتراك"><FilePenLine size={17}/></button>}{onCancel && <button onClick={onCancel} disabled={cancelling} className="p-2 disabled:opacity-50" title="حذف الاشتراك وإخراج الطالب من المجموعة" aria-label="حذف الاشتراك وإخراج الطالب من المجموعة">{cancelling ? <Loader2 size={17} className="animate-spin" /> : <Trash2 size={17} />}</button>}</div>);
 
 const valueOrDash = (value) => (value == null || value === "" ? "--" : value);
 
@@ -51,18 +52,8 @@ const sessionDisplay = (value) => (value == null ? "--" : `${value} حصة`);
 const sourceLabel = (source) =>
   ({ admin: "يدوي", payment: "بوابة الدفع", legacy: "قديم" })[source] || "--";
 
-const formatDateTime = (value) => {
-  if (!value) return "--";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "--";
-  return new Intl.DateTimeFormat("ar-EG", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-};
-
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
-const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick, onCancel, cancelling }) => (
+const SubCard = ({ s, onView, onComplete, onStudentClick, onCancel, cancelling }) => (
   <div className="p-4 flex flex-col gap-2.5">
     <div className="flex items-start justify-between gap-2">
       <button
@@ -72,7 +63,7 @@ const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick, onCancel, can
       >
         {s.student}
       </button>
-      <RowActions onView={onView} onRenew={onRenew} onComplete={onComplete} onCancel={onCancel} cancelling={cancelling} canRenew={s.status === "active" && !s.incomplete} />
+      <RowActions onView={onView} onComplete={onComplete} onCancel={onCancel} cancelling={cancelling} />
     </div>
     <div className="flex items-center justify-between text-[13px]">
       <span className="text-[#9CA3AF]">المادة</span>
@@ -102,10 +93,6 @@ const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick, onCancel, can
       <span className="text-[#9CA3AF]">طريقة الاشتراك</span>
       <span className="text-[#575F69]">{s.source}</span>
     </div>
-    <div className="flex items-center justify-between text-[13px]">
-      <span className="text-[#9CA3AF]">تاريخ الاشتراك</span>
-      <span className="text-[#575F69]">{s.createdAt}</span>
-    </div>
   </div>
 );
 
@@ -133,7 +120,6 @@ const flattenSubscriptions = (subscriptions) => {
         status: "incomplete",
         subscriptionStatus: sub.status,
         source: sourceLabel(sub.source),
-        createdAt: formatDateTime(sub.createdAt),
         incomplete: true,
       });
       continue;
@@ -172,7 +158,6 @@ const flattenSubscriptions = (subscriptions) => {
         status: item.status ?? sub.status,
         subscriptionStatus: sub.status,
         source: sourceLabel(sub.source),
-        createdAt: formatDateTime(sub.createdAt),
       });
     }
   }
@@ -186,6 +171,7 @@ const SubscriptionsTab = () => {
   const [pageSize, setPageSize] = useState(() => getSavedPageSize(PAGE_SIZE));
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -219,11 +205,12 @@ const SubscriptionsTab = () => {
     const query = searchQuery.trim().toLocaleLowerCase("ar");
     return rows.filter((row) => {
       const matchesStatus = statusFilter === "all" || row.status === statusFilter;
+      const matchesSource = sourceFilter === "all" || row.source === sourceLabel(sourceFilter);
       const matchesSearch = !query || [row.student, row.subject, row.package]
         .some((value) => String(value || "").toLocaleLowerCase("ar").includes(query));
-      return matchesStatus && matchesSearch;
+      return matchesStatus && matchesSource && matchesSearch;
     });
-  }, [rows, searchQuery, statusFilter]);
+  }, [rows, searchQuery, sourceFilter, statusFilter]);
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const paged = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -268,7 +255,7 @@ const SubscriptionsTab = () => {
 
   return (
     <div className="w-full max-w-full">
-      {rows.length > 0 && <div className="mb-4 grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_220px]" dir="rtl">
+      {rows.length > 0 && <div className="mb-4 grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_180px_180px]" dir="rtl">
         <div className="relative">
           <Search size={17} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
           <input value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setPage(1); }} placeholder="ابحث باسم الطالب أو المادة أو الباقة..." className="h-11 w-full rounded-xl border border-gray-200 bg-[#F8FAFC] pr-10 pl-3 text-sm outline-none focus:border-[#123C91]" />
@@ -278,7 +265,14 @@ const SubscriptionsTab = () => {
           <option value="active">نشط</option>
           <option value="expired">منتهي</option>
           <option value="suspended">موقوف</option>
+          <option value="cancelled">ملغي</option>
           <option value="incomplete">بيانات غير مكتملة</option>
+        </AppSelect>
+        <AppSelect value={sourceFilter} onChange={(event) => { setSourceFilter(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm">
+          <option value="all">كل طرق الاشتراك</option>
+          <option value="admin">يدوي</option>
+          <option value="payment">بوابة الدفع</option>
+          <option value="legacy">قديم</option>
         </AppSelect>
       </div>}
 
@@ -316,7 +310,6 @@ const SubscriptionsTab = () => {
                   onView={() =>
                     navigate(`/admin/subscriptions/${s.subscriptionId}`)
                   }
-                  onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
                   onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
                   onStudentClick={() => s.studentEntity && setProfileStudent(s.studentEntity)}
                   onCancel={(s.isOrphan || s.subscriptionStatus !== "cancelled") ? () => setCancelTarget({ id: s.subscriptionId, isOrphan: s.isOrphan }) : undefined}
@@ -338,7 +331,6 @@ const SubscriptionsTab = () => {
                       "المستهلك",
                       "المتبقي",
                       "طريقة الاشتراك",
-                      "تاريخ الاشتراك",
                       "الحالة",
                       "الإجراءات",
                     ].map((h) => (
@@ -385,14 +377,11 @@ const SubscriptionsTab = () => {
                       <td className="px-5 py-3.5 text-[13px] text-[#575F69] whitespace-nowrap">
                         {s.source}
                       </td>
-                      <td className="px-5 py-3.5 text-[13px] text-[#575F69] whitespace-nowrap">
-                        {s.createdAt}
-                      </td>
                       <td className="px-5 py-3.5">
                         <StatusBadge status={s.status} />
                       </td>
                       <td className="px-5 py-3.5">
-                        <RowActions canRenew={s.status === "active" && !s.incomplete} onRenew={() => navigate(`/admin/subscriptions/${s.subscriptionId}/renew`)}
+                        <RowActions
                           onComplete={s.incomplete ? () => navigate(`/admin/subscriptions/add?studentId=${s.studentId}&completeLegacy=${s.subscriptionId}`) : undefined}
                           onView={() =>
                             navigate(`/admin/subscriptions/${s.subscriptionId}`)

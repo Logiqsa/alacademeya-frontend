@@ -1,4 +1,5 @@
-import { Search, ChevronDown } from "lucide-react";
+import { Search } from "lucide-react";
+import AppSelect from "../../ui/AppSelect";
 
 const RecordingsFilters = ({
   search,
@@ -22,17 +23,19 @@ const RecordingsFilters = ({
       </div>
 
       {/* Group filter */}
-      <div className="relative w-full sm:w-56" style={{ height: "48px" }}>
-        <select
+      <div className="w-full sm:w-56" style={{ height: "48px" }}>
+        <AppSelect
           value={filterGroup}
           onChange={(e) => onFilterGroupChange?.(e.target.value)}
-          className="w-full h-full appearance-none bg-[#F9FAFA] border border-[#E5E5E5] rounded-lg px-4 py-3 text-sm text-[#575F69] outline-none cursor-pointer focus:border-[#123C91] font-['IBM_Plex_Sans_Arabic']"
+          searchable
+          searchPlaceholder="ابحث باسم المجموعة..."
+          emptyMessage="لا توجد مجموعات متاحة"
+          className="h-full w-full rounded-lg border border-[#E5E5E5] bg-[#F9FAFA] px-4 py-3 text-sm text-[#575F69] outline-none focus:border-[#123C91] font-['IBM_Plex_Sans_Arabic']"
         >
           {groupOptions.map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
-        </select>
-        <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 text-[#575F69] pointer-events-none" size={16} />
+        </AppSelect>
       </div>
     </div>
   );
