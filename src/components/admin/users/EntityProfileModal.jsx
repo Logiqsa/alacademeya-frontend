@@ -21,6 +21,7 @@ import {
   getAllSubscriptions,
   getClassroomStudents,
   getClassrooms,
+  getStudent,
   getTeacher,
 } from "../../../services/APIService";
 
@@ -167,8 +168,23 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [teacherDetails, setTeacherDetails] = useState(null);
   const [teacherDetailsLoading, setTeacherDetailsLoading] = useState(false);
+  const [studentDetails, setStudentDetails] = useState(null);
   const isTeacher = role === "teacher";
   const studentProfileId = entity?.id || entity?._id;
+
+  useEffect(() => {
+    if (!entity || isTeacher || !studentProfileId) return undefined;
+    let active = true;
+    setStudentDetails(null);
+    getStudent(studentProfileId)
+      .then((response) => {
+        if (!active) return;
+        const details = response?.data?.data ?? response?.data;
+        setStudentDetails(details && typeof details === "object" ? details : null);
+      })
+      .catch(() => active && setStudentDetails(null));
+    return () => { active = false; };
+  }, [entity, isTeacher, studentProfileId]);
 
   useEffect(() => {
     if (!entity || !isTeacher) return undefined;
@@ -301,13 +317,16 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
   }, [entity, isTeacher, studentProfileId]);
 
   if (!entity) return null;
+  const profileEntity = !isTeacher && studentDetails ? studentDetails : entity;
   const user =
-    entity.user && typeof entity.user === "object" ? entity.user : entity;
+    profileEntity.user && typeof profileEntity.user === "object"
+      ? profileEntity.user
+      : profileEntity;
   const name =
-    user.fullName || entity.fullName || text(user.name || entity.name);
+    user.fullName || profileEntity.fullName || text(user.name || profileEntity.name);
   const teacherFileUrls = isTeacher ? getTeacherFileUrls(entity) : [];
   const currentUserId = user.id || user._id;
-  const country = user.country ?? entity.country;
+  const country = user.country ?? profileEntity.country;
   const countryName =
     country && typeof country === "object"
       ? getArabicCountryName(country)
@@ -377,11 +396,11 @@ const EntityProfileModal = ({ entity, role = "student", onClose }) => {
           joinDate: user.createdAt
             ? new Date(user.createdAt).toLocaleDateString("ar-EG")
             : "—",
-          stage: text(entity.stage ?? entity.academicLevel),
-          grade: text(entity.grade),
-          package: text(entity.package),
+          stage: text(profileEntity.stage ?? profileEntity.academicLevel),
+          grade: text(profileEntity.grade),
+          package: text(profileEntity.package),
           studentSubjects: names(
-            entity.preferredSubjects ?? entity.subjects ?? entity.subject,
+            profileEntity.preferredSubjects ?? profileEntity.subjects ?? profileEntity.subject,
           ),
           groups: studentGroups,
           groupsLoading,
