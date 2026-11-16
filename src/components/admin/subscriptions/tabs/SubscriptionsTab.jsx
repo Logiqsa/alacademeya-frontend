@@ -48,6 +48,19 @@ const sessionValue = (...values) => {
 
 const sessionDisplay = (value) => (value == null ? "--" : `${value} حصة`);
 
+const sourceLabel = (source) =>
+  ({ admin: "يدوي", payment: "بوابة الدفع", legacy: "قديم" })[source] || "--";
+
+const formatDateTime = (value) => {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  return new Intl.DateTimeFormat("ar-EG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
+
 // ─── Mobile Card ──────────────────────────────────────────────────────────────
 const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick, onCancel, cancelling }) => (
   <div className="p-4 flex flex-col gap-2.5">
@@ -85,6 +98,14 @@ const SubCard = ({ s, onView, onRenew, onComplete, onStudentClick, onCancel, can
       <span className="text-[#9CA3AF]">الحالة</span>
       <StatusBadge status={s.status} />
     </div>
+    <div className="flex items-center justify-between text-[13px]">
+      <span className="text-[#9CA3AF]">طريقة الاشتراك</span>
+      <span className="text-[#575F69]">{s.source}</span>
+    </div>
+    <div className="flex items-center justify-between text-[13px]">
+      <span className="text-[#9CA3AF]">تاريخ الاشتراك</span>
+      <span className="text-[#575F69]">{s.createdAt}</span>
+    </div>
   </div>
 );
 
@@ -111,6 +132,8 @@ const flattenSubscriptions = (subscriptions) => {
         remainingSessions: "--",
         status: "incomplete",
         subscriptionStatus: sub.status,
+        source: sourceLabel(sub.source),
+        createdAt: formatDateTime(sub.createdAt),
         incomplete: true,
       });
       continue;
@@ -148,6 +171,8 @@ const flattenSubscriptions = (subscriptions) => {
         remainingSessions: sessionDisplay(remainingSessions),
         status: item.status ?? sub.status,
         subscriptionStatus: sub.status,
+        source: sourceLabel(sub.source),
+        createdAt: formatDateTime(sub.createdAt),
       });
     }
   }
@@ -312,6 +337,8 @@ const SubscriptionsTab = () => {
                       "الخصم",
                       "المستهلك",
                       "المتبقي",
+                      "طريقة الاشتراك",
+                      "تاريخ الاشتراك",
                       "الحالة",
                       "الإجراءات",
                     ].map((h) => (
@@ -354,6 +381,12 @@ const SubscriptionsTab = () => {
                       </td>
                       <td className="px-5 py-3.5 text-[14px] font-medium text-[#123C91] whitespace-nowrap">
                         {s.remainingSessions}
+                      </td>
+                      <td className="px-5 py-3.5 text-[13px] text-[#575F69] whitespace-nowrap">
+                        {s.source}
+                      </td>
+                      <td className="px-5 py-3.5 text-[13px] text-[#575F69] whitespace-nowrap">
+                        {s.createdAt}
                       </td>
                       <td className="px-5 py-3.5">
                         <StatusBadge status={s.status} />

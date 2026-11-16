@@ -54,6 +54,21 @@ const statusLabel = (status) =>
   status ||
   "--";
 
+const sourceLabel = (source) =>
+  ({ admin: "اشتراك يدوي", payment: "بوابة الدفع", legacy: "اشتراك قديم" })[
+    source
+  ] || "--";
+
+const formatDateTime = (value) => {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  return new Intl.DateTimeFormat("ar-EG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
+
 const Detail = ({ label, value }) => (
   <div className="bg-[#F9FAFA] rounded-xl px-4 py-3 flex items-center justify-between gap-3">
     <span className="text-[12px] text-[#8C9198]">{label}</span>
@@ -194,6 +209,20 @@ const SubscriptionDetailsPage = () => {
               label="حالة الاشتراك"
               value={statusLabel(subscription.status)}
             />
+            <Detail
+              label="طريقة الاشتراك"
+              value={sourceLabel(subscription.source)}
+            />
+            <Detail
+              label="تاريخ ووقت الاشتراك"
+              value={formatDateTime(subscription.createdAt)}
+            />
+            {subscription.createdBy && (
+              <Detail
+                label="تم الإنشاء بواسطة"
+                value={nameOf(subscription.createdBy)}
+              />
+            )}
             <Detail label="عملة الاشتراك" value={currency} />
             {subscription.totalAmount != null && (
               <Detail

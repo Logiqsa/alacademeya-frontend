@@ -109,6 +109,14 @@ export default function AddSubscriptionPage() {
   const packagePrice = Number(selectedPackage?.price) || 0;
   const discountValue = Math.min(Math.max(Number(item.discount) || 0, 0), packagePrice);
   const finalPrice = packagePrice - discountValue;
+  const isFormComplete = Boolean(
+    student &&
+      item.subject &&
+      item.teacher &&
+      item.package &&
+      item.classroom &&
+      item.type,
+  );
   const set = (key, value) => {
     if (["subject", "teacher", "type"].includes(key)) setRooms([]);
     setItem((x) => ({
@@ -393,7 +401,8 @@ export default function AddSubscriptionPage() {
           </Field>}
           <div className="flex items-end gap-3">
             <button
-              disabled={busy}
+              type="submit"
+              disabled={busy || !isFormComplete}
               className="h-12 rounded-xl bg-[#123C91] px-6 font-semibold text-white shadow-sm transition hover:bg-[#0E3177] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy
