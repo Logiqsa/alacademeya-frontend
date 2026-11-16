@@ -318,7 +318,18 @@ const SubscriptionsTab = () => {
 
             {/* Desktop/tablet: table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-right" style={{ minWidth: 680 }}>
+              <table className="w-full table-fixed text-right" style={{ minWidth: 980 }}>
+                <colgroup>
+                  <col style={{ width: "15%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "24%" }} />
+                  <col style={{ width: "6%" }} />
+                  <col style={{ width: "7%" }} />
+                  <col style={{ width: "7%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "9%" }} />
+                  <col style={{ width: "12%" }} />
+                </colgroup>
                 <thead className="bg-[#F9FAFA] border-b border-gray-100">
                   <tr>
                     {[
@@ -361,11 +372,11 @@ const SubscriptionsTab = () => {
                           {s.student}
                         </button>
                       </td>
-                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
+                      <td className="px-3 py-3.5 text-[14px] text-[#575F69]">
                         {s.subject}
                       </td>
-                      <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
-                        {s.package}
+                      <td className="px-3 py-3.5 text-[14px] leading-6 text-[#575F69]">
+                        <span className="block break-words">{s.package}</span>
                       </td>
                       <td className="px-5 py-3.5 text-[14px] text-[#575F69] whitespace-nowrap">
                         {valueOrDash(s.discount)}
