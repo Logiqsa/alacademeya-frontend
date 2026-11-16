@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Component, Suspense, lazy, useContext } from "react";
 import toast, { Toaster, ToastBar } from "react-hot-toast";
+import { AlertTriangle, Copy, LayoutDashboard, RefreshCw } from "lucide-react";
 
 import HomeLayout from "./components/layout/HomeLayout";
 import Landing from "./pages/Landing";
@@ -115,23 +116,57 @@ class LazyRouteBoundary extends Component {
         this.state.error?.stack ? `Stack:\n${this.state.error.stack}` : "",
       ].filter(Boolean).join("\n\n");
       return (
-        <main className="grid min-h-[60vh] place-items-center bg-[#F5F7FB] px-4 text-center" dir="rtl">
-          <div className="w-full max-w-3xl py-10">
-            <h1 className="text-xl font-bold text-[#123C91]">تعذر تحميل الصفحة</h1>
-            <p className="mt-2 text-sm text-[#667085]">انسخ تفاصيل الخطأ التالية لإظهار السبب الحقيقي بدل إعادة المحاولة بدون تشخيص.</p>
-            <pre className="mt-5 max-h-72 overflow-auto whitespace-pre-wrap rounded-xl border border-red-200 bg-red-50 p-4 text-left text-xs leading-5 text-red-800" dir="ltr">{errorDetails}</pre>
-            <div className="mt-5 flex flex-wrap justify-center gap-3">
-              <button type="button" onClick={() => navigator.clipboard?.writeText(errorDetails)} className="rounded-xl border border-[#123C91] bg-white px-5 py-2.5 text-sm font-bold text-[#123C91]">
-                نسخ تفاصيل الخطأ
-              </button>
-              <button type="button" onClick={reloadLatestApp} className="rounded-xl bg-[#123C91] px-5 py-2.5 text-sm font-bold text-white">
-                تنظيف الكاش وإعادة التحميل
-              </button>
-              <button type="button" onClick={() => window.location.assign("/admin-dashboard")} className="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-bold text-gray-700">
-                العودة للوحة التحكم
-              </button>
+        <main className="min-h-screen bg-[#F4F7FC] px-4 py-8 sm:px-6 sm:py-14" dir="rtl">
+          <section className="mx-auto w-full max-w-4xl overflow-hidden rounded-3xl border border-[#DCE5F3] bg-white shadow-[0_18px_55px_rgba(16,42,88,0.10)]">
+            <header className="border-b border-[#E6ECF5] bg-gradient-to-l from-[#F3F7FF] to-white px-5 py-6 sm:px-8">
+              <div className="flex items-start gap-4 text-right">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100">
+                  <AlertTriangle size={24} />
+                </span>
+                <div>
+                  <h1 className="text-xl font-bold text-[#123C91] sm:text-2xl">تعذر تحميل الصفحة</h1>
+                  <p className="mt-1.5 text-sm leading-6 text-[#667085]">حدث خطأ داخل الصفحة. التفاصيل التقنية بالأسفل تساعد فريق التطوير على تحديد السبب بسرعة.</p>
+                </div>
+              </div>
+            </header>
+
+            <div className="p-5 sm:p-8">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-red-100 bg-red-50/70 p-4 text-right">
+                  <p className="text-xs font-semibold text-red-500">نوع الخطأ</p>
+                  <p className="mt-1 break-words font-mono text-sm font-bold text-red-800" dir="ltr">{this.state.error?.name || "UnknownError"}</p>
+                </div>
+                <div className="rounded-2xl border border-red-100 bg-red-50/70 p-4 text-right">
+                  <p className="text-xs font-semibold text-red-500">رسالة الخطأ</p>
+                  <p className="mt-1 break-words font-mono text-sm font-bold text-red-800" dir="ltr">{this.state.error?.message || "No error message"}</p>
+                </div>
+              </div>
+
+              <div className="mt-5 overflow-hidden rounded-2xl border border-[#26364F] bg-[#101828] shadow-inner">
+                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 text-xs text-slate-300">
+                  <span className="font-semibold">تفاصيل Debug</span>
+                  <span dir="ltr">Runtime Error</span>
+                </div>
+                <pre className="max-h-80 overflow-auto whitespace-pre-wrap p-4 text-left font-mono text-xs leading-6 text-slate-200 sm:p-5" dir="ltr">{errorDetails}</pre>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <button type="button" onClick={async () => { await navigator.clipboard?.writeText(errorDetails); toast.success("تم نسخ تفاصيل الخطأ"); }} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#B9C9E5] bg-white px-4 py-3 text-sm font-bold text-[#123C91] transition hover:bg-[#F4F7FC]">
+                  <Copy size={17} />
+                  نسخ التفاصيل
+                </button>
+                <button type="button" onClick={reloadLatestApp} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#123C91] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#0F327A]">
+                  <RefreshCw size={17} />
+                  تنظيف الكاش وإعادة التحميل
+                </button>
+                <button type="button" onClick={() => window.location.assign("/admin-dashboard")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-4 py-3 text-sm font-bold text-[#344054] transition hover:bg-gray-50">
+                  <LayoutDashboard size={17} />
+                  العودة للوحة التحكم
+                </button>
+              </div>
+              <p className="mt-5 text-center text-xs leading-5 text-[#98A2B3]">يمكنك نسخ التفاصيل وإرسالها للمطور دون مشاركة أي كلمات مرور.</p>
             </div>
-          </div>
+          </section>
         </main>
       );
     }
