@@ -839,6 +839,7 @@ export const updateTeacherProfile = (teacherId, payload) =>
 // ──────────────────────────────────────────────────────────────────────────────
 export const getSessionAttendance = (sessionId) =>
   API.get(`/sessions/${sessionId}/attendance`);
+export const getSession = (sessionId) => API.get(`/sessions/${sessionId}`);
 export const saveSessionAttendance = (sessionId, payload) =>
   API.patch(`/sessions/${sessionId}/attendance`, payload);
 

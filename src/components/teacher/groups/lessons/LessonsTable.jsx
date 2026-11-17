@@ -143,12 +143,12 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession, n
                       >
                         <HiOutlineEye size={18} />
                       </ActionButton>
-                      {role !== "admin" && lesson.rawStatus === "live" && (
+                      {lesson.rawStatus === "live" && (
                         <ActionButton
                           onClick={() => onEndSession?.(lesson)}
                           colorClass="text-[#575F69] hover:text-red-600"
                         >
-                          <HiOutlineStop size={18} />
+                          <HiOutlineStop size={18} title="إنهاء الحصة" />
                         </ActionButton>
                       )}
                       {/* <ActionButton
@@ -202,12 +202,12 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession, n
               >
                 <HiOutlineEye size={18} />
               </ActionButton>
-              {role !== "admin" && lesson.rawStatus === "live" && (
+              {lesson.rawStatus === "live" && (
                 <ActionButton
                   onClick={() => onEndSession?.(lesson)}
                   colorClass="text-[#575F69] hover:text-red-600 bg-gray-50 flex-1 justify-center"
                 >
-                  <HiOutlineStop size={18} />
+                  <HiOutlineStop size={18} title="إنهاء الحصة" />
                 </ActionButton>
               )}
               {/* <ActionButton

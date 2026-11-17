@@ -57,8 +57,16 @@ const formatHours = (minutes = 0) =>
     maximumFractionDigits: 1,
   }).format(Number(minutes || 0) / 60)} ساعة`;
 
-const formatSessionDuration = (minutes = 0) =>
-  minutes ? formatHours(minutes) : "لم تُعقد";
+const formatSessionDuration = (minutes = 0) => {
+  const totalMinutes = Math.max(0, Math.round(Number(minutes) || 0));
+  if (!totalMinutes) return "لم تُعقد";
+
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+  if (!hours) return `${totalMinutes} دقيقة`;
+  if (!remainingMinutes) return `${hours} ساعة`;
+  return `${hours} ساعة و${remainingMinutes} دقيقة`;
+};
 
 const teacherName = (teacher) =>
   teacher.user?.fullName || teacher.fullName || teacher.name || "—";
@@ -1162,8 +1170,36 @@ const TeachersPage = () => {
                     <tbody className="divide-y divide-[#E5E7EB]">
                       {sessionDialogItems.map((session) => (
                         <tr key={session.id || session.eventId} className="odd:bg-white even:bg-[#F8FAFC]">
-                          <td className="px-4 py-3 text-sm font-medium text-[#1F2937]">{session.title}</td>
-                          <td className="px-4 py-3 text-sm text-[#575F69]">{session.classroomName}</td>
+                          <td className="px-4 py-3 text-sm font-medium">
+                            {session.id && session.classroomId ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate(`/admin/classrooms/${session.classroomId}/sessions/${session.id}`)
+                                }
+                                className="text-right font-semibold text-[#123C91] hover:underline"
+                              >
+                                {session.title}
+                              </button>
+                            ) : (
+                              <span className="text-[#1F2937]">{session.title}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {session.classroomId ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate(`/admin/groups/${session.classroomId}/lessons`)
+                                }
+                                className="text-right font-medium text-[#123C91] hover:underline"
+                              >
+                                {session.classroomName}
+                              </button>
+                            ) : (
+                              <span className="text-[#575F69]">{session.classroomName}</span>
+                            )}
+                          </td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm text-[#575F69]">{session.scheduledAt ? new Date(session.scheduledAt).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" }) : "—"}</td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-[#123C91]">{formatSessionDuration(session.duration)}</td>
                         </tr>

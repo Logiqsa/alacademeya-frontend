@@ -31,3 +31,11 @@ test("teacher status header filters the table by the selected state", () => {
   assert.match(source, /teacher\.status === filterStatus/);
   assert.match(source, /setFilterStatus\(event\.target\.value\)/);
 });
+
+test("monthly session details use minute-based durations and link sessions and groups", () => {
+  assert.match(source, /Math\.round\(Number\(minutes\) \|\| 0\)/);
+  assert.match(source, /`\$\{totalMinutes\} دقيقة`/);
+  assert.match(source, /`\$\{hours\} ساعة و\$\{remainingMinutes\} دقيقة`/);
+  assert.match(source, /\/admin\/classrooms\/\$\{session\.classroomId\}\/sessions\/\$\{session\.id\}/);
+  assert.match(source, /\/admin\/groups\/\$\{session\.classroomId\}\/lessons/);
+});

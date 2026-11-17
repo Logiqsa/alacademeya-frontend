@@ -10,8 +10,8 @@ import LessonStats from "../../components/teacher/groups/lessons/LessonStats";
 import {
   getAssignmentsByClassroom,
   getClassroom,
-  getClassroomSessions,
   getClassroomStudents,
+  getSession,
   getSessionAttendance,
   getSessionRecording,
 } from "../../services/APIService";
@@ -107,18 +107,23 @@ const SessionDetailsPage = ({ role }) => {
     let active = true;
     Promise.allSettled([
       getClassroom(classroomId),
-      getClassroomSessions(classroomId),
+      getSession(sessionId),
       getClassroomStudents(classroomId),
       getSessionAttendance(sessionId),
       getAssignmentsByClassroom(classroomId),
       getSessionRecording(sessionId),
-    ]).then(([classroomResult, sessionsResult, studentsResult, attendanceResult, assignmentsResult, recordingResult]) => {
+    ]).then(([classroomResult, sessionResult, studentsResult, attendanceResult, assignmentsResult, recordingResult]) => {
       if (!active) return;
-      if (sessionsResult.status === "rejected") throw sessionsResult.reason;
-      const classroom = classroomResult.status === "fulfilled" ? classroomResult.value.data?.data || {} : {};
-      const sessions = sessionsResult.value.data?.data || [];
-      const session = sessions.find((item) => (item.id || item._id) === sessionId);
+      if (sessionResult.status === "rejected") throw sessionResult.reason;
+      const session = sessionResult.value.data?.data || null;
       if (!session) throw new Error("لم يتم العثور على الحصة");
+      const classroomDetails = classroomResult.status === "fulfilled" ? classroomResult.value.data?.data || {} : {};
+      const sessionClassroom = typeof session.classroom === "object" && session.classroom
+        ? session.classroom
+        : {};
+      // تفاصيل المجموعة العامة تحجب رابط الاجتماع، بينما endpoint الحصة يعيد
+      // المجموعة المرتبطة ورابطها بعد التحقق من صلاحية المستخدم.
+      const classroom = { ...classroomDetails, ...sessionClassroom };
 
       // خريطة id → اسم طالب، مصدر موثوق لو getSessionAttendance رجّع student كـ id نص بس
       const studentNameMap = new Map();

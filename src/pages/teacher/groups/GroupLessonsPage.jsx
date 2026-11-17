@@ -71,14 +71,19 @@ const isValidMeetingUrl = (value) => {
   }
 };
 
+const durationLabel = (minutes = 0) => {
+  const totalMinutes = Math.max(0, Math.floor(Number(minutes) || 0));
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+  return `${hours} ساعة و${remainingMinutes} دقيقة`;
+};
+
 const liveDurationLabel = (startedAt, now) => {
   const startedAtMs = new Date(startedAt).getTime();
   if (!Number.isFinite(startedAtMs)) return "جارية الآن";
 
   const elapsedMinutes = Math.max(0, Math.floor((now - startedAtMs) / 60000));
-  return elapsedMinutes < 1
-    ? "أقل من دقيقة (جارية)"
-    : `${elapsedMinutes} دقيقة (جارية)`;
+  return `${durationLabel(elapsedMinutes)} (جارية)`;
 };
 
 const resolveAcademicName = (field, primaryClassroom, fallbackClassroom) => {
@@ -578,7 +583,7 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
               : "--",
           duration:
             typeof s.duration === "number"
-              ? `${s.duration} دقيقة`
+              ? durationLabel(s.duration)
               : (s.duration ?? "--"),
           startedAt: s.startedAt || s.startAt || null,
           attendance,
@@ -624,7 +629,6 @@ const GroupLessonsPage = ({ role = "teacher" }) => {
   useEffect(() => {
     if (!lessons.some((lesson) => lesson.rawStatus === "live")) return undefined;
 
-    setLiveClock(Date.now());
     const timer = window.setInterval(() => setLiveClock(Date.now()), 30000);
     return () => window.clearInterval(timer);
   }, [lessons]);
