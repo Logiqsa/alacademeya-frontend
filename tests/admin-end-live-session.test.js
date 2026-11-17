@@ -20,14 +20,10 @@ test("lesson durations show hours and remaining minutes", () => {
   assert.match(pageSource, /durationLabel\(elapsedMinutes\)/);
 });
 
-test("admins can end live sessions from desktop and mobile tables", () => {
+test("admin end-session controls stay hidden in desktop and mobile tables", () => {
   assert.equal(
-    tableSource.match(/\{lesson\.rawStatus === "live" && \(/g)?.length,
+    tableSource.match(/\{role !== "admin" && lesson\.rawStatus === "live" && \(/g)?.length,
     2,
-  );
-  assert.doesNotMatch(
-    tableSource,
-    /role !== "admin" && lesson\.rawStatus === "live"/,
   );
   assert.match(tableSource, /onEndSession\?\.\(lesson\)/);
 });

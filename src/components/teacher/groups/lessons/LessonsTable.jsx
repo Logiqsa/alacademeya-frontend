@@ -143,7 +143,7 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession, n
                       >
                         <HiOutlineEye size={18} />
                       </ActionButton>
-                      {lesson.rawStatus === "live" && (
+                      {role !== "admin" && lesson.rawStatus === "live" && (
                         <ActionButton
                           onClick={() => onEndSession?.(lesson)}
                           colorClass="text-red-600 hover:bg-red-50 hover:text-red-700"
@@ -202,7 +202,7 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession, n
               >
                 <HiOutlineEye size={18} />
               </ActionButton>
-              {lesson.rawStatus === "live" && (
+              {role !== "admin" && lesson.rawStatus === "live" && (
                 <ActionButton
                   onClick={() => onEndSession?.(lesson)}
                   colorClass="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 flex-1 justify-center"
