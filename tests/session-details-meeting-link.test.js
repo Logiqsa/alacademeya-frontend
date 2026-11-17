@@ -16,4 +16,13 @@ test("admin session details use the meeting link stored on the classroom", () =>
   assert.match(source, /getSession\(sessionId\)/);
   assert.match(source, /const classroom = \{ \.\.\.classroomDetails, \.\.\.sessionClassroom \}/);
   assert.match(source, /data\.classroom\.meetingLink/);
+  assert.match(source, /!text-white \[&_svg\]:!text-white/);
+});
+
+test("admin can end a live session from its details page", () => {
+  assert.match(source, /setShowEndModal\(true\)/);
+  assert.match(source, />إنهاء الحصة<\/button>/);
+  assert.match(source, /bg-red-600/);
+  assert.match(source, /await endSession\(sessionId\)/);
+  assert.match(source, /<EndSessionDetailsModal/);
 });

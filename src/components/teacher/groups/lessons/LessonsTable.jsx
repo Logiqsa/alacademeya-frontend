@@ -146,7 +146,7 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession, n
                       {lesson.rawStatus === "live" && (
                         <ActionButton
                           onClick={() => onEndSession?.(lesson)}
-                          colorClass="text-[#575F69] hover:text-red-600"
+                          colorClass="text-red-600 hover:bg-red-50 hover:text-red-700"
                         >
                           <HiOutlineStop size={18} title="إنهاء الحصة" />
                         </ActionButton>
@@ -205,7 +205,7 @@ const LessonsTable = ({ lessons = [], groupId, role = "teacher", onEndSession, n
               {lesson.rawStatus === "live" && (
                 <ActionButton
                   onClick={() => onEndSession?.(lesson)}
-                  colorClass="text-[#575F69] hover:text-red-600 bg-gray-50 flex-1 justify-center"
+                  colorClass="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 flex-1 justify-center"
                 >
                   <HiOutlineStop size={18} title="إنهاء الحصة" />
                 </ActionButton>
